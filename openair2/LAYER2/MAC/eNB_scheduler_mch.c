@@ -84,11 +84,11 @@ get_mbsfn_sf_alloction(module_id_t module_idP, uint8_t CC_id,
 }
 
 static uint32_t bytes_in_buffer=0;
-static uint8_t msi_pmch_stop=0;
+static uint32_t msi_pmch_stop=0;
 //static uint8_t msi_active=0;
 //static uint8_t msi_pmch_stop2=0;
 uint16_t mbms_rab_id = 2047;
-static uint8_t msi_sfs=0;
+static uint32_t msi_sfs=0;
 
 
 //MSI_ELEMENT * ptr =NULL;
@@ -709,7 +709,7 @@ schedule_MBMS_NFAPI(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 	      "e-MBMS log channel %u frameP %d, subframeP %d,  rlc_status.bytes_in_buffer is %d TBS %d pmch_stop %d msi_sfs %d\n",
 	      MTCH, frameP, subframeP, rlc_status.bytes_in_buffer,TBS,msi_pmch_stop,msi_sfs);
 
-	if (rlc_status.bytes_in_buffer > 0 ||  msi_pmch_stop > 0  /*msi_pmch_stop>=num_sf_alloc*/ ) {
+	if ((rlc_status.bytes_in_buffer > 0 &&  msi_pmch_stop > 0) || msi_sfs > cc->pmch_Config[0]->sf_AllocEnd_r9 /*msi_pmch_stop>=num_sf_alloc*/ ) {
 	    //if(rlc_status.bytes_in_buffer > 0){
 	    LOG_I(MAC,
 		  "[eNB %d][MBMS USER-PLANE], CC_id %d, Frame %d, MTCH->MCH, Requesting %d bytes from RLC (header len mtch %d) rlc_status.bytes_in_buffer %d\n",
