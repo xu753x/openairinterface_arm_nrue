@@ -53,7 +53,7 @@ void mac_rlc_data_ind     (
   rlc_ue_t *ue;
   rlc_entity_t *rb;
 
-  if (module_idP != 0 || eNB_index != 0 || /*enb_flagP != 1 ||*/ MBMS_flagP != 0) {
+  if (module_idP != 0 || eNB_index != 0 /*|| enb_flagP != 1 || MBMS_flagP != 0*/) {
     LOG_E(RLC, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
     exit(1);
   }
@@ -63,12 +63,21 @@ void mac_rlc_data_ind     (
       T_INT(channel_idP), T_INT(tb_sizeP));
 
   rlc_manager_lock(rlc_ue_manager);
-  ue = rlc_manager_get_ue(rlc_ue_manager, rntiP);
+
+  if(MBMS_flagP == MBMS_FLAG_YES)
+	ue = rlc_manager_get_ue(rlc_ue_manager, 0xfffd);
+  else
+	ue = rlc_manager_get_ue(rlc_ue_manager, rntiP);
+  
 
   switch (channel_idP) {
   case 1 ... 2: rb = ue->srb[channel_idP - 1]; break;
   case 3 ... 7: rb = ue->drb[channel_idP - 3]; break;
   default:      rb = NULL;                     break;
+  }
+
+  if(MBMS_flagP == MBMS_FLAG_YES){
+	rb = ue->drb[channel_idP-1];
   }
 
   if (rb != NULL) {
@@ -412,7 +421,7 @@ rb_found:
       T_INT(ue->rnti), T_INT(rb_id), T_INT(size));
   }
 
-  if (!pdcp_data_ind(&ctx, is_srb, 0, rb_id, size, memblock)) {
+  if (!pdcp_data_ind(&ctx, is_srb, (ue->rnti == 0xfffd ? 1 : 0), rb_id, size, memblock)) {
     LOG_E(RLC, "%s:%d:%s: ERROR: pdcp_data_ind failed\n", __FILE__, __LINE__, __FUNCTION__);
     /* what to do in case of failure? for the moment: nothing */
   }
@@ -838,6 +847,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
           drb_id =  (mbms_service_id * LTE_maxSessionPerPMCH ) + mbms_session_id; // + (LTE_maxDRB + 3); // 15
         }
 
+        rnti = 0xfffd;
         LOG_I(RLC, PROTOCOL_CTXT_FMT" CONFIG REQ MBMS ASN1 LC ID %u RB ID %u SESSION ID %u SERVICE ID %u, rnti %x\n",
               PROTOCOL_CTXT_ARGS(ctxt_pP),
               lc_id,
