@@ -3681,16 +3681,18 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
                           , NULL);
 
   /* Refresh SRBs/DRBs */
-  rrc_rlc_config_asn1_req(ctxt_pP,
-                          *SRB_configList2, // NULL,
-                          *DRB_configList,
-                          NULL
+  if (!NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
+    rrc_rlc_config_asn1_req(ctxt_pP,
+                            *SRB_configList2, // NULL,
+                            *DRB_configList,
+                            NULL
 #if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-                          , (LTE_PMCH_InfoList_r9_t *) NULL,
-                          0,
-                          0
+                            , (LTE_PMCH_InfoList_r9_t *) NULL,
+                            0,
+                            0
 #endif
-                          );
+                            );
+  }
 
   free(Sparams);
   Sparams = NULL;
@@ -6352,16 +6354,18 @@ rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ct
                           , NULL);
 
   /* Refresh SRBs/DRBs */
-  rrc_rlc_config_asn1_req(ctxt_pP,
-                          *SRB_configList2, // NULL,
-                          *DRB_configList,
-                          NULL
+  if (!NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
+    rrc_rlc_config_asn1_req(ctxt_pP,
+                            *SRB_configList2, // NULL,
+                            *DRB_configList,
+                            NULL
 #if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-                          , (LTE_PMCH_InfoList_r9_t *) NULL,
-                          0,
-                          0
+                            , (LTE_PMCH_InfoList_r9_t *) NULL,
+                            0,
+                            0
 #endif
-                          );
+                            );
+  }
 
   free(quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ);
   quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ = NULL;
@@ -6414,15 +6418,17 @@ rrc_eNB_configure_rbs_handover(struct rrc_eNB_ue_context_s *ue_context_p, protoc
                            , (LTE_PMCH_InfoList_r9_t *) NULL
 #endif
                            , NULL);
-  rrc_rlc_config_asn1_req(ctxt_pP,
-                          ue_context_p->ue_context.SRB_configList,
-                          (LTE_DRB_ToAddModList_t *) NULL,
-                          (LTE_DRB_ToReleaseList_t *) NULL
+  if (!NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
+    rrc_rlc_config_asn1_req(ctxt_pP,
+                            ue_context_p->ue_context.SRB_configList,
+                            (LTE_DRB_ToAddModList_t *) NULL,
+                            (LTE_DRB_ToReleaseList_t *) NULL
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-                          , (LTE_PMCH_InfoList_r9_t *) NULL
-                          , 0, 0
+                            , (LTE_PMCH_InfoList_r9_t *) NULL
+                            , 0, 0
 #endif
-                         );
+                           );
+  }
 
   if (EPC_MODE_ENABLED) {
   rrc_eNB_process_security (
@@ -6582,16 +6588,18 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
                           , NULL);
 
   /* Refresh SRBs/DRBs */
-  rrc_rlc_config_asn1_req(ctxt_pP,
-                          SRB_configList, // NULL,
-                          DRB_configList,
-                          DRB_Release_configList2
+  if (!NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
+    rrc_rlc_config_asn1_req(ctxt_pP,
+                            SRB_configList, // NULL,
+                            DRB_configList,
+                            DRB_Release_configList2
 #if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-                          , (LTE_PMCH_InfoList_r9_t *) NULL,
-                          0,
-                          0
+                            , (LTE_PMCH_InfoList_r9_t *) NULL,
+                            0,
+                            0
 #endif
-                          );
+                            );
+  }
 
   /* Set the SRB active in UE context */
   if (SRB_configList != NULL) {
