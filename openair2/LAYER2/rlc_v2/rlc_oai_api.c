@@ -53,8 +53,9 @@ void mac_rlc_data_ind     (
   rlc_ue_t *ue;
   rlc_entity_t *rb;
 
-  if (module_idP != 0 || eNB_index != 0 /*|| enb_flagP != 1 || MBMS_flagP != 0*/) {
-    LOG_E(RLC, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
+  if (enb_flagP == 1 && module_idP != 0) {
+    LOG_E(RLC, "%s:%d:%s: fatal, module_id must be 0 for eNB\n",
+          __FILE__, __LINE__, __FUNCTION__);
     exit(1);
   }
 
@@ -69,7 +70,6 @@ void mac_rlc_data_ind     (
   else
 	ue = rlc_manager_get_ue(rlc_ue_manager, rntiP);
   
-
   switch (channel_idP) {
   case 1 ... 2: rb = ue->srb[channel_idP - 1]; break;
   case 3 ... 7: rb = ue->drb[channel_idP - 3]; break;
@@ -357,6 +357,9 @@ void rlc_util_print_hex_octets(comp_name_t componentP, unsigned char *dataP, con
 {
 }
 
+#include "common/ran_context.h"
+extern RAN_CONTEXT_t RC;
+
 static void deliver_sdu(void *_ue, rlc_entity_t *entity, char *buf, int size)
 {
   rlc_ue_t *ue = _ue;
@@ -401,7 +404,7 @@ rb_found:
   memcpy(memblock->data, buf, size);
 
   /* unused fields? */
-  ctx.instance = 0;
+  ctx.instance = ue->module_id;
   ctx.frame = 0;
   ctx.subframe = 0;
   ctx.eNB_index = 0;
@@ -409,7 +412,7 @@ rb_found:
   ctx.brOption = 0;
 
   /* used fields? */
-  ctx.module_id = 0;
+  ctx.module_id = ue->module_id;
   ctx.rnti = ue->rnti;
 
   is_enb = rlc_manager_get_enb_flag(rlc_ue_manager);
@@ -419,9 +422,26 @@ rb_found:
     T(T_ENB_RLC_UL,
       T_INT(0 /*ctxt_pP->module_id*/),
       T_INT(ue->rnti), T_INT(rb_id), T_INT(size));
+  //}
+
+  //if (!pdcp_data_ind(&ctx, is_srb, (ue->rnti == 0xfffd ? 1 : 0), rb_id, size, memblock)) {
+
+    const ngran_node_t type = RC.rrc[0 /*ctxt_pP->module_id*/]->node_type;
+    AssertFatal(type != ngran_eNB_CU && type != ngran_ng_eNB_CU && type != ngran_gNB_CU,
+                "Can't be CU, bad node type %d\n", type);
+
+    if (NODE_IS_DU(type) && is_srb == 1) {
+      MessageDef *msg = itti_alloc_new_message(TASK_RLC_ENB, F1AP_UL_RRC_MESSAGE);
+      F1AP_UL_RRC_MESSAGE(msg).rnti = ue->rnti;
+      F1AP_UL_RRC_MESSAGE(msg).srb_id = rb_id;
+      F1AP_UL_RRC_MESSAGE(msg).rrc_container = (unsigned char *)buf;
+      F1AP_UL_RRC_MESSAGE(msg).rrc_container_length = size;
+      itti_send_msg_to_task(TASK_DU_F1, ENB_MODULE_ID_TO_INSTANCE(0 /*ctxt_pP->module_id*/), msg);
+      return;
+    }
   }
 
-  if (!pdcp_data_ind(&ctx, is_srb, (ue->rnti == 0xfffd ? 1 : 0), rb_id, size, memblock)) {
+  if (!get_pdcp_data_ind_func()(&ctx, is_srb, (ue->rnti == 0xfffd ? 1 : 0), rb_id, size, memblock, NULL, NULL)) {
     LOG_E(RLC, "%s:%d:%s: ERROR: pdcp_data_ind failed\n", __FILE__, __LINE__, __FUNCTION__);
     /* what to do in case of failure? for the moment: nothing */
   }
@@ -534,7 +554,7 @@ rb_found:
   itti_send_msg_to_task(TASK_RRC_ENB, 0, msg);
 }
 
-static void add_srb(int rnti, struct LTE_SRB_ToAddMod *s)
+static void add_srb(int rnti, int module_id, struct LTE_SRB_ToAddMod *s)
 {
   rlc_entity_t            *rlc_am;
   rlc_ue_t                *ue;
@@ -609,6 +629,7 @@ static void add_srb(int rnti, struct LTE_SRB_ToAddMod *s)
 
   rlc_manager_lock(rlc_ue_manager);
   ue = rlc_manager_get_ue(rlc_ue_manager, rnti);
+  ue->module_id = module_id;
   if (ue->srb[srb_id-1] != NULL) {
     LOG_D(RLC, "%s:%d:%s: warning SRB %d already exist for ue %d, do nothing\n",
           __FILE__, __LINE__, __FUNCTION__, srb_id, rnti);
@@ -629,7 +650,7 @@ static void add_srb(int rnti, struct LTE_SRB_ToAddMod *s)
   rlc_manager_unlock(rlc_ue_manager);
 }
 
-static void add_drb_am(int rnti, struct LTE_DRB_ToAddMod *s)
+static void add_drb_am(int rnti, int module_id, struct LTE_DRB_ToAddMod *s)
 {
   rlc_entity_t            *rlc_am;
   rlc_ue_t                *ue;
@@ -686,6 +707,7 @@ static void add_drb_am(int rnti, struct LTE_DRB_ToAddMod *s)
 
   rlc_manager_lock(rlc_ue_manager);
   ue = rlc_manager_get_ue(rlc_ue_manager, rnti);
+  ue->module_id = module_id;
   if (ue->drb[drb_id-1] != NULL) {
     LOG_D(RLC, "%s:%d:%s: warning DRB %d already exist for ue %d, do nothing\n",
           __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
@@ -706,7 +728,7 @@ static void add_drb_am(int rnti, struct LTE_DRB_ToAddMod *s)
   rlc_manager_unlock(rlc_ue_manager);
 }
 
-static void add_drb_um(int rnti, struct LTE_DRB_ToAddMod *s)
+static void add_drb_um(int rnti, int module_id, struct LTE_DRB_ToAddMod *s)
 {
   rlc_entity_t            *rlc_um;
   rlc_ue_t                *ue;
@@ -759,6 +781,7 @@ static void add_drb_um(int rnti, struct LTE_DRB_ToAddMod *s)
 
   rlc_manager_lock(rlc_ue_manager);
   ue = rlc_manager_get_ue(rlc_ue_manager, rnti);
+  ue->module_id = module_id;
   if (ue->drb[drb_id-1] != NULL) {
     LOG_D(RLC, "%s:%d:%s: warning DRB %d already exist for ue %d, do nothing\n",
           __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
@@ -776,14 +799,14 @@ static void add_drb_um(int rnti, struct LTE_DRB_ToAddMod *s)
   rlc_manager_unlock(rlc_ue_manager);
 }
 
-static void add_drb(int rnti, struct LTE_DRB_ToAddMod *s)
+static void add_drb(int rnti, int module_id, struct LTE_DRB_ToAddMod *s)
 {
   switch (s->rlc_Config->present) {
   case LTE_RLC_Config_PR_am:
-    add_drb_am(rnti, s);
+    add_drb_am(rnti, module_id, s);
     break;
   case LTE_RLC_Config_PR_um_Bi_Directional:
-    add_drb_um(rnti, s);
+    add_drb_um(rnti, module_id, s);
     break;
   default:
     LOG_E(RLC, "%s:%d:%s: fatal: unhandled DRB type\n",
@@ -806,18 +829,18 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
                                         )
 {
   int rnti = ctxt_pP->rnti;
+  int module_id = ctxt_pP->module_id;
   int i,j;
 
-  if (/*ctxt_pP->enb_flag != 1 ||*/ ctxt_pP->module_id != 0 /*||
-      ctxt_pP->instance != 0 || ctxt_pP->eNB_index != 0 ||
-      ctxt_pP->configured != 1 || ctxt_pP->brOption != 0 */) {
-    LOG_E(RLC, "%s: ctxt_pP not handled (%d %d %d %d %d %d)\n", __FUNCTION__,
-          ctxt_pP->enb_flag , ctxt_pP->module_id, ctxt_pP->instance,
-          ctxt_pP->eNB_index, ctxt_pP->configured, ctxt_pP->brOption);
+  if (ctxt_pP->enb_flag == 1 &&
+      (ctxt_pP->module_id != 0 || ctxt_pP->instance != 0)) {
+    LOG_E(RLC, "%s: module_id != 0 or instance != 0 not handled for eNB\n",
+          __FUNCTION__);
     exit(1);
   }
 
   if (pmch_InfoList_r9_pP != NULL) {
+
     LTE_MBMS_SessionInfoList_r9_t *mbms_SessionInfoList_r9_p = NULL;
     LTE_MBMS_SessionInfo_r9_t     *MBMS_SessionInfo_p        = NULL;
     mbms_session_id_t          mbms_session_id;
@@ -881,8 +904,6 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
    }
 
    rlc_manager_unlock(rlc_ue_manager);
-
-
   }
 
   if (drb2release_listP != NULL) {
@@ -892,13 +913,13 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
 
   if (srb2add_listP != NULL) {
     for (i = 0; i < srb2add_listP->list.count; i++) {
-      add_srb(rnti, srb2add_listP->list.array[i]);
+      add_srb(rnti, module_id, srb2add_listP->list.array[i]);
     }
   }
 
   if (drb2add_listP != NULL) {
     for (i = 0; i < drb2add_listP->list.count; i++) {
-      add_drb(rnti, drb2add_listP->list.array[i]);
+      add_drb(rnti, module_id, drb2add_listP->list.array[i]);
     }
   }
 
