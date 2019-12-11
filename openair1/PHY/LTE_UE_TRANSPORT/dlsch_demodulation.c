@@ -547,9 +547,9 @@ int rx_pdsch(PHY_VARS_UE *ue,
                                pdsch_vars[eNB_id]->log2_maxh,
                                measurements); // log2_maxh+I0_shift
 
-    if (symbol == 5) {
-      LOG_M("rxF_comp_d.m","rxF_c_d",&pdsch_vars[eNB_id]->rxdataF_comp0[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
-    }
+    //if (symbol == 5) {
+      //LOG_M("rxF_comp_d.m","rxF_c_d",&pdsch_vars[eNB_id]->rxdataF_comp0[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
+    //}
 
     if ((rx_type==rx_IC_single_stream) &&
         (eNB_id_i<ue->n_connected_eNB)) {
