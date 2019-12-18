@@ -905,8 +905,8 @@ int flexran_agent_handle_enb_config_reply(mid_t mod_id, const void *params, Prot
 
   if (flexran_agent_get_mac_xface(mod_id) && enb_config->cell_config[0]->slice_config) {
     prepare_update_slice_config(mod_id, enb_config->cell_config[0]->slice_config);
-    //} else {
-    //  initiate_soft_restart(mod_id, enb_config->cell_config[0]);
+  } else {
+    initiate_soft_restart(mod_id, enb_config->cell_config[0]);
   }
 
   if (flexran_agent_get_rrc_xface(mod_id) && enb_config->cell_config[0]->has_x2_ho_net_control) {
