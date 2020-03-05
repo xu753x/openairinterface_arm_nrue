@@ -1719,6 +1719,9 @@ typedef struct {
   uint8_t SI_Decoded;
   int ra_frame;   // This variable keeps the frame in which the RA started for the specific UE. It is used in order
   // to make sure that different UEs RA starts within a number of frames difference.
+  /// Phy_stub mode: variable tracks cqi_req since this is normally handled in
+  /// the PHY using LTE_UE_ULSCH_t to which we don't have access
+  int cqi_req;
 
   eth_params_t         eth_params_n;
 

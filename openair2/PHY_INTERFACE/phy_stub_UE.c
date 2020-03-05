@@ -494,7 +494,8 @@ void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,
 			  fill_rx_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, ulsch_buffer,buflen, rnti, index);
 		  }
 	  }
-	  //fill_ulsch_cqi_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, rnti);
+    if (UE_mac_inst[Mod_id].cqi_req)
+      fill_ulsch_cqi_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, rnti);
 
   }
   else if (ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_ULSCH_CQI_HARQ_RI_PDU_TYPE) {
@@ -524,7 +525,8 @@ void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,
 
 	  if(ulsch_harq_information!=NULL)
 		  fill_ulsch_harq_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, ulsch_harq_information, rnti);
-	  //fill_ulsch_cqi_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, rnti);
+    if (UE_mac_inst[Mod_id].cqi_req)
+	    fill_ulsch_cqi_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, rnti);
 
   }
   else if (ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_UCI_HARQ_PDU_TYPE) {
@@ -812,8 +814,15 @@ int hi_dci0_req_UE_MAC(nfapi_hi_dci0_request_t* req, module_id_t Mod_id)
 
     if (req->hi_dci0_request_body.hi_dci0_pdu_list[i].pdu_type == NFAPI_HI_DCI0_DCI_PDU_TYPE)
     {
-      LOG_D(PHY,"[UE-PHY_STUB] HI_DCI0_REQ sfn_sf:%d PDU[%d] - NFAPI_HI_DCI0_DCI_PDU_TYPE not used \n", NFAPI_SFNSF2DEC(req->sfn_sf), i);
-
+      LOG_D(PHY,
+            "[UE-PHY_STUB] HI_DCI0_REQ sfn_sf:%d PDU[%d] - "
+            "NFAPI_HI_DCI0_DCI_PDU_TYPE\n",
+            NFAPI_SFNSF2DEC(req->sfn_sf),
+            i);
+      const nfapi_hi_dci0_dci_pdu_rel8_t *dci = &req->hi_dci0_request_body.hi_dci0_pdu_list[i].dci_pdu.dci_pdu_rel8;
+      if (dci->rnti != UE_mac_inst[Mod_id].crnti)
+        continue;
+      UE_mac_inst[Mod_id].cqi_req = dci->cqi_csi_request;
     }
     else if (req->hi_dci0_request_body.hi_dci0_pdu_list[i].pdu_type == NFAPI_HI_DCI0_HI_PDU_TYPE)
     {
