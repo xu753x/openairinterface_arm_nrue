@@ -225,6 +225,8 @@ else (CUDA_FOUND)
     )
 endif ()
 
+
+
 add_definitions("-DASN_DISABLE_OER_SUPPORT")
 
 #########################
@@ -323,6 +325,17 @@ set(asn1_generated_dir ${OPENAIR_BIN_DIR})
 set(protoc_call "${OPENAIR_CMAKE}/tools/generate_protobuf")
 set(protobuf_generated_dir ${OPENAIR_BIN_DIR})
 
+include_directories(${OPENAIR_DIR}/ngap/libngap)
+include_directories(${OPENAIR_DIR}/ngap/ngapMsgs)
+include_directories(${OPENAIR_DIR}/ngap/ngapIEs)
+file(GLOB NGAP_source ${OPENAIR_DIR}/ngap/libngap/*.c)
+file(GLOB NGAP_Message ${OPENAIR_DIR}/ngap/ngapMsgs/*.cpp)
+file(GLOB NGAP_IE ${OPENAIR_DIR}/ngap/ngapIEs/*.cpp)
+add_library(NGAP_LIB
+  ${NGAP_source}
+  ${NGAP_Message}
+  ${NGAP_IE}
+  )
 
 # RRC
 ######
@@ -2717,6 +2730,13 @@ target_link_libraries (lte-uesoftmodem ${T_LIB})
 # nr-softmodem
 ###################################################
 
+#include_directories(${OPENAIR_DIR}/ngap/libngap)
+#file(GLOB NGAP_source ${OPENAIR_DIR}/ngap/libngap/*.c)
+#add_library(NGAP_LIB
+#  ${NGAP_source}
+#  )
+#add_dependencies(NGAP_LIB)
+
 add_executable(nr-softmodem
   ${rrc_h}
   ${nr_rrc_h}
@@ -2746,7 +2766,7 @@ add_executable(nr-softmodem
 target_link_libraries (nr-softmodem
   -Wl,--start-group
   UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB SCHED_RU_LIB SCHED_NR_LIB PHY_NR PHY PHY_COMMON PHY_NR_COMMON PHY_RU LFDS NR_GTPV1U SECU_CN SECU_OSA
-  ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} RRC_LIB NR_RRC_LIB 
+  ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} NGAP_LIB RRC_LIB NR_RRC_LIB 
   S1AP_LIB S1AP_ENB L2 L2_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   X2AP_LIB X2AP_ENB F1AP_LIB F1AP M2AP_LIB M2AP_ENB M3AP_LIB M3AP_ENB ${PROTO_AGENT_LIB} ${FSPT_MSG_LIB}
   -Wl,--end-group z dl)
