@@ -4,7 +4,7 @@ function main()
 {
 mkdir -p $1
 
-#echo generate protobuf messages inside $1 $2
+echo generate protobuf messages inside $1 $2
 
 c_out=$1
 shift

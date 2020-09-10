@@ -1,0 +1,16 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/wf/work/55g5/cmake_targets/ran_build/build/CMakeFiles/FSPT_V2/flexsplit.pb-c.c
+flexsplit.pb-c.h
+/home/wf/work/55g5/cmake_targets/ran_build/build/CMakeFiles/FSPT_V2/flexsplit.pb-c.h
+
+/home/wf/work/55g5/cmake_targets/ran_build/build/CMakeFiles/FSPT_V2/flexsplit.pb-c.h
+protobuf-c/protobuf-c.h
+-
+

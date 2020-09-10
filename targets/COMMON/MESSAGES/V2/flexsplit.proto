@@ -1,5 +1,5 @@
+syntax = "proto2";
 package protocol;
-
 
 message fsp_header {
         optional uint32 version = 1;
