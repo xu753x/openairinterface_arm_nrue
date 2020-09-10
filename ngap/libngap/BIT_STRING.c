@@ -25,13 +25,13 @@ asn_TYPE_operation_t asn_OP_BIT_STRING = {
 	OCTET_STRING_encode_der,   /* Implemented in terms of OCTET STRING */
 	OCTET_STRING_decode_xer_binary,
 	BIT_STRING_encode_xer,
-#ifdef	ASN_DISABLE_OER_SUPPORT
+#ifdef	ASN_DISABLE_OER_SUPPORT_NGAP
 	0,
 	0,
 #else
 	BIT_STRING_decode_oer,
 	BIT_STRING_encode_oer,
-#endif  /* ASN_DISABLE_OER_SUPPORT */
+#endif  /* ASN_DISABLE_OER_SUPPORT_NGAP */
 #ifdef	ASN_DISABLE_PER_SUPPORT
 	0,
 	0,

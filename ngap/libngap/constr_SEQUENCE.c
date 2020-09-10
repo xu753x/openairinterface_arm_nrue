@@ -1972,13 +1972,13 @@ asn_TYPE_operation_t asn_OP_SEQUENCE = {
 	SEQUENCE_encode_der,
 	SEQUENCE_decode_xer,
 	SEQUENCE_encode_xer,
-#ifdef	ASN_DISABLE_OER_SUPPORT
+#ifdef	ASN_DISABLE_OER_SUPPORT_NGAP
 	0,
 	0,
 #else
 	SEQUENCE_decode_oer,
 	SEQUENCE_encode_oer,
-#endif  /* ASN_DISABLE_OER_SUPPORT */
+#endif  /* ASN_DISABLE_OER_SUPPORT_NGAP */
 #ifdef ASN_DISABLE_PER_SUPPORT
 	0,
 	0,

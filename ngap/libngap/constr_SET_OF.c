@@ -1277,7 +1277,7 @@ asn_TYPE_operation_t asn_OP_SET_OF = {
 	SET_OF_encode_der,
 	SET_OF_decode_xer,
 	SET_OF_encode_xer,
-#ifdef ASN_DISABLE_OER_SUPPORT
+#ifdef ASN_DISABLE_OER_SUPPORT_NGAP
 	0,
 	0,
 #else

@@ -3,7 +3,7 @@
  * All rights reserved.
  * Redistribution and modifications are permitted subject to BSD license.
  */
-#ifndef ASN_DISABLE_OER_SUPPORT
+#ifndef ASN_DISABLE_OER_SUPPORT_NGAP
 
 #include <asn_internal.h>
 #include <INTEGER.h>
@@ -176,4 +176,4 @@ INTEGER_encode_oer(const asn_TYPE_descriptor_t *td,
     ASN__ENCODED_OK(er);
 }
 
-#endif  /* ASN_DISABLE_OER_SUPPORT */
+#endif  /* ASN_DISABLE_OER_SUPPORT_NGAP */

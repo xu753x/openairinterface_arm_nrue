@@ -22,13 +22,13 @@ asn_TYPE_operation_t asn_OP_INTEGER = {
 	INTEGER_encode_der,
 	INTEGER_decode_xer,
 	INTEGER_encode_xer,
-#ifdef  ASN_DISABLE_OER_SUPPORT
+#ifdef  ASN_DISABLE_OER_SUPPORT_NGAP
 	0,
 	0,
 #else
 	INTEGER_decode_oer,     /* OER decoder */
 	INTEGER_encode_oer,     /* Canonical OER encoder */
-#endif  /* ASN_DISABLE_OER_SUPPORT */
+#endif  /* ASN_DISABLE_OER_SUPPORT_NGAP */
 #ifdef	ASN_DISABLE_PER_SUPPORT
 	0,
 	0,

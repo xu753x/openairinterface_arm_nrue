@@ -19,13 +19,13 @@ asn_TYPE_operation_t asn_OP_ANY = {
 	OCTET_STRING_encode_der,
 	OCTET_STRING_decode_xer_hex,
 	ANY_encode_xer,
-#ifdef	ASN_DISABLE_OER_SUPPORT
+#ifdef	ASN_DISABLE_OER_SUPPORT_NGAP
 	0,
 	0,
 #else
 	0,
 	0,
-#endif  /* ASN_DISABLE_OER_SUPPORT */
+#endif  /* ASN_DISABLE_OER_SUPPORT_NGAP */
 #ifdef	ASN_DISABLE_PER_SUPPORT
 	0, 0, 0, 0,
 #else

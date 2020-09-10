@@ -287,13 +287,13 @@ asn_encode_internal(const asn_codec_ctx_t *opt_codec_ctx,
         errno = ENOENT; /* Transfer syntax is not defined for any type. */
         ASN__ENCODE_FAILED;
 
-#ifdef  ASN_DISABLE_OER_SUPPORT
+#ifdef  ASN_DISABLE_OER_SUPPORT_NGAP
     case ATS_BASIC_OER:
     case ATS_CANONICAL_OER:
         errno = ENOENT; /* PER is not defined. */
         ASN__ENCODE_FAILED;
         break;
-#else /* ASN_DISABLE_OER_SUPPORT */
+#else /* ASN_DISABLE_OER_SUPPORT_NGAP */
     case ATS_BASIC_OER:
         /* CANONICAL-OER is a superset of BASIC-OER. */
         /* Fall through. */
@@ -312,7 +312,7 @@ asn_encode_internal(const asn_codec_ctx_t *opt_codec_ctx,
             ASN__ENCODE_FAILED;
         }
         break;
-#endif /* ASN_DISABLE_OER_SUPPORT */
+#endif /* ASN_DISABLE_OER_SUPPORT_NGAP */
 
 #ifdef  ASN_DISABLE_PER_SUPPORT
     case ATS_UNALIGNED_BASIC_PER:
@@ -448,7 +448,7 @@ asn_decode(const asn_codec_ctx_t *opt_codec_ctx,
 
     case ATS_BASIC_OER:
     case ATS_CANONICAL_OER:
-#ifdef  ASN_DISABLE_OER_SUPPORT
+#ifdef  ASN_DISABLE_OER_SUPPORT_NGAP
         errno = ENOENT;
         ASN__DECODE_FAILED;
 #else

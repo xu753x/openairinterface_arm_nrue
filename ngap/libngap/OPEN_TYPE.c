@@ -16,7 +16,7 @@ asn_TYPE_operation_t asn_OP_OPEN_TYPE = {
 	OPEN_TYPE_encode_der,
 	OPEN_TYPE_decode_xer,
 	OPEN_TYPE_encode_xer,
-#ifdef ASN_DISABLE_OER_SUPPORT
+#ifdef ASN_DISABLE_OER_SUPPORT_NGAP
  	0, 0,	/* No OER support, use "-gen-OER" to enable */
 #else
 	OPEN_TYPE_decode_oer,

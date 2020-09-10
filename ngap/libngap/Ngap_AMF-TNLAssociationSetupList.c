@@ -8,9 +8,9 @@
 #include "Ngap_AMF-TNLAssociationSetupList.h"
 
 #include "Ngap_AMF-TNLAssociationSetupItem.h"
-static asn_oer_constraints_t asn_OER_type_Ngap_AMF_TNLAssociationSetupList_constr_1 CC_NOTUSED = {
-	{ 0, 0 },
-	-1	/* (SIZE(1..32)) */};
+//static asn_oer_constraints_t asn_OER_type_Ngap_AMF_TNLAssociationSetupList_constr_1 CC_NOTUSED = {
+//	{ 0, 0 },
+//	-1	/* (SIZE(1..32)) */};
 asn_per_constraints_t asn_PER_type_Ngap_AMF_TNLAssociationSetupList_constr_1 CC_NOTUSED = {
 	{ APC_UNCONSTRAINED,	-1, -1,  0,  0 },
 	{ APC_CONSTRAINED,	 5,  5,  1,  32 }	/* (SIZE(1..32)) */,
@@ -45,7 +45,7 @@ asn_TYPE_descriptor_t asn_DEF_Ngap_AMF_TNLAssociationSetupList = {
 	asn_DEF_Ngap_AMF_TNLAssociationSetupList_tags_1,	/* Same as above */
 	sizeof(asn_DEF_Ngap_AMF_TNLAssociationSetupList_tags_1)
 		/sizeof(asn_DEF_Ngap_AMF_TNLAssociationSetupList_tags_1[0]), /* 1 */
-	{ &asn_OER_type_Ngap_AMF_TNLAssociationSetupList_constr_1, &asn_PER_type_Ngap_AMF_TNLAssociationSetupList_constr_1, SEQUENCE_OF_constraint },
+	{ 0, &asn_PER_type_Ngap_AMF_TNLAssociationSetupList_constr_1, SEQUENCE_OF_constraint },
 	asn_MBR_Ngap_AMF_TNLAssociationSetupList_1,
 	1,	/* Single element */
 	&asn_SPC_Ngap_AMF_TNLAssociationSetupList_specs_1	/* Additional specs */

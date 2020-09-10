@@ -1491,13 +1491,13 @@ asn_TYPE_operation_t asn_OP_CHOICE = {
 	CHOICE_encode_der,
 	CHOICE_decode_xer,
 	CHOICE_encode_xer,
-#ifdef	ASN_DISABLE_OER_SUPPORT
+#ifdef	ASN_DISABLE_OER_SUPPORT_NGAP
 	0,
 	0,
 #else
 	CHOICE_decode_oer,
 	CHOICE_encode_oer,
-#endif  /* ASN_DISABLE_OER_SUPPORT */
+#endif  /* ASN_DISABLE_OER_SUPPORT_NGAP */
 #ifdef ASN_DISABLE_PER_SUPPORT
 	0,
 	0,

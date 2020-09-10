@@ -55,13 +55,13 @@ asn_TYPE_operation_t asn_OP_PrintableString = {
 	OCTET_STRING_encode_der,
 	OCTET_STRING_decode_xer_utf8,
 	OCTET_STRING_encode_xer_utf8,
-#ifdef	ASN_DISABLE_OER_SUPPORT
+#ifdef	ASN_DISABLE_OER_SUPPORT_NGAP
 	0,
 	0,
 #else
 	OCTET_STRING_decode_oer,
 	OCTET_STRING_encode_oer,
-#endif	/* ASN_DISABLE_OER_SUPPORT */
+#endif	/* ASN_DISABLE_OER_SUPPORT_NGAP */
 #ifdef	ASN_DISABLE_PER_SUPPORT
 	0,
 	0,

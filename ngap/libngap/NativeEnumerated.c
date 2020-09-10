@@ -26,13 +26,13 @@ asn_TYPE_operation_t asn_OP_NativeEnumerated = {
 	NativeInteger_encode_der,
 	NativeInteger_decode_xer,
 	NativeEnumerated_encode_xer,
-#ifdef	ASN_DISABLE_OER_SUPPORT
+#ifdef	ASN_DISABLE_OER_SUPPORT_NGAP
 	0,
 	0,
 #else
 	NativeEnumerated_decode_oer,
 	NativeEnumerated_encode_oer,
-#endif  /* ASN_DISABLE_OER_SUPPORT */
+#endif  /* ASN_DISABLE_OER_SUPPORT_NGAP */
 #ifdef	ASN_DISABLE_PER_SUPPORT
 	0,
 	0,
