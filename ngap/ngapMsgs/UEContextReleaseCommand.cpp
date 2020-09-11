@@ -109,4 +109,54 @@ int UEContextReleaseCommandMsg::encode2buffer(uint8_t *buf, int buf_size){
 
 bool UEContextReleaseCommandMsg::decodefrompdu(Ngap_NGAP_PDU_t *ngap_msg_pdu){
   pdu = ngap_msg_pdu;
+  if (pdu->present == Ngap_NGAP_PDU_PR_initiatingMessage) {
+	  if (pdu->choice.initiatingMessage && pdu->choice.initiatingMessage->procedureCode == Ngap_ProcedureCode_id_UEContextRelease && pdu->choice.initiatingMessage->criticality == Ngap_Criticality_reject && pdu->choice.initiatingMessage->value.present == Ngap_InitiatingMessage__value_PR_UEContextReleaseCommand) {
+		  ies = &pdu->choice.initiatingMessage->value.choice.UEContextReleaseCommand;
+	  }
+	  else {
+		  cout << "Check UEContextReleaseCommand message error" << endl;
+		  return false;
+	  }
+  }
+  else {
+	  cout << "typeOfMessage of UEContextReleaseCommand is not initiatingMessage" << endl;
+	  return false;
+  }
+  for (int i = 0; i < ies->protocolIEs.list.count; i++) {
+	  switch (ies->protocolIEs.list.array[i]->id) {
+	  case Ngap_ProtocolIE_ID_id_UE_NGAP_IDs: {
+		  if (ies->protocolIEs.list.array[i]->criticality == Ngap_Criticality_reject && ies->protocolIEs.list.array[i]->value.present == Ngap_UEContextReleaseCommand_IEs__value_PR_UE_NGAP_IDs) {
+			  if (!amfUeNgapId) amfUeNgapId = new AMF_UE_NGAP_ID();
+				amfUeNgapId->decodefromAMF_UE_NGAP_ID(ies->protocolIEs.list.array[i]->value.choice.UE_NGAP_IDs.choice.uE_NGAP_ID_pair->aMF_UE_NGAP_ID);
+			  if (!ranUeNgapId) ranUeNgapId = new RAN_UE_NGAP_ID();
+				ranUeNgapId->decodefromRAN_UE_NGAP_ID(ies->protocolIEs.list.array[i]->value.choice.UE_NGAP_IDs.choice.uE_NGAP_ID_pair->rAN_UE_NGAP_ID);
+		  }
+		  else {
+			  cout << "IE UE_NGAP_IDs is not correct" << endl;
+			  return false;
+		  }
+	  }break;
+	  case Ngap_ProtocolIE_ID_id_Cause: {
+		  if (ies->protocolIEs.list.array[i]->criticality == Ngap_Criticality_ignore && ies->protocolIEs.list.array[i]->value.present == Ngap_UEContextReleaseCommand_IEs__value_PR_Cause) {
+			  causeValue = new Cause();
+			  if (!causeValue->decodefromCause(&ies->protocolIEs.list.array[i]->value.choice.Cause)) {
+				  cout << "decode Cause error" << endl;
+				  return false;
+			  }
+		  }
+		  else {
+			  cout << "IE Cause is not correct" << endl;
+			  return false;
+		  }
+	  }break;
+	  }
+  }
+  return true;
+}
+unsigned long UEContextReleaseCommandMsg::getAmfUeNgapId() {
+	return amfUeNgapId->getAMF_UE_NGAP_ID();
+}
+
+uint32_t UEContextReleaseCommandMsg::getRanUeNgapId() {
+	return ranUeNgapId->getRanUeNgapId();
 }
