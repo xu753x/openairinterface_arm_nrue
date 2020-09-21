@@ -178,7 +178,8 @@ void nr_fill_nfapi_dl_pdu(int Mod_id,
                           int NrOfSymbols,
                           int harq_pid,
                           int ndi,
-                          int round);
+                          int round,
+                          int UE_beam_index);
 
 void handle_nr_uci_pucch_0_1(module_id_t mod_id,
                              frame_t frame,
@@ -262,15 +263,23 @@ void find_search_space(int ss_type,
                        NR_BWP_Downlink_t *bwp,
                        NR_SearchSpace_t *ss);
 
+void nr_configure_dci(gNB_MAC_INST *nr_mac,
+                      nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
+                      uint16_t rnti,
+                      NR_SearchSpace_t *ss,
+                      NR_ControlResourceSet_t *coreset,
+                      NR_ServingCellConfigCommon_t *scc,
+                      NR_BWP_Downlink_t *bwp,
+		      uint8_t beam_index,
+                      uint8_t aggregation_level,
+                      int CCEIndex);
+
 void nr_configure_pdcch(gNB_MAC_INST *nr_mac,
                         nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
-                        uint16_t rnti,
                         NR_SearchSpace_t *ss,
                         NR_ControlResourceSet_t *coreset,
                         NR_ServingCellConfigCommon_t *scc,
-                        NR_BWP_Downlink_t *bwp,
-                        uint8_t aggregation_level,
-                        int CCEIndex);
+                        NR_BWP_Downlink_t *bwp);
 
 void fill_dci_pdu_rel15(NR_ServingCellConfigCommon_t *scc,
                         NR_CellGroupConfig_t *secondaryCellGroup,

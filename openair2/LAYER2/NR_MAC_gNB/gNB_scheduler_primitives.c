@@ -171,9 +171,6 @@ int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
                      uint16_t Y,
                      int m,
                      int nr_of_candidates) {
-  // uncomment these when we allocate for common search space
-  //  NR_COMMON_channels_t                *cc      = nr_mac->common_channels;
-  //  NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
 
   int coreset_id = coreset->controlResourceSetId;
   int *cce_list = nr_mac->cce_list[bwp->bwp_Id][coreset_id];
@@ -496,6 +493,37 @@ void nr_configure_css_dci_initial(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
 
 }
 
+void nr_configure_dci(gNB_MAC_INST *nr_mac,
+                      nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
+                      uint16_t rnti,
+                      NR_SearchSpace_t *ss,
+                      NR_ControlResourceSet_t *coreset,
+                      NR_ServingCellConfigCommon_t *scc,
+                      NR_BWP_Downlink_t *bwp,
+     		      uint8_t beam_index,
+                      uint8_t aggregation_level,
+                      int CCEIndex) {
+  pdcch_pdu->dci_pdu.RNTI[pdcch_pdu->numDlDci]=rnti;
+
+  if (coreset->pdcch_DMRS_ScramblingID != NULL &&
+    ss->searchSpaceType->present == NR_SearchSpace__searchSpaceType_PR_ue_Specific) {
+    pdcch_pdu->dci_pdu.ScramblingId[pdcch_pdu->numDlDci] = *coreset->pdcch_DMRS_ScramblingID;
+    pdcch_pdu->dci_pdu.ScramblingRNTI[pdcch_pdu->numDlDci]=rnti;
+  }
+  else {
+    pdcch_pdu->dci_pdu.ScramblingId[pdcch_pdu->numDlDci] = *scc->physCellId;
+    pdcch_pdu->dci_pdu.ScramblingRNTI[pdcch_pdu->numDlDci]=0;
+  }
+
+  pdcch_pdu->dci_pdu.AggregationLevel[pdcch_pdu->numDlDci] = aggregation_level;
+  pdcch_pdu->dci_pdu.CceIndex[pdcch_pdu->numDlDci] = CCEIndex;
+  if (ss->searchSpaceType->choice.ue_Specific->dci_Formats==NR_SearchSpace__searchSpaceType__ue_Specific__dci_Formats_formats0_0_And_1_0)
+    pdcch_pdu->dci_pdu.beta_PDCCH_1_0[pdcch_pdu->numDlDci]=0;
+
+  pdcch_pdu->dci_pdu.powerControlOffsetSS[pdcch_pdu->numDlDci]=1;
+
+}		
+
 void nr_fill_nfapi_dl_pdu(int Mod_idP,
                           nfapi_nr_dl_tti_request_body_t *dl_req,
                           rnti_t rnti,
@@ -510,7 +538,8 @@ void nr_fill_nfapi_dl_pdu(int Mod_idP,
                           int NrOfSymbols,
                           int harq_pid,
                           int ndi,
-                          int round) {
+                          int round,
+                          int UE_beam_index) {
   gNB_MAC_INST                        *nr_mac  = RC.nrmac[Mod_idP];
   NR_COMMON_channels_t                *cc      = nr_mac->common_channels;
   NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
@@ -657,14 +686,22 @@ void nr_fill_nfapi_dl_pdu(int Mod_idP,
 
   nr_configure_pdcch(nr_mac,
                      pdcch_pdu_rel15,
-                     rnti,
                      sched_ctrl->search_space,
                      sched_ctrl->coreset,
                      scc,
-                     bwp,
-                     sched_ctrl->aggregation_level,
-                     sched_ctrl->cce_index);
+                     bwp);
 
+  nr_configure_dci(nr_mac,
+                   pdcch_pdu_rel15,
+                   rnti,
+                   sched_ctrl->search_space,
+                   sched_ctrl->coreset,
+                   scc,
+                   bwp,
+	           UE_beam_index,
+                   sched_ctrl->aggregation_level,
+                   sched_ctrl->cce_index);
+  pdcch_pdu_rel15->numDlDci++;
   int dci_formats[2];
   int rnti_types[2];
 
@@ -780,13 +817,10 @@ void config_uldci(NR_BWP_Uplink_t *ubwp,
 
 void nr_configure_pdcch(gNB_MAC_INST *nr_mac,
                         nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
-                        uint16_t rnti,
                         NR_SearchSpace_t *ss,
                         NR_ControlResourceSet_t *coreset,
                         NR_ServingCellConfigCommon_t *scc,
-                        NR_BWP_Downlink_t *bwp,
-                        uint8_t aggregation_level,
-                        int CCEIndex) {
+                        NR_BWP_Downlink_t *bwp) {
   if (bwp) { // This is not the InitialBWP
     pdcch_pdu->BWPSize  = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
     pdcch_pdu->BWPStart = NRRIV2PRBOFFSET(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
@@ -837,27 +871,6 @@ void nr_configure_pdcch(gNB_MAC_INST *nr_mac,
     
     //precoderGranularity
     pdcch_pdu->precoderGranularity = coreset->precoderGranularity;
-
-    pdcch_pdu->dci_pdu.RNTI[pdcch_pdu->numDlDci]=rnti;
-
-    if (coreset->pdcch_DMRS_ScramblingID != NULL &&
-        ss->searchSpaceType->present == NR_SearchSpace__searchSpaceType_PR_ue_Specific) {
-      pdcch_pdu->dci_pdu.ScramblingId[pdcch_pdu->numDlDci] = *coreset->pdcch_DMRS_ScramblingID;
-      pdcch_pdu->dci_pdu.ScramblingRNTI[pdcch_pdu->numDlDci]=rnti;
-    }
-    else {
-      pdcch_pdu->dci_pdu.ScramblingId[pdcch_pdu->numDlDci] = *scc->physCellId;
-      pdcch_pdu->dci_pdu.ScramblingRNTI[pdcch_pdu->numDlDci]=0;
-    }
-
-    pdcch_pdu->dci_pdu.AggregationLevel[pdcch_pdu->numDlDci] = aggregation_level;
-    pdcch_pdu->dci_pdu.CceIndex[pdcch_pdu->numDlDci] = CCEIndex;
-
-    if (ss->searchSpaceType->choice.ue_Specific->dci_Formats==NR_SearchSpace__searchSpaceType__ue_Specific__dci_Formats_formats0_0_And_1_0)
-      pdcch_pdu->dci_pdu.beta_PDCCH_1_0[pdcch_pdu->numDlDci]=0;
-
-    pdcch_pdu->dci_pdu.powerControlOffsetSS[pdcch_pdu->numDlDci]=1;
-    pdcch_pdu->numDlDci++;
   }
   else { // this is for InitialBWP
     AssertFatal(1==0,"Fill in InitialBWP PDCCH configuration\n");
