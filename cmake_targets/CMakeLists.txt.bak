@@ -198,7 +198,7 @@ endif()
 
 #
 set(CMAKE_C_FLAGS
-  "${CMAKE_C_FLAGS} ${C_FLAGS_PROCESSOR} -pipe -std=gnu99 -Wall -Wstrict-prototypes -fno-strict-aliasing -rdynamic -funroll-loops -Wno-packed-bitfield-compat -fPIC")
+  "${CMAKE_C_FLAGS} ${C_FLAGS_PROCESSOR} -pipe -std=gnu99 -Wall -Wstrict-prototypes -fno-strict-aliasing -rdynamic -funroll-loops -Wno-packed-bitfield-compat -fPIC -g -fstack-protector-all -fno-omit-frame-pointer -fsanitize=address")
 # add autotools definitions that were maybe used!
 if (CUDA_FOUND)
 	set(MKVER "'MAKE_VERSION(a,b,c)=((a)*256+(b)*16+c)'")
@@ -206,14 +206,14 @@ if (CUDA_FOUND)
            "${CMAKE_C_FLAGS} -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_FCNTL_H=1 -DHAVE_ARPA_INET_H=1 -DHAVE_SYS_TIME_H=1 -DHAVE_SYS_SOCKET_H=1 -DHAVE_STRERROR=1 -DHAVE_SOCKET=1 -DHAVE_MEMSET=1 -DHAVE_GETTIMEOFDAY=1 -DHAVE_STDLIB_H=1 -DHAVE_MALLOC=1 -DHAVE_LIBSCTP -D CUDA_FLAG"
     )
     set(CUDA_CMAKE_CXX_FLAGS
-	"${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR} -Wno-packed-bitfield-compat -fPIC -Wall -fno-strict-aliasing -rdynamic -std=c++11 -D CUDA_FLAG"
+	"${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR} -Wno-packed-bitfield-compat -fPIC -Wall -fno-strict-aliasing -rdynamic -std=c++17 -D CUDA_FLAG"
     )
 	
 	set(CMAKE_C_FLAGS
-           "${CMAKE_C_FLAGS} -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_FCNTL_H=1 -DHAVE_ARPA_INET_H=1 -DHAVE_SYS_TIME_H=1 -DHAVE_SYS_SOCKET_H=1 -DHAVE_STRERROR=1 -DHAVE_SOCKET=1 -DHAVE_MEMSET=1 -DHAVE_GETTIMEOFDAY=1 -DHAVE_STDLIB_H=1 -DHAVE_MALLOC=1 -DHAVE_LIBSCTP -D${MKVER} -D CUDA_FLAG"
+		"${CMAKE_C_FLAGS} -std=gnu99 -Wall -Wstrict-prototypes -fno-strict-aliasing -rdynamic -funroll-loops -Wno-packed-bitfield-compat -g -fstack-protector-all -fno-omit-frame-pointer -fsanitize=address -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_FCNTL_H=1 -DHAVE_ARPA_INET_H=1 -DHAVE_SYS_TIME_H=1 -DHAVE_SYS_SOCKET_H=1 -DHAVE_STRERROR=1 -DHAVE_SOCKET=1 -DHAVE_MEMSET=1 -DHAVE_GETTIMEOFDAY=1 -DHAVE_STDLIB_H=1 -DHAVE_MALLOC=1 -DHAVE_LIBSCTP -D${MKVER} -D CUDA_FLAG"
     )
     set(CMAKE_CXX_FLAGS
-	"${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR} -Wno-packed-bitfield-compat -fPIC -Wall -fno-strict-aliasing -rdynamic -std=c++11 -D${MKVER} -D CUDA_FLAG"
+	"${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR} -Wno-packed-bitfield-compat -fPIC -Wall -fno-strict-aliasing -rdynamic -std=c++17 -D${MKVER} -D CUDA_FLAG"
     )
 else (CUDA_FOUND)
     set(MKVER "'MAKE_VERSION(a,b,c)=((a)*256+(b)*16+c)'")
@@ -221,13 +221,11 @@ else (CUDA_FOUND)
            "${CMAKE_C_FLAGS} -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_FCNTL_H=1 -DHAVE_ARPA_INET_H=1 -DHAVE_SYS_TIME_H=1 -DHAVE_SYS_SOCKET_H=1 -DHAVE_STRERROR=1 -DHAVE_SOCKET=1 -DHAVE_MEMSET=1 -DHAVE_GETTIMEOFDAY=1 -DHAVE_STDLIB_H=1 -DHAVE_MALLOC=1 -DHAVE_LIBSCTP -D${MKVER}"
     )
     set(CMAKE_CXX_FLAGS
-	"${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR} -Wno-packed-bitfield-compat -fPIC -Wall -fno-strict-aliasing -rdynamic -std=c++11 -D${MKVER}"
+	"${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR} -Wno-packed-bitfield-compat -fPIC -Wall -fno-strict-aliasing -rdynamic -std=c++17 -D${MKVER}"
     )
 endif ()
 
-
-
-add_definitions("-DASN_DISABLE_OER_SUPPORT")
+#add_definitions("-DASN_DISABLE_OER_SUPPORT")
 
 #########################
 set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath -Wl,${CMAKE_CURRENT_BINARY_DIR}")
@@ -325,34 +323,6 @@ set(asn1_generated_dir ${OPENAIR_BIN_DIR})
 set(protoc_call "${OPENAIR_CMAKE}/tools/generate_protobuf")
 set(protobuf_generated_dir ${OPENAIR_BIN_DIR})
 
-include_directories(${OPENAIR_DIR}/ngap/libngap)
-include_directories(${OPENAIR_DIR}/ngap/ngapMsgs)
-include_directories(${OPENAIR_DIR}/ngap/ngapIEs)
-include_directories(${OPENAIR_DIR}/test-ly)
-include_directories(${OPENAIR_DIR}/nas/common)
-include_directories(${OPENAIR_DIR}/nas/msgs)
-include_directories(${OPENAIR_DIR}/nas/ies)
-include_directories(${OPENAIR_DIR}/nas/utils)
-include_directories(${OPENAIR_DIR}/utils)
-include_directories(${OPENAIR_DIR}/utils/bstr)
-file(GLOB NGAP_source ${OPENAIR_DIR}/ngap/libngap/*.c)
-file(GLOB NGAP_Message ${OPENAIR_DIR}/ngap/ngapMsgs/*.cpp)
-file(GLOB NGAP_IE ${OPENAIR_DIR}/ngap/ngapIEs/*.cpp)
-file(GLOB NAS_utils ${OPENAIR_DIR}/nas/utils/*.c)
-file(GLOB NAS_msgs ${OPENAIR_DIR}/nas/msgs/*.cpp)
-file(GLOB NAS_IE ${OPENAIR_DIR}/nas/ies/*.cpp)
-file(GLOB UTILS_cpp ${OPENAIR_DIR}/utils/*.cpp)
-file(GLOB UTILS_c ${OPENAIR_DIR}/utils/*.c)
-file(GLOB UTILS_bstr ${OPENAIR_DIR}/utils/bstr/*.c)
-
-#file(GLOB SCTP_SRC ${OPENAIR_DIR}/test-ly/ue_gnb.cpp)
-file(GLOB SCTP_SRC ${OPENAIR_DIR}/test-ly/*.cpp)
-add_library(NGAP_LIB
-  ${NGAP_source}
-  ${NGAP_Message}
-  ${NGAP_IE}
-  ${SCTP_SRC}
-  )
 
 # RRC
 ######
@@ -2746,13 +2716,15 @@ target_link_libraries (lte-uesoftmodem ${T_LIB})
 
 # nr-softmodem
 ###################################################
+include_directories(${OPENAIR_DIR}/ngap/libngap)
+include_directories(${OPENAIR_DIR}/ngap/ngapIEs)
+include_directories(${OPENAIR_DIR}/ngap/ngapMsgs)
 
-#include_directories(${OPENAIR_DIR}/ngap/libngap)
-#file(GLOB NGAP_source ${OPENAIR_DIR}/ngap/libngap/*.c)
-#add_library(NGAP_LIB
-#  ${NGAP_source}
-#  )
-#add_dependencies(NGAP_LIB)
+file(GLOB NGAP_SRCS
+  ${OPENAIR_DIR}/ngap/libngap/*.c	
+  ${OPENAIR_DIR}/ngap/ngapIEs/*.cpp	
+  ${OPENAIR_DIR}/ngap/ngapMsgs/*.cpp	
+	)
 
 add_executable(nr-softmodem
   ${rrc_h}
@@ -2778,13 +2750,13 @@ add_executable(nr-softmodem
   ${T_SOURCE}
   ${CONFIG_SOURCES}
   ${SHLIB_LOADER_SOURCES}
-  #${OPENAIR_DIR}/test-ly/ue_gnb.cpp
+  ${NGAP_SRCS}
   )
 
 target_link_libraries (nr-softmodem
   -Wl,--start-group
   UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB SCHED_RU_LIB SCHED_NR_LIB PHY_NR PHY PHY_COMMON PHY_NR_COMMON PHY_RU LFDS NR_GTPV1U SECU_CN SECU_OSA
-  ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} NGAP_LIB RRC_LIB NR_RRC_LIB 
+  ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} RRC_LIB NR_RRC_LIB 
   S1AP_LIB S1AP_ENB L2 L2_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   X2AP_LIB X2AP_ENB F1AP_LIB F1AP M2AP_LIB M2AP_ENB M3AP_LIB M3AP_ENB ${PROTO_AGENT_LIB} ${FSPT_MSG_LIB}
   -Wl,--end-group z dl)

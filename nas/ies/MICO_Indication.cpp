@@ -1,0 +1,81 @@
+#include "MICO_Indication.hpp"
+#include "logger.hpp"
+using namespace nas;
+
+MICO_Indication::MICO_Indication(const uint8_t _iei, bool sprti, bool raai) {
+	iei = _iei;
+	RAAI = raai;
+	SPRTI = sprti;
+}
+
+MICO_Indication::MICO_Indication(bool sprti, bool raai) {
+	this->iei = 0;
+	this->RAAI = raai;
+	this->SPRTI = sprti;
+}
+
+MICO_Indication::MICO_Indication() {
+}
+
+MICO_Indication::~MICO_Indication() {};
+
+int MICO_Indication::encode2buffer(uint8_t *buf, int len) {
+	Logger::nas_mm().debug("encoding MICO_Indication IE iei(0x%x)", iei);
+	if (len < 1) {
+		Logger::nas_mm().error("len is less than one");
+		return -1;
+	}
+	else {
+		uint8_t octet = 0;
+		if (!(iei & 0x0f)) {
+			//octet = (0x0f) & ((tsc << 3) | key_id);
+			//*buf = octet;
+			//Logger::nas_mm().debug("encoded NasKeySetIdentifier IE(len(1/2 octet))");
+			//return 0;
+		}
+		else {
+			octet = (iei << 4) | (SPRTI << 1) | RAAI;
+			*buf = octet;
+			Logger::nas_mm().debug("encoded MICO_Indication IE(len(1 octet))");
+			return 1;
+		}
+	}
+}
+
+int MICO_Indication::decodefrombuffer(uint8_t *buf, int len, bool is_option) {
+	Logger::nas_mm().debug("decoding MICO_Indication IE");
+	if (len < 1) {
+		Logger::nas_mm().error("len is less than one");
+		return 0;
+	}
+	else {
+		uint8_t octet = (*buf);
+		if (is_option) {
+			iei = (octet & 0xf0) >> 4;
+		}
+		else {
+			iei = 0;
+		}
+		SPRTI = octet & 0x02;
+		RAAI = octet & 0x01;
+		Logger::nas_mm().debug("decoded MICO_Indication iei(0x%x) sprti(0x%x) raai(0x%x)", iei,SPRTI,RAAI);
+		return 1;
+	}
+}
+
+void MICO_Indication::setSPRTI(bool value) {
+	SPRTI  = value;
+}
+
+void MICO_Indication::setRAAI(bool value) {
+	RAAI = value;
+}
+
+bool MICO_Indication::getSPRTI() {
+	return SPRTI;
+}
+
+bool MICO_Indication::getRAAI() {
+	return RAAI;
+}
+

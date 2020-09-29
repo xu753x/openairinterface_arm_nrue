@@ -84,6 +84,8 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "NB_IoT_interface.h"
 #include "x2ap_eNB.h"
 
+//extern "C" int ue_gnb_simulator();
+
 pthread_cond_t nfapi_sync_cond;
 pthread_mutex_t nfapi_sync_mutex;
 int nfapi_sync_var=-1; //!< protected by mutex \ref nfapi_sync_mutex
@@ -795,6 +797,12 @@ void init_pdcp(void) {
 
 int main( int argc, char **argv )
 {
+/**************************liuyu test*****************/
+  printf("-------------------------liuyu test ngap--------------------\n");
+  int ret = ue_gnb_simulator();
+  printf("-------------------------liuyu test ngap--------------------\n");
+/**************************liuyu test*****************/
+#if 0
   int ru_id, CC_id = 0;
   start_background_system();
 
@@ -974,6 +982,10 @@ if(!IS_SOFTMODEM_NOS1)
 
   printf("ALL RUs ready - ALL gNBs ready\n");
   // connect the TX/RX buffers
+
+
+  
+
   printf("Sending sync to all threads\n");
   pthread_mutex_lock(&sync_mutex);
   sync_var=0;
@@ -1012,7 +1024,7 @@ if(!IS_SOFTMODEM_NOS1)
           }
       }
 
-  #endif*/
+  //#endif*/
   printf("stopping MODEM threads\n");
   // cleanup
   stop_gNB(NB_gNB_INST);
@@ -1049,5 +1061,6 @@ if(!IS_SOFTMODEM_NOS1)
 
   logClean();
   printf("Bye.\n");
+#endif
   return 0;
 }
