@@ -1214,7 +1214,9 @@ function start_rf_sim_gnb {
         then
             echo "echo \"RFSIMULATOR=server ./nr-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --log_config.global_log_options level,nocolor --parallel-config PARALLEL_SINGLE_THREAD --noS1 --nokrnmod 1 --rfsim --phy-test\" > ./my-nr-softmodem-run.sh " >> $1
         else #RA test => use --do-ra option
-            echo "echo \"RFSIMULATOR=server ./nr-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --log_config.global_log_options level,nocolor --parallel-config PARALLEL_SINGLE_THREAD --noS1 --nokrnmod 1 --rfsim --do-ra\" > ./my-nr-softmodem-run.sh " >> $1
+            #change initialDLBWPlocationAndBandwidth and initialDLBWPlocationAndBandwidth values from initial conf file for RA test only
+            sed 's/13475/6366/' /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE
+            echo "echo \"RFSIMULATOR=server ./nr-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --log_config.global_log_options level,nocolor --parallel-config PARALLEL_SINGLE_THREAD --rfsim --do-ra\" > ./my-nr-softmodem-run.sh " >> $1
         fi
     fi
     echo "chmod 775 ./my-nr-softmodem-run.sh" >> $1
@@ -1311,8 +1313,8 @@ function start_rf_sim_nr_ue {
         if [ $LOC_RA_TEST -eq 0 ] #no RA test => use --phy-test option
         then
             echo "echo \"RFSIMULATOR=${LOC_GNB_VM_IP_ADDR}  ./nr-uesoftmodem --nokrnmod 1 --rfsim --phy-test --rrc_config_path /home/ubuntu/tmp/cmake_targets/ran_build/build/ --log_config.global_log_options level,nocolor --noS1\" > ./my-nr-softmodem-run.sh " >> $1
-        else #RA test => use --do-ra option
-            echo "echo \"RFSIMULATOR=${LOC_GNB_VM_IP_ADDR}  ./nr-uesoftmodem --nokrnmod 1 --rfsim --do-ra --rrc_config_path /home/ubuntu/tmp/cmake_targets/ran_build/build/ --log_config.global_log_options level,nocolor --noS1\" > ./my-nr-softmodem-run.sh " >> $1            
+        else #RA test => use --do-ra option 
+             echo "echo \"RFSIMULATOR=${LOC_GNB_VM_IP_ADDR}  ./nr-uesoftmodem --rfsim --do-ra --log_config.global_log_options level,nocolor \" > ./my-nr-softmodem-run.sh " >> $1            
         fi
     fi
     echo "chmod 775 ./my-nr-softmodem-run.sh" >> $1
