@@ -578,3 +578,180 @@ void do_SpCellConfig(gNB_RRC_INST *rrc,
   spconfig->reconfigurationWithSync = CALLOC(1,sizeof(struct NR_ReconfigurationWithSync));
 }
 
+
+/*MSG 5*/
+uint8_t do_RRCSetupComplete_NR(uint8_t Mod_id, uint8_t *buffer, const uint8_t Transaction_id, uint8_t sel_plmn_id, const int dedicatedInfoNASLength, const char *dedicatedInfoNAS) {
+  asn_enc_rval_t enc_rval;
+  NR_UL_DCCH_Message_t ul_dcch_msg;
+  NR_RRCSetupComplete_t *rrcConnectionSetupComplete;
+  memset((void *)&ul_dcch_msg,0,sizeof(NR_UL_DCCH_Message_t));
+  ul_dcch_msg.message.present           = NR_UL_DCCH_MessageType_PR_c1;
+  ul_dcch_msg.message.choice.c1.present = NR_UL_DCCH_MessageType__c1_PR_rrcSetupComplete;
+  rrcConnectionSetupComplete            = &ul_dcch_msg.message.choice.c1.choice.rrcSetupComplete;
+  rrcConnectionSetupComplete->rrc_TransactionIdentifier = Transaction_id;
+  rrcConnectionSetupComplete->criticalExtensions.present = NR_RRCSetupComplete__criticalExtensions_PR_rrcSetupComplete;
+  
+  
+  //TODO NR_RRCSetupComplete_IEs
+  rrcConnectionSetupComplete->criticalExtensions.choice.rrcSetupComplete->selectedPLMN_Identity = sel_plmn_id;
+  rrcConnectionSetupComplete->criticalExtensions.choice.rrcSetupComplete->registeredAMF = NULL;
+  rrcConnectionSetupComplete->criticalExtensions.choice.rrcSetupComplete->guami_Type = NULL;
+  //rrcConnectionSetupComplete->criticalExtensions.choice.rrcSetupComplete->s_NSSAI_List
+  //rrcConnectionSetupComplete->criticalExtensions.choice.rrcSetupComplete->lateNonCriticalExtension
+  memset(rrcConnectionSetupComplete->criticalExtensions.choice.rrcSetupComplete->lateNonCriticalExtension, 0, sizeof(*rrcConnectionSetupComplete->criticalExtensions.choice.rrcSetupComplete->lateNonCriticalExtension))
+  //rrcConnectionSetupComplete->criticalExtensions.choice.rrcSetupComplete->ng_5G_S_TMSI_Value
+  memset(&rrcConnectionSetupComplete->criticalExtensions.choice.rrcSetupComplete->ng_5G_S_TMSI_Value.choice, 0, sizeof(rrcConnectionSetupComplete->criticalExtensions.choice.rrcSetupComplete->ng_5G_S_TMSI_Value.choice));
+  memset(&rrcConnectionSetupComplete->criticalExtensions.choice.rrcSetupComplete->ng_5G_S_TMSI_Value.present, 0, sizeof(rrcConnectionSetupComplete->criticalExtensions.choice.rrcSetupComplete->ng_5G_S_TMSI_Value.present));
+  memset(&rrcConnectionSetupComplete->criticalExtensions.choice.rrcSetupComplete->s_NSSAI_List.list, 0, sizeof(rrcConnectionSetupComplete->criticalExtensions.choice.rrcSetupComplete->s_NSSAI_List.list));
+  //rrcConnectionSetupComplete->criticalExtensions.choice.rrcSetupComplete->s_NSSAI_List
+  //rrcConnectionSetupComplete->criticalExtensions.choice.criticalExtensionsFuture =
+
+
+
+  /*
+  rrcConnectionSetupComplete->criticalExtensions.choice.c1.present = LTE_RRCConnectionSetupComplete__criticalExtensions__c1_PR_rrcConnectionSetupComplete_r8;
+  rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.nonCriticalExtension=CALLOC(1,
+      sizeof(*rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.nonCriticalExtension));
+  rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.selectedPLMN_Identity= sel_plmn_id;
+  rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.registeredMME =
+    NULL;//calloc(1,sizeof(*rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.registeredMME));
+  */
+
+  /*
+    rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.registeredMME->plmn_Identity=NULL;
+    rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.registeredMME->mmegi.buf = calloc(2,1);
+    rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.registeredMME->mmegi.buf[0] = 0x0;
+    rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.registeredMME->mmegi.buf[1] = 0x1;
+    rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.registeredMME->mmegi.size=2;
+    rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.registeredMME->mmegi.bits_unused=0;
+  */
+  memset(&rrcConnectionSetupComplete->criticalExtensions.choice.rrcSetupComplete->dedicatedNAS_Message,0,sizeof(OCTET_STRING_t));
+  OCTET_STRING_fromBuf(&rrcConnectionSetupComplete->criticalExtensions.choice.rrcSetupComplete->dedicatedNAS_Message,
+                       dedicatedInfoNAS, dedicatedInfoNASLength);
+
+  /*
+    rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.registeredMME->mmec.buf = calloc(1,1);
+    rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.registeredMME->mmec.buf[0] = 0x98;
+    rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.registeredMME->mmec.size=1;
+    rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.registeredMME->mmec.bits_unused=0;
+  */
+  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+    xer_fprint(stdout, &asn_DEF_NR_UL_DCCH_Message, (void *)&ul_dcch_msg);
+  }
+
+  enc_rval = uper_encode_to_buffer(&asn_DEF_NR_UL_DCCH_Message,
+                                   NULL,
+                                   (void *)&ul_dcch_msg,
+                                   buffer,
+                                   100);
+  AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
+               enc_rval.failed_type->name, enc_rval.encoded);
+  LOG_D(RRC,"RRCConnectionSetupComplete Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+  return((enc_rval.encoded+7)/8);
+}
+
+
+//SMC
+uint8_t do_SecurityModeCommand_NR(
+  const protocol_ctxt_t *const ctxt_pP,
+  uint8_t *const buffer,
+  const uint8_t Transaction_id,
+  const uint8_t cipheringAlgorithm,
+  const uint8_t integrityProtAlgorithm)
+  {
+  NR_DL_DCCH_Message_t dl_dcch_msg;
+  asn_enc_rval_t enc_rval;
+  memset(&dl_dcch_msg,0,sizeof(NR_DL_DCCH_Message_t));
+  dl_dcch_msg.message.present           = NR_DL_DCCH_MessageType_PR_c1;
+  dl_dcch_msg.message.choice.c1.present = NR_DL_DCCH_MessageType__c1_PR_securityModeCommand;
+  dl_dcch_msg.message.choice.c1.choice.securityModeCommand.rrc_TransactionIdentifier = Transaction_id;
+  dl_dcch_msg.message.choice.c1.choice.securityModeCommand.criticalExtensions.present = NR_SecurityModeCommand__criticalExtensions_PR_securityModeCommand;
+  dl_dcch_msg.message.choice.c1.choice.securityModeCommand.criticalExtensions.choice.securityModeCommand->securityConfigSMC.securityAlgorithmConfig.cipheringAlgorithm = (NR_CipheringAlgorithm_t)cipheringAlgorithm;
+  *dl_dcch_msg.message.choice.c1.choice.securityModeCommand.criticalExtensions.choice.securityModeCommand->securityConfigSMC.securityAlgorithmConfig.integrityProtAlgorithm = (NR_IntegrityProtAlgorithm_t)integrityProtAlgorithm;
+  memset(dl_dcch_msg.message.choice.c1.choice.securityModeCommand.criticalExtensions.choice.securityModeCommand->lateNonCriticalExtension, 0, sizeof(OCTET_STRING_t));
+
+  //dl_dcch_msg.message.choice.c1.choice.securityModeCommand.criticalExtensions.choice.c1.present =
+  // LTE_SecurityModeCommand__criticalExtensions__c1_PR_securityModeCommand_r8;
+  // the two following information could be based on the mod_id
+  //dl_dcch_msg.message.choice.c1.choice.securityModeCommand.criticalExtensions.choice.c1.choice.securityModeCommand_r8.securityConfigSMC.securityAlgorithmConfig.cipheringAlgorithm
+  //= (NR_CipheringAlgorithm_r12_t)cipheringAlgorithm;
+  //dl_dcch_msg.message.choice.c1.choice.securityModeCommand.criticalExtensions.choice.c1.choice.securityModeCommand_r8.securityConfigSMC.securityAlgorithmConfig.integrityProtAlgorithm
+  // = (e_LTE_SecurityAlgorithmConfig__integrityProtAlgorithm)integrityProtAlgorithm;
+
+  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+    xer_fprint(stdout, &asn_DEF_NR_DL_DCCH_Message, (void *)&dl_dcch_msg);
+  }
+
+  enc_rval = uper_encode_to_buffer(&asn_DEF_NR_DL_DCCH_Message,
+                                   NULL,
+                                   (void *)&dl_dcch_msg,
+                                   buffer,
+                                   100);
+
+  if(enc_rval.encoded == -1) {
+    LOG_I(RRC, "[eNB AssertFatal]ASN1 message encoding failed (%s, %lu)!\n",
+          enc_rval.failed_type->name, enc_rval.encoded);
+    return -1;
+  }
+
+  LOG_D(RRC,"[eNB %d] securityModeCommand for UE %x Encoded %zd bits (%zd bytes)\n",
+        ctxt_pP->module_id,
+        ctxt_pP->rnti,
+        enc_rval.encoded,
+        (enc_rval.encoded+7)/8);
+
+  if (enc_rval.encoded==-1) {
+    LOG_E(RRC,"[eNB %d] ASN1 : securityModeCommand encoding failed for UE %x\n",
+          ctxt_pP->module_id,
+          ctxt_pP->rnti);
+    return(-1);
+  }
+
+  //  rrc_ue_process_ueCapabilityEnquiry(0,1000,&dl_dcch_msg.message.choice.c1.choice.ueCapabilityEnquiry,0);
+  //  exit(-1);
+  return((enc_rval.encoded+7)/8);
+  }
+
+
+  uint8_t do_ULInformationTransfer_NR(uint8_t **buffer, uint32_t pdu_length, uint8_t *pdu_buffer)
+   {
+  ssize_t encoded;
+  NR_UL_DCCH_Message_t ul_dcch_msg;
+  memset(&ul_dcch_msg, 0, sizeof(NR_UL_DCCH_Message_t));
+  ul_dcch_msg.message.present           = NR_DL_DCCH_MessageType_PR_c1;
+  ul_dcch_msg.message.choice.c1.present = 	NR_UL_DCCH_MessageType__c1_PR_ulInformationTransfer;
+  ul_dcch_msg.message.choice.c1.choice.ulInformationTransfer.criticalExtensions.present = NR_ULInformationTransfer__criticalExtensions_PR_ulInformationTransfer;
+  ul_dcch_msg.message.choice.c1.choice.ulInformationTransfer.criticalExtensions.choice.ulInformationTransfer->dedicatedNAS_Message->size = pdu_length;
+  ul_dcch_msg.message.choice.c1.choice.ulInformationTransfer.criticalExtensions.choice.ulInformationTransfer->dedicatedNAS_Message->buf = pdu_buffer;
+  ul_dcch_msg.message.choice.c1.choice.ulInformationTransfer.criticalExtensions.choice.ulInformationTransfer->lateNonCriticalExtension
+  memset(ul_dcch_msg.message.choice.c1.choice.ulInformationTransfer.criticalExtensions.choice.ulInformationTransfer->lateNonCriticalExtension, 0, sizeof(*ul_dcch_msg.message.choice.c1.choice.ulInformationTransfer.criticalExtensions.choice.ulInformationTransfer->lateNonCriticalExtension));
+  //ul_dcch_msg.message.choice.c1.choice.ulInformationTransfer.criticalExtensions.choice.c1.present = LTE_DLInformationTransfer__criticalExtensions__c1_PR_dlInformationTransfer_r8;
+  //ul_dcch_msg.message.choice.c1.choice.ulInformationTransfer.criticalExtensions.choice.c1.choice.ulInformationTransfer_r8.dedicatedInfoType.present =
+  //LTE_ULInformationTransfer_r8_IEs__dedicatedInfoType_PR_dedicatedInfoNAS;
+  //ul_dcch_msg.message.choice.c1.choice.ulInformationTransfer.criticalExtensions.choice.c1.choice.ulInformationTransfer_r8.dedicatedInfoType.choice.dedicatedInfoNAS.size = pdu_length;
+  //ul_dcch_msg.message.choice.c1.choice.ulInformationTransfer.criticalExtensions.choice.c1.choice.ulInformationTransfer_r8.dedicatedInfoType.choice.dedicatedInfoNAS.buf = pdu_buffer;
+  encoded = uper_encode_to_new_buffer (&asn_DEF_NR_UL_DCCH_Message, NULL, (void *) &ul_dcch_msg, (void **) buffer);
+  return encoded;
+}
+
+uint8_t do_DLInformationTransfer_NR(uint8_t Mod_id, uint8_t **buffer, uint8_t transaction_id, uint32_t pdu_length, uint8_t *pdu_buffer)
+{
+  ssize_t encoded;
+  NR_DL_DCCH_Message_t dl_dcch_msg;
+  memset(&dl_dcch_msg, 0, sizeof(NR_DL_DCCH_Message_t));
+  dl_dcch_msg.message.present           = NR_DL_DCCH_MessageType_PR_c1;
+  dl_dcch_msg.message.choice.c1.present = NR_DL_DCCH_MessageType__c1_PR_dlInformationTransfer;
+  dl_dcch_msg.message.choice.c1.choice.dlInformationTransfer->rrc_TransactionIdentifier = transaction_id;
+  dl_dcch_msg.message.choice.c1.choice.dlInformationTransfer->criticalExtensions.present = NR_DLInformationTransfer__criticalExtensions_PR_dlInformationTransfer;
+  dl_dcch_msg.message.choice.c1.choice.dlInformationTransfer->criticalExtensions.choice.dlInformationTransfer->dedicatedNAS_Message->size = pdu_length;
+  dl_dcch_msg.message.choice.c1.choice.dlInformationTransfer->criticalExtensions.choice.dlInformationTransfer->dedicatedNAS_Message->buf  = pdu_buffer;
+  //dl_dcch_msg.message.choice.c1.choice.dlInformationTransfer->criticalExtensions.choice.dlInformationTransfer->lateNonCriticalExtension
+  memset(dl_dcch_msg.message.choice.c1.choice.dlInformationTransfer->criticalExtensions.choice.dlInformationTransfer->lateNonCriticalExtension, 0, sizeof(*dl_dcch_msg.message.choice.c1.choice.dlInformationTransfer->criticalExtensions.choice.dlInformationTransfer->lateNonCriticalExtension));
+  //dl_dcch_msg.message.choice.c1.choice.dlInformationTransfer->criticalExtensions.choice.c1.present = LTE_DLInformationTransfer__criticalExtensions__c1_PR_dlInformationTransfer_r8;
+  //dl_dcch_msg.message.choice.c1.choice.dlInformationTransfer.criticalExtensions.choice.c1.choice.dlInformationTransfer_r8.dedicatedInfoType.present =
+   // LTE_DLInformationTransfer_r8_IEs__dedicatedInfoType_PR_dedicatedInfoNAS;
+  //dl_dcch_msg.message.choice.c1.choice.dlInformationTransfer.criticalExtensions.choice.c1.choice.dlInformationTransfer_r8.dedicatedInfoType.choice.dedicatedInfoNAS.size = pdu_length;
+  //dl_dcch_msg.message.choice.c1.choice.dlInformationTransfer.criticalExtensions.choice.c1.choice.dlInformationTransfer_r8.dedicatedInfoType.choice.dedicatedInfoNAS.buf = pdu_buffer;
+  encoded = uper_encode_to_new_buffer (&asn_DEF_NR_DL_DCCH_Message, NULL, (void *) &dl_dcch_msg, (void **) buffer);
+  return encoded;
+}

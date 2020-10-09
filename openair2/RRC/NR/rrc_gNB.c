@@ -7899,7 +7899,7 @@ rrc_gNB_decode_dcch(
         if (eutra_index == -1)
           break;
 
-        if (ue_context_p->ue_context.UE_Capability) {
+        if (ue_context_p->ue_context.UE_Capability_nr) {
           LOG_I(RRC, "freeing old UE capabilities for UE %x\n", ctxt_pP->rnti);
           ASN_STRUCT_FREE(asn_DEF_NR_UE_EUTRA_Capability,
                           ue_context_p->ue_context.UE_Capability);
@@ -7908,7 +7908,7 @@ rrc_gNB_decode_dcch(
 
         dec_rval = uper_decode(NULL,
                                &asn_DEF_NR_UE_EUTRA_Capability,
-                               (void **)&ue_context_p->ue_context.UE_Capability,
+                               (void **)&ue_context_p->ue_context.UE_Capability_nr,
                                ul_dcch_msg->message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.array[eutra_index]->ueCapabilityRAT_Container.buf,
                                ul_dcch_msg->message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.array[eutra_index]->ueCapabilityRAT_Container.size,
                                0, 0);

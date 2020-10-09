@@ -82,3 +82,29 @@ void do_PHYSICALCELLGROUP(uint8_t Mod_id,
 
 void do_SpCellConfig(gNB_RRC_INST *rrc,
                       struct NR_SpCellConfig  *spconfig);
+
+
+/*MSG 5*/
+/** \brief Generate an RRCConnectionSetupComplete UL-DCCH-Message (UE)
+ * @param buffer Pointer to PER-encoded ASN.1 description of UL-DCCH-Message PDU
+ * @returns Size of encoded bit stream in bytes*/
+uint8_t do_RRCSetupComplete_NR(uint8_t Mod_id, uint8_t *buffer, const uint8_t Transaction_id, uint8_t sel_plmn_id, const int dedicatedInfoNASLength, const char *dedicatedInfoNAS);
+
+uint8_t do_SecurityModeCommand_NR(
+  const protocol_ctxt_t *const ctxt_pP,
+  uint8_t *const buffer,
+  const uint8_t Transaction_id,
+  const uint8_t cipheringAlgorithm,
+  const uint8_t integrityProtAlgorithm);
+
+
+uint8_t do_ULInformationTransfer_NR(uint8_t **buffer, uint32_t pdu_length, uint8_t *pdu_buffer);
+
+uint8_t do_DLInformationTransfer_NR(uint8_t Mod_id, uint8_t **buffer, uint8_t transaction_id, uint32_t pdu_length, uint8_t *pdu_buffer);
+
+
+
+
+
+
+
