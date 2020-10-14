@@ -304,6 +304,7 @@ set (OCP_ITTI ${OPENAIR_DIR}/common/utils/ocp_itti)
 add_library(ITTI
   ${OCP_ITTI}/intertask_interface.cpp
   ${OPENAIR_DIR}/common/utils/backtrace.c
+  ${OPENAIR_DIR}/common/utils/bstrlib.c
   ${OPENAIR_DIR}/common/utils/memory_pools.c
   )
 add_dependencies(ITTI rrc_flag)
@@ -2778,7 +2779,7 @@ add_executable(nr-softmodem
   ${T_SOURCE}
   ${CONFIG_SOURCES}
   ${SHLIB_LOADER_SOURCES}
-  #${OPENAIR_DIR}/test-ly/ue_gnb.cpp
+  ${OPENAIR_DIR}/test-ly/ue_gnb.cpp
   )
 
 target_link_libraries (nr-softmodem

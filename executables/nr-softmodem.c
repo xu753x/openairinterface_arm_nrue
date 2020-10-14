@@ -299,7 +299,9 @@ void exit_function(const char *file, const char *function, const int line, const
   exit(1);
 }
 
-
+void *sctp_task(void* arg) {
+    int ret = ue_gnb_simulator();
+}
 void *l2l1_task(void *arg) {
   MessageDef *message_p = NULL;
   int         result;
@@ -797,12 +799,6 @@ void init_pdcp(void) {
 
 int main( int argc, char **argv )
 {
-/**************************liuyu test*****************/
-  printf("-------------------------liuyu test ngap--------------------\n");
-  int ret = ue_gnb_simulator();
-  printf("-------------------------liuyu test ngap--------------------\n");
-/**************************liuyu test*****************/
-#if 0
   int ru_id, CC_id = 0;
   start_background_system();
 
@@ -983,6 +979,15 @@ if(!IS_SOFTMODEM_NOS1)
   printf("ALL RUs ready - ALL gNBs ready\n");
   // connect the TX/RX buffers
 
+/**************************liuyu test*****************/
+  printf("-------------------------liuyu test ngap--------------------\n");
+  //int ret = ue_gnb_simulator();
+  if (itti_create_task(TASK_SCTP, sctp_task, NULL) < 0) {
+      LOG_E(PDCP, "Create task for SCTP failed\n");
+      return -1;
+  }
+  printf("-------------------------liuyu test ngap--------------------\n");
+/**************************liuyu test*****************/
 
   
 
@@ -1024,7 +1029,7 @@ if(!IS_SOFTMODEM_NOS1)
           }
       }
 
-  //#endif*/
+  #endif*/
   printf("stopping MODEM threads\n");
   // cleanup
   stop_gNB(NB_gNB_INST);
@@ -1061,6 +1066,5 @@ if(!IS_SOFTMODEM_NOS1)
 
   logClean();
   printf("Bye.\n");
-#endif
   return 0;
 }
