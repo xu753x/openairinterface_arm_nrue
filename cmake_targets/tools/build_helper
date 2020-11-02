@@ -40,7 +40,15 @@ esac
 KERNEL_VERSION=$(uname -r | cut -d '.' -f1)
 KERNEL_MAJOR=$(uname -r | cut -d '.' -f2)
 
-SUDO='sudo -E'
+#check if we run inside a container
+IS_CONTAINER=`egrep -c "docker|podman|kubepods" /proc/self/cgroup || true`
+#sudo is not needed when we are root
+if [ "$UID" = 0 ]
+then
+  SUDO=''
+else
+  SUDO='sudo -S -E'
+fi
 
 ###############################
 ## echo and  family
@@ -216,10 +224,22 @@ install_protobuf_from_source(){
     #wget https://github.com/google/protobuf/releases/download/v2.6.1/protobuf-2.6.1.tar.gz
     #tar -xzvf protobuf-2.6.1.tar.gz --owner $USER --group $USER --no-same-owner
     #cd protobuf-2.6.1/
-    rm -rf /tmp/protobuf-cpp-3.3.0.tar.gz* /tmp/protobuf-3.3.0
-    wget https://github.com/google/protobuf/releases/download/v3.3.0/protobuf-cpp-3.3.0.tar.gz
-    tar -xzvf protobuf-cpp-3.3.0.tar.gz --owner $USER --group $(groups | cut -d" " -f1) --no-same-owner
-    cd protobuf-3.3.0/
+
+    if [ $IS_CONTAINER -eq 0 ]
+    then
+      rm -rf /tmp/protobuf-cpp-3.3.0.tar.gz* /tmp/protobuf-3.3.0
+      wget --tries=3 --retry-connrefused https://github.com/google/protobuf/releases/download/v3.3.0/protobuf-cpp-3.3.0.tar.gz
+      tar -xzvf protobuf-cpp-3.3.0.tar.gz --owner $USER --group $(groups | cut -d" " -f1) --no-same-owner
+      cd protobuf-3.3.0/
+    else
+      export LD_LIBRARY_PATH=/usr/local/lib #protoc needs to know where toclook for shared libs
+      rm -rf /tmp/protobuf
+      git clone --depth=1 --branch=v3.3.0 https://github.com/protocolbuffers/protobuf.git /tmp/protobuf
+      cd /tmp/protobuf
+      git submodule update --init --recursive
+      ./autogen.sh
+    fi
+
     ./configure
     echo "Compiling protobuf"
     make -j`nproc`
