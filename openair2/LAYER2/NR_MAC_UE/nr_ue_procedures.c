@@ -1450,9 +1450,15 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
       */
     }
   } else if (ul_info) {
-
-    if (get_softmodem_params()->phy_test && ul_info->slot_tx == 8) { // ULSCH is handled only in phy-test mode (consistently with OAI gNB)
-
+     NR_UE_MAC_INST_t *mac = get_mac_inst(ul_info->module_id);
+    //if (get_softmodem_params()->phy_test && ul_info->slot_tx == 8) { // ULSCH is handled only in phy-test mode (consistently with OAI gNB)
+    if ((mac->ra_state == RA_SUCCEEDED) && ( ul_info->slot_tx == 8)) { 
+      static int skip_the_first = 0;
+      if (skip_the_first == 0)
+      {
+        skip_the_first = 1;
+        return UE_CONNECTION_OK;
+      }
       uint8_t nb_dmrs_re_per_rb;
       uint8_t ulsch_input_buffer[MAX_ULSCH_PAYLOAD_BYTES];
       uint8_t data_existing = 0;
@@ -1487,6 +1493,14 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
       uint8_t  start_symbol_index = ulcfg_pdu->pusch_config_pdu.start_symbol_index;
       uint8_t  nrOfLayers         = 1;
       uint8_t  mcs_index          = ulcfg_pdu->pusch_config_pdu.mcs_index;
+
+      rb_size = 106;
+      rb_start = 0;
+      nr_of_symbols = 11;
+      start_symbol_index = 0;
+      mcs_index = 9;
+
+
       uint8_t  mcs_table          = ulcfg_pdu->pusch_config_pdu.mcs_table;
       uint8_t  harq_process_id    = ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id;
       uint8_t  rv_index           = ulcfg_pdu->pusch_config_pdu.pusch_data.rv_index;
@@ -1507,10 +1521,10 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
 #ifdef DEBUG_DCI      
       LOG_I(MAC, " UL config params \n rnti: %x \n rb_size: %d \n", 
                 rnti, rb_size);
-      LOG_I(MAC, "rb_start: %x \n nr_of_symbols: %d \n start_symbol_index: %d \n nrOfLayers: %d \n mcs_index: %d \n \
+      LOG_I(MAC, "rb_start: %d \n nr_of_symbols: %d \n start_symbol_index: %d \n nrOfLayers: %d \n mcs_index: %d \n \
                 mcs_table: %d \n harq_process_id: %d \n ndi: %d \n num_cb: %d \n rv_index: %d \n", 
                 rb_start, nr_of_symbols, start_symbol_index, nrOfLayers, mcs_index,
-                mcs_table, harq_process_id, ndi, num_cb, rv_index);
+                mcs_table, harq_process_id, -1, -1, rv_index);
 #endif
 
       // PTRS ports configuration
@@ -1673,7 +1687,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
           }
         //}
 
-        LOG_D(MAC, "[UE %d] Frame %d, Subframe %d Adding Msg3 UL Config Request for rnti: %x\n",
+        LOG_I(MAC, "[UE %d] Frame %d, Subframe %d Adding Msg3 UL Config Request for rnti: %x\n",
           ul_info->module_id,
           ul_info->frame_tx,
           ul_info->slot_tx,

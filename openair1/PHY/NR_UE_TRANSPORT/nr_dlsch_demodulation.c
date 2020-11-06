@@ -427,9 +427,13 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 #if UE_TIMING_TRACE
     start_meas(&ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot]);
 #endif
+
+  
   if (first_symbol_flag==1) {
     if (beamforming_mode==0){
       if (dlsch0_harq->mimo_mode<NR_DUALSTREAM) {
+
+        //write_output("ch_estext_first.m","ch_estext",&pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][1*16*12],5*16*12,1,13);
         nr_dlsch_channel_level(pdsch_vars[eNB_id]->dl_ch_estimates_ext,
 			       frame_parms,
 			       avg,
@@ -465,11 +469,11 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
      }
     }
     //#ifdef UE_DEBUG_TRACE
-    LOG_D(PHY,"[DLSCH] AbsSubframe %d.%d log2_maxh = %d [log2_maxh0 %d log2_maxh1 %d] (%d,%d)\n",
+    LOG_I(PHY,"[DLSCH] AbsSubframe %d.%d log2_maxh = %d [log2_maxh0 %d log2_maxh1 %d] (%d,%d), mimo_mode %d, symbol %d\n",
 	  frame%1024,nr_tti_rx, pdsch_vars[eNB_id]->log2_maxh,
 	  pdsch_vars[eNB_id]->log2_maxh0,
 	  pdsch_vars[eNB_id]->log2_maxh1,
-	  avg[0],avgs);
+	  avg[0],avgs, dlsch0_harq->mimo_mode, symbol);
     //LOG_D(PHY,"[DLSCH] mimo_mode = %d\n", dlsch0_harq->mimo_mode);
     //#endif
 

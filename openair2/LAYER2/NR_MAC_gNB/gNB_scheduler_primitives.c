@@ -621,6 +621,84 @@ void nr_fill_nfapi_dl_pdu(int Mod_idP,
         TBS);
 
   dl_req->nPDUs += 2;
+
+#if 1 // LOG_PDCCH_PARAMES
+  static int log_first = 0;
+    if(log_first == 0)
+    {
+        //log_first =1;
+        LOG_I(MAC, "NB PDCCH PARAMS: rnti %d, BWPSize %d, BWPStart %d, SubcarrierSpacing %d, CCE %d, L %d dci_length %d dci_format %d dci index %d\n",
+              pdcch_pdu_rel15->dci_pdu.RNTI[0],
+              pdcch_pdu_rel15->BWPSize,
+              pdcch_pdu_rel15->BWPStart,
+              pdcch_pdu_rel15->SubcarrierSpacing,
+              pdcch_pdu_rel15->dci_pdu.CceIndex[pdcch_pdu_rel15->numDlDci-1],
+              pdcch_pdu_rel15->dci_pdu.AggregationLevel[pdcch_pdu_rel15->numDlDci-1],
+              pdcch_pdu_rel15->dci_pdu.PayloadSizeBits[pdcch_pdu_rel15->numDlDci-1],
+              dci_formats[0], pdcch_pdu_rel15->numDlDci-1);
+        LOG_I(MAC, "NB PDCCH PARAMS: coreset:frequency_domain_resource %d %d %d %d %d %d\n", pdcch_pdu_rel15->FreqDomainResource[0],
+                      pdcch_pdu_rel15->FreqDomainResource[1],
+                      pdcch_pdu_rel15->FreqDomainResource[2],
+                      pdcch_pdu_rel15->FreqDomainResource[3],
+                      pdcch_pdu_rel15->FreqDomainResource[4],
+                      pdcch_pdu_rel15->FreqDomainResource[5]);
+        LOG_I(MAC, "NB PDCCH PARAMS: coreset:StartSymbolIndex %d duration %d CceRegMappingType %d RegBundleSize %d InterleaverSize %d ShiftIndex %d CoreSetType %d precoder_granularity %d, pdcch_dmrs_scrambling_id %d,scrambling_rnti %d\n",
+              pdcch_pdu_rel15->StartSymbolIndex,
+              pdcch_pdu_rel15->DurationSymbols,
+              pdcch_pdu_rel15->CceRegMappingType,
+              pdcch_pdu_rel15->RegBundleSize,
+              pdcch_pdu_rel15->InterleaverSize,
+              pdcch_pdu_rel15->ShiftIndex,
+              pdcch_pdu_rel15->CoreSetType,
+              pdcch_pdu_rel15->precoderGranularity,
+              pdcch_pdu_rel15->dci_pdu.ScramblingId[0],
+              pdcch_pdu_rel15->dci_pdu.ScramblingRNTI[0]);
+        
+    }
+#endif   
+
+#if 1 // LOG_PDSCH_PARAMES
+   static int log_first_pdsch = 0;
+   if (log_first_pdsch == 0)
+   {
+      //log_first_pdsch = 1;
+      LOG_I(MAC, "NB PDSCH PARAMS: rnti %d, bwp (%d, %d), scs %d, codewords %d, coderate %d, mod %d, mcs (%d, %d), rv %d, dataScramId %d, layers %d, tm %d, refPoint %d \n ",
+            pdsch_pdu_rel15->rnti,
+            pdsch_pdu_rel15->BWPSize,
+            pdsch_pdu_rel15->BWPStart,
+            pdsch_pdu_rel15->SubcarrierSpacing,
+            pdsch_pdu_rel15->NrOfCodewords,
+            pdsch_pdu_rel15->targetCodeRate[0],
+            pdsch_pdu_rel15->qamModOrder[0],
+            pdsch_pdu_rel15->mcsIndex[0],
+            pdsch_pdu_rel15->mcsTable[0],
+            pdsch_pdu_rel15->rvIndex[0],
+            pdsch_pdu_rel15->dataScramblingId,
+            pdsch_pdu_rel15->nrOfLayers,
+            pdsch_pdu_rel15->transmissionScheme,
+            pdsch_pdu_rel15->refPoint      
+            );
+      LOG_I(MAC, "NB PDSCH PARAMS: dlDmrsScramblingId %d, scid %d, numDmrsCdmGrpsNoData %d, dmrsPorts %d, resourceAlloc %d, rb (%d, %d), symb (%d, %d), dmrsType %d, dmrsPos %d, vrb2prb %d\n",
+            pdsch_pdu_rel15->dlDmrsScramblingId,
+            pdsch_pdu_rel15->SCID,
+            pdsch_pdu_rel15->numDmrsCdmGrpsNoData,
+            pdsch_pdu_rel15->dmrsPorts,
+            pdsch_pdu_rel15->resourceAlloc,
+            pdsch_pdu_rel15->rbStart,
+            pdsch_pdu_rel15->rbSize,
+            pdsch_pdu_rel15->StartSymbolIndex,
+            pdsch_pdu_rel15->NrOfSymbols,
+            pdsch_pdu_rel15->dmrsConfigType,
+            pdsch_pdu_rel15->dlDmrsSymbPos,
+            pdsch_pdu_rel15->VRBtoPRBMapping 
+            );
+   }
+#endif
+
+
+
+
+  
 }
 
 void nr_configure_pdcch(gNB_MAC_INST *nr_mac,

@@ -235,7 +235,7 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
   if (decodeSuccess) {
     memcpy(ulsch_harq->b+rdata->offset,
            ulsch_harq->c[r],
-           rdata->Kr_bytes- - (ulsch_harq->F>>3) -((ulsch_harq->C>1)?3:0));
+           rdata->Kr_bytes- - (ulsch_harq->F>>3) -((ulsch_harq->C>1)?3:0));    
 
   } else {
     if ( rdata->nbSegments != ulsch_harq->processedSegments ) {
@@ -253,7 +253,7 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
   // if all segments are done 
   if (rdata->nbSegments == ulsch_harq->processedSegments) {
     if (decodeSuccess) {
-      LOG_D(PHY,"[gNB %d] ULSCH: Setting ACK for nr_tti_rx %d TBS %d\n",
+      LOG_I(PHY,"[gNB %d] ULSCH: Setting ACK for nr_tti_rx %d TBS %d\n",
             gNB->Mod_id,ulsch_harq->slot,ulsch_harq->TBS);
       ulsch_harq->status = SCH_IDLE;
       ulsch_harq->round  = 0;
@@ -261,8 +261,9 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
 
       LOG_D(PHY, "ULSCH received ok \n");
       nr_fill_indication(gNB,ulsch_harq->frame, ulsch_harq->slot, rdata->ulsch_id, rdata->harq_pid, 0);
+      log_dump(PHY, ulsch_harq->b, 8, LOG_DUMP_CHAR,"gnb pusch rx frame %d %d: ", ulsch_harq->frame, ulsch_harq->slot);   
     } else {
-      LOG_D(PHY,"[gNB %d] ULSCH: Setting NAK for SFN/SF %d/%d (pid %d, status %d, round %d, TBS %d) r %d\n",
+      LOG_I(PHY,"[gNB %d] ULSCH: Setting NAK for SFN/SF %d/%d (pid %d, status %d, round %d, TBS %d) r %d\n",
             gNB->Mod_id, ulsch_harq->frame, ulsch_harq->slot,
             rdata->harq_pid,ulsch_harq->status, ulsch_harq->round,ulsch_harq->TBS,r);
       if (ulsch_harq->round >= ulsch->Mlimit) {

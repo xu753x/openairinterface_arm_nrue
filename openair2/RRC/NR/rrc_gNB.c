@@ -402,6 +402,32 @@ rrc_gNB_generate_RRCSetup(
   ue_context_pP->ue_context.ue_release_timer_thres = 1000;
   /* init timers */
   //   ue_context_pP->ue_context.ue_rrc_inactivity_timer = 0;
+  printf("--------------------------------gnb send rrc setup to ue ----------liuyu---------------");
+  MessageDef *message_p;
+  // Uses a new buffer to avoid issue with PDCP buffer content that could be changed by PDCP (asynchronous message handling).
+  uint8_t *message_buffer;
+  message_buffer = itti_malloc(
+  ctxt_pP->enb_flag ? TASK_RRC_ENB : TASK_RRC_UE,
+  ctxt_pP->enb_flag ? TASK_PDCP_ENB : TASK_PDCP_UE,
+  ue_p->Srb0.Tx_buffer.payload_size);
+  memcpy(message_buffer,ue_p->Srb0.Tx_buffer.Payload, ue_p->Srb0.Tx_buffer.payload_size);
+  message_p = itti_alloc_new_message(ctxt_pP->enb_flag ? TASK_RRC_ENB : TASK_RRC_UE, RRC_DCCH_DATA_REQ);
+  RRC_DCCH_DATA_REQ(message_p).frame = ctxt_pP->frame;
+  RRC_DCCH_DATA_REQ(message_p).enb_flag = ctxt_pP->enb_flag;
+  RRC_DCCH_DATA_REQ(message_p).rb_id = 1;
+  RRC_DCCH_DATA_REQ(message_p).muip = 1;
+  RRC_DCCH_DATA_REQ(message_p).confirmp = SDU_CONFIRM_NO;
+  RRC_DCCH_DATA_REQ(message_p).sdu_size = ue_p->Srb0.Tx_buffer.payload_size;
+  RRC_DCCH_DATA_REQ(message_p).sdu_p = message_buffer;
+  RRC_DCCH_DATA_REQ(message_p).mode = PDCP_TRANSMISSION_MODE_CONTROL;
+  RRC_DCCH_DATA_REQ(message_p).module_id = ctxt_pP->module_id;
+  RRC_DCCH_DATA_REQ(message_p).rnti = 0x1234;//ctxt_pP->rnti;
+  RRC_DCCH_DATA_REQ(message_p).eNB_index = ctxt_pP->eNB_index;
+  itti_send_msg_to_task(
+  TASK_PDCP_ENB,
+        ctxt_pP->instance,
+            message_p);
+
 #ifdef ITTI_SIM
   MessageDef *message_p;
   uint8_t *message_buffer;
@@ -734,6 +760,7 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
                PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP));
     return -1;
   }
+  xer_fprint(stdout,&asn_DEF_NR_UL_CCCH_Message,(void *)ul_ccch_msg);
 
   if (ul_ccch_msg->message.present == NR_UL_CCCH_MessageType_PR_c1) {
     switch (ul_ccch_msg->message.choice.c1->present) {
