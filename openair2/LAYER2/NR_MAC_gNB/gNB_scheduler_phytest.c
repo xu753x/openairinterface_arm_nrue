@@ -889,7 +889,7 @@ void schedule_fapi_ul_pdu(int Mod_idP,
     nfapi_nr_pusch_pdu_t  *pusch_pdu = &pusch_sched->pusch_pdu;
     memset(pusch_pdu,0,sizeof(nfapi_nr_pusch_pdu_t));
 
-    LOG_D(MAC, "Scheduling UE specific PUSCH\n");
+    LOG_I(MAC, "Scheduling UE specific PUSCH\n");
     //UL_tti_req = &nr_mac->UL_tti_req[CC_id];
 
     int dci_formats[2];
@@ -1126,7 +1126,7 @@ void schedule_fapi_ul_pdu(int Mod_idP,
     UL_dci_req->numPdus+=1;
 
 
-    LOG_D(MAC,"Configuring ULDCI/PDCCH in %d.%d\n", frameP,slotP);
+    LOG_I(MAC,"Configuring ULDCI/PDCCH in %d.%d\n", frameP,slotP);
 
     uint8_t nr_of_candidates, aggregation_level;
     find_aggregation_candidates(&aggregation_level, &nr_of_candidates, ss);
@@ -1163,6 +1163,52 @@ void schedule_fapi_ul_pdu(int Mod_idP,
       fill_dci_pdu_rel15(scc,secondaryCellGroup,pdcch_pdu_rel15,dci_pdu_rel15,dci_formats,rnti_types,pusch_pdu->bwp_size,bwp_id);
       free(dci_pdu_rel15);
     }
+
+#define LOG_PUSCH_PARAMES
+#ifdef LOG_PUSCH_PARAMES
+  static int islog =0;
+  if(islog == 0)
+  {   
+      //islog = 1;
+      LOG_I(MAC, "UE PUSCH PARAMS: frame %d, %d , rnti %d, bwpsize %d, bwpstart %d, subcarrier_spacing %d  cyclic_prefix %d, Nid_cell %d, num_slots_per_tdd %d\n",
+      pusch_sched->frame,
+      pusch_sched->slot,
+      pusch_pdu->rnti,
+      pusch_pdu->bwp_size,
+      pusch_pdu->bwp_start,
+      pusch_pdu->subcarrier_spacing,
+      -1, //pusch_pdu->cyclic_prefix
+      *scc->physCellId,
+      num_slots_per_tdd
+      );
+      LOG_I(MAC, "UE PUSCH PARAMS: target_code_rate %d, qam_mod_order %d, mcs_index %d, mcs_table %d , transform_precoding %d, data_scrambling_id %d\n",
+      pusch_pdu->target_code_rate,
+      pusch_pdu->qam_mod_order,
+      pusch_pdu->mcs_index,
+      pusch_pdu->mcs_table,
+      pusch_pdu->transform_precoding,
+      pusch_pdu->data_scrambling_id);
+      LOG_I(MAC, "UE PUSCH PARAMS: nrOfLayers %d, ul_dmrs_symb_pos %d dmrs_config_type %d, ul_dmrs_scrambling_id %d, scid %d, num_dmrs_cdm_grps_no_data %d\n",
+      pusch_pdu->nrOfLayers,
+      pusch_pdu->ul_dmrs_symb_pos,
+      pusch_pdu->dmrs_config_type,
+      pusch_pdu->ul_dmrs_scrambling_id,
+      -1, //pusch_pdu->scid,
+      pusch_pdu->num_dmrs_cdm_grps_no_data);
+      LOG_I(MAC, "UE PUSCH PARAMS: dmrs_ports %d, resource_alloc %d, rb_start %d, rb_size %d, vrb_to_prb_mapping %d, frequency_hopping %d, tx_direct_current_location %d, uplink_frequency_shift_7p5khz %d, start_symbol_index %d, nr_of_symbols %d\n",
+      pusch_pdu->dmrs_ports,
+      pusch_pdu->resource_alloc,
+      pusch_pdu->rb_start,
+      pusch_pdu->rb_size,
+      pusch_pdu->vrb_to_prb_mapping,
+      -1, //pusch_pdu->frequency_hopping,
+      -1, //pusch_pdu->tx_direct_current_location,
+      pusch_pdu->uplink_frequency_shift_7p5khz,
+       pusch_pdu->start_symbol_index,
+      pusch_pdu->nr_of_symbols);
+  }
+
+#endif  
   }
 }
 

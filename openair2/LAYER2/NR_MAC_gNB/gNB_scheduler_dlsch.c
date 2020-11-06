@@ -499,6 +499,12 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
                                                     lcid,
                                                     0,
                                                     0);
+  LOG_I(MAC,
+        "%d.%d, DTCH%d->DLSCH, RLC status %d bytes\n",
+        frame,
+        slot,
+        lcid,
+        sched_ctrl->rlc_status[lcid].bytes_in_buffer);                                                  
   sched_ctrl->num_total_bytes += sched_ctrl->rlc_status[lcid].bytes_in_buffer;
   if (sched_ctrl->num_total_bytes == 0 && !get_softmodem_params()->phy_test)
     return;

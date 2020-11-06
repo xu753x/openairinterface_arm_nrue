@@ -153,6 +153,8 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
     unsigned int G = nr_get_G(nb_rb, number_of_symbols,
                               nb_dmrs_re_per_rb, number_dmrs_symbols, mod_order, Nl);
+
+    log_dump(PHY, harq_process_ul_ue->a, 8, LOG_DUMP_CHAR,"nrue pusch tx frame %d %d: ", frame, slot);                          
     nr_ulsch_encoding(ulsch_ue, frame_parms, harq_pid, G);
 
     ///////////
@@ -385,6 +387,59 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
       }
     }
   }
+ 
+
+  #if 0 // LOG_PUSCH_FREQ_DATA
+ static int log_data_first_freq = 0;
+  if (log_data_first_freq == 0)
+  {
+    log_data_first_freq = 1;
+	  LOG_M("txdataF_freq.m","txF",txdataF[0],frame_parms->ofdm_symbol_size *5,1,1);
+  }
+#endif
+
+#define LOG_PUSCH_PARAMES 
+#ifdef LOG_PUSCH_PARAMES
+  static int islog =0;
+  if(islog == 0)
+  {
+      //islog = 1;
+      LOG_I(MAC, "UE PUSCH PARAMS: rnti %d, bwpsize %d, bwpstart %d, subcarrier_spacing %d  cyclic_prefix %d, Nid_cell %d\n",
+      pusch_pdu->rnti,
+      -1, //pusch_pdu->bwp_size,
+      -1, //pusch_pdu->bwp_start,
+      -1, //pusch_pdu->subcarrier_spacing,
+      -1, //pusch_pdu->cyclic_prefix
+      ulsch_ue->Nid_cell
+      );
+      LOG_I(MAC, "UE PUSCH PARAMS: target_code_rate %d, qam_mod_order %d, mcs_index %d, mcs_table %d , transform_precoding %d, data_scrambling_id %d\n",
+      -1, //code_rate,
+      mod_order,
+      -1,//harq_process_ul_ue->mcs,
+      0,
+      0,
+      ulsch_ue->Nid_cell); //harq_process_ul_ue->data_scrambling_id);
+      LOG_I(MAC, "UE PUSCH PARAMS: nrOfLayers %d, ul_dmrs_symb_pos %d dmrs_config_type %d, ul_dmrs_scrambling_id %d, scid %d, num_dmrs_cdm_grps_no_data %d\n",
+      pusch_pdu->nrOfLayers,
+      pusch_pdu->ul_dmrs_symb_pos,
+      pusch_pdu->dmrs_config_type,
+      -1, //harq_process_ul_ue->dmrs_scrambling_id[0],
+      -1, //pusch_pdu->scid,
+      pusch_pdu->num_dmrs_cdm_grps_no_data);
+      LOG_I(MAC, "UE PUSCH PARAMS: dmrs_ports %d, resource_alloc %d, rb_start %d, rb_size %d, vrb_to_prb_mapping %d, frequency_hopping %d, tx_direct_current_location %d, uplink_frequency_shift_7p5khz %d, start_symbol_index %d, nr_of_symbols %d\n",
+      1, //pusch_pdu->dmrs_ports,
+      1, //pusch_pdu->resource_alloc,
+      pusch_pdu->rb_start,
+       pusch_pdu->rb_size,
+      -1, //pusch_pdu->vrb_to_prb_mapping,
+      -1, //pusch_pdu->frequency_hopping,
+      -1, //pusch_pdu->tx_direct_current_location,
+      -1, //pusch_pdu->uplink_frequency_shift_7p5khz,
+      pusch_pdu->start_symbol_index,
+      pusch_pdu->nr_of_symbols);
+  }
+
+#endif
   }
 
   NR_UL_UE_HARQ_t *harq_process_ulsch=NULL;

@@ -267,8 +267,8 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_UE_ULSCH_ENCODING, VCD_FUNCTION_IN);
 
-  LOG_D(PHY,"ulsch coding nb_rb %d, Nl = %d\n", nb_rb, harq_process->pusch_pdu.nrOfLayers);
-  LOG_D(PHY,"ulsch coding A %d G %d mod_order %d\n", A,G, mod_order);
+  LOG_I(PHY,"ulsch coding nb_rb %d, Nl = %d\n", nb_rb, harq_process->pusch_pdu.nrOfLayers);
+  LOG_I(PHY,"ulsch coding A %d G %d mod_order %d\n", A,G, mod_order);
 
   //  if (harq_process->Ndi == 1) {  // this is a new packet
   if (harq_process->round == 0) {  // this is a new packet
@@ -501,6 +501,9 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
   }
+
+  LOG_I(PHY,"ULSCH coding  C %d, A %d, G %d, E %d, Kb %d, F %d, Zc %d, Kr %d, BG %d\n", harq_process->C, A, G, E, Kb, F, *pz, Kr, BG);
+  LOG_I(PHY,"ULSCH coding  Kr_bytes %d, encLen %d\n", Kr>>3, (3*Kr)+12);
 
   memcpy(ulsch->g,harq_process->f,G); // g is the concatenated code block
 

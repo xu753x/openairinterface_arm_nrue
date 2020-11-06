@@ -194,6 +194,52 @@ void nr_config_Msg3_pdu(NR_UE_MAC_INST_t *mac,
                                                         0, // TBR to verify tb scaling
                                                         pusch_config_pdu->nrOfLayers)/8;
 
+
+
+#define LOG_PUSCH_PARAMES
+#ifdef LOG_PUSCH_PARAMES
+  static int islog =0;
+  if(islog == 0)
+  {
+      //islog = 1;
+      LOG_I(MAC, "UE PUSCH PARAMS: rnti %d, bwpsize %d, bwpstart %d, subcarrier_spacing %d  cyclic_prefix %d, Nid_cell %d\n",
+      pusch_config_pdu->rnti,
+      pusch_config_pdu->bwp_size,
+      pusch_config_pdu->bwp_start,
+      pusch_config_pdu->subcarrier_spacing,
+      -1, //pusch_pdu->cyclic_prefix
+      *scc->physCellId
+      );
+      LOG_I(MAC, "UE PUSCH PARAMS: target_code_rate %d, qam_mod_order %d, mcs_index %d, mcs_table %d , transform_precoding %d, data_scrambling_id %d\n",
+      pusch_config_pdu->target_code_rate,
+      pusch_config_pdu->qam_mod_order,
+      pusch_config_pdu->mcs_index,
+      pusch_config_pdu->mcs_table,
+      pusch_config_pdu->transform_precoding,
+      pusch_config_pdu->data_scrambling_id);
+      LOG_I(MAC, "UE PUSCH PARAMS: nrOfLayers %d, ul_dmrs_symb_pos %d dmrs_config_type %d, ul_dmrs_scrambling_id %d, scid %d, num_dmrs_cdm_grps_no_data %d\n",
+      pusch_config_pdu->nrOfLayers,
+      pusch_config_pdu->ul_dmrs_symb_pos,
+      pusch_config_pdu->dmrs_config_type,
+      pusch_config_pdu->ul_dmrs_scrambling_id,
+      -1, //pusch_pdu->scid,
+      pusch_config_pdu->num_dmrs_cdm_grps_no_data);
+      LOG_I(MAC, "UE PUSCH PARAMS: dmrs_ports %d, resource_alloc %d, rb_start %d, rb_size %d, vrb_to_prb_mapping %d, frequency_hopping %d, tx_direct_current_location %d, uplink_frequency_shift_7p5khz %d, start_symbol_index %d, nr_of_symbols %d\n",
+      pusch_config_pdu->dmrs_ports,
+      pusch_config_pdu->resource_alloc,
+      pusch_config_pdu->rb_start,
+      pusch_config_pdu->rb_size,
+      pusch_config_pdu->vrb_to_prb_mapping,
+      -1, //pusch_pdu->frequency_hopping,
+      -1, //pusch_pdu->tx_direct_current_location,
+      pusch_config_pdu->uplink_frequency_shift_7p5khz,
+       pusch_config_pdu->start_symbol_index,
+      pusch_config_pdu->nr_of_symbols);
+  }
+
+#endif
+
+
 }
 
 /////////////////////////////////////
@@ -320,17 +366,17 @@ uint16_t nr_ue_process_rar(module_id_t mod_id,
       // frequency hopping
       freq_hopping = (unsigned char) (rar->UL_GRANT_1 >> 2);
 
-      #ifdef DEBUG_RAR
-      LOG_D(MAC, "[DEBUG_RAR] Received RAR with t_alloc %d f_alloc %d ta_command %d mcs %d freq_hopping %d tpc_command %d csi_req %d t_crnti %x \n",
+      //#ifdef DEBUG_RAR
+      LOG_I(MAC, "[DEBUG_RAR] Received RAR with t_alloc %d f_alloc %d ta_command %d mcs %d freq_hopping %d tpc_command %d csi_req %d t_crnti %x \n",
         Msg3_t_alloc,
         Msg3_f_alloc,
         ta_command,
         mcs,
         freq_hopping,
         tpc_command,
-        csi_req,
+        -1, //csi_req,
         ue_mac->t_crnti);
-      #endif
+      //#endif
 
       // Config Msg3 PDU
       nr_config_Msg3_pdu(ue_mac, Msg3_f_alloc, Msg3_t_alloc, mcs, freq_hopping);

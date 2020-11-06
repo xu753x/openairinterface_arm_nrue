@@ -708,6 +708,46 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
   // calling function to fill rar message
   nr_fill_rar(module_idP, ra, cc->RAR_pdu.payload, pusch_pdu);
 
+#if 1 //#ifdef LOG_PUSCH_PARAMES
+static int log_first = 0;
+ if (log_first == 0)
+  {
+    log_first = 1;
+  LOG_I(MAC, "pusch configure: rnti %d, bwpsize %d, bwpstart %d, subcarrier_spacing %d  cyclic_prefix %d\n",
+  pusch_pdu->rnti,
+  pusch_pdu->bwp_size,
+  pusch_pdu->bwp_start,
+  pusch_pdu->subcarrier_spacing,
+  pusch_pdu->cyclic_prefix);
+  LOG_I(MAC, "pusch configure: target_code_rate %d, qam_mod_order %d, mcs_index %d, mcs_table %d , transform_precoding %d, data_scrambling_id %d\n",
+  pusch_pdu->target_code_rate,
+  pusch_pdu->qam_mod_order,
+  pusch_pdu->mcs_index,
+  pusch_pdu->mcs_table,
+  pusch_pdu->transform_precoding,
+  pusch_pdu->data_scrambling_id);
+  LOG_I(MAC, "pusch configure: nrOfLayers %d, ul_dmrs_symb_pos %d dmrs_config_type %d, ul_dmrs_scrambling_id %d, scid %d, num_dmrs_cdm_grps_no_data %d\n",
+  pusch_pdu->nrOfLayers,
+  pusch_pdu->ul_dmrs_symb_pos,
+  pusch_pdu->dmrs_config_type,
+  pusch_pdu->ul_dmrs_scrambling_id,
+  pusch_pdu->scid,
+  pusch_pdu->num_dmrs_cdm_grps_no_data);
+  LOG_I(MAC, "pusch configure: dmrs_ports %d, resource_alloc %d, rb_start %d, rb_size %d, vrb_to_prb_mapping %d, frequency_hopping %d, tx_direct_current_location %d, uplink_frequency_shift_7p5khz %d, start_symbol_index %d, nr_of_symbols %d\n",
+  pusch_pdu->dmrs_ports,
+  pusch_pdu->resource_alloc,
+  pusch_pdu->rb_start,
+  pusch_pdu->rb_size,
+  pusch_pdu->vrb_to_prb_mapping,
+  pusch_pdu->frequency_hopping,
+  pusch_pdu->tx_direct_current_location,
+  pusch_pdu->uplink_frequency_shift_7p5khz,
+  pusch_pdu->start_symbol_index,
+  pusch_pdu->nr_of_symbols);
+  }
+#endif
+
+
 }
 
 // WIP
@@ -788,7 +828,7 @@ void nr_generate_Msg2(module_id_t module_idP,
       mcsIndex = 9;
     else
       mcsIndex = 0;
-
+  
     pdsch_pdu_rel15->pduBitmap = 0;
     pdsch_pdu_rel15->rnti = RA_rnti;
     pdsch_pdu_rel15->pduIndex = 0;
@@ -822,7 +862,7 @@ void nr_generate_Msg2(module_id_t module_idP,
     pdsch_pdu_rel15->dmrsPorts = 1;
     pdsch_pdu_rel15->resourceAlloc = 1;
     pdsch_pdu_rel15->rbStart = 0;
-    pdsch_pdu_rel15->rbSize = 6;
+    pdsch_pdu_rel15->rbSize = 16;
     pdsch_pdu_rel15->VRBtoPRBMapping = 0; // non interleaved
 
     for (int i=0; i<bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count; i++) {
@@ -925,7 +965,54 @@ void nr_generate_Msg2(module_id_t module_idP,
     uint8_t *vrb_map = cc[CC_id].vrb_map;
     for (int rb = 0; rb < pdsch_pdu_rel15->rbSize; rb++)
       vrb_map[rb + pdsch_pdu_rel15->rbStart] = 1;
+
+
+#if 1 // LOG_PDSCH_PARAMES
+   static int log_first_pdsch_ra = 0;
+   if (log_first_pdsch_ra == 0)
+   {
+      //log_first_pdsch_ra = 1;
+      LOG_I(MAC, "NB PDSCH PARAMS: RA rnti %d, bwp (%d, %d), scs %d, codewords %d, coderate %d, mod %d, mcs (%d, %d), rv %d, dataScramId %d, layers %d, tm %d, refPoint %d \n ",
+            pdsch_pdu_rel15->rnti,
+            pdsch_pdu_rel15->BWPSize,
+            pdsch_pdu_rel15->BWPStart,
+            pdsch_pdu_rel15->SubcarrierSpacing,
+            pdsch_pdu_rel15->NrOfCodewords,
+            pdsch_pdu_rel15->targetCodeRate[0],
+            pdsch_pdu_rel15->qamModOrder[0],
+            pdsch_pdu_rel15->mcsIndex[0],
+            pdsch_pdu_rel15->mcsTable[0],
+            pdsch_pdu_rel15->rvIndex[0],
+            pdsch_pdu_rel15->dataScramblingId,
+            pdsch_pdu_rel15->nrOfLayers,
+            pdsch_pdu_rel15->transmissionScheme,
+            pdsch_pdu_rel15->refPoint      
+            );
+      LOG_I(MAC, "NB PDSCH PARAMS: RA dlDmrsScramblingId %d, scid %d, numDmrsCdmGrpsNoData %d, dmrsPorts %d, resourceAlloc %d, rb (%d, %d), symb (%d, %d), dmrsType %d, dmrsPos %d, vrb2prb %d\n",
+            pdsch_pdu_rel15->dlDmrsScramblingId,
+            pdsch_pdu_rel15->SCID,
+            pdsch_pdu_rel15->numDmrsCdmGrpsNoData,
+            pdsch_pdu_rel15->dmrsPorts,
+            pdsch_pdu_rel15->resourceAlloc,
+            pdsch_pdu_rel15->rbStart,
+            pdsch_pdu_rel15->rbSize,
+            pdsch_pdu_rel15->StartSymbolIndex,
+            pdsch_pdu_rel15->NrOfSymbols,
+            pdsch_pdu_rel15->dmrsConfigType,
+            pdsch_pdu_rel15->dlDmrsSymbPos,
+            pdsch_pdu_rel15->VRBtoPRBMapping 
+            );
+   }
+#endif
+
   }
+
+
+
+
+
+
+
 }
 
 void nr_clear_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP){

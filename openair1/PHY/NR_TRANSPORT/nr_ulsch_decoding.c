@@ -514,7 +514,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
   A   = (harq_process->TBS)<<3;
 
-  LOG_D(PHY,"ULSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_rb %d, Qm %d, n_layers %d\n",harq_pid,A,G, mcs, n_layers, nb_rb, Qm, n_layers);
+  LOG_I(PHY,"ULSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_rb %d, Qm %d, n_layers %d\n",harq_pid,A,G, mcs, n_layers, nb_rb, Qm, n_layers);
 
   if (R<1024)
     Coderate = (float) R /(float) 1024;
@@ -656,5 +656,13 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     offset += (Kr_bytes - (harq_process->F>>3) - ((harq_process->C>1)?3:0));
     //////////////////////////////////////////////////////////////////////////////////////////
   }
+
+    //log_dump(PHY, harq_process->b, 8, LOG_DUMP_CHAR,"gnb pusch rx frame %d %d: ", frame, nr_tti_rx);
+
+
+
+  LOG_I(PHY,"ULSCH Decoding C %d, A %d, G %d, E %d, Kb %d, F %d, Zc %d, Kr %d, BG %d\n", harq_process->C, A, G, E, -1, harq_process->F, harq_process->Z, Kr, p_decParams->BG);
+  LOG_I(PHY,"ULSCH Decoding Kr_bytes %d, encLen %d\n", Kr_bytes, (3*8*Kr_bytes)+12);
+
   return 1;
 }
