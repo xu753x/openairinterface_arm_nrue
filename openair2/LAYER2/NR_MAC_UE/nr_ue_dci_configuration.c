@@ -287,7 +287,7 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
       if (ss->searchSpaceType->choice.ue_Specific){
         if(ss->searchSpaceType->choice.ue_Specific->dci_Formats == NR_SearchSpace__searchSpaceType__ue_Specific__dci_Formats_formats0_1_And_1_1){
           // Monitors DCI 01 and 11 scrambled with C-RNTI, or CS-RNTI(s), or SP-CSI-RNTI
-          if (get_softmodem_params()->phy_test == 1 && mac->crnti > 0) {
+          if (mac->ra_state == RA_SUCCEEDED && mac->crnti > 0) {
             LOG_D(MAC, "[DCI_CONFIG] Configure monitoring of PDCCH candidates in the user specific search space\n");
             rel15->num_dci_options = 2;
             rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_1;
@@ -326,5 +326,46 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
       AssertFatal(1 == 0, "[DCI_CONFIG] Unrecognized search space type...");
       break;
     }
+ 
+  if (dl_config->number_pdus > 0)
+  {
+
+    #if 0   // LOG_PDCCH_PARAMES
+    static int log_first = 0;
+    if(log_first == 0)
+    {
+        //log_first =1;
+        LOG_I(MAC, "UE PDCCH PARAMS: frame %d %d,  pdus %d, rnti %d, BWPSize %d, BWPStart %d, SubcarrierSpacing %d, CCE %d %d %d %d, L %d dci_length %d / %d, dci_format %d / %d, canditats %d\n",
+              frame,
+              slot,dl_config->number_pdus,
+              rel15->rnti,
+              rel15->BWPSize,
+              rel15->BWPStart,
+              rel15->SubcarrierSpacing,
+              rel15->CCE[0],rel15->CCE[1],rel15->CCE[2],rel15->CCE[3],
+              rel15->L[0],
+              rel15->dci_length_options[0],rel15->dci_length_options[1],
+              rel15->dci_format_options[0], rel15->dci_format_options[1],
+              rel15->number_of_candidates);
+        LOG_I(MAC, "UE PDCCH PARAMS: coreset:frequency_domain_resource %d %d %d %d %d %d\n", rel15->coreset.frequency_domain_resource[0],
+                      rel15->coreset.frequency_domain_resource[1],
+                      rel15->coreset.frequency_domain_resource[2],
+                      rel15->coreset.frequency_domain_resource[3],
+                      rel15->coreset.frequency_domain_resource[4],
+                      rel15->coreset.frequency_domain_resource[5]);
+        LOG_I(MAC, "UE PDCCH PARAMS: coreset:StartSymbolIndex %d duration %d CceRegMappingType %d RegBundleSize %d InterleaverSize %d ShiftIndex %d CoreSetType %d precoder_granularity %d, pdcch_dmrs_scrambling_id %d, scrambling_rnti %d\n",
+              rel15->coreset.StartSymbolIndex,
+              rel15->coreset.duration,
+              rel15->coreset.CceRegMappingType,
+              rel15->coreset.RegBundleSize,
+              rel15->coreset.InterleaverSize,
+              rel15->coreset.ShiftIndex,
+              rel15->coreset.CoreSetType,
+              rel15->coreset.precoder_granularity,
+              rel15->coreset.pdcch_dmrs_scrambling_id,
+              rel15->coreset.scrambling_rnti);
+              }
+#endif
+  }
   }
 }

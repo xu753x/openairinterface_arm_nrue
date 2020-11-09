@@ -433,7 +433,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
     if (beamforming_mode==0){
       if (dlsch0_harq->mimo_mode<NR_DUALSTREAM) {
 
-        write_output("ch_estext_first.m","ch_estext",&pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][1*16*12],5*16*12,1,13);
+        //write_output("ch_estext_first.m","ch_estext",&pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][1*16*12],5*16*12,1,13);
         nr_dlsch_channel_level(pdsch_vars[eNB_id]->dl_ch_estimates_ext,
 			       frame_parms,
 			       avg,

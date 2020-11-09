@@ -1752,7 +1752,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 
   if (dci_cnt > 0) {
 
-    LOG_D(PHY,"[UE %d] Frame %d, nr_tti_rx %d: found %d DCIs\n", ue->Mod_id, frame_rx, nr_tti_rx, dci_cnt);
+    LOG_I(PHY,"[UE %d] Frame %d, nr_tti_rx %d: found %d DCIs\n", ue->Mod_id, frame_rx, nr_tti_rx, dci_cnt);
 
     NR_UE_DLSCH_t *dlsch = NULL;
     if (ue->dlsch[ue->current_thread_id[nr_tti_rx]][gNB_id][0]->active == 1){

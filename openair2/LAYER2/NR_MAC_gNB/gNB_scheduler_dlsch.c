@@ -499,6 +499,7 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
                                                     lcid,
                                                     0,
                                                     0);
+  sched_ctrl->rlc_status[lcid].bytes_in_buffer = 500;
   LOG_I(MAC,
         "%d.%d, DTCH%d->DLSCH, RLC status %d bytes\n",
         frame,
@@ -750,6 +751,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
       unsigned char sdu_lcids[NB_RB_MAX] = {0};
       const int lcid = DL_SCH_LCID_DTCH;
       if (sched_ctrl->num_total_bytes > 0) {
+        #if 0
         LOG_D(MAC,
               "[gNB %d][USER-PLANE DEFAULT DRB] Frame %d : DTCH->DLSCH, Requesting "
               "%d bytes from RLC (lcid %d total hdr len %d), TBS: %d \n \n",
@@ -784,6 +786,18 @@ void nr_schedule_ue_spec(module_id_t module_id,
         header_length_total += header_length_last;
 
         num_sdus++;
+        #else
+        LOG_D(MAC, "Configuring DL_TX in %d.%d: random data\n", frame, slot);
+        // fill dlsch_buffer with random data
+        for (int i = 0; i < TBS; i++)
+          mac_sdus[i] = (unsigned char) (lrand48()&0xff);
+        sdu_lcids[0] = 0x3f; // DRB
+        sdu_lengths[0] = TBS - ta_len - 3;
+        header_length_total += 2 + (sdu_lengths[0] >= 128);
+        sdu_length_total += sdu_lengths[0];
+        num_sdus +=1;
+
+        #endif
 
         //ue_sched_ctl->uplane_inactivity_timer = 0;
       }
