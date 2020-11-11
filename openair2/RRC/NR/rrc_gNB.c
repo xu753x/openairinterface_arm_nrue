@@ -733,7 +733,8 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
                    PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP));
         return -1;
     }
-
+    xer_fprint(stdout,&asn_DEF_NR_DL_CCCH_Message,(void *)dl_ccch_msg);
+    
     if (ul_ccch_msg->message.present == NR_UL_CCCH_MessageType_PR_c1) {
         switch (ul_ccch_msg->message.choice.c1->present) {
             case NR_UL_CCCH_MessageType__c1_PR_NOTHING:
