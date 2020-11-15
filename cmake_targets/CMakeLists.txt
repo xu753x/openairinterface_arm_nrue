@@ -23,6 +23,7 @@
 
 cmake_minimum_required (VERSION 3.0)
 
+include("macros.cmake")
 
 # System packages that are required
 # We use either the cmake buildin, in ubuntu are in: /usr/share/cmake*/Modules/
@@ -177,89 +178,6 @@ else (CUDA_FOUND)
    message ("No CUDA tool installed")
 endif ()
 
-
-###########################################
-# macros to define options as there is numerous options in oai
-################################################
-macro(add_option name val helpstr)
-  if(DEFINED ${name})
-    set(value ${${name}})
-  else(DEFINED ${name})
-    set(value ${val})
-  endif()
-  set(${name} ${value} CACHE STRING "${helpstr}")
-  add_definitions("-D${name}=${value}")
-endmacro(add_option)
-
-macro(add_boolean_option name val helpstr)
-  if(DEFINED ${name})
-    set(value ${${name}})
-  else(DEFINED ${name})
-    set(value ${val})
-  endif()
-  set(${name} ${value} CACHE STRING "${helpstr}")
-  set_property(CACHE ${name} PROPERTY TYPE BOOL)
-  if (${value})
-    add_definitions("-D${name}")
-  endif (${value})
-endmacro(add_boolean_option)
-
-macro(add_integer_option name val helpstr)
-  if(DEFINED ${name})
-    set(value ${${name}})
-  else(DEFINED ${name})
-    set(value ${val})
-  endif()
-  set(${name} ${value} CACHE STRING "${helpstr}")
-  add_definitions("-D${name}=${value}")
-endmacro(add_integer_option)
-
-macro(add_list1_option name val helpstr)
-  if(DEFINED ${name})
-    set(value ${${name}})
-  else(DEFINED ${name})
-    set(value ${val})
-  endif()
-  set(${name} ${value} CACHE STRING "${helpstr}")
-  set_property(CACHE ${name} PROPERTY STRINGS ${ARGN})
-  if(NOT "${value}" STREQUAL "False")
-    add_definitions("-D${name}=${value}")
-  endif()
-endmacro(add_list1_option)
-
-macro(add_list2_option name val helpstr)
-  if(DEFINED ${name})
-    set(value ${${name}})
-  else(DEFINED ${name})
-    set(value ${val})
-  endif()
-  set(${name} ${value} CACHE STRING "${helpstr}")
-  set_property(CACHE ${name} PROPERTY STRINGS ${ARGN})
-  if(NOT "${value}" STREQUAL "False")
-    add_definitions("-D${value}=1")
-  endif()
-endmacro(add_list2_option)
-
-macro(add_list_string_option name val helpstr)
-  if(DEFINED ${name})
-    set(value ${${name}})
-  else(DEFINED ${name})
-    set(value ${val})
-  endif()
-  set(${name} ${value} CACHE STRING "${helpstr}")
-  set_property(CACHE ${name} PROPERTY STRINGS ${ARGN})
-  if(NOT "${value}" STREQUAL "False")
-    add_definitions("-D${name}=\"${value}\"")
-  endif()
-endmacro(add_list_string_option)
-
-function(make_version VERSION_VALUE)
-  math(EXPR RESULT "0")
-  foreach (ARG ${ARGN})
-    math(EXPR RESULT "${RESULT} * 16 + ${ARG}")
-  endforeach()
-  set(${VERSION_VALUE} "${RESULT}" PARENT_SCOPE)
-endfunction()
 ####################################################
 # compilation flags
 #############################################
