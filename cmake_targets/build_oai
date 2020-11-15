@@ -51,7 +51,6 @@ HW="None"
 TP="None"
 EPC=0
 VERBOSE_COMPILE=0
-CFLAGS_PROCESSOR_USER=""
 RUN_GROUP=0
 TEST_CASE_GROUP=""
 BUILD_DOXYGEN=0
@@ -60,13 +59,8 @@ T_TRACER="True"
 DISABLE_HARDWARE_DEPENDENCY="False"
 CMAKE_BUILD_TYPE=""
 CMAKE_CMD="$CMAKE"
-UE_AUTOTEST_TRACE="False"
-UE_DEBUG_TRACE="False"
-UE_TIMING_TRACE="False"
-USRP_REC_PLAY="False"
 BUILD_ECLIPSE=0
 NR="False"
-ITTI_SIM="False"
 OPTIONAL_LIBRARIES="telnetsrv enbscope uescope nrscope msc"
 trap handle_ctrl_c INT
 
@@ -263,7 +257,7 @@ function main() {
             echo_info "Will compile NR UE"
             shift;;
        --mu)
-            UE_EXPANSION="True"
+            CMAKE_CMD+=" -DUE_EXPANSION=True -DPRE_SCD_THREAD=True"
             echo_info "Will compile with UE_EXPANSION"
             shift;;
        --UE-conf-nvram)
@@ -276,13 +270,13 @@ function main() {
             # Use OAI_USRP as the key word USRP is used inside UHD driver           
             case "$2" in
                 "EXMIMO")
-                    HW="EXMIMO"
+                    CMAKE_CMD+=" -DRF_BOARD=\"EXMIMO\""
                     ;;
                 "USRP" | "BLADERF" | "LMSSDR" | "IRIS" | "ADRV9371_ZC706" | "SIMU")
-                    HW="OAI_"$2
+                    CMAKE_CMD+=" -DRF_BOARD=\"OAI_$2\""
                     ;;
                 "None")
-                    HW="None"
+                    CMAKE_CMD+=" -DRF_BOARD=\"None\""
                     ;;
                 *)
                     echo_fatal "Unknown HW type $HW: exit..."
@@ -309,6 +303,7 @@ function main() {
        -V | --vcd)
             echo_info "Setting gtk-wave output"
             VCD_TIMING=1
+            CMAKE_CMD+=" -DENABLE_VCD_FIFO=True"
             EXE_ARGUMENTS="$EXE_ARGUMENTS -V"
             shift;;
        -x | --xforms)
@@ -329,8 +324,9 @@ function main() {
             echo_info "Will compile with verbose instructions"
             shift;;
        --cflags_processor)
-            CFLAGS_PROCESSOR_USER=$2
-            echo_info "Setting CPU FLAGS from USER to: $CFLAGS_PROCESSOR_USER"
+            # Prepend(!) flags to cmake program call
+            CMAKE_CMD="CFLAGS=\"$2\" $CMAKE_CMD"
+            echo_info "Setting CPU FLAGS from USER to: $2"
             shift 2;;
        --build-doxygen)
 	        BUILD_DOXYGEN=1
@@ -341,23 +337,28 @@ function main() {
             echo_info "Will build Coverity-Scan objects for upload"
             shift;;
        --disable-deadline)
+            CMAKE_CMD+=" -DDEADLINE_SCHEDULER=False"
             DEADLINE_SCHEDULER_FLAG_USER="False"
             echo_info "Disabling the usage of deadline scheduler"
             shift 1;;
        --enable-deadline)
+            CMAKE_CMD+=" -DDEADLINE_SCHEDULER=True"
             DEADLINE_SCHEDULER_FLAG_USER="True"
             echo_info "Enabling the usage of deadline scheduler"
             shift 1;;
        --enable-cpu-affinity)
+            CMAKE_CMD+=" -DCPU_AFFINITY=True"
             CPU_AFFINITY_FLAG_USER="True"
             echo_info "Enabling CPU Affinity (only valid when not using deadline scheduler)"
             shift 1;;
        --disable-cpu-affinity)
+            CMAKE_CMD+=" -DCPU_AFFINITY=False"
             CPU_AFFINITY_FLAG_USER="False"
             echo_info "Disabling CPU Affinity (only valid when not using deadline scheduler)"
             shift 1;;
        --disable-T-Tracer)
             T_TRACER="False"
+            CMAKE_CMD+=" -DT_TRACER=False"
             echo_info "Disabling the T tracer"
             shift 1;;
        --disable-hardware-dependency)
@@ -365,15 +366,15 @@ function main() {
             DISABLE_HARDWARE_DEPENDENCY="True"
             shift 1;;
        --ue-autotest-trace)
-            UE_AUTOTEST_TRACE="True"
+            CMAKE_CMD+=" -DUE_AUTOTEST_TRACE=True"
             echo_info "Enabling autotest specific trace for UE"
             shift 1;;
        --ue-trace)
-            UE_DEBUG_TRACE="True"
+            CMAKE_CMD+=" -DUE_DEBUG_TRACE=True"
             echo_info "Enabling UE trace for debug"
             shift 1;;
        --ue-timing)
-            UE_TIMING_TRACE="True"
+            CMAKE_CMD+=" -DUE_TIMING_TRACE=True"
             echo_info "Enabling UE timing trace"
             shift 1;;
        --uhd-images-dir)
@@ -405,11 +406,11 @@ function main() {
             fi
             shift 2;;		
         --usrp-recplay)
-            USRP_REC_PLAY="True"
+            CMAKE_CMD+=" -DUSRP_REC_PLAY=True"
             echo_info "Enabling USRP record playback mode"
             shift 1;;
         -k | --skip-shared-libraries)
-            SKIP_SHARED_LIB_FLAG="True"
+            CMAKE_CMD+=" -DSKIP_SHARED_LIB_FLAG=True"
             echo_info "Skipping build of shared libraries, rfsimulator and transport protocol libraries"
             shift;;
     --ninja)
@@ -418,7 +419,7 @@ function main() {
 	shift;;
       --ittiSIM)
             ittiSIM=1
-            ITTI_SIM="True"
+            CMAKE_CMD+=" -DITTI_SIM=True"
             echo_info "Will compile itti simulator"
             shift;;
         -h | --help)
@@ -444,7 +445,9 @@ function main() {
       fi
   fi
 
-  CMAKE_CMD="$CMAKE_CMD .."
+  # We use the CMakeLists.txt in cmake_targets, but (for historical reasons)
+  # build in a subdirectory XYZ/build, e.g., ran_build/build, hence the ../..
+  CMAKE_CMD="$CMAKE_CMD ../.."
   echo_info "CMAKE_CMD=$CMAKE_CMD"
 
   ########################################################
@@ -582,29 +585,6 @@ function main() {
   if [ "$eNB" = "1" -o "$eNBocp" = "1" -o "$UE" = "1" -o "$gNB" = "1" -o "$nrUE" = "1" -o "$HW" = "EXMIMO" -o "$ittiSIM" = "1" ] ; then
 
     # softmodem compilation
-
-    cmake_file=$DIR/$build_dir/CMakeLists.txt
-    echo "cmake_minimum_required(VERSION 2.8)"                             >  $cmake_file
-    echo "project (OpenAirInterface)"                                    >> $cmake_file
-    echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )"                     >> $cmake_file
-    echo "set ( CFLAGS_PROCESSOR_USER \"$CFLAGS_PROCESSOR_USER\" )"       >> $cmake_file
-    echo "set ( UE_EXPANSION $UE_EXPANSION )"                             >> $cmake_file
-#    echo "set ( PHY_TX_THREAD $UE_EXPANSION )"                            >> $cmake_file
-    echo "set ( PRE_SCD_THREAD $UE_EXPANSION )"                           >> $cmake_file
-    echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )"                            >> $cmake_file
-    echo "set ( RF_BOARD \"${HW}\")"                                      >> $cmake_file
-    echo "set ( TRANSP_PRO \"${TP}\")"                                    >> $cmake_file
-    echo "set ( PACKAGE_NAME \"${exec}\")"                                >> $cmake_file
-    echo "set ( DEADLINE_SCHEDULER \"${DEADLINE_SCHEDULER_FLAG_USER}\" )" >> $cmake_file
-    echo "set ( CPU_AFFINITY \"${CPU_AFFINITY_FLAG_USER}\" )"             >> $cmake_file
-    echo "set ( T_TRACER $T_TRACER )"                                     >> $cmake_file
-    echo "set ( UE_AUTOTEST_TRACE $UE_AUTOTEST_TRACE )"                   >> $cmake_file
-    echo "set ( UE_DEBUG_TRACE $UE_DEBUG_TRACE )"                         >> $cmake_file
-    echo "set ( UE_TIMING_TRACE $UE_TIMING_TRACE )"                       >> $cmake_file
-    echo "set ( USRP_REC_PLAY $USRP_REC_PLAY )"                           >> $cmake_file
-    echo "set ( SKIP_SHARED_LIB_FLAG $SKIP_SHARED_LIB_FLAG )"             >> $cmake_file
-    echo "set ( ITTI_SIM $ITTI_SIM )"                                     >> $cmake_file
-    echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)'         >> $cmake_file
     cd  $DIR/$build_dir/build
     eval $CMAKE_CMD
 

@@ -21,7 +21,9 @@
 
 # Author: laurent THOMAS, Lionel GAUTHIER
 
-cmake_minimum_required (VERSION 3.0)
+# Ubuntu 16.04 has 3.5
+cmake_minimum_required (VERSION 3.5)
+project (OpenAirInterface VERSION 1.2.2 LANGUAGES C CXX)
 
 include("macros.cmake")
 
@@ -47,6 +49,7 @@ pkg_search_module(CRYPTO libcrypto REQUIRED)
 include_directories(${CRYPTO_INCLUDE_DIRS})
 
 #use native cmake method as this package is not in pkg-config
+add_list2_option(RF_BOARD "EXMIMO" "RF head type" "None" "OAI_USRP" "OAI_BLADERF" "OAI_LMSSDR" "OAI_SIMU")
 if (${RF_BOARD} STREQUAL "OAI_USRP")
   find_package(Boost REQUIRED)
   include_directories(${LIBBOOST_INCLUDE_DIR})
@@ -150,7 +153,6 @@ set (OPENAIR3_DIR    ${OPENAIR_DIR}/openair3)
 set (OPENAIR_CMAKE   ${OPENAIR_DIR}/cmake_targets)
 set (OPENAIR_BIN_DIR ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY})
 
-project (OpenAirInterface)
 
 
 
@@ -752,8 +754,6 @@ add_library(F1AP
 ###################################
 add_list1_option(NB_ANTENNAS_RX "2" "Number of antennas in reception" "1" "2" "4")
 add_list1_option(NB_ANTENNAS_TX "4" "Number of antennas in transmission" "1" "2" "4")
-
-add_list2_option(RF_BOARD "EXMIMO" "RF head type" "None" "OAI_USRP" "OAI_BLADERF" "OAI_LMSSDR" "OAI_SIMU")
 
 
 
