@@ -379,7 +379,10 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
   }
   G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs,mod_order,rel15->nrOfLayers);
 
-  LOG_D(PHY,"dlsch coding A %d G %d mod_order %d\n", A,G, mod_order);
+  LOG_I(PHY,"frame %d %d dlsch coding A %d G %d mod_order %d\n",frame, slot, A,G, mod_order);
+
+  LOG_I(PHY,"dlsch coding nb_rb %d nb_symb_sch %d nb_re_dmrs %d, length_dmrs %d, harq_process->Nl = %d, mod %d\n", nb_rb    ,nb_symb_sch, nb_re_dmrs,length_dmrs, rel15->nrOfLayers, mod_order);
+
 
   //  if (dlsch->harq_processes[harq_pid]->Ndi == 1) {  // this is a new packet
   if (dlsch->harq_processes[harq_pid]->round == 0) {  // this is a new packet
@@ -565,6 +568,8 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
     r_offset += E;
   }
 
+  LOG_D(PHY,"dlsch coding  C %d, A %d, G %d, E %d, Kb %d, F %d, Zc %d, Kr %d, BG %d\n", dlsch->harq_processes[harq_pid]->C, A, G, E, Kb, F, *Zc, Kr, BG);
+  LOG_D(PHY,"dlsch coding  Kr_bytes %d, encLen %d\n", Kr>>3, (3*Kr)+12);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ENCODING, VCD_FUNCTION_OUT);
 
   return 0;

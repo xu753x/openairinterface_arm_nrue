@@ -341,6 +341,11 @@ void nr_ue_pbch_procedures(uint8_t gNB_id,
       ue->UE_mode[gNB_id] = PRACH;
       ue->prach_resources[gNB_id]->sync_frame = frame_rx;
       ue->prach_resources[gNB_id]->init_msg1 = 0;
+    LOG_I(PHY,"[UE %d] frame %d, nr_tti_rx %d, outofsync, return to PRACH\n",
+    ue->Mod_id,
+    frame_rx,
+    nr_tti_rx
+    );  
     }
 
 #ifdef DEBUG_PHY_PROC
@@ -772,8 +777,8 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
                       return -1;
       }
       else { // This is to adjust the llr offset in the case of skipping over a dmrs symbol (i.e. in case of no PDSCH REs in DMRS)
-	if      (pdsch == RA_PDSCH) ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->llr_offset[m]=ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->llr_offset[m-1];
-	else if (pdsch == PDSCH) {
+	if      (dlsch0->harq_processes[harq_pid]->n_dmrs_cdm_groups == 2) ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->llr_offset[m]=ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->llr_offset[m-1];
+	else if (dlsch0->harq_processes[harq_pid]->n_dmrs_cdm_groups == 1) {
           if (nr_rx_pdsch(ue,
                     pdsch,
                     eNB_id,
@@ -804,6 +809,45 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
           proc->first_symbol_available = 1;
 	}
     } // CRNTI active
+
+    #if 1 // LOG_PDSCH_PARAMES
+   static int log_first_pdsch_ue = 0;
+   if (log_first_pdsch_ue == 0)
+   {
+      //log_first_pdsch_ue = 1;
+      LOG_I(MAC, "UE PDSCH PARAMS: frame %d %d, rnti %d, bwp (%d, %d), scs %d, codewords %d, coderate %d, mod %d, mcs (%d, %d), rv %d, dataScramId %d, layers %d, tm %d, refPoint %d \n ",
+            proc->frame_rx, nr_tti_rx,
+            dlsch0->rnti,
+            dlsch0->harq_processes[harq_pid]->BWPSize,
+            dlsch0->harq_processes[harq_pid]->BWPStart,
+            -1,//dlsch0->harq_processes[harq_pid]->SubcarrierSpacing,
+            -1, //dlsch0->harq_processes[harq_pid]->NrOfCodewords,
+            dlsch0->harq_processes[harq_pid]->R,
+            dlsch0->harq_processes[harq_pid]->Qm,
+            dlsch0->harq_processes[harq_pid]->mcs,
+            dlsch0->harq_processes[harq_pid]->mcs_table,
+            dlsch0->harq_processes[harq_pid]->rvidx,
+            -1, //dlsch0->harq_processes[harq_pid]->data_scrambling_id,
+            dlsch0->harq_processes[harq_pid]->Nl,
+            dlsch0->harq_processes[harq_pid]->mimo_mode,
+            -1//dlsch0->harq_processes[harq_pid]->refPoint      
+            );
+      LOG_I(MAC, "UE PDSCH PARAMS: dlDmrsScramblingId %d, scid %d, numDmrsCdmGrpsNoData %d, dmrsPorts %d, resourceAlloc %d, rb (%d, %d), symb (%d, %d), dmrsType %d, dmrsPos %d, vrb2prb %d\n",
+            -1, //dlsch0->harq_processes[harq_pid]->dmrs_scrambling_id[0],
+            -1, //dlsch0->harq_processes[harq_pid]->SCID,
+            dlsch0->harq_processes[harq_pid]->n_dmrs_cdm_groups,
+            -1, //dlsch0->harq_processes[harq_pid]->dmrsPorts,
+            -1, //dlsch0->harq_processes[harq_pid]->resourceAlloc
+            dlsch0->harq_processes[harq_pid]->start_rb,
+            dlsch0->harq_processes[harq_pid]->nb_rb,
+            dlsch0->harq_processes[harq_pid]->start_symbol,
+            dlsch0->harq_processes[harq_pid]->nb_symbols,
+            dlsch0->harq_processes[harq_pid]->dmrsConfigType,
+            dlsch0->harq_processes[harq_pid]->dlDmrsSymbPos,
+            dlsch0->harq_processes[harq_pid]->vrb_type 
+            );
+   }
+#endif
   }
   return 0;
 }
