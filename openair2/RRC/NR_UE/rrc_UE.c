@@ -1418,7 +1418,7 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_CCCH, VCD_FUNCTION_OUT);
       return -1;
     }
-    
+    NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].State = NR_RRC_SI_RECEIVED;
     if (dl_ccch_msg->message.present == NR_DL_CCCH_MessageType_PR_c1) {
       if (NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].State == NR_RRC_SI_RECEIVED) {
         switch (dl_ccch_msg->message.choice.c1->present) {

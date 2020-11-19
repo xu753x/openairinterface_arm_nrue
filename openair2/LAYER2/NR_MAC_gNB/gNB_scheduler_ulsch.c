@@ -236,7 +236,7 @@ void nr_process_mac_pdu(
                 }
                 else{
                   mac_rlc_data_ind(module_idP,
-                      rnti,
+                      0x1234,
                       module_idP,
                       frameP,
                       ENB_FLAG_YES,
