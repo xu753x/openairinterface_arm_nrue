@@ -226,11 +226,11 @@ int encodeNasMsg(UENAS_msg *msg, uint8_t *buffer, uint32_t len) { //QUES:UENAS_m
 
   switch(msg->header.message_type) { 
     case IDENTITY_RESPONSE: {
-      encode_result = encode_IdentityresponseIMSI(&msg->identity_response, buffer, len);
+      encode_result = encode_identity_response(&msg->identity_response, buffer, len);
       break;
     }
     case AUTHENTICATION_RESPONSE: {
-      encode_result = encode_authenticationresponse(&msg->authentication_response, buffer, len);
+      encode_result = encode_authentication_response(&msg->authentication_response, buffer, len);
       break;
     }
   }
