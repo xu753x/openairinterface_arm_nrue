@@ -270,36 +270,36 @@ static int _emm_msg_encode_header(const emm_msg_header_t *header,
 
 int encode_IdentityresponseIMSI(IdentityresponseIMSI_t *identity_response, uint8_t *buffer, uint32_t len)
 {
-  int encoded = 0;
-  int encode_result = 0;
+  // int encoded = 0;
+  // int encode_result = 0;
 
-  /* Checking IEI and pointer */
-  CHECK_PDU_POINTER_AND_LENGTH_ENCODER(buffer, IDENTITY_RESPONSE_MINIMUM_LENGTH, len);
+  // /* Checking IEI and pointer */
+  // CHECK_PDU_POINTER_AND_LENGTH_ENCODER(buffer, IDENTITY_RESPONSE_MINIMUM_LENGTH, len);
 
-  if ((encode_result =
-         encode_mobile_identity(&identity_response->mobileidentity, 0, buffer +
-                                encoded, len - encoded)) < 0)        //Return in case of error
-    return encode_result;
-  else
-    encoded += encode_result;
+  // if ((encode_result =
+  //        encode_mobile_identity(&identity_response->mobileidentity, 0, buffer +
+  //                               encoded, len - encoded)) < 0)        //Return in case of error
+  //   return encode_result;
+  // else
+  //   encoded += encode_result;
 
-  return encoded;
+  // return encoded;
 }
 
 int encode_authenticationresponse(authenticationresponse_t *authentication_response, uint8_t *buffer, uint32_t len)
 {
-  int encoded = 0;
-  int encode_result = 0;
+  // int encoded = 0;
+  // int encode_result = 0;
 
-  /* Checking IEI and pointer */
-  CHECK_PDU_POINTER_AND_LENGTH_ENCODER(buffer, AUTHENTICATION_RESPONSE_MINIMUM_LENGTH, len);
+  // /* Checking IEI and pointer */
+  // CHECK_PDU_POINTER_AND_LENGTH_ENCODER(buffer, AUTHENTICATION_RESPONSE_MINIMUM_LENGTH, len);
 
-  if ((encode_result =
-         encode_authentication_response_parameter(&authentication_response->authenticationresponseparameter,
-             0, buffer + encoded, len - encoded)) < 0)        //Return in case of error
-    return encode_result;
-  else
-    encoded += encode_result;
+  // if ((encode_result =
+  //        encode_authentication_response_parameter(&authentication_response->authenticationresponseparameter,
+  //            0, buffer + encoded, len - encoded)) < 0)        //Return in case of error
+  //   return encode_result;
+  // else
+  //   encoded += encode_result;
 
-  return encoded;
+  // return encoded;
 }
