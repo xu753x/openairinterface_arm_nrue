@@ -288,10 +288,10 @@ typedef struct {
 
 // the message continues with the identity value, depending on identity type, see TS 14.501, 9.11.3.4
 typedef struct __attribute__((packed)) {
-  Extendedprotocoldiscriminator_t epd:8;
-  Security_header_t sh:8;
-  SGSmobilitymanagementmessages_t mt:8;
-  uint16_t len;
+  Extendedprotocoldiscriminator_t epd:8; //CUC:√
+  Security_header_t sh:8;//√
+  SGSmobilitymanagementmessages_t mt:8;//√
+  uint16_t len;//√
 }
 Identityresponse_t;
 

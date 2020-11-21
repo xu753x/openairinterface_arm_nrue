@@ -33,6 +33,7 @@
 #include "TLVEncoder.h"
 #include "NR_NAS_defs.h"
 #include "nas_itti_messaging.h"
+#include "nr_nas_msg_sim.h"
 
 typedef union {
   emm_msg_header_t header;
@@ -44,9 +45,9 @@ typedef union {
 
 void *nas_nrue_task(void *args_p);
 void nr_nas_proc_dl_transfer_ind (UENAS_msg *msg, Byte_t *data, uint32_t len);
-int decodeNasMsg(UENAS_msg *msg, uint8_t *buffer, uint32_t len);
+int mm_msg_decode(MM_msg *mm_msg, uint8_t *buffer, uint32_t len);
 int encodeNasMsg(UENAS_msg *msg, uint8_t *buffer, uint32_t len);
-static int _emm_msg_decode_header(emm_msg_header_t *header, const uint8_t *buffer, uint32_t len); //QUES: defined in emm_msg.c  and no check
+static int _nas_mm_msg_encode_header(emm_msg_header_t *header, const uint8_t *buffer, uint32_t len); //QUES: defined in emm_msg.c  and no check
 static int _emm_msg_encode_header(const emm_msg_header_t *header, uint8_t *buffer, uint32_t len);
 int encode_IdentityresponseIMSI(IdentityresponseIMSI_t *identity_response, uint8_t *buffer, uint32_t len);
 int encode_authenticationresponse(authenticationresponse_t *authentication_response, uint8_t *buffer, uint32_t len);

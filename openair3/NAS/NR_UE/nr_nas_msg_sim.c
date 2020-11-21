@@ -87,6 +87,10 @@ int mm_msg_encode(MM_msg *mm_msg, uint8_t *buffer, uint32_t len) {
       encode_result = encode_registration_request(&mm_msg->registration_request, buffer, len);
       break;
 
+    case Identityresponse:
+      encode_result = encode_noidentity_response(&mm_msg->identity_response, buffer, len);
+      break;
+
     default:
       LOG_TRACE(ERROR, "EMM-MSG   - Unexpected message type: 0x%x",
     		  mm_msg->header.message_type);

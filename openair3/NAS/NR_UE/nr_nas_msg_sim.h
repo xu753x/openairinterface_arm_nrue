@@ -33,7 +33,8 @@
 #define __NR_NAS_MSG_SIM_H__
 
 #include "RegistrationRequest.h"
-#include "as_message.h"
+#include "as_message.h
+#include "nas_nrue_dencode.h"
 
 
 #define PLAIN_5GS_MSG                                      0b0000
@@ -69,6 +70,7 @@ typedef struct {
 typedef union {
   mm_msg_header_t                        header;
   registration_request_msg               registration_request;
+  noidentity_identity_response_msg       identity_response;
 } MM_msg;
 
 
