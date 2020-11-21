@@ -190,34 +190,34 @@ void nr_nas_proc_dl_transfer_ind (MM_msg *msg,  Byte_t *data, uint32_t len) { //
   }
 }
 
-// #include "nr_nas_msg_sim.h"
+#include "nr_nas_msg_sim.h"
 
-// int mm_msg_decode(MM_msg *mm_msg, uint8_t *buffer, uint32_t len) {
-//   int header_result;
-//   int decode_result=0;
-//   uint8_t msg_type = mm_msg->header.message_type;
+int mm_msg_decode(MM_msg *mm_msg, uint8_t *buffer, uint32_t len) {
+  int header_result;
+  int decode_result=0;
+  uint8_t msg_type = mm_msg->header.message_type;
 
 
-//   /* First decode the EMM message header */
-//   header_result = _nas_mm_msg_decode_header(&mm_msg->header, buffer, len);
+  /* First decode the EMM message header */
+  header_result = _nas_mm_msg_decode_header(&mm_msg->header, buffer, len);
 
-//   if (header_result < 0) {
-//     LOG_TRACE(ERROR, "NR_UE   - Failed to decode EMM message header "
-//               "(%d)", header_result);
-//     LOG_FUNC_RETURN(header_result);
-//   }
+  if (header_result < 0) {
+    LOG_TRACE(ERROR, "NR_UE   - Failed to decode EMM message header "
+              "(%d)", header_result);
+    LOG_FUNC_RETURN(header_result);
+  }
 
-//   buffer += header_result;
-//   len -= header_result;
+  buffer += header_result;
+  len -= header_result;
 
-//   LOG_TRACE(INFO, "NR_UE   - Message Type 0x%02x", msg_type);
+  LOG_TRACE(INFO, "NR_UE   - Message Type 0x%02x", msg_type);
 
-//   switch(msg->header.message_type) { 
+  switch(msg->header.message_type) { 
 
-//   }
+  }
 
-//   LOG_FUNC_RETURN (header_result + decode_result);
-// }
+  LOG_FUNC_RETURN (header_result + decode_result);
+}
 
 // int encodeNasMsg(UENAS_msg *msg, uint8_t *buffer, uint32_t len) { //QUES:UENAS_msg *msg
 //   int header_result;
@@ -248,7 +248,7 @@ void nr_nas_proc_dl_transfer_ind (MM_msg *msg,  Byte_t *data, uint32_t len) { //
 //   LOG_FUNC_RETURN (header_result + encode_result);
 // }
 
-static int _nas_mm_msg_decode_header(mm_msg_header_t *header,,
+static int _nas_mm_msg_decode_header(mm_msg_header_t *header,
                                   const uint8_t *buffer, uint32_t len) {
   int size = 0;
 
