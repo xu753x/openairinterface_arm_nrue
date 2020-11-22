@@ -276,6 +276,7 @@ static int _nas_mm_msg_decode_header(mm_msg_header_t *header,
   return (size);
 }
 
+<<<<<<< HEAD
 // static int _emm_msg_encode_header(const emm_msg_header_t *header,
 //                                   uint8_t *buffer, uint32_t len) {
 //   int size = 0;
@@ -290,3 +291,40 @@ static int _nas_mm_msg_decode_header(mm_msg_header_t *header,
 //   ENCODE_U8(buffer + size, header->message_type, size);
 //   return (size);
 // }
+=======
+int encode_IdentityresponseIMSI(IdentityresponseIMSI_t *identity_response, uint8_t *buffer, uint32_t len)
+{
+  int encoded = 0;
+  int encode_result = 0;
+
+  /* Checking IEI and pointer */
+  CHECK_PDU_POINTER_AND_LENGTH_ENCODER(buffer, IDENTITY_RESPONSE_MINIMUM_LENGTH, len);
+
+  if ((encode_result =
+         encode_mobile_identity(&identity_response->mobileidentity, 0, buffer +
+                                encoded, len - encoded)) < 0)        //Return in case of error
+    return encode_result;
+  else
+    encoded += encode_result;
+
+  return encoded;
+}
+
+int encode_authenticationresponse(authenticationresponse_t *authentication_response, uint8_t *buffer, uint32_t len)
+{
+  int encoded = 0;
+  int encode_result = 0;
+
+  /* Checking IEI and pointer */
+  CHECK_PDU_POINTER_AND_LENGTH_ENCODER(buffer, AUTHENTICATION_RESPONSE_MINIMUM_LENGTH, len);
+
+  if ((encode_result =
+         encode_authentication_response_parameter(&authentication_response->authenticationresponseparameter,
+             0, buffer + encoded, len - encoded)) < 0)        //Return in case of error
+    return encode_result;
+  else
+    encoded += encode_result;
+
+  return encoded;
+}
+>>>>>>> parent of d659e98df... Update nas_nrue_task.c
