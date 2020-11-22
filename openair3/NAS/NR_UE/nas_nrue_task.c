@@ -20,7 +20,7 @@
  */
 
 #define NAS_BUILT_IN_UE 1 //QUES: #undef
-#define __LITTLE_ENDIAN_BITFIELD 1
+// #define __LITTLE_ENDIAN_BITFIELD 1
 
 #include "utils.h"
 # include "assertions.h"
@@ -158,7 +158,7 @@ void nr_nas_proc_dl_transfer_ind (UENAS_msg *msg,  Byte_t *data, uint32_t len) {
   decodeNasMsg(msg,data,len);
   switch (msg->header.message_type) {
     case IDENTITY_REQUEST: {     //send identityResponse in NAS_UPLINK_DATA_REQ
-      msg1->header.protocol_discriminator=0;
+      msg1->header.ex_protocol_discriminator=0;
       msg1->header.security_header_type=0;
       len1 += sizeof(uint8_t);
       msg1->header.message_type = IDENTITY_RESPONSE;
@@ -170,7 +170,7 @@ void nr_nas_proc_dl_transfer_ind (UENAS_msg *msg,  Byte_t *data, uint32_t len) {
       }
       
     case AUTHENTICATION_REQUEST: { //send authenticationResponse
-      msg1->header.protocol_discriminator=0;
+      msg1->header.ex_protocol_discriminator=0;
       msg1->header.security_header_type=0;
       len1 += sizeof(uint8_t);
       msg1->header.message_type = AUTHENTICATION_RESPONSE;
@@ -189,7 +189,7 @@ int decodeNasMsg(UENAS_msg *msg, uint8_t *buffer, uint32_t len) {
   int decode_result=0;
 
   /* First decode the EMM message header */
-  header_result = _emm_msg_decode_header(&msg->header, buffer, len);
+  header_result = _nas_mm_msg_decode_header(&msg->header, buffer, len);
 
   if (header_result < 0) {
     LOG_TRACE(ERROR, "NR_UE   - Failed to decode EMM message header "
@@ -237,18 +237,22 @@ int encodeNasMsg(UENAS_msg *msg, uint8_t *buffer, uint32_t len) { //QUES:UENAS_m
   LOG_FUNC_RETURN (header_result + encode_result);
 }
 
-static int _emm_msg_decode_header(emm_msg_header_t *header,
+static int _nas_mm_msg_decode_header(mm_msg_header_t *header,
                                   const uint8_t *buffer, uint32_t len) {
   int size = 0;
 
   /* Check the buffer length */
 
-  /* Decode the security header type and the protocol discriminator */
-  DECODE_U8(buffer + size, *(uint8_t *)(header), size);
-  /* Decode the message type */
+
+  /* Encode the extendedprotocol discriminator */
+  DECODE_U8(buffer + size, header->ex_protocol_discriminator, size);
+  /* Encode the security header type */
+  DECODE_U8(buffer + size, header->security_header_type, size);
+  /* Encode the message type */
   DECODE_U8(buffer + size, header->message_type, size);
 
   /* Check the protocol discriminator */
+
 
   return (size);
 }
@@ -265,6 +269,6 @@ static int _emm_msg_encode_header(const emm_msg_header_t *header,
   ENCODE_U8(buffer + size, *(uint8_t *)(header), size);
   /* Encode the message type */
   ENCODE_U8(buffer + size, header->message_type, size);
-  
+
   return (size);
 }
