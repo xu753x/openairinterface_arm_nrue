@@ -48,7 +48,5 @@ int decodeNasMsg(UENAS_msg *msg, uint8_t *buffer, uint32_t len);
 int encodeNasMsg(UENAS_msg *msg, uint8_t *buffer, uint32_t len);
 static int _emm_msg_decode_header(emm_msg_header_t *header, const uint8_t *buffer, uint32_t len); //QUES: defined in emm_msg.c  and no check
 static int _emm_msg_encode_header(const emm_msg_header_t *header, uint8_t *buffer, uint32_t len);
-int encode_IdentityresponseIMSI(IdentityresponseIMSI_t *identity_response, uint8_t *buffer, uint32_t len);
-int encode_authenticationresponse(authenticationresponse_t *authentication_response, uint8_t *buffer, uint32_t len);
 
 #endif /* NAS_TASK_H_ */

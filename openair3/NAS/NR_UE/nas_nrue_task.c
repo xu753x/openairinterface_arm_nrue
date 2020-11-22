@@ -152,7 +152,7 @@ void *nas_ue_task(void *args_p)
 void nr_nas_proc_dl_transfer_ind (UENAS_msg *msg,  Byte_t *data, uint32_t len) { //QUES: 解出的msg干什么
   uint8_t *buffer;
   UENAS_msg *msg1;
-  uint32_t len1;
+  uint32_t len1=0;
   nr_user_nas_t UErrc= {0};//QUES:user
   int size;
   decodeNasMsg(msg,data,len);
@@ -266,40 +266,4 @@ static int _emm_msg_encode_header(const emm_msg_header_t *header,
   /* Encode the message type */
   ENCODE_U8(buffer + size, header->message_type, size);
   return (size);
-}
-
-int encode_IdentityresponseIMSI(IdentityresponseIMSI_t *identity_response, uint8_t *buffer, uint32_t len)
-{
-  int encoded = 0;
-  int encode_result = 0;
-
-  /* Checking IEI and pointer */
-  CHECK_PDU_POINTER_AND_LENGTH_ENCODER(buffer, IDENTITY_RESPONSE_MINIMUM_LENGTH, len);
-
-  if ((encode_result =
-         encode_mobile_identity(&identity_response->mobileidentity, 0, buffer +
-                                encoded, len - encoded)) < 0)        //Return in case of error
-    return encode_result;
-  else
-    encoded += encode_result;
-
-  return encoded;
-}
-
-int encode_authenticationresponse(authenticationresponse_t *authentication_response, uint8_t *buffer, uint32_t len)
-{
-  int encoded = 0;
-  int encode_result = 0;
-
-  /* Checking IEI and pointer */
-  CHECK_PDU_POINTER_AND_LENGTH_ENCODER(buffer, AUTHENTICATION_RESPONSE_MINIMUM_LENGTH, len);
-
-  if ((encode_result =
-         encode_authentication_response_parameter(&authentication_response->authenticationresponseparameter,
-             0, buffer + encoded, len - encoded)) < 0)        //Return in case of error
-    return encode_result;
-  else
-    encoded += encode_result;
-
-  return encoded;
 }
