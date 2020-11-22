@@ -326,8 +326,4 @@ int encode_authenticationresponse(authenticationresponse_t *authentication_respo
     encoded += encode_result;
 
   return encoded;
-<<<<<<< HEAD
-<<<<<<< HEAD
-}
->>>>>>> parent of d659e98df... Update nas_nrue_task.c
 }
