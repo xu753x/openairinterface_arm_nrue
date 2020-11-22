@@ -265,5 +265,6 @@ static int _emm_msg_encode_header(const emm_msg_header_t *header,
   ENCODE_U8(buffer + size, *(uint8_t *)(header), size);
   /* Encode the message type */
   ENCODE_U8(buffer + size, header->message_type, size);
+  
   return (size);
 }
