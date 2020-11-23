@@ -20,7 +20,7 @@
  */
 
 #define NAS_BUILT_IN_UE 1 //QUES: #undef
-#define __LITTLE_ENDIAN_BITFIELD 1
+// #define __LITTLE_ENDIAN_BITFIELD 1
 
 #include "utils.h"
 # include "assertions.h"
@@ -43,6 +43,9 @@
 // FIXME review these externs
 extern unsigned char NB_eNB_INST;
 extern uint16_t NB_UE_INST;
+
+static int _nas_mm_msg_decode_header(mm_msg_header_t *header, const uint8_t *buffer, uint32_t len);
+static int _nas_mm_msg_encode_header(const mm_msg_header_t *header, uint8_t *buffer, uint32_t len);
 
 void *nas_ue_task(void *args_p)
 {
@@ -152,34 +155,48 @@ void *nas_ue_task(void *args_p)
 void nr_nas_proc_dl_transfer_ind (UENAS_msg *msg,  Byte_t *data, uint32_t len) { //QUES: 解出的msg干什么
   uint8_t *buffer;
   UENAS_msg *msg1;
-  uint32_t len1;
+  uint32_t len1=0;
   nr_user_nas_t UErrc= {0};//QUES:user
   int size;
   decodeNasMsg(msg,data,len);
   switch (msg->header.message_type) {
-    case IDENTITY_REQUEST: {     //send identityResponse in NAS_UPLINK_DATA_REQ
-      msg1->header.protocol_discriminator=0;
-      msg1->header.security_header_type=0;
-      len1 += sizeof(uint8_t);
-      msg1->header.message_type = IDENTITY_RESPONSE;
-      len1 += sizeof(uint8_t);
-      len1 += identityResponse((void **)&msg1->identity_response, &UErrc);
-      size = encodeNasMsg(msg1, buffer, len1);
-      nas_itti_ul_data_req(0,buffer,size,0); 
-      break;
-      }
+    // case IDENTITY_REQUEST: {     //send identityResponse in NAS_UPLINK_DATA_REQ
+    //   msg1->header.ex_protocol_discriminator=0;
+    //   msg1->header.security_header_type=0;
+    //   len1 += sizeof(uint8_t);
+    //   msg1->header.message_type = IDENTITY_RESPONSE;
+    //   len1 += sizeof(uint8_t);
+    //   len1 += identityResponse((void **)&msg1->identity_response, &UErrc);
+    //   size = encodeNasMsg(msg1, buffer, len1);
+    //   nas_itti_ul_data_req(0,buffer,size,0); 
+    //   break;
+    //   }
       
     case AUTHENTICATION_REQUEST: { //send authenticationResponse
-      msg1->header.protocol_discriminator=0;
-      msg1->header.security_header_type=0;
-      len1 += sizeof(uint8_t);
-      msg1->header.message_type = AUTHENTICATION_RESPONSE;
-      len1 += sizeof(uint8_t);
       len1 += authenticationResponse((void **)&msg1->identity_response, &UErrc);
       size = encodeNasMsg(msg1, buffer, len1);
       nas_itti_ul_data_req(0,buffer,size,0);
       break;
       }
+
+    case SECURITY_MODE_COMMAND: { 
+      len1 += securityModeComplete5g((void **)&msg1->securitymode_complete);
+      size = encodeNasMsg(msg1, buffer, len1);
+      nas_itti_ul_data_req(0,buffer,size,0);
+      break;
+      }
+    
+    case REGISTRATION_ACCEPT: { 
+      len1 += registrationComplete5g((void **)&msg1->registration_complete);
+      size = encodeNasMsg(msg1, buffer, len1);
+      nas_itti_ul_data_req(0,buffer,size,0);
+      break;
+      }
+
+  for (int i = 0; i < size; i++)
+  {
+    printf("aaaaaaaaaaaaa%x",*(buffer+i));
+  }
       
   }
 }
@@ -189,7 +206,7 @@ int decodeNasMsg(UENAS_msg *msg, uint8_t *buffer, uint32_t len) {
   int decode_result=0;
 
   /* First decode the EMM message header */
-  header_result = _emm_msg_decode_header(&msg->header, buffer, len);
+  header_result = _nas_mm_msg_decode_header(&msg->header, buffer, len);
 
   if (header_result < 0) {
     LOG_TRACE(ERROR, "NR_UE   - Failed to decode EMM message header "
@@ -213,7 +230,7 @@ int encodeNasMsg(UENAS_msg *msg, uint8_t *buffer, uint32_t len) { //QUES:UENAS_m
   int encode_result=0;
 
   /* First encode the EMM message header */
-  header_result = _emm_msg_encode_header(&msg->header, buffer, len);
+  header_result = _nas_mm_msg_encode_header(&msg->header, buffer, len);
 
   if (header_result < 0) {
     LOG_TRACE(ERROR, "NR_UE   - Failed to encode EMM message header "
@@ -225,81 +242,120 @@ int encodeNasMsg(UENAS_msg *msg, uint8_t *buffer, uint32_t len) { //QUES:UENAS_m
   len -= header_result;
 
   switch(msg->header.message_type) { 
-    case IDENTITY_RESPONSE: {
-      encode_result = encode_identity_response(&msg->identity_response, buffer, len);
+    // case IDENTITY_RESPONSE: {
+    //   encode_result = encode_identity_response(&msg->identity_response, buffer, len);
+    //   break;
+    // }
+    case AUTHENTICATION_RESPONSE: {
+      encode_result = encode_authentication_response5g(&msg->authentication_response, buffer, len);
       break;
     }
-    case AUTHENTICATION_RESPONSE: {
-      encode_result = encode_authentication_response(&msg->authentication_response, buffer, len);
+
+    case SECURITY_MODE_COMPLETE: {
+      encode_result = encode_security_mode_complete5g(&msg->securitymode_complete, buffer, len);//TODO:encode_security_mode_complete5g
+      break;
+    }
+
+    case REGISTRATION_COMPLETE: {
+      encode_result = encode_registration_complete5g(&msg->registration_complete, buffer, len);//TODO:encode_security_mode_complete5g
       break;
     }
   }
   LOG_FUNC_RETURN (header_result + encode_result);
 }
 
-static int _emm_msg_decode_header(emm_msg_header_t *header,
-                                  const uint8_t *buffer, uint32_t len) {
+static int _nas_mm_msg_decode_header(mm_msg_header_t *header, const uint8_t *buffer, uint32_t len) {  //QUES: 静态函数在哪声明？
   int size = 0;
 
   /* Check the buffer length */
 
-  /* Decode the security header type and the protocol discriminator */
-  DECODE_U8(buffer + size, *(uint8_t *)(header), size);
-  /* Decode the message type */
+
+  /* Encode the extendedprotocol discriminator */
+  DECODE_U8(buffer + size, header->ex_protocol_discriminator, size);
+  /* Encode the security header type */
+  DECODE_U8(buffer + size, header->security_header_type, size);
+  /* Encode the message type */
   DECODE_U8(buffer + size, header->message_type, size);
 
   /* Check the protocol discriminator */
 
+
   return (size);
 }
 
-static int _emm_msg_encode_header(const emm_msg_header_t *header,
-                                  uint8_t *buffer, uint32_t len) {
+static int _nas_mm_msg_encode_header(const mm_msg_header_t *header, uint8_t *buffer, uint32_t len) {
   int size = 0;
 
   /* Check the buffer length */
+  if (len < sizeof(mm_msg_header_t)) {
+    return (TLV_ENCODE_BUFFER_TOO_SHORT);
+  }
 
   /* Check the protocol discriminator */
+  if (header->ex_protocol_discriminator != FGS_MOBILITY_MANAGEMENT_MESSAGE) {
+    LOG_TRACE(ERROR, "ESM-MSG   - Unexpected extened protocol discriminator: 0x%x",
+              header->ex_protocol_discriminator);
+    return (TLV_ENCODE_PROTOCOL_NOT_SUPPORTED);
+  }
 
-  /* Encode the security header type and the protocol discriminator */
-  ENCODE_U8(buffer + size, *(uint8_t *)(header), size);
+  /* Encode the extendedprotocol discriminator */
+  ENCODE_U8(buffer + size, header->ex_protocol_discriminator, size);
+  /* Encode the security header type */
+  ENCODE_U8(buffer + size, (header->security_header_type & 0xf), size);
   /* Encode the message type */
   ENCODE_U8(buffer + size, header->message_type, size);
   return (size);
 }
 
-int encode_IdentityresponseIMSI(IdentityresponseIMSI_t *identity_response, uint8_t *buffer, uint32_t len)
+
+int encode_authentication_response5g(authenticationresponse_t *authentication_response, uint8_t *buffer, uint32_t len)//QUES:AuthenticationResponse.c 中函数同名先编译哪个？
 {
   int encoded = 0;
-  int encode_result = 0;
 
-  /* Checking IEI and pointer */
-  CHECK_PDU_POINTER_AND_LENGTH_ENCODER(buffer, IDENTITY_RESPONSE_MINIMUM_LENGTH, len);
+  if (authentication_response->iei > 0) {
+    *buffer = authentication_response->iei;
+    encoded++;
+  }
 
-  if ((encode_result =
-         encode_mobile_identity(&identity_response->mobileidentity, 0, buffer +
-                                encoded, len - encoded)) < 0)        //Return in case of error
-    return encode_result;
-  else
-    encoded += encode_result;
+  *(buffer + encoded) = authentication_response->RESlen;
+  encoded++;
+  for (int i = 0; i < authentication_response->RESlen; i++)
+  {
+    *(buffer + encoded) = authentication_response->RES[i];
+    encoded++;
+  }
+  
+  return encoded;
+}
+
+int encode_security_mode_complete5g(securityModeComplete_t *securitymodecomplete, uint8_t *buffer, uint32_t len)
+{
+  int encoded = 0;
 
   return encoded;
 }
 
-int encode_authenticationresponse(authenticationresponse_t *authentication_response, uint8_t *buffer, uint32_t len)
+int encode_registration_complete5g(registrationcomplete_t *registrationcomplete, uint8_t *buffer, uint32_t len)
 {
   int encoded = 0;
-  int encode_result = 0;
-
-  /* Checking IEI and pointer */
-  CHECK_PDU_POINTER_AND_LENGTH_ENCODER(buffer, AUTHENTICATION_RESPONSE_MINIMUM_LENGTH, len);
-
-  if ((encode_result =
-         encode_authentication_response_parameter(&authentication_response->authenticationresponseparameter,
-             0, buffer + encoded, len - encoded)) < 0)        //Return in case of error
-    return encode_result;
-  else
-    encoded += encode_result;
 
   return encoded;
+}
+
+int securityModeComplete5g(void **msg) {
+  myCalloc(resp, securityModeComplete_t);
+  resp->epd=SGSmobilitymanagementmessages;
+  resp->sh=0;
+  resp->mt=Registrationcomplete;
+  *msg=resp;
+  return sizeof(securityModeComplete_t);
+}
+
+int registrationComplete5g(void **msg) {
+  myCalloc(resp, registrationcomplete_t);
+  resp->epd=SGSmobilitymanagementmessages;
+  resp->sh=0;
+  resp->mt=Securitymodecomplete;
+  *msg=resp;
+  return sizeof(registrationcomplete_t);
 }

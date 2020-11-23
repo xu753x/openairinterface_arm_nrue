@@ -32,23 +32,55 @@
 #include "TLVDecoder.h"
 #include "TLVEncoder.h"
 #include "NR_NAS_defs.h"
-#include "nas_itti_messaging.h"
+#include "nr_nas_msg_sim.h"
+
+# define REGISTRATION_ACCEPT        0b01000010
+# define REGISTRATION_COMPLETE      0b01000011
+typedef struct  __attribute__((packed)) {
+  Extendedprotocoldiscriminator_t epd:8;
+  Security_header_t sh:8;
+  SGSmobilitymanagementmessages_t mt:8;
+} securityModeComplete_t;
+
+typedef struct  __attribute__((packed)) {
+  unsigned int len:8;
+  unsigned int allowed:4;
+  unsigned int value:4;
+} SGSregistrationresult;
+
+typedef struct  __attribute__((packed)) {
+  Extendedprotocoldiscriminator_t epd:8;
+  Security_header_t sh:8;
+  SGSmobilitymanagementmessages_t mt:8;
+  SGSregistrationresult rr;
+} registrationaccept_t;
+
+typedef struct  __attribute__((packed)) {
+  Extendedprotocoldiscriminator_t epd:8;
+  Security_header_t sh:8;
+  SGSmobilitymanagementmessages_t mt:8;
+} registrationcomplete_t;
 
 typedef union {
-  emm_msg_header_t header;
+  mm_msg_header_t header;
   authenticationrequestHeader_t authentication_request;
   authenticationresponse_t authentication_response;
   Identityrequest_t identity_request;
   IdentityresponseIMSI_t identity_response;
+  securityModeCommand_t securitymode_command;
+  securityModeComplete_t securitymode_complete;
+  registrationaccept_t registration_accept;
+  registrationcomplete_t registration_complete;
 } UENAS_msg;
 
 void *nas_nrue_task(void *args_p);
 void nr_nas_proc_dl_transfer_ind (UENAS_msg *msg, Byte_t *data, uint32_t len);
 int decodeNasMsg(UENAS_msg *msg, uint8_t *buffer, uint32_t len);
 int encodeNasMsg(UENAS_msg *msg, uint8_t *buffer, uint32_t len);
-static int _emm_msg_decode_header(emm_msg_header_t *header, const uint8_t *buffer, uint32_t len); //QUES: defined in emm_msg.c  and no check
-static int _emm_msg_encode_header(const emm_msg_header_t *header, uint8_t *buffer, uint32_t len);
-int encode_IdentityresponseIMSI(IdentityresponseIMSI_t *identity_response, uint8_t *buffer, uint32_t len);
-int encode_authenticationresponse(authenticationresponse_t *authentication_response, uint8_t *buffer, uint32_t len);
+int encode_authentication_response5g(authenticationresponse_t *authentication_response, uint8_t *buffer, uint32_t len);
+int encode_security_mode_complete5g(securityModeComplete_t *securitymodecomplete, uint8_t *buffer, uint32_t len);
+int encode_registration_complete5g(registrationcomplete_t *registrationcomplete, uint8_t *buffer, uint32_t len);
+int securityModeComplete5g(void **msg);
+int registrationComplete5g(void **msg);
 
 #endif /* NAS_TASK_H_ */
