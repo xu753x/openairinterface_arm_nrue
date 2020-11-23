@@ -180,6 +180,20 @@ void nr_nas_proc_dl_transfer_ind (UENAS_msg *msg,  Byte_t *data, uint32_t len) {
       break;
       }
 
+    case SECURITY_MODE_COMMAND: { 
+      len1 += securityModeComplete5g((void **)&msg1->securitymode_complete);
+      size = encodeNasMsg(msg1, buffer, len1);
+      nas_itti_ul_data_req(0,buffer,size,0);
+      break;
+      }
+    
+    case REGISTRATION_ACCEPT: { 
+      len1 += registrationComplete5g((void **)&msg1->registration_complete);
+      size = encodeNasMsg(msg1, buffer, len1);
+      nas_itti_ul_data_req(0,buffer,size,0);
+      break;
+      }
+
   for (int i = 0; i < size; i++)
   {
     printf("aaaaaaaaaaaaa%x",*(buffer+i));
@@ -235,6 +249,16 @@ int encodeNasMsg(UENAS_msg *msg, uint8_t *buffer, uint32_t len) { //QUES:UENAS_m
     // }
     case AUTHENTICATION_RESPONSE: {
       encode_result = encode_authentication_response5g(&msg->authentication_response, buffer, len);
+      break;
+    }
+
+    case SECURITY_MODE_COMPLETE: {
+      encode_result = encode_security_mode_complete5g(&msg->securitymode_complete, buffer, len);//TODO:encode_security_mode_complete5g
+      break;
+    }
+
+    case REGISTRATION_COMPLETE: {
+      encode_result = encode_registration_complete5g(&msg->registration_complete, buffer, len);//TODO:encode_security_mode_complete5g
       break;
     }
   }
@@ -303,5 +327,36 @@ int encode_authentication_response5g(authenticationresponse_t *authentication_re
   }
   
   return encoded;
+}
 
+int encode_security_mode_complete5g(securityModeComplete_t *securitymodecomplete, uint8_t *buffer, uint32_t len)
+{
+  int encoded = 0;
+
+  return encoded;
+}
+
+int encode_registration_complete5g(registrationcomplete_t *registrationcomplete, uint8_t *buffer, uint32_t len)
+{
+  int encoded = 0;
+
+  return encoded;
+}
+
+int securityModeComplete5g(void **msg) {
+  myCalloc(resp, securityModeComplete_t);
+  resp->epd=SGSmobilitymanagementmessages;
+  resp->sh=0;
+  resp->mt=Registrationcomplete;
+  *msg=resp;
+  return sizeof(securityModeComplete_t);
+}
+
+int registrationComplete5g(void **msg) {
+  myCalloc(resp, registrationcomplete_t);
+  resp->epd=SGSmobilitymanagementmessages;
+  resp->sh=0;
+  resp->mt=Securitymodecomplete;
+  *msg=resp;
+  return sizeof(registrationcomplete_t);
 }
