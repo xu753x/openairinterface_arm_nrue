@@ -159,7 +159,6 @@ void nr_nas_proc_dl_transfer_ind (UENAS_msg *msg,  Byte_t *data, uint32_t len) {
   nr_user_nas_t UErrc= {0};//QUES:user
   int size;
   decodeNasMsg(msg,data,len);
-  msg->header.message_type = AUTHENTICATION_REQUEST;
   switch (msg->header.message_type) {
     // case IDENTITY_REQUEST: {     //send identityResponse in NAS_UPLINK_DATA_REQ
     //   msg1->header.ex_protocol_discriminator=0;
