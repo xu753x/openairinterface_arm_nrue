@@ -56,7 +56,7 @@ void *nas_ue_task(void *args_p)
   unsigned int          Mod_id;
   int                   result;
   nas_user_container_t *users=args_p;
-  UENAS_msg * nrue_msg;
+  UENAS_msg nrue_msg;
 
   itti_mark_task_ready (TASK_NAS_UE);
   MSC_START_USE();
@@ -132,7 +132,7 @@ void *nas_ue_task(void *args_p)
       case NAS_DOWNLINK_DATA_IND: //CUC：NAS_DOWNLINK_DATA_IND √
         LOG_I(NAS, "[UE %d] Received %s: UEid %u, length %u\n", Mod_id,  ITTI_MSG_NAME (msg_p),
               NAS_DOWNLINK_DATA_IND (msg_p).UEid, NAS_DOWNLINK_DATA_IND (msg_p).nasMsg.length);
-        nr_nas_proc_dl_transfer_ind (nrue_msg, NAS_DOWNLINK_DATA_IND(msg_p).nasMsg.data, NAS_DOWNLINK_DATA_IND(msg_p).nasMsg.length); //handle dl info NAS mesaages.
+        nr_nas_proc_dl_transfer_ind (&nrue_msg, NAS_DOWNLINK_DATA_IND(msg_p).nasMsg.data, NAS_DOWNLINK_DATA_IND(msg_p).nasMsg.length); //handle dl info NAS mesaages.
         break;
 
       default:
@@ -153,7 +153,7 @@ void *nas_ue_task(void *args_p)
 }
 
 void nr_nas_proc_dl_transfer_ind (UENAS_msg *msg,  Byte_t *data, uint32_t len) { //QUES: 解出的msg干什么
-  uint8_t *buffer;
+  uint8_t buffer[100];
   UENAS_msg *msg1;
   uint32_t len1=0;
   nr_user_nas_t UErrc= {0};//QUES:user
@@ -192,15 +192,49 @@ void nr_nas_proc_dl_transfer_ind (UENAS_msg *msg,  Byte_t *data, uint32_t len) {
       nas_itti_ul_data_req(0,buffer,size,0);
       break;
       }
-
+    
+  }
+  printf("aaaaaaaaaaaaa: ");
+  printf("%d\n",size);
   for (int i = 0; i < size; i++)
   {
-    printf("aaaaaaaaaaaaa%x",*(buffer+i));
+    printf("%02x ",*(buffer+i));
+
   }
-      
-  }
+  printf("aaaaaaaaaaaaa \n ");
+
 }
 
+#define CHAR_TO_UINT8(input) ((input & 0xf) + 9*(input>>6))
+//function to convert string to byte array
+int string2ByteArray(char* input,uint8_t* output)
+{
+    int loop;
+    int i;
+    
+    loop = 0;
+    i = 0;
+    
+    while(input[loop] != '\0')
+    {
+        output[i++] = (CHAR_TO_UINT8(input[loop]))<<4 |  CHAR_TO_UINT8(input[loop+1]);
+        loop += 2;
+    }
+    return i;
+}
+
+void tesths(void)
+{
+  
+  UENAS_msg msg;
+  char name[] = "7e005601020000217d003b4a2e3bb80403de19020f57b16a2010583f0d352eb89001539b2cb2cbf1da5c";
+  uint32_t len=42;
+  Byte_t *data= (uint8_t *)malloc(sizeof(uint8_t)*len);
+  string2ByteArray(name, data);
+  nr_nas_proc_dl_transfer_ind(&msg,data,len);
+
+  
+}
 int decodeNasMsg(UENAS_msg *msg, uint8_t *buffer, uint32_t len) {
   int header_result;
   int decode_result=0;

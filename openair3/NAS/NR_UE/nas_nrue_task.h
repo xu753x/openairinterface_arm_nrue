@@ -83,4 +83,7 @@ int encode_registration_complete5g(registrationcomplete_t *registrationcomplete,
 int securityModeComplete5g(void **msg);
 int registrationComplete5g(void **msg);
 
+int string2ByteArray(char* input,uint8_t* output);
+void tesths(void);
+
 #endif /* NAS_TASK_H_ */

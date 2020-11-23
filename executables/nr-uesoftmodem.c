@@ -597,7 +597,12 @@ void *rrc_enb_process_msg(void *notUsed) {
 }
 
 
+extern void tesths(void);
+
 int main( int argc, char **argv ) {
+  
+
+
   //uint8_t beta_ACK=0,beta_RI=0,beta_CQI=2;
   PHY_VARS_NR_UE *UE[MAX_NUM_CCs];
   start_background_system();
@@ -657,6 +662,9 @@ int main( int argc, char **argv ) {
 #endif
 #endif
 */
+  printf("1111111");
+  tesths ();
+  printf("1111111");
 
   NB_UE_INST=1;
   NB_INST=1;
