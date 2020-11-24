@@ -25,7 +25,7 @@
 cmake_minimum_required (VERSION 3.5)
 project (OpenAirInterface VERSION 1.2.2 LANGUAGES C CXX)
 
-include("macros.cmake")
+include("cmake_targets/macros.cmake")
 
 # System packages that are required
 # We use either the cmake buildin, in ubuntu are in: /usr/share/cmake*/Modules/

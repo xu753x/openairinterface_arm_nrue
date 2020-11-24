@@ -445,11 +445,6 @@ function main() {
       fi
   fi
 
-  # We use the CMakeLists.txt in cmake_targets, but (for historical reasons)
-  # build in a subdirectory XYZ/build, e.g., ran_build/build, hence the ../..
-  CMAKE_CMD="$CMAKE_CMD ../.."
-  echo_info "CMAKE_CMD=$CMAKE_CMD"
-
   ########################################################
   # Check validity of HW and TP parameters for eNB / gNB #
   ########################################################
@@ -520,6 +515,11 @@ function main() {
     clean_all_files
     echo_info "Erased all previously producted files"
   fi
+
+  # for historical reasons we build in a subdirectory cmake_targets/XYZ/build,
+  # e.g., cmake_targets/ran_build/build, hence the ../../..
+  CMAKE_CMD="$CMAKE_CMD ../../.."
+  echo_info "CMAKE_CMD=$CMAKE_CMD"
 
   dbin=$OPENAIR_DIR/targets/bin
   dlog=$OPENAIR_DIR/cmake_targets/log
