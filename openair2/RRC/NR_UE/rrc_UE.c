@@ -2445,7 +2445,7 @@ void *rrc_nrue_task( void *args_p ) {
         uint8_t *buffer;
         LOG_D(RRC, "[UE %d] Received %s: UEid %d\n", ue_mod_id, ITTI_MSG_NAME (msg_p), NAS_UPLINK_DATA_REQ (msg_p).UEid);
         /* Create message for PDCP (ULInformationTransfer_t) */
-        length = do_ULInformationTransfer(&buffer, NAS_UPLINK_DATA_REQ (msg_p).nasMsg.length, NAS_UPLINK_DATA_REQ (msg_p).nasMsg.data);
+        length = do_ULInformationTransfer(&buffer, NAS_UPLINK_DATA_REQ (msg_p).nasMsg.length, NAS_UPLINK_DATA_REQ (msg_p).nasMsg.data);//QUES:
         break;
       }
 

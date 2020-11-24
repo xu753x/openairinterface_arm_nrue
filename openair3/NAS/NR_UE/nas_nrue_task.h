@@ -80,10 +80,11 @@ int encodeNasMsg(UENAS_msg *msg, uint8_t *buffer, uint32_t len);
 int encode_authentication_response5g(authenticationresponse_t *authentication_response, uint8_t *buffer, uint32_t len);
 int encode_security_mode_complete5g(securityModeComplete_t *securitymodecomplete, uint8_t *buffer, uint32_t len);
 int encode_registration_complete5g(registrationcomplete_t *registrationcomplete, uint8_t *buffer, uint32_t len);
-int securityModeComplete5g(void **msg);
-int registrationComplete5g(void **msg);
+int authenticationResponse5g(authenticationresponse_t *msg);
+int securityModeComplete5g(securityModeComplete_t *msg);
+int registrationComplete5g(registrationcomplete_t *msg);
 
-int string2ByteArray(char* input,uint8_t* output);
+int string2ByteArray(char* input,uint8_t* output); //CUC:test
 void tesths(void);
 
 #endif /* NAS_TASK_H_ */

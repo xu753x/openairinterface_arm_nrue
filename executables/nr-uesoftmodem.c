@@ -597,7 +597,7 @@ void *rrc_enb_process_msg(void *notUsed) {
 }
 
 
-extern void tesths(void);
+// extern void tesths(void);//CUC:test
 
 int main( int argc, char **argv ) {
   
@@ -662,9 +662,9 @@ int main( int argc, char **argv ) {
 #endif
 #endif
 */
-  printf("1111111");
-  tesths ();
-  printf("1111111");
+  // printf("witcomm111witcomm: \n");//CUC:test
+  // tesths ();
+  // printf("witcomm111witcomm \n");
 
   NB_UE_INST=1;
   NB_INST=1;

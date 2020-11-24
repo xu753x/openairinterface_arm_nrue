@@ -154,9 +154,8 @@ void *nas_ue_task(void *args_p)
 
 void nr_nas_proc_dl_transfer_ind (UENAS_msg *msg,  Byte_t *data, uint32_t len) { //QUES: 解出的msg干什么
   uint8_t buffer[100];
-  UENAS_msg *msg1;
+  UENAS_msg msg1;
   uint32_t len1=0;
-  nr_user_nas_t UErrc= {0};//QUES:user
   int size;
   decodeNasMsg(msg,data,len);
   switch (msg->header.message_type) {
@@ -172,36 +171,45 @@ void nr_nas_proc_dl_transfer_ind (UENAS_msg *msg,  Byte_t *data, uint32_t len) {
     //   break;
     //   }
       
-    case AUTHENTICATION_REQUEST: { //send authenticationResponse
-      len1 += authenticationResponse((void **)&msg1->identity_response, &UErrc);
-      size = encodeNasMsg(msg1, buffer, len1);
+    case Authenticationrequest: { //send authenticationResponse
+      len1 += authenticationResponse5g(&msg1.authentication_response);
+      size = encodeNasMsg(&msg1, buffer, len1);
       nas_itti_ul_data_req(0,buffer,size,0);
       break;
       }
 
-    case SECURITY_MODE_COMMAND: { 
-      len1 += securityModeComplete5g((void **)&msg1->securitymode_complete);
-      size = encodeNasMsg(msg1, buffer, len1);
+    case Securitymodecommand: { 
+      len1 += securityModeComplete5g(&msg1.securitymode_complete);
+      size = encodeNasMsg(&msg1, buffer, len1);
       nas_itti_ul_data_req(0,buffer,size,0);
       break;
       }
     
-    case REGISTRATION_ACCEPT: { 
-      len1 += registrationComplete5g((void **)&msg1->registration_complete);
-      size = encodeNasMsg(msg1, buffer, len1);
+    case Registrationaccept: { 
+      len1 += registrationComplete5g(&msg1.registration_complete);
+      size = encodeNasMsg(&msg1, buffer, len1);
       nas_itti_ul_data_req(0,buffer,size,0);
       break;
       }
     
   }
-  printf("aaaaaaaaaaaaa: ");
-  printf("%d\n",size);
+
+  //****************************** //CUC:test
+  printf("decodeaaadecode:");
+  for (int i = 0; i < len; i++)
+  {
+    printf("%02x ",*(data+i));
+
+  }
+  printf("decodeaaadecode \n ");
+  printf("encodeaaaencode:");
   for (int i = 0; i < size; i++)
   {
     printf("%02x ",*(buffer+i));
 
   }
-  printf("aaaaaaaaaaaaa \n ");
+  printf("encodeaaaencode \n ");
+  //******************************
 
 }
 
@@ -223,15 +231,29 @@ int string2ByteArray(char* input,uint8_t* output)
     return i;
 }
 
-void tesths(void)
+void tesths(void) //CUC:test
 {
-  
-  UENAS_msg msg;
-  char name[] = "7e005601020000217d003b4a2e3bb80403de19020f57b16a2010583f0d352eb89001539b2cb2cbf1da5c";
-  uint32_t len=42;
-  Byte_t *data= (uint8_t *)malloc(sizeof(uint8_t)*len);
-  string2ByteArray(name, data);
-  nr_nas_proc_dl_transfer_ind(&msg,data,len);
+  printf("Authentication: \n ");
+  UENAS_msg msg1;
+  char Authenticationrequest[] = "7e005601020000217d003b4a2e3bb80403de19020f57b16a2010583f0d352eb89001539b2cb2cbf1da5c";
+  uint32_t len1=84;
+  Byte_t *data1= (uint8_t *)malloc(sizeof(uint8_t)*len1);
+  string2ByteArray(Authenticationrequest, data1);
+  nr_nas_proc_dl_transfer_ind(&msg1,data1,len1);
+  printf("Security mode: \n ");
+  UENAS_msg msg2;
+  char Securitymodecommand[] = "7e005d0201028020e1360102";
+  uint32_t len2=24;
+  Byte_t *data2= (uint8_t *)malloc(sizeof(uint8_t)*len2);
+  string2ByteArray(Securitymodecommand, data2);
+  nr_nas_proc_dl_transfer_ind(&msg2,data2,len2);
+  printf("Registration: \n ");
+  UENAS_msg msg3;
+  char Registrationrequest[] = "7e0042010177000bf202f8398000410000000154070002f83900000115020101210200005e01be";
+  uint32_t len3=94;
+  Byte_t *data3= (uint8_t *)malloc(sizeof(uint8_t)*len3);
+  string2ByteArray(Registrationrequest, data3);
+  nr_nas_proc_dl_transfer_ind(&msg3,data3,len3);
 
   
 }
@@ -253,6 +275,21 @@ int decodeNasMsg(UENAS_msg *msg, uint8_t *buffer, uint32_t len) {
   LOG_TRACE(INFO, "NR_UE   - Message Type 0x%02x", msg->header.message_type);
 
   switch(msg->header.message_type) { 
+
+    case Authenticationrequest: 
+      break;
+    
+    case Securitymodecommand:
+      break;
+
+    case Registrationaccept:
+      break;
+
+    default:
+      LOG_TRACE(ERROR, "NR_UE   - Unexpected message type: 0x%x",
+    		  msg->header.message_type);
+      decode_result = TLV_ENCODE_WRONG_MESSAGE_TYPE;
+      break;
 
   }
 
@@ -280,17 +317,17 @@ int encodeNasMsg(UENAS_msg *msg, uint8_t *buffer, uint32_t len) { //QUES:UENAS_m
     //   encode_result = encode_identity_response(&msg->identity_response, buffer, len);
     //   break;
     // }
-    case AUTHENTICATION_RESPONSE: {
+    case Authenticationresponse: {
       encode_result = encode_authentication_response5g(&msg->authentication_response, buffer, len);
       break;
     }
 
-    case SECURITY_MODE_COMPLETE: {
+    case Securitymodecomplete: {
       encode_result = encode_security_mode_complete5g(&msg->securitymode_complete, buffer, len);//TODO:encode_security_mode_complete5g
       break;
     }
 
-    case REGISTRATION_COMPLETE: {
+    case Registrationcomplete: {
       encode_result = encode_registration_complete5g(&msg->registration_complete, buffer, len);//TODO:encode_security_mode_complete5g
       break;
     }
@@ -302,7 +339,9 @@ static int _nas_mm_msg_decode_header(mm_msg_header_t *header, const uint8_t *buf
   int size = 0;
 
   /* Check the buffer length */
-
+  if (len < sizeof(mm_msg_header_t)) {
+    return (TLV_ENCODE_BUFFER_TOO_SHORT);
+  }
 
   /* Encode the extendedprotocol discriminator */
   DECODE_U8(buffer + size, header->ex_protocol_discriminator, size);
@@ -312,7 +351,11 @@ static int _nas_mm_msg_decode_header(mm_msg_header_t *header, const uint8_t *buf
   DECODE_U8(buffer + size, header->message_type, size);
 
   /* Check the protocol discriminator */
-
+  if (header->ex_protocol_discriminator != FGS_MOBILITY_MANAGEMENT_MESSAGE) {
+    LOG_TRACE(ERROR, "ESM-MSG   - Unexpected extened protocol discriminator: 0x%x",
+              header->ex_protocol_discriminator);
+    return (TLV_ENCODE_PROTOCOL_NOT_SUPPORTED);
+  }
 
   return (size);
 }
@@ -376,20 +419,28 @@ int encode_registration_complete5g(registrationcomplete_t *registrationcomplete,
   return encoded;
 }
 
-int securityModeComplete5g(void **msg) {
-  myCalloc(resp, securityModeComplete_t);
-  resp->epd=SGSmobilitymanagementmessages;
-  resp->sh=0;
-  resp->mt=Registrationcomplete;
-  *msg=resp;
+
+int authenticationResponse5g(authenticationresponse_t *msg) {
+  msg->epd=SGSmobilitymanagementmessages;
+  msg->sh=0;
+  msg->mt=Authenticationresponse;
+  msg->iei=IEI_AuthenticationResponse;
+  msg->RESlen=sizeof(msg->RES); 
+  uint8_t AUTN[16]={0};
+  memcpy(&msg->RES,AUTN,msg->RESlen);
+  return sizeof(authenticationresponse_t);
+}
+
+int securityModeComplete5g(securityModeComplete_t *msg) {
+  msg->epd=SGSmobilitymanagementmessages;
+  msg->sh=0;
+  msg->mt=Securitymodecomplete;
   return sizeof(securityModeComplete_t);
 }
 
-int registrationComplete5g(void **msg) {
-  myCalloc(resp, registrationcomplete_t);
-  resp->epd=SGSmobilitymanagementmessages;
-  resp->sh=0;
-  resp->mt=Securitymodecomplete;
-  *msg=resp;
+int registrationComplete5g(registrationcomplete_t *msg) {
+  msg->epd=SGSmobilitymanagementmessages;
+  msg->sh=0;
+  msg->mt=Registrationcomplete;
   return sizeof(registrationcomplete_t);
 }
