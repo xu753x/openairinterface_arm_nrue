@@ -26,6 +26,7 @@ cmake_minimum_required (VERSION 3.5)
 project (OpenAirInterface VERSION 1.2.2 LANGUAGES C CXX)
 
 include("cmake_targets/macros.cmake")
+add_subdirectory(openair2)
 
 # System packages that are required
 # We use either the cmake buildin, in ubuntu are in: /usr/share/cmake*/Modules/
@@ -380,34 +381,16 @@ add_library(RRC_LIB ${rrc_source}
 add_dependencies(RRC_LIB rrc_flag)
 include_directories ("${RRC_FULL_DIR}")
 
-
 #NR RRC
 #######
-set (NR_RRC_ASN1_VERSION "NR_Rel16" )
-make_version(NR_RRC_VERSION 16 1 0)
-set (NR_RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/NR/MESSAGES/asn1c/ASN1_files/nr-rrc-16.1.0.asn1)
-add_definitions(-DNR_RRC_VERSION=${NR_RRC_VERSION})
-set (NR_RRC_FULL_DIR ${asn1_generated_dir}/RRC_${NR_RRC_ASN1_VERSION})
-
-# Warning: if you modify ASN.1 source file to generate new C files, cmake should be re-run instead of make
-execute_process(COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "${NR_RRC_FULL_DIR}" "${NR_RRC_GRAMMAR}" "NR_" "-findirect-choice"
-                RESULT_VARIABLE ret)
-if (NOT ${ret} STREQUAL 0)
-  message(FATAL_ERROR "${ret}: error")
-endif ()
-file(GLOB nr_rrc_source ${NR_RRC_FULL_DIR}/*.c)
-file(GLOB nr_rrc_h ${NR_RRC_FULL_DIR}/*.h)
-add_custom_target (
-  nr_rrc_flag ALL
-  ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "${NR_RRC_FULL_DIR}" "${NR_RRC_GRAMMAR}" "NR_" "-findirect-choice"
-  DEPENDS ${NR_RRC_GRAMMAR}
-  )
-
-add_library(NR_RRC_LIB ${nr_rrc_h} ${nr_rrc_source} 
-    ${OPENAIR2_DIR}/RRC/NR/MESSAGES/asn1_msg.c
-    )
-add_dependencies(NR_RRC_LIB nr_rrc_flag)
-include_directories ("${NR_RRC_FULL_DIR}")
+add_library(NR_RRC_LIB ${OPENAIR2_DIR}/RRC/NR/MESSAGES/asn1_msg.c)
+target_link_libraries(NR_RRC_LIB PUBLIC ASN1_NR_RRC_LIB)
+# RRC is used everywhere, and recursively included literally everywhere.
+# Therefore, include the defs via include_directories (although this is ugly!).
+# To clean this up, every module would need to be separated into subdirectories
+# (via add_subdirectory()) and use
+# target_link_libraries(xyz PRIVATE ASN1_NR_RRC_LIB)
+include_directories("${CMAKE_CURRENT_BINARY_DIR}/openair2/RRC/NR/MESSAGES/asn1c/CMakeFiles/RRC_NR_Rel16/")
 
 # S1AP
 # Same limitation as described in RRC: unknown generated file list
@@ -1364,6 +1347,7 @@ set(SCHED_NR_SRC
   ${OPENAIR1_DIR}/SCHED_NR/phy_frame_config_nr.c
 )
 add_library(SCHED_NR_LIB ${SCHED_NR_SRC})
+target_link_libraries(SCHED_NR_LIB PUBLIC NR_RRC_LIB)
 
 set(SCHED_SRC_RU
   ${OPENAIR1_DIR}/SCHED/ru_procedures.c
@@ -2101,7 +2085,7 @@ add_library(L2_LTE_NR
   ${MCE_APP_SRC}
 )
   
-add_dependencies(L2_NR rrc_flag nr_rrc_flag s1ap_flag x2_flag)
+add_dependencies(L2_NR rrc_flag s1ap_flag x2_flag)
 
 add_library(L2_UE
   ${L2_SRC_UE}
