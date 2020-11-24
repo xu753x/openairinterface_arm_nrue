@@ -478,9 +478,11 @@ function main() {
   if [ "$DEADLINE_SCHEDULER_FLAG_USER" = "" ]; then
       case "$HW" in
           "EXMIMO")
+          CMAKE_CMD+=" -DDEADLINE_SCHEDULER=True"
 		      DEADLINE_SCHEDULER_FLAG_USER="True"
 		      ;;
           *)
+          CMAKE_CMD+=" -DDEADLINE_SCHEDULER=False"
 		      DEADLINE_SCHEDULER_FLAG_USER="False"
 		      ;;
       esac
@@ -488,6 +490,7 @@ function main() {
 
   #Disable CPU Affinity for deadline scheduler
   if [ "$DEADLINE_SCHEDULER_FLAG_USER" = "True" ] ; then 
+     CMAKE_CMD+=" -DCPU_AFFINITY=False"
      CPU_AFFINITY_FLAG_USER="False"
   fi
 
