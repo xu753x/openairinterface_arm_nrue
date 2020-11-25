@@ -490,8 +490,83 @@ static void deliver_sdu_srb(void *_ue, nr_pdcp_entity_t *entity,
                             char *buf, int size)
 {
   /* Implementation to be added */
-  return;
+  
+  // extern int nas_sock_fd[];
+  // int len;
+  protocol_ctxt_t ctxt;
+  nr_pdcp_ue_t *ue = _ue;
+  MessageDef  *message_p;
+  uint8_t     *gtpu_buffer_p;
+  int srb_id;
+  int i;
+  
+  ctxt.module_id = 0;
+  ctxt.enb_flag = 1;
+  ctxt.instance = 0;
+  ctxt.frame = 0;
+  ctxt.subframe = 0;
+  ctxt.eNB_index = 0;
+  ctxt.configured = 1;
+  ctxt.brOption = 0;
+
+  ctxt.rnti = ue->rnti;
+
+  if(IS_SOFTMODEM_NOS1){
+    // len = write(nas_sock_fd[0], buf, size);
+	  // nr_rrc_data_ind_ccch(ctxt_pP, Srb_id, sdu_sizeP, buffer_pP);
+	nr_rrc_data_ind_ccch(ctxt, srb_id, size, buf);
+	//把buf上传到RRC
+	
+    // if (len != size) {
+    //  LOG_E(PDCP, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
+    //  exit(1);
+    // }
+  }
+  else{
+    for (i = 0; i < 5; i++) {
+        if (entity == ue->srb[i]) {
+          srb_id = i+1;
+          goto srb_found;
+        }
+      }
+
+      LOG_E(PDCP, "%s:%d:%s: fatal, no srb found for ue %d\n",
+            __FILE__, __LINE__, __FUNCTION__, ue->rnti);
+      exit(1);
+
+    srb_found:
+      gtpu_buffer_p = itti_malloc(TASK_PDCP_ENB, TASK_GTPV1_U,
+                                  size + GTPU_HEADER_OVERHEAD_MAX);
+      AssertFatal(gtpu_buffer_p != NULL, "OUT OF MEMORY");
+      memcpy(&gtpu_buffer_p[GTPU_HEADER_OVERHEAD_MAX], buf, size);
+      message_p = itti_alloc_new_message(TASK_PDCP_ENB, GTPV1U_ENB_TUNNEL_DATA_REQ);
+      AssertFatal(message_p != NULL, "OUT OF MEMORY");
+      GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).buffer       = gtpu_buffer_p;
+      GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).length       = size;
+      GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).offset       = GTPU_HEADER_OVERHEAD_MAX;
+      GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).rnti         = ue->rnti;
+      GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).rab_id       = srb_id + 4;
+      LOG_D(PDCP, "%s() (srb %d) sending message to gtp size %d\n", __func__, srb_id, size);
+      //for (i = 0; i < size; i++) printf(" %2.2x", (unsigned char)buf[i]);
+      //printf("\n");
+      itti_send_msg_to_task(TASK_GTPV1_U, INSTANCE_DEFAULT, message_p);
+
+  }
+  
+  // return;
 }
+
+void
+nr_rrc_data_ind_ccch(
+  const protocol_ctxt_t *const ctxt_pP,
+  const rb_id_t                Srb_id,
+  const sdu_size_t             sdu_sizeP,
+  const uint8_t   *const       buffer_pP
+)
+//------------------------------------------------------------------------------
+{
+  ;//先为了将deliver_sdu_srb函数编译通过，这个函数在其他分支的RRC里有
+  }
 
 static void deliver_pdu_srb(void *_ue, nr_pdcp_entity_t *entity,
                             char *buf, int size, int sdu_id)
@@ -798,8 +873,15 @@ void nr_DRB_preconfiguration(void)
   //fill_default_rbconfig(rb_config, 5, 1);
   rbconfig = calloc(1, sizeof(*rbconfig));
 
-  rbconfig->srb_ToAddModList = NULL;
-  rbconfig->srb3_ToRelease = NULL;
+  rbconfig->srb_ToAddModList = calloc(1,sizeof(*rbconfig->srb_ToAddModList));
+  NR_SRB_ToAddMod_t *srb_ToAddMod = calloc(1,sizeof(*srb_ToAddMod));
+  rbconfig->srb3_ToRelease = calloc(1,sizeof(*rbconfig->srb3_ToRelease));
+  srb_ToAddMod->srb_Identity = 1;
+  srb_ToAddMod->reestablishPDCP = NULL;
+
+  ASN_SEQUENCE_ADD(&rbconfig->srb_ToAddModList->list,srb_ToAddMod);
+
+  
   rbconfig->drb_ToAddModList = calloc(1,sizeof(*rbconfig->drb_ToAddModList));
   NR_DRB_ToAddMod_t *drb_ToAddMod = calloc(1,sizeof(*drb_ToAddMod));
   drb_ToAddMod->cnAssociation = calloc(1,sizeof(*drb_ToAddMod->cnAssociation));
@@ -842,60 +924,117 @@ void nr_DRB_preconfiguration(void)
   xer_fprint(stdout, &asn_DEF_NR_RadioBearerConfig, (const void*)rbconfig);
 
 
-  NR_RLC_BearerConfig_t *RLC_BearerConfig = calloc(1,sizeof(*RLC_BearerConfig));
 
-  RLC_BearerConfig->logicalChannelIdentity = 4;
-  RLC_BearerConfig->servedRadioBearer = calloc(1,sizeof(*RLC_BearerConfig->servedRadioBearer));
-  RLC_BearerConfig->servedRadioBearer->present =    NR_RLC_BearerConfig__servedRadioBearer_PR_drb_Identity;
+  NR_RLC_BearerConfig_t *RLC_BearerConfig_srb = calloc(1,sizeof(*RLC_BearerConfig_srb));
 
-  RLC_BearerConfig->servedRadioBearer->choice.drb_Identity=1;
-  RLC_BearerConfig->reestablishRLC=calloc(1,sizeof(*RLC_BearerConfig->reestablishRLC));
-  *RLC_BearerConfig->reestablishRLC=NR_RLC_BearerConfig__reestablishRLC_true;
-  RLC_BearerConfig->rlc_Config=calloc(1,sizeof(*RLC_BearerConfig->rlc_Config));
+  RLC_BearerConfig_srb->logicalChannelIdentity = 4;
+  RLC_BearerConfig_srb->servedRadioBearer = calloc(1,sizeof(*RLC_BearerConfig_srb->servedRadioBearer));
+  RLC_BearerConfig_srb->servedRadioBearer->present =    NR_RLC_BearerConfig__servedRadioBearer_PR_srb_Identity;
 
-  // RLC UM Bi-directional Bearer configuration
-  RLC_BearerConfig->rlc_Config->present = NR_RLC_Config_PR_um_Bi_Directional;
-  RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional = calloc(1,sizeof(*RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional));
-  RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional->ul_UM_RLC.sn_FieldLength = calloc(1,sizeof(*RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional->ul_UM_RLC.sn_FieldLength));
-  *RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional->ul_UM_RLC.sn_FieldLength   =    NR_SN_FieldLengthUM_size12;
+  RLC_BearerConfig_srb->servedRadioBearer->choice.srb_Identity=1;
+  RLC_BearerConfig_srb->reestablishRLC=calloc(1,sizeof(*RLC_BearerConfig_srb->reestablishRLC));
+  *RLC_BearerConfig_srb->reestablishRLC=NR_RLC_BearerConfig__reestablishRLC_true;
+  RLC_BearerConfig_srb->rlc_Config=calloc(1,sizeof(*RLC_BearerConfig_srb->rlc_Config));
 
-  RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional->dl_UM_RLC.sn_FieldLength = calloc(1,sizeof(*RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional->dl_UM_RLC.sn_FieldLength));
-  *RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional->dl_UM_RLC.sn_FieldLength   =    NR_SN_FieldLengthUM_size12;
-  RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional->dl_UM_RLC.t_Reassembly = NR_T_Reassembly_ms15;
 
-  // RLC AM Bearer configuration
-  /*RLC_BearerConfig->rlc_Config->present = NR_RLC_Config_PR_am;
-  RLC_BearerConfig->rlc_Config->choice.am = calloc(1,sizeof(*RLC_BearerConfig->rlc_Config->choice.am));
-  RLC_BearerConfig->rlc_Config->choice.am->ul_AM_RLC.sn_FieldLength = calloc(1,sizeof(*RLC_BearerConfig->rlc_Config->choice.am->ul_AM_RLC.sn_FieldLength));
-  *RLC_BearerConfig->rlc_Config->choice.am->ul_AM_RLC.sn_FieldLength   =    NR_SN_FieldLengthAM_size18;
-  RLC_BearerConfig->rlc_Config->choice.am->ul_AM_RLC.t_PollRetransmit = NR_T_PollRetransmit_ms45;
-  RLC_BearerConfig->rlc_Config->choice.am->ul_AM_RLC.pollPDU          = NR_PollPDU_p64;
-  RLC_BearerConfig->rlc_Config->choice.am->ul_AM_RLC.pollByte         = NR_PollByte_kB500;
-  RLC_BearerConfig->rlc_Config->choice.am->ul_AM_RLC.maxRetxThreshold = NR_UL_AM_RLC__maxRetxThreshold_t32;
+   // RLC AM Bearer configuration
+  RLC_BearerConfig_srb->rlc_Config->present = NR_RLC_Config_PR_am;
+  RLC_BearerConfig_srb->rlc_Config->choice.am = calloc(1,sizeof(*RLC_BearerConfig_srb->rlc_Config->choice.am));
+  RLC_BearerConfig_srb->rlc_Config->choice.am->ul_AM_RLC.sn_FieldLength = calloc(1,sizeof(*RLC_BearerConfig_srb->rlc_Config->choice.am->ul_AM_RLC.sn_FieldLength));
+  *RLC_BearerConfig_srb->rlc_Config->choice.am->ul_AM_RLC.sn_FieldLength   =    NR_SN_FieldLengthAM_size18;
+  RLC_BearerConfig_srb->rlc_Config->choice.am->ul_AM_RLC.t_PollRetransmit = NR_T_PollRetransmit_ms45;
+  RLC_BearerConfig_srb->rlc_Config->choice.am->ul_AM_RLC.pollPDU          = NR_PollPDU_p64;
+  RLC_BearerConfig_srb->rlc_Config->choice.am->ul_AM_RLC.pollByte         = NR_PollByte_kB500;
+  RLC_BearerConfig_srb->rlc_Config->choice.am->ul_AM_RLC.maxRetxThreshold = NR_UL_AM_RLC__maxRetxThreshold_t32;
 
-  RLC_BearerConfig->rlc_Config->choice.am->dl_AM_RLC.sn_FieldLength = calloc(1,sizeof(*RLC_BearerConfig->rlc_Config->choice.am->dl_AM_RLC.sn_FieldLength));
-  *RLC_BearerConfig->rlc_Config->choice.am->dl_AM_RLC.sn_FieldLength = NR_SN_FieldLengthAM_size18;
-  RLC_BearerConfig->rlc_Config->choice.am->dl_AM_RLC.t_Reassembly   = NR_T_Reassembly_ms15;
-  RLC_BearerConfig->rlc_Config->choice.am->dl_AM_RLC.t_StatusProhibit = NR_T_StatusProhibit_ms15;*/
+  RLC_BearerConfig_srb->rlc_Config->choice.am->dl_AM_RLC.sn_FieldLength = calloc(1,sizeof(*RLC_BearerConfig_srb->rlc_Config->choice.am->dl_AM_RLC.sn_FieldLength));
+  *RLC_BearerConfig_srb->rlc_Config->choice.am->dl_AM_RLC.sn_FieldLength = NR_SN_FieldLengthAM_size18;
+  RLC_BearerConfig_srb->rlc_Config->choice.am->dl_AM_RLC.t_Reassembly   = NR_T_Reassembly_ms15;
+  RLC_BearerConfig_srb->rlc_Config->choice.am->dl_AM_RLC.t_StatusProhibit = NR_T_StatusProhibit_ms15;
+  // // RLC UM Bi-directional Bearer configuration
+  // RLC_BearerConfig_srb->rlc_Config->present = NR_RLC_Config_PR_um_Bi_Directional;
+  // RLC_BearerConfig_srb->rlc_Config->choice.um_Bi_Directional = calloc(1,sizeof(*RLC_BearerConfig_srb->rlc_Config->choice.um_Bi_Directional));
+  // RLC_BearerConfig_srb->rlc_Config->choice.um_Bi_Directional->ul_UM_RLC.sn_FieldLength = calloc(1,sizeof(*RLC_BearerConfig_srb->rlc_Config->choice.um_Bi_Directional->ul_UM_RLC.sn_FieldLength));
+  // *RLC_BearerConfig_srb->rlc_Config->choice.um_Bi_Directional->ul_UM_RLC.sn_FieldLength   =    NR_SN_FieldLengthUM_size12;
 
-  RLC_BearerConfig->mac_LogicalChannelConfig = calloc(1,sizeof(*RLC_BearerConfig->mac_LogicalChannelConfig));
-  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters = calloc(1,sizeof(*RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters));
-  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->priority            = 1;
-  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->prioritisedBitRate  = NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity;
-  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->bucketSizeDuration  = NR_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50;
-  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->allowedServingCells = NULL;
-  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->allowedSCS_List     = NULL;
-  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->maxPUSCH_Duration   = NULL;
-  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->configuredGrantType1Allowed = NULL;
-  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelGroup   = calloc(1,sizeof(*RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelGroup));
-  *RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelGroup  = 1;
-  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->schedulingRequestID   = NULL;
-  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelSR_Mask = false;
-  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelSR_DelayTimerApplied = false;
-  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->bitRateQueryProhibitTimer   = NULL;
+  // RLC_BearerConfig_srb->rlc_Config->choice.um_Bi_Directional->dl_UM_RLC.sn_FieldLength = calloc(1,sizeof(*RLC_BearerConfig_srb->rlc_Config->choice.um_Bi_Directional->dl_UM_RLC.sn_FieldLength));
+  // *RLC_BearerConfig_srb->rlc_Config->choice.um_Bi_Directional->dl_UM_RLC.sn_FieldLength   =    NR_SN_FieldLengthUM_size12;
+  // RLC_BearerConfig_srb->rlc_Config->choice.um_Bi_Directional->dl_UM_RLC.t_Reassembly = NR_T_Reassembly_ms15;
+
+  RLC_BearerConfig_srb->mac_LogicalChannelConfig = calloc(1,sizeof(*RLC_BearerConfig_srb->mac_LogicalChannelConfig));
+  RLC_BearerConfig_srb->mac_LogicalChannelConfig->ul_SpecificParameters = calloc(1,sizeof(*RLC_BearerConfig_srb->mac_LogicalChannelConfig->ul_SpecificParameters));
+  RLC_BearerConfig_srb->mac_LogicalChannelConfig->ul_SpecificParameters->priority            = 1;
+  RLC_BearerConfig_srb->mac_LogicalChannelConfig->ul_SpecificParameters->prioritisedBitRate  = NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity;
+  RLC_BearerConfig_srb->mac_LogicalChannelConfig->ul_SpecificParameters->bucketSizeDuration  = NR_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50;
+  RLC_BearerConfig_srb->mac_LogicalChannelConfig->ul_SpecificParameters->allowedServingCells = NULL;
+  RLC_BearerConfig_srb->mac_LogicalChannelConfig->ul_SpecificParameters->allowedSCS_List     = NULL;
+  RLC_BearerConfig_srb->mac_LogicalChannelConfig->ul_SpecificParameters->maxPUSCH_Duration   = NULL;
+  RLC_BearerConfig_srb->mac_LogicalChannelConfig->ul_SpecificParameters->configuredGrantType1Allowed = NULL;
+  RLC_BearerConfig_srb->mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelGroup   = calloc(1,sizeof(*RLC_BearerConfig_srb->mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelGroup));
+  *RLC_BearerConfig_srb->mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelGroup  = 1;
+  RLC_BearerConfig_srb->mac_LogicalChannelConfig->ul_SpecificParameters->schedulingRequestID   = NULL;
+  RLC_BearerConfig_srb->mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelSR_Mask = false;
+  RLC_BearerConfig_srb->mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelSR_DelayTimerApplied = false;
+  RLC_BearerConfig_srb->mac_LogicalChannelConfig->ul_SpecificParameters->bitRateQueryProhibitTimer   = NULL;
 
   Rlc_Bearer_ToAdd_list = calloc(1,sizeof(*Rlc_Bearer_ToAdd_list));
-  ASN_SEQUENCE_ADD(&Rlc_Bearer_ToAdd_list->list, RLC_BearerConfig);
+  ASN_SEQUENCE_ADD(&Rlc_Bearer_ToAdd_list->list, RLC_BearerConfig_srb);
+
+
+  NR_RLC_BearerConfig_t *RLC_BearerConfig_drb = calloc(1,sizeof(*RLC_BearerConfig_drb));  
+
+  RLC_BearerConfig_drb->logicalChannelIdentity = 4;
+  RLC_BearerConfig_drb->servedRadioBearer = calloc(1,sizeof(*RLC_BearerConfig_drb->servedRadioBearer));
+  RLC_BearerConfig_drb->servedRadioBearer->present =    NR_RLC_BearerConfig__servedRadioBearer_PR_drb_Identity;
+
+  RLC_BearerConfig_drb->servedRadioBearer->choice.drb_Identity=1;
+  RLC_BearerConfig_drb->reestablishRLC=calloc(1,sizeof(*RLC_BearerConfig_drb->reestablishRLC));
+  *RLC_BearerConfig_drb->reestablishRLC=NR_RLC_BearerConfig__reestablishRLC_true;
+  RLC_BearerConfig_drb->rlc_Config=calloc(1,sizeof(*RLC_BearerConfig_drb->rlc_Config));
+
+  // RLC UM Bi-directional Bearer configuration
+  RLC_BearerConfig_drb->rlc_Config->present = NR_RLC_Config_PR_um_Bi_Directional;
+  RLC_BearerConfig_drb->rlc_Config->choice.um_Bi_Directional = calloc(1,sizeof(*RLC_BearerConfig_drb->rlc_Config->choice.um_Bi_Directional));
+  RLC_BearerConfig_drb->rlc_Config->choice.um_Bi_Directional->ul_UM_RLC.sn_FieldLength = calloc(1,sizeof(*RLC_BearerConfig_drb->rlc_Config->choice.um_Bi_Directional->ul_UM_RLC.sn_FieldLength));
+  *RLC_BearerConfig_drb->rlc_Config->choice.um_Bi_Directional->ul_UM_RLC.sn_FieldLength   =    NR_SN_FieldLengthUM_size12;
+
+  RLC_BearerConfig_drb->rlc_Config->choice.um_Bi_Directional->dl_UM_RLC.sn_FieldLength = calloc(1,sizeof(*RLC_BearerConfig_drb->rlc_Config->choice.um_Bi_Directional->dl_UM_RLC.sn_FieldLength));
+  *RLC_BearerConfig_drb->rlc_Config->choice.um_Bi_Directional->dl_UM_RLC.sn_FieldLength   =    NR_SN_FieldLengthUM_size12;
+  RLC_BearerConfig_drb->rlc_Config->choice.um_Bi_Directional->dl_UM_RLC.t_Reassembly = NR_T_Reassembly_ms15;
+
+  // RLC AM Bearer configuration
+  /*RLC_BearerConfig_drb->rlc_Config->present = NR_RLC_Config_PR_am;
+  RLC_BearerConfig_drb->rlc_Config->choice.am = calloc(1,sizeof(*RLC_BearerConfig_drb->rlc_Config->choice.am));
+  RLC_BearerConfig_drb->rlc_Config->choice.am->ul_AM_RLC.sn_FieldLength = calloc(1,sizeof(*RLC_BearerConfig_drb->rlc_Config->choice.am->ul_AM_RLC.sn_FieldLength));
+  *RLC_BearerConfig_drb->rlc_Config->choice.am->ul_AM_RLC.sn_FieldLength   =    NR_SN_FieldLengthAM_size18;
+  RLC_BearerConfig_drb->rlc_Config->choice.am->ul_AM_RLC.t_PollRetransmit = NR_T_PollRetransmit_ms45;
+  RLC_BearerConfig_drb->rlc_Config->choice.am->ul_AM_RLC.pollPDU          = NR_PollPDU_p64;
+  RLC_BearerConfig_drb->rlc_Config->choice.am->ul_AM_RLC.pollByte         = NR_PollByte_kB500;
+  RLC_BearerConfig_drb->rlc_Config->choice.am->ul_AM_RLC.maxRetxThreshold = NR_UL_AM_RLC__maxRetxThreshold_t32;
+
+  RLC_BearerConfig_drb->rlc_Config->choice.am->dl_AM_RLC.sn_FieldLength = calloc(1,sizeof(*RLC_BearerConfig_drb->rlc_Config->choice.am->dl_AM_RLC.sn_FieldLength));
+  *RLC_BearerConfig_drb->rlc_Config->choice.am->dl_AM_RLC.sn_FieldLength = NR_SN_FieldLengthAM_size18;
+  RLC_BearerConfig_drb->rlc_Config->choice.am->dl_AM_RLC.t_Reassembly   = NR_T_Reassembly_ms15;
+  RLC_BearerConfig_drb->rlc_Config->choice.am->dl_AM_RLC.t_StatusProhibit = NR_T_StatusProhibit_ms15;*/
+
+  RLC_BearerConfig_drb->mac_LogicalChannelConfig = calloc(1,sizeof(*RLC_BearerConfig_drb->mac_LogicalChannelConfig));
+  RLC_BearerConfig_drb->mac_LogicalChannelConfig->ul_SpecificParameters = calloc(1,sizeof(*RLC_BearerConfig_drb->mac_LogicalChannelConfig->ul_SpecificParameters));
+  RLC_BearerConfig_drb->mac_LogicalChannelConfig->ul_SpecificParameters->priority            = 1;
+  RLC_BearerConfig_drb->mac_LogicalChannelConfig->ul_SpecificParameters->prioritisedBitRate  = NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity;
+  RLC_BearerConfig_drb->mac_LogicalChannelConfig->ul_SpecificParameters->bucketSizeDuration  = NR_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50;
+  RLC_BearerConfig_drb->mac_LogicalChannelConfig->ul_SpecificParameters->allowedServingCells = NULL;
+  RLC_BearerConfig_drb->mac_LogicalChannelConfig->ul_SpecificParameters->allowedSCS_List     = NULL;
+  RLC_BearerConfig_drb->mac_LogicalChannelConfig->ul_SpecificParameters->maxPUSCH_Duration   = NULL;
+  RLC_BearerConfig_drb->mac_LogicalChannelConfig->ul_SpecificParameters->configuredGrantType1Allowed = NULL;
+  RLC_BearerConfig_drb->mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelGroup   = calloc(1,sizeof(*RLC_BearerConfig_drb->mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelGroup));
+  *RLC_BearerConfig_drb->mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelGroup  = 1;
+  RLC_BearerConfig_drb->mac_LogicalChannelConfig->ul_SpecificParameters->schedulingRequestID   = NULL;
+  RLC_BearerConfig_drb->mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelSR_Mask = false;
+  RLC_BearerConfig_drb->mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelSR_DelayTimerApplied = false;
+  RLC_BearerConfig_drb->mac_LogicalChannelConfig->ul_SpecificParameters->bitRateQueryProhibitTimer   = NULL;
+
+  // Rlc_Bearer_ToAdd_list = calloc(1,sizeof(*Rlc_Bearer_ToAdd_list));  //上面srb已经定义过了
+  ASN_SEQUENCE_ADD(&Rlc_Bearer_ToAdd_list->list, RLC_BearerConfig_drb);
 
   if (ENB_NAS_USE_TUN){
     PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, 0, ENB_FLAG_YES, 0x1234, 0, 0,0);
@@ -906,7 +1045,7 @@ void nr_DRB_preconfiguration(void)
 
   nr_rrc_pdcp_config_asn1_req(
     &ctxt,
-    (NR_SRB_ToAddModList_t *) NULL,
+    rbconfig->srb_ToAddModList,
     rbconfig->drb_ToAddModList ,
     rbconfig->drb_ToReleaseList,
     0xff,
@@ -918,7 +1057,7 @@ void nr_DRB_preconfiguration(void)
     Rlc_Bearer_ToAdd_list);
 
   nr_rrc_rlc_config_asn1_req (&ctxt,
-      (NR_SRB_ToAddModList_t *) NULL,
+      rbconfig->srb_ToAddModList,
       rbconfig->drb_ToAddModList,
       rbconfig->drb_ToReleaseList,
       (LTE_PMCH_InfoList_r9_t *) NULL,
@@ -1028,6 +1167,51 @@ static boolean_t pdcp_data_req_drb(
   return 1;
 }
 
+static boolean_t pdcp_data_req_srb(
+  protocol_ctxt_t  *ctxt_pP,
+  const rb_id_t rb_id,
+  const mui_t muiP,
+  const confirm_t confirmP,
+  const sdu_size_t sdu_buffer_size,
+  unsigned char *const sdu_buffer)
+{
+  LOG_D(PDCP, "%s() called, size %d\n", __func__, sdu_buffer_size);
+  nr_pdcp_ue_t *ue;
+  nr_pdcp_entity_t *rb;
+  int rnti = ctxt_pP->rnti;
+
+  if (ctxt_pP->module_id != 0 ||
+      //ctxt_pP->enb_flag != 1 ||
+      ctxt_pP->instance != 0 ||
+      ctxt_pP->eNB_index != 0 /*||
+      ctxt_pP->configured != 1 ||
+      ctxt_pP->brOption != 0*/) {
+    LOG_E(PDCP, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
+    exit(1);
+  }
+
+  nr_pdcp_manager_lock(nr_pdcp_ue_manager);
+
+  ue = nr_pdcp_manager_get_ue(nr_pdcp_ue_manager, rnti);
+
+  if (rb_id < 1 || rb_id > 5)
+    rb = NULL;
+  else
+    rb = ue->srb[rb_id - 1];
+
+  if (rb == NULL) {
+    LOG_E(PDCP, "%s:%d:%s: no SRB found (rnti %d, rb_id %ld)\n",
+          __FILE__, __LINE__, __FUNCTION__, rnti, rb_id);
+    return 0;
+  }
+
+  rb->recv_sdu(rb, (char *)sdu_buffer, sdu_buffer_size, muiP);
+
+  nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
+
+  return 1;
+}
+
 boolean_t pdcp_data_req(
   protocol_ctxt_t  *ctxt_pP,
   const srb_flag_t srb_flagP,
@@ -1043,7 +1227,10 @@ boolean_t pdcp_data_req(
 #endif
   )
 {
-  if (srb_flagP) { TODO; }
+  if (srb_flagP) { 
+    return pdcp_data_req_srb(ctxt_pP, rb_id, muiP, confirmP, sdu_buffer_size,
+                           sdu_buffer); 
+  }
   return pdcp_data_req_drb(ctxt_pP, rb_id, muiP, confirmP, sdu_buffer_size,
                            sdu_buffer);
 }
