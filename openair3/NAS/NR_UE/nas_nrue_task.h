@@ -37,9 +37,21 @@
 # define REGISTRATION_ACCEPT        0b01000010
 # define REGISTRATION_COMPLETE      0b01000011
 typedef struct  __attribute__((packed)) {
+  unsigned int iei:8;
+  unsigned int len:16;
+  identitytype_t mi:3;
+  unsigned int indic:1;
+  unsigned int digit1:4;
+  unsigned int digit2:4;
+  unsigned int digit3:4;
+} SGSmobileidentityIMEISV_t;
+
+typedef struct  __attribute__((packed)) {
   Extendedprotocoldiscriminator_t epd:8;
   Security_header_t sh:8;
   SGSmobilitymanagementmessages_t mt:8;
+  /* Optional fields */
+  SGSmobileidentityIMEISV_t sgsmobileidentityimeisv;
 } securityModeComplete_t;
 
 typedef struct  __attribute__((packed)) {
@@ -71,6 +83,7 @@ typedef union {
   securityModeComplete_t securitymode_complete;
   registrationaccept_t registration_accept;
   registrationcomplete_t registration_complete;
+  registration_request_msg registration_request;
 } UENAS_msg;
 
 void *nas_nrue_task(void *args_p);
@@ -83,6 +96,7 @@ int encode_registration_complete5g(registrationcomplete_t *registrationcomplete,
 int authenticationResponse5g(authenticationresponse_t *msg);
 int securityModeComplete5g(securityModeComplete_t *msg);
 int registrationComplete5g(registrationcomplete_t *msg);
+void SUCIRegistrationRequest(as_nas_info_t *initialNasMsg);
 
 int string2ByteArray(char* input,uint8_t* output); //CUC:test
 void tesths(void);

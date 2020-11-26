@@ -91,10 +91,11 @@ void *nas_ue_task(void *args_p)
       case NAS_CELL_SELECTION_CNF:  //CUC：NAS_CELL_SELECTION_CNF √
         LOG_I(NAS, "[UE %d] Received %s: errCode %u, cellID %u, tac %u\n", Mod_id,  ITTI_MSG_NAME (msg_p),
               NAS_CELL_SELECTION_CNF (msg_p).errCode, NAS_CELL_SELECTION_CNF (msg_p).cellID, NAS_CELL_SELECTION_CNF (msg_p).tac);
-        as_stmsi_t s_tmsi={0,0};
+        as_stmsi_t s_tmsi={0, 0};
+        as_nas_info_t nas_info;
         plmn_t plmnID={0, 0, 0, 0};
-        Byte_t  data = 0;
-        nas_itti_nas_establish_req(0, AS_TYPE_ORIGINATING_SIGNAL, s_tmsi, plmnID, &data, 0, 0);
+        SUCIRegistrationRequest(&nas_info);
+        nas_itti_nas_establish_req(0, AS_TYPE_ORIGINATING_SIGNAL, s_tmsi, plmnID, nas_info.data, nas_info.length, 0);
         break;
 
       case NAS_CELL_SELECTION_IND:
@@ -150,6 +151,74 @@ void *nas_ue_task(void *args_p)
 
   free(users);
   return NULL;
+}
+
+void SUCIRegistrationRequest(as_nas_info_t *initialNasMsg) {
+  int size = sizeof(mm_msg_header_t);
+  UENAS_msg nas_msg;
+  memset(&nas_msg, 0, sizeof(UENAS_msg));
+  UENAS_msg *mm_msg;
+
+  mm_msg = &nas_msg;
+  // set header
+  mm_msg->header.ex_protocol_discriminator = FGS_MOBILITY_MANAGEMENT_MESSAGE;
+  mm_msg->header.security_header_type = PLAIN_5GS_MSG;
+  mm_msg->header.message_type = REGISTRATION_REQUEST;
+
+
+  // set registration request
+  mm_msg->registration_request.protocoldiscriminator = FGS_MOBILITY_MANAGEMENT_MESSAGE;
+  size += 1;
+  mm_msg->registration_request.securityheadertype = PLAIN_5GS_MSG;
+  size += 1;
+  mm_msg->registration_request.messagetype = REGISTRATION_REQUEST;
+  size += 1;
+  mm_msg->registration_request.fgsregistrationtype = INITIAL_REGISTRATION;
+  mm_msg->registration_request.naskeysetidentifier.naskeysetidentifier = NAS_KEY_SET_IDENTIFIER_NOT_AVAILABLE;
+  size += 1;
+
+  mm_msg->registration_request.fgsmobileidentity.suci.supiformat = 0;
+  mm_msg->registration_request.fgsmobileidentity.suci.typeofidentity = FGS_MOBILE_IDENTITY_SUCI;
+
+  //SGS mobile idengtity
+  mm_msg->registration_request.fgsmobileidentity.suci.mccdigit2 = 0;
+  mm_msg->registration_request.fgsmobileidentity.suci.mccdigit1 = 2;
+  mm_msg->registration_request.fgsmobileidentity.suci.mncdigit3 = 15;
+  mm_msg->registration_request.fgsmobileidentity.suci.mccdigit3 = 8;
+  mm_msg->registration_request.fgsmobileidentity.suci.mncdigit2 = 3;
+  mm_msg->registration_request.fgsmobileidentity.suci.mncdigit1 = 9;
+  mm_msg->registration_request.fgsmobileidentity.suci.routingindicatordigit2 = 0;
+  mm_msg->registration_request.fgsmobileidentity.suci.routingindicatordigit1 = 0;
+  mm_msg->registration_request.fgsmobileidentity.suci.routingindicatordigit4 = 0;
+  mm_msg->registration_request.fgsmobileidentity.suci.routingindicatordigit3 = 0;
+  mm_msg->registration_request.fgsmobileidentity.suci.protectionschemeId = 0;
+  mm_msg->registration_request.fgsmobileidentity.suci.homenetworkpki = 0;
+  mm_msg->registration_request.fgsmobileidentity.suci.msin = 0x00004778;
+
+
+  size += 14;
+
+  mm_msg->registration_request.presencemask |= REGISTRATION_REQUEST_5GMM_CAPABILITY_PRESENT;
+  mm_msg->registration_request.fgmmcapability.iei = REGISTRATION_REQUEST_5GMM_CAPABILITY_IEI;
+  mm_msg->registration_request.fgmmcapability.length = 1;
+  mm_msg->registration_request.fgmmcapability.value = 0x7;
+  size += 3;
+
+  mm_msg->registration_request.presencemask |= REGISTRATION_REQUEST_UE_SECURITY_CAPABILITY_PRESENT;
+  mm_msg->registration_request.nruesecuritycapability.iei = REGISTRATION_REQUEST_UE_SECURITY_CAPABILITY_IEI;
+  mm_msg->registration_request.nruesecuritycapability.length = 8;
+  mm_msg->registration_request.nruesecuritycapability.fg_EA = 0x80;
+  mm_msg->registration_request.nruesecuritycapability.fg_IA = 0x20;
+  mm_msg->registration_request.nruesecuritycapability.EEA = 0;
+  mm_msg->registration_request.nruesecuritycapability.EIA = 0;
+  size += 10;
+
+  // encode the message
+  initialNasMsg->data = (Byte_t *)malloc(size * sizeof(Byte_t));
+
+  initialNasMsg->length = encodeNasMsg(mm_msg, (uint8_t*)(initialNasMsg->data), size);
+
+
 }
 
 void nr_nas_proc_dl_transfer_ind (UENAS_msg *msg,  Byte_t *data, uint32_t len) { //QUES: 解出的msg干什么
@@ -255,6 +324,18 @@ void tesths(void) //CUC:test
   string2ByteArray(Registrationrequest, data3);
   nr_nas_proc_dl_transfer_ind(&msg3,data3,len3);
 
+  printf("Registration request: \n ");
+  as_nas_info_t nas_info;
+  SUCIRegistrationRequest(&nas_info);
+  printf("encodeaaaencode:");
+  for (int i = 0; i < nas_info.length; i++)
+  {
+    printf("%02x ",*(nas_info.data+i));
+
+  }
+  printf("encodeaaaencode \n ");
+  //******************************
+
   
 }
 int decodeNasMsg(UENAS_msg *msg, uint8_t *buffer, uint32_t len) {
@@ -331,6 +412,10 @@ int encodeNasMsg(UENAS_msg *msg, uint8_t *buffer, uint32_t len) { //QUES:UENAS_m
       encode_result = encode_registration_complete5g(&msg->registration_complete, buffer, len);//TODO:encode_security_mode_complete5g
       break;
     }
+
+    case REGISTRATION_REQUEST:
+      encode_result = encode_registration_request(&msg->registration_request, buffer, len);
+    break;
   }
   LOG_FUNC_RETURN (header_result + encode_result);
 }
@@ -409,6 +494,20 @@ int encode_security_mode_complete5g(securityModeComplete_t *securitymodecomplete
 {
   int encoded = 0;
 
+  if (securitymodecomplete->sgsmobileidentityimeisv.iei > 0) {
+    *buffer = securitymodecomplete->sgsmobileidentityimeisv.iei;
+    encoded++;
+  }
+
+  *(buffer + encoded) = 0x00 | securitymodecomplete->sgsmobileidentityimeisv.len>>4;
+  encoded++;
+  *(buffer + encoded) = securitymodecomplete->sgsmobileidentityimeisv.len;
+  encoded++;
+  *(buffer + encoded) = 0x00 | ((securitymodecomplete->sgsmobileidentityimeisv.digit1&0x0f)<<4) | ((securitymodecomplete->sgsmobileidentityimeisv.indic&0x01)<<3) | (securitymodecomplete->sgsmobileidentityimeisv.mi&0x0f);
+  encoded++;
+  *(buffer + encoded) = 0x00 | ((securitymodecomplete->sgsmobileidentityimeisv.digit3&0x0f)<<4) | (securitymodecomplete->sgsmobileidentityimeisv.digit2&0x0f);
+  encoded++;
+
   return encoded;
 }
 
@@ -435,6 +534,13 @@ int securityModeComplete5g(securityModeComplete_t *msg) {
   msg->epd=SGSmobilitymanagementmessages;
   msg->sh=0;
   msg->mt=Securitymodecomplete;
+  msg->sgsmobileidentityimeisv.iei=0x77;
+  msg->sgsmobileidentityimeisv.len=2;
+  msg->sgsmobileidentityimeisv.indic=0;
+  msg->sgsmobileidentityimeisv.mi=IMEISV;
+  msg->sgsmobileidentityimeisv.digit1=1;
+  msg->sgsmobileidentityimeisv.digit2=1;
+  msg->sgsmobileidentityimeisv.digit3=1;
   return sizeof(securityModeComplete_t);
 }
 

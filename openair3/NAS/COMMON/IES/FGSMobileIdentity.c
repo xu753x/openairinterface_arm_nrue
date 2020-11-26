@@ -41,6 +41,8 @@ static int decode_guti_5gs_mobile_identity(Guti5GSMobileIdentity_t *guti, uint8_
 
 static int encode_guti_5gs_mobile_identity(Guti5GSMobileIdentity_t *guti, uint8_t *buffer);
 
+static int encode_suci_5gs_mobile_identity(Suci5GSMobileIdentity_t *suci, uint8_t *buffer);
+
 int decode_5gs_mobile_identity(FGSMobileIdentity *fgsmobileidentity, uint8_t iei, uint8_t *buffer, uint32_t len)
 {
   int decoded_rc = TLV_DECODE_VALUE_DOESNT_MATCH;
@@ -84,6 +86,11 @@ int encode_5gs_mobile_identity(FGSMobileIdentity *fgsmobileidentity, uint8_t iei
 
   if (fgsmobileidentity->guti.typeofidentity == FGS_MOBILE_IDENTITY_5G_GUTI) {
     encoded_rc = encode_guti_5gs_mobile_identity(&fgsmobileidentity->guti,
+                 buffer + encoded);
+  }
+
+   if (fgsmobileidentity->guti.typeofidentity == FGS_MOBILE_IDENTITY_SUCI) {
+    encoded_rc = encode_suci_5gs_mobile_identity(&fgsmobileidentity->suci,
                  buffer + encoded);
   }
 
@@ -173,3 +180,36 @@ static int encode_guti_5gs_mobile_identity(Guti5GSMobileIdentity_t *guti, uint8_
   return encoded;
 }
 
+static int encode_suci_5gs_mobile_identity(Suci5GSMobileIdentity_t *suci, uint8_t *buffer)
+{
+  uint32_t encoded = 0;
+
+  *(buffer + encoded) = 0x00 | ((suci->supiformat & 0x7) << 4) |
+                        (suci->typeofidentity & 0x7);
+  encoded++;
+  *(buffer + encoded) = 0x00 | ((suci->mccdigit2 & 0xf) << 4) |
+                        (suci->mccdigit1 & 0xf);
+  encoded++;
+  *(buffer + encoded) = 0x00 | ((suci->mncdigit3 & 0xf) << 4) |
+                        (suci->mccdigit3 & 0xf);
+  encoded++;
+  *(buffer + encoded) = 0x00 | ((suci->mncdigit2 & 0xf) << 4) |
+                        (suci->mncdigit1 & 0xf);
+  encoded++;
+
+  *(buffer + encoded) = 0x00 | ((suci->routingindicatordigit2 & 0xf) << 4) |
+                        (suci->routingindicatordigit1 & 0xf);
+  encoded++;
+  *(buffer + encoded) = 0x00 | ((suci->routingindicatordigit4 & 0xf) << 4) |
+                        (suci->routingindicatordigit3 & 0xf);
+  encoded++;
+
+  *(buffer + encoded) = 0x00 | (suci->protectionschemeId & 0xf);
+  encoded++;
+
+  *(buffer + encoded) = suci->homenetworkpki;
+  encoded++;
+
+  IES_ENCODE_U32(buffer, encoded, suci->msin);
+  return encoded;
+}
