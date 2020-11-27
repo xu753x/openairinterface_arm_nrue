@@ -1,7 +1,7 @@
 
 ranRepository : https://gitlab.eurecom.fr/oai/openairinterface5g.git
-ranBranch : integration_wk48_2 
-ranCommitID : b16d7b2eedae6cb3bd44ea91f2efddc2d132dfbe 
+ranBranch : BRANCH_NAME 
+ranCommitID : COMMIT_ID 
 ranAllowMerge : 'true' 
 ranTargetBranch : develop
 
