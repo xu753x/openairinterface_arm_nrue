@@ -1529,7 +1529,25 @@ int8_t nr_rrc_ue_decode_NR_DL_DCCH_Message(
           
           case NR_DL_DCCH_MessageType__c1_PR_rrcReestablishment:
           case NR_DL_DCCH_MessageType__c1_PR_securityModeCommand:
-          case NR_DL_DCCH_MessageType__c1_PR_dlInformationTransfer:
+          case NR_DL_DCCH_MessageType__c1_PR_dlInformationTransfer: {
+          //不对应
+          //NR_UL_DCCH_MessageType__c1_PR_ulInformationTransfer=8
+            if(nr_dl_dcch_msg->message.choice.c1->choice.dlInformationTransfer->criticalExtensions.present == NR_DLInformationTransfer__criticalExtensions_PR_dlInformationTransfer){
+              uint32_t pdu_length;
+              uint8_t *pdu_buffer;
+              MessageDef *msg_p;
+              pdu_length = nr_dl_dcch_msg->message.choice.c1->choice.dlInformationTransfer->criticalExtensions.choice.dlInformationTransfer->dedicatedNAS_Message->size;
+              pdu_buffer = nr_dl_dcch_msg->message.choice.c1->choice.dlInformationTransfer->criticalExtensions.choice.dlInformationTransfer->dedicatedNAS_Message->buf;
+              msg_p = itti_alloc_new_message(TASK_RRC_UE, NAS_DOWNLINK_DATA_IND);
+              // NAS_DOWNLINK_DATA_IND(msg_p).UEid = ctxt_pP->module_id; // TODO set the UEid to something else ?
+              NAS_DOWNLINK_DATA_IND(msg_p).UEid = 0;
+              NAS_DOWNLINK_DATA_IND(msg_p).nasMsg.length = pdu_length;
+              NAS_DOWNLINK_DATA_IND(msg_p).nasMsg.data = pdu_buffer;
+              // itti_send_msg_to_task(TASK_NAS_UE, ctxt_pP->instance, msg_p);
+              itti_send_msg_to_task(TASK_NAS_UE, 0, msg_p);
+              }
+            break;
+            }
           case NR_DL_DCCH_MessageType__c1_PR_ueCapabilityEnquiry:
           case NR_DL_DCCH_MessageType__c1_PR_counterCheck:
           case NR_DL_DCCH_MessageType__c1_PR_mobilityFromNRCommand:
@@ -2445,7 +2463,7 @@ void *rrc_nrue_task( void *args_p ) {
         uint8_t *buffer;
         LOG_D(RRC, "[UE %d] Received %s: UEid %d\n", ue_mod_id, ITTI_MSG_NAME (msg_p), NAS_UPLINK_DATA_REQ (msg_p).UEid);
         /* Create message for PDCP (ULInformationTransfer_t) */
-        length = do_ULInformationTransfer(&buffer, NAS_UPLINK_DATA_REQ (msg_p).nasMsg.length, NAS_UPLINK_DATA_REQ (msg_p).nasMsg.data);//QUES:
+        length = do_NR_ULInformationTransfer(&buffer, NAS_UPLINK_DATA_REQ (msg_p).nasMsg.length, NAS_UPLINK_DATA_REQ (msg_p).nasMsg.data);//QUES:
         break;
       }
 
