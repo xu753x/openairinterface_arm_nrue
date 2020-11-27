@@ -69,6 +69,8 @@ void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc,LTE_UE_CapabilityRAT_ContainerL
 
 void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_p, x2ap_ENDC_sgnb_addition_req_t *m);
 
+void rrc_remove_nsa_user(gNB_RRC_INST *rrc, int rnti);
+
 void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
 				     NR_CellGroupConfig_t *secondaryCellGroup,
 				     int scg_id,

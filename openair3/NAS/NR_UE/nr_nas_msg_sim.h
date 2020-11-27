@@ -1,11 +1,32 @@
-/*! \file nr_nas_msg_sim.h
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-\brief simulator for nr nas message
-\author Yoshio INOUE, Masayuki HARADA
-\email: yoshio.inoue@fujitsu.com,masayuki.harada@fujitsu.com
-\date 2020
-\version 0.1
-*/
+/*! \file nr_nas_msg_sim.h
+ * \brief simulator for nr nas message
+ * \author Yoshio INOUE, Masayuki HARADA
+ * \email yoshio.inoue@fujitsu.com,masayuki.harada@fujitsu.com
+ * \date 2020
+ * \version 0.1
+ */
+
 
 
 #ifndef __NR_NAS_MSG_SIM_H__
@@ -28,13 +49,32 @@
 #define REGISTRATION_REQUEST                               0b01000001 /* 65 = 0x41 */
 #define REGISTRATION_ACCEPT                                0b01000010 /* 66 = 0x42 */
 #define REGISTRATION_COMPLETE                              0b01000011 /* 67 = 0x43 */
+#define REGISTRATION_REJECT                                0b01000100 /* 68 = 0x44 */
+#define DEREGISTRATION_REQUEST_UE_ORIGINATING              0b01000101 /* 69 = 0x45 */
+#define DEREGISTRATION_ACCEPT_UE_ORIGINATING               0b01000110 /* 70 = 0x46 */
+#define DEREGISTRATION_REQUEST_UE_TERMINATED               0b01000111 /* 71 = 0x47 */
+#define DEREGISTRATION_ACCEPT_UE_TERMINATED                0b01001000 /* 72 = 0x48 */
+
+#define FIVEGMM_SERVICE_REQUEST                            0b01001100 /* 76 = 0x4c */
+#define FIVEGMM_SERVICE_REJECT                             0b01001101 /* 77 = 0x4d */
+#define FIVEGMM_SERVICE_ACCEPT                             0b01001110 /* 78 = 0x4e */
+#define CONFIGURATION_UPDATE_COMMAND                       0b01010100 /* 84 = 0x54 */
+#define CONFIGURATION_UPDATE_COMPLETE                      0b01010101 /* 85 = 0x55 */
 #define FGS_AUTHENTICATION_REQUEST                         0b01010110 /* 86 = 0x56 */
 #define FGS_AUTHENTICATION_RESPONSE                        0b01010111 /* 87 = 0x57 */
+#define AUTHENTICATION_REJECT                              0b01011000 /* 88 = 0x58 */
+#define AUTHENTICATION_FAILURE                             0b01011001 /* 89 = 0x59 */
+#define AUTHENTICATION_RESULT                              0b01011010 /* 90 = 0x5a */
 #define FGS_IDENTITY_REQUEST                               0b01011011 /* 91 = 0x5b */
 #define FGS_IDENTITY_RESPONSE                              0b01011100 /* 92 = 0x5c */
 #define FGS_SECURITY_MODE_COMMAND                          0b01011101 /* 93 = 0x5d */
 #define FGS_SECURITY_MODE_COMPLETE                         0b01011110 /* 94 = 0x5e */
+#define FIVEGMM_SECURITY_MODE_REJECT 	                     0b01011111 /* 95 = 0x5f */
+#define FIVEGMM_STATUS                                     0b01100100 /* 100 = 0x64 */
+#define NOTIFICATION                                       0b01100101 /* 101 = 0x65 */
+#define NOTIFICATION_RESPONSE                              0b01100110 /* 102 = 0x66 */
 #define FGS_UPLINK_NAS_TRANSPORT                           0b01100111 /* 103= 0x67 */
+#define DL_NAS_TRANSPORT                                   0b01101000 /* 104 = 0x68 */
 
 // message type for 5GS session management
 #define FGS_PDU_SESSION_ESTABLISHMENT_REQ                  0b11000001 /* 193= 0xc1 */

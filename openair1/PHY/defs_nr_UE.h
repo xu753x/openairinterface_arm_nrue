@@ -848,9 +848,6 @@ typedef struct {
   /// UE FAPI indication for DCI reception
   //fapi_nr_dci_indication_t dci_ind;
 
-  // point to the current rxTx thread index
-  uint8_t current_thread_id[NR_MAX_SLOTS_PER_FRAME];
-
   t_nrPolar_params *polarList;
   NR_UE_PDSCH     *pdsch_vars[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_eNB_MAX+1]; // two RxTx Threads
   NR_UE_PBCH      *pbch_vars[NUMBER_OF_CONNECTED_eNB_MAX];
@@ -912,10 +909,6 @@ typedef struct {
   char ulsch_no_allocation_counter[NUMBER_OF_CONNECTED_eNB_MAX];
 
   unsigned char ulsch_Msg3_active[NUMBER_OF_CONNECTED_gNB_MAX];
-  uint32_t  ulsch_Msg3_frame[NUMBER_OF_CONNECTED_gNB_MAX];
-  unsigned char ulsch_Msg3_subframe[NUMBER_OF_CONNECTED_gNB_MAX];
-  uint8_t Msg3_startSymbol[NUMBER_OF_CONNECTED_gNB_MAX];
-  uint8_t Msg3_Length[NUMBER_OF_CONNECTED_gNB_MAX];
 
   NR_PRACH_RESOURCES_t *prach_resources[NUMBER_OF_CONNECTED_gNB_MAX];
   int turbo_iterations, turbo_cntl_iterations;
@@ -1125,6 +1118,8 @@ typedef struct {
   SLIST_HEAD(ral_thresholds_gen_poll_s, ral_threshold_phy_t) ral_thresholds_gen_polled[RAL_LINK_PARAM_GEN_MAX];
   SLIST_HEAD(ral_thresholds_lte_poll_s, ral_threshold_phy_t) ral_thresholds_lte_polled[RAL_LINK_PARAM_LTE_MAX];
 #endif
+  
+  int dl_stats[5];
 
 } PHY_VARS_NR_UE;
 
