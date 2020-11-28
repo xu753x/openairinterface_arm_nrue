@@ -1260,3 +1260,16 @@ int do_DLInformationTransfer_NR (void * p) {
 	return 0;
 }
 
+
+uint8_t do_NR_ULInformationTransfer(uint8_t **buffer, uint32_t pdu_length, uint8_t *pdu_buffer) {
+  ssize_t encoded;
+  NR_UL_DCCH_Message_t ul_dcch_msg;
+  memset(&ul_dcch_msg, 0, sizeof(NR_UL_DCCH_Message_t));
+  ul_dcch_msg.message.present           = NR_UL_DCCH_MessageType_PR_c1;
+  ul_dcch_msg.message.choice.c1->present = NR_UL_DCCH_MessageType__c1_PR_ulInformationTransfer;
+  ul_dcch_msg.message.choice.c1->choice.ulInformationTransfer->criticalExtensions.present = NR_ULInformationTransfer__criticalExtensions_PR_ulInformationTransfer;
+  ul_dcch_msg.message.choice.c1->choice.ulInformationTransfer->criticalExtensions.choice.ulInformationTransfer->dedicatedNAS_Message->size = pdu_length;
+  ul_dcch_msg.message.choice.c1->choice.ulInformationTransfer->criticalExtensions.choice.ulInformationTransfer->dedicatedNAS_Message->buf = pdu_buffer;
+  encoded = uper_encode_to_new_buffer (&asn_DEF_NR_UL_DCCH_Message, NULL, (void *) &ul_dcch_msg, (void **) buffer);
+  return encoded;
+}

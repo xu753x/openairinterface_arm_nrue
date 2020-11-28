@@ -1530,7 +1530,23 @@ int8_t nr_rrc_ue_decode_NR_DL_DCCH_Message(
           
           case NR_DL_DCCH_MessageType__c1_PR_rrcReestablishment:
           case NR_DL_DCCH_MessageType__c1_PR_securityModeCommand:
-          case NR_DL_DCCH_MessageType__c1_PR_dlInformationTransfer:
+          case NR_DL_DCCH_MessageType__c1_PR_dlInformationTransfer: {
+            if(nr_dl_dcch_msg->message.choice.c1->choice.dlInformationTransfer->criticalExtensions.present == NR_DLInformationTransfer__criticalExtensions_PR_dlInformationTransfer){
+              uint32_t pdu_length;
+              uint8_t *pdu_buffer;
+              MessageDef *msg_p;
+              pdu_length = nr_dl_dcch_msg->message.choice.c1->choice.dlInformationTransfer->criticalExtensions.choice.dlInformationTransfer->dedicatedNAS_Message->size;
+              pdu_buffer = nr_dl_dcch_msg->message.choice.c1->choice.dlInformationTransfer->criticalExtensions.choice.dlInformationTransfer->dedicatedNAS_Message->buf;
+              msg_p = itti_alloc_new_message(TASK_RRC_UE, NAS_DOWNLINK_DATA_IND);
+              // NAS_DOWNLINK_DATA_IND(msg_p).UEid = ctxt_pP->module_id; // TODO set the UEid to something else ?
+              NAS_DOWNLINK_DATA_IND(msg_p).UEid = 0;
+              NAS_DOWNLINK_DATA_IND(msg_p).nasMsg.length = pdu_length;
+              NAS_DOWNLINK_DATA_IND(msg_p).nasMsg.data = pdu_buffer;
+              // itti_send_msg_to_task(TASK_NAS_UE, ctxt_pP->instance, msg_p);
+              itti_send_msg_to_task(TASK_NAS_UE, 0, msg_p);
+              }
+            break;
+            }
           case NR_DL_DCCH_MessageType__c1_PR_ueCapabilityEnquiry:
           case NR_DL_DCCH_MessageType__c1_PR_counterCheck:
           case NR_DL_DCCH_MessageType__c1_PR_mobilityFromNRCommand:
@@ -2440,6 +2456,32 @@ void *rrc_nrue_task( void *args_p ) {
           NR_RRC_DCCH_DATA_IND (msg_p).sdu_p,
           NR_RRC_DCCH_DATA_IND (msg_p).gNB_index);
         break;
+
+       //store NAS msgs for msg5 
+      case NAS_CONN_ESTABLI_REQ: //CUC：NAS_CONN_ESTABLI_REQ √
+        LOG_D(RRC, "[UE %d] Received %s: cause %d, type %d, s_tmsi (mme code %"PRIu8", m-tmsi %"PRIu32"), plmnID (%d%d%d.%d%d%d)\n", ue_mod_id, ITTI_MSG_NAME (msg_p), NAS_CONN_ESTABLI_REQ (msg_p).cause,
+              NAS_CONN_ESTABLI_REQ (msg_p).type,
+              NAS_CONN_ESTABLI_REQ (msg_p).s_tmsi.MMEcode,
+              NAS_CONN_ESTABLI_REQ (msg_p).s_tmsi.m_tmsi,
+              NAS_CONN_ESTABLI_REQ (msg_p).plmnID.MCCdigit1,
+              NAS_CONN_ESTABLI_REQ (msg_p).plmnID.MCCdigit2,
+              NAS_CONN_ESTABLI_REQ (msg_p).plmnID.MCCdigit3,
+              NAS_CONN_ESTABLI_REQ (msg_p).plmnID.MNCdigit1,
+              NAS_CONN_ESTABLI_REQ (msg_p).plmnID.MNCdigit2,
+              NAS_CONN_ESTABLI_REQ (msg_p).plmnID.MNCdigit3);
+        PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, ue_mod_id, ENB_FLAG_NO, NOT_A_RNTI, 0, 0, 0);
+        UE_rrc_inst[ue_mod_id].initialNasMsg = NAS_CONN_ESTABLI_REQ (msg_p).initialNasMsg;
+        break;
+
+       //send ulinfo to PDCP
+      case NAS_UPLINK_DATA_REQ: { //CUC：NAS_UPLINK_DATA_REQ √
+        uint32_t length;
+        uint8_t *buffer;
+        LOG_D(RRC, "[UE %d] Received %s: UEid %d\n", ue_mod_id, ITTI_MSG_NAME (msg_p), NAS_UPLINK_DATA_REQ (msg_p).UEid);
+        /* Create message for PDCP (ULInformationTransfer_t) */
+        length = do_NR_ULInformationTransfer(&buffer, NAS_UPLINK_DATA_REQ (msg_p).nasMsg.length, NAS_UPLINK_DATA_REQ (msg_p).nasMsg.data);//QUES:
+        break;
+      }
 
       default:
         LOG_E(NR_RRC, "[UE %d] Received unexpected message %s\n", ue_mod_id, ITTI_MSG_NAME (msg_p));
