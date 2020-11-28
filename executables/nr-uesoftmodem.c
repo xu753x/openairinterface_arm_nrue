@@ -611,6 +611,8 @@ void *rrc_enb_process_msg(void *notUsed) {
 }
 
 
+extern void tesths(void);//CUC:test
+
 int main( int argc, char **argv ) {
   //uint8_t beta_ACK=0,beta_RI=0,beta_CQI=2;
   PHY_VARS_NR_UE *UE[MAX_NUM_CCs];
@@ -671,6 +673,10 @@ int main( int argc, char **argv ) {
 #endif
 #endif
 */
+
+  printf("witcomm111witcomm: \n");//CUC:test
+  tesths();
+  printf("witcomm111witcomm \n");
 
   NB_UE_INST=1;
   NB_INST=1;

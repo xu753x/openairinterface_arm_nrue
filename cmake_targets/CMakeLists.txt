@@ -2511,7 +2511,7 @@ if(NAS_UE)
 endif()
 
 
-if(ITTI_SIM)
+# if(ITTI_SIM)
   set(libnas_ue_api_OBJS
     ${NAS_SRC}UE/API/USER/at_command.c
     ${NAS_SRC}UE/API/USER/at_error.c
@@ -2585,6 +2585,12 @@ if(ITTI_SIM)
 
   set(libnrnas_emm_msg_OBJS
     ${NAS_SRC}COMMON/EMM/MSG/RegistrationRequest.c
+    ${NAS_SRC}COMMON/EMM/MSG/FGSIdentityResponse.c
+    ${NAS_SRC}COMMON/EMM/MSG/FGSAuthenticationResponse.c
+    ${NAS_SRC}COMMON/EMM/MSG/FGSNASSecurityModeComplete.c
+    ${NAS_SRC}COMMON/EMM/MSG/RegistrationComplete.c
+    ${NAS_SRC}COMMON/EMM/MSG/FGSUplinkNasTransport.c
+    ${NAS_SRC}COMMON/ESM/MSG/PduSessionEstablishRequest.c
   )
 
   set(libnrnas_ies_OBJS
@@ -2594,6 +2600,8 @@ if(ITTI_SIM)
     ${NAS_SRC}COMMON/IES/SpareHalfOctet.c
     ${NAS_SRC}COMMON/IES/FGMMCapability.c
     ${NAS_SRC}COMMON/IES/NrUESecurityCapability.c
+    ${NAS_SRC}COMMON/IES/FGCNasMessageContainer.c
+    ${NAS_SRC}COMMON/IES/SORTransparentContainer.c
   )
 
   add_library(LIB_NAS_SIMUE
@@ -2627,7 +2635,7 @@ if(ITTI_SIM)
   include_directories(${NAS_SRC}UE/EMM/SAP)
   include_directories(${NAS_SRC}UE/ESM)
   include_directories(${NAS_SRC}UE/ESM/SAP)
-endif()
+# endif()
 
 # nbiot
 add_definitions("-DNUMBER_OF_UE_MAX_NB_IoT=16")
@@ -3096,7 +3104,8 @@ add_executable(nr-uesoftmodem
   ${OPENAIR2_DIR}/LAYER2/NR_MAC_COMMON/nr_mac_common.c
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
-  ${OPENAIR3_DIR}/NAS/UE/nas_ue_task.c
+  ${OPENAIR3_DIR}/NAS/NR_UE/nas_nrue_task.c
+  ${OPENAIR3_DIR}/NAS/NR_UE/nr_nas_msg_sim.c
   ${OPENAIR_DIR}/common/utils/utils.c
   ${OPENAIR_DIR}/common/utils/system.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
@@ -3111,7 +3120,7 @@ target_link_libraries (nr-uesoftmodem
   -Wl,--start-group
   RRC_LIB NR_RRC_LIB NGAP_LIB NGAP_GNB SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_RU_LIB SCHED_UE_LIB SCHED_NR_UE_LIB
   PHY_COMMON PHY_NR_COMMON PHY_UE PHY_NR_UE PHY_RU LFDS NR_L2_UE L2_UE_LTE_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB
-  NFAPI_USER_LIB S1AP_LIB S1AP_ENB
+  NFAPI_USER_LIB S1AP_LIB S1AP_ENB ${NAS_SIM_LIB}
   ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7 ${ATLAS_LIBRARIES} LIB_5GNAS_GNB
   -Wl,--end-group z dl)
 
