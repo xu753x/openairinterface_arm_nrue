@@ -788,7 +788,7 @@ int main( int argc, char **argv ) {
 
   init_NR_UE_threads(1);
   printf("UE threads created by %ld\n", gettid());
-  
+
   // wait for end of program
   printf("TYPE <CTRL-C> TO TERMINATE\n");
   protocol_ctxt_t ctxt_pP = {0};
@@ -799,10 +799,11 @@ int main( int argc, char **argv ) {
     printf("cannot create ITTI tasks\n");
     exit(-1); // need a softer mode
   }
-  
+
 
   MessageDef  *msg_p;
   msg_p = itti_alloc_new_message(TASK_RRC_UE, NAS_CELL_SELECTION_CNF);
+  printf("create CUC TASK_RRC_UE to NAS_CELL_SELECTION_CNF \n");
   NAS_CELL_SELECTION_CNF (msg_p).errCode = AS_SUCCESS;
   NAS_CELL_SELECTION_CNF (msg_p).cellID = 0;
   NAS_CELL_SELECTION_CNF (msg_p).tac = 0;
@@ -810,6 +811,8 @@ int main( int argc, char **argv ) {
   NAS_CELL_SELECTION_CNF (msg_p).rsrq = 0;
   NAS_CELL_SELECTION_CNF (msg_p).rsrp = 0;
   itti_send_msg_to_task(TASK_NAS_UE, 0, msg_p);
+  nas_ue_task(msg_p);
+  rrc_nrue_task(msg_p);
 
   while(true)
     sleep(3600);

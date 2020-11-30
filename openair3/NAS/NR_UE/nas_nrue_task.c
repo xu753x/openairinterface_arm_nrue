@@ -86,7 +86,8 @@ void *nas_ue_task(void *args_p)
         LOG_I(NAS, "[UE %d] Received %s\n", Mod_id,  ITTI_MSG_NAME (msg_p));
         break;
 
-      case NAS_CELL_SELECTION_CNF:  //CUC：NAS_CELL_SELECTION_CNF √
+      case NAS_CELL_SELECTION_CNF: { //CUC：NAS_CELL_SELECTION_CNF √
+        printf("nas received CUC TASK_RRC_UE \n");
         LOG_I(NAS, "[UE %d] Received %s: errCode %u, cellID %u, tac %u\n", Mod_id,  ITTI_MSG_NAME (msg_p),
               NAS_CELL_SELECTION_CNF (msg_p).errCode, NAS_CELL_SELECTION_CNF (msg_p).cellID, NAS_CELL_SELECTION_CNF (msg_p).tac);
         as_stmsi_t s_tmsi={0, 0};
@@ -95,6 +96,7 @@ void *nas_ue_task(void *args_p)
         generateRegistrationRequest(&nas_info);
         nas_itti_nas_establish_req(0, AS_TYPE_ORIGINATING_SIGNAL, s_tmsi, plmnID, nas_info.data, nas_info.length, 0);
         break;
+        }
 
       case NAS_CELL_SELECTION_IND:
         LOG_I(NAS, "[UE %d] Received %s: cellID %u, tac %u\n", Mod_id,  ITTI_MSG_NAME (msg_p),
@@ -129,6 +131,8 @@ void *nas_ue_task(void *args_p)
         break;
 
       case NAS_DOWNLINK_DATA_IND: //CUC：NAS_DOWNLINK_DATA_IND √
+        printf("nas received CUC TASK_RRC_UE \n");
+        printf("nas create CUC TASK_UE to NAS_UPLINK_DATA_REQ\n");
         LOG_I(NAS, "[UE %d] Received %s: UEid %u, length %u\n", Mod_id,  ITTI_MSG_NAME (msg_p),
               NAS_DOWNLINK_DATA_IND (msg_p).UEid, NAS_DOWNLINK_DATA_IND (msg_p).nasMsg.length);
         nr_nas_proc_dl_transfer_ind (NAS_DOWNLINK_DATA_IND(msg_p).nasMsg.data, NAS_DOWNLINK_DATA_IND(msg_p).nasMsg.length); //handle dl info NAS mesaages.

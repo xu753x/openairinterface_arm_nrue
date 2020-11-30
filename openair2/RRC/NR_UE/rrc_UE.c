@@ -2577,6 +2577,7 @@ void *rrc_nrue_task( void *args_p ) {
         break;
 
       case NAS_CONN_ESTABLI_REQ:
+        printf("rrc received CUC TASK_NAS_UE \n");
         LOG_D(RRC, "[UE %d] Received %s: cause %d, type %d, s_tmsi (mme code %"PRIu8", m-tmsi %"PRIu32"), plmnID (%d%d%d.%d%d%d)\n", ue_mod_id, ITTI_MSG_NAME (msg_p), NAS_CONN_ESTABLI_REQ (msg_p).cause,
               NAS_CONN_ESTABLI_REQ (msg_p).type,
               NAS_CONN_ESTABLI_REQ (msg_p).s_tmsi.MMEcode,
