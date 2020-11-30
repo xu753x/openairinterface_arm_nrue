@@ -160,7 +160,7 @@ int nas_itti_nas_establish_req(as_cause_t cause, as_call_type_t type, as_stmsi_t
     s_tmsi.MMEcode, s_tmsi.m_tmsi,
     plmnID.MCCdigit1, plmnID.MCCdigit2, plmnID.MCCdigit3,
     plmnID.MNCdigit1, plmnID.MNCdigit2, plmnID.MNCdigit3);
-  return itti_send_msg_to_task(TASK_RRC_UE, NB_eNB_INST + user_id, message_p);
+  return itti_send_msg_to_task(TASK_RRC_NRUE, NB_eNB_INST + user_id, message_p);
 }
 
 int nas_itti_ul_data_req(const uint32_t ue_id, void *const data, const uint32_t length, int user_id) {
