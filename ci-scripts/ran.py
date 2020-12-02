@@ -885,7 +885,9 @@ class RANManagement():
 		NSA_RAPROC_PUSCH_check = 0
 		#dlsch and ulsch statistics (dictionary)
 		dlsch_ulsch_stats = {}
-		
+		#count L1 thread not ready msg 	
+		L1_thread_not_ready_cnt = 0
+	
 		for line in enb_log_file.readlines():
 			# Runtime statistics
 			result = re.search('Run time:' ,str(line))
@@ -1050,6 +1052,10 @@ class RANManagement():
 				if result is not None:
 					#remove 1- all useless char before relevant info (ulsch or dlsch) 2- trailing char
 					dlsch_ulsch_stats[k]=re.sub(r'^.*\]\s+', r'' , line.rstrip())
+			#count L1 thread not ready msg
+			result = re.search('\[PHY\]\s+L1_thread isn\'t ready', str(line))
+			if result is not None:
+				L1_thread_not_ready_cnt += 1			
 		enb_log_file.close()
 		logging.debug('   File analysis completed')
 		if (self.air_interface[self.eNB_instance] == 'lte-softmodem') or (self.air_interface[self.eNB_instance] == 'ocp-enb'):
@@ -1076,6 +1082,12 @@ class RANManagement():
 				htmlMsg = statMsg+'\n'
 			else:
 				statMsg = '[RAPROC] PUSCH with TC_RNTI message check for ' + nodeB_prefix + 'NB : FAIL '
+				htmlMsg = statMsg+'\n'
+			logging.debug(statMsg)
+			htmleNBFailureMsg += htmlMsg
+			#L1 thread not ready log
+			if L1_thread_not_ready_cnt != 0:
+				statMsg = '[PHY] L1 thread is not ready msg count =  '+str(L1_thread_not_ready_cnt)
 				htmlMsg = statMsg+'\n'
 			logging.debug(statMsg)
 			htmleNBFailureMsg += htmlMsg

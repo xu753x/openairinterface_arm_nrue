@@ -1,7 +1,7 @@
 
 ranRepository : https://gitlab.eurecom.fr/oai/openairinterface5g.git
-ranBranch : BRANCH_NAME 
-ranCommitID : COMMIT_ID 
+ranBranch : ci-deploy-docker-compose 
+ranCommitID : 2d6fea51b33b0543ccc2bf3dd63265ff26994af1 
 ranAllowMerge : 'true' 
 ranTargetBranch : develop
 
