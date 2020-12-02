@@ -98,8 +98,9 @@ def AssignParams(params_dict):
 
 
 def GetParametersFromXML(action):
-	if action == 'Build_eNB':
+	if action == 'Build_eNB' or action == 'Build_Image':
 		RAN.Build_eNB_args=test.findtext('Build_eNB_args')
+		RAN.imageKind=test.findtext('kind')
 		forced_workspace_cleanup = test.findtext('forced_workspace_cleanup')
 		if (forced_workspace_cleanup is None):
 			RAN.Build_eNB_forced_workspace_cleanup=False
@@ -113,9 +114,11 @@ def GetParametersFromXML(action):
 			RAN.eNB_instance=0
 		else:
 			RAN.eNB_instance=int(eNB_instance)
-		RAN.eNB_serverId=test.findtext('eNB_serverId')
-		if (RAN.eNB_serverId is None):
-			RAN.eNB_serverId='0'
+		eNB_serverId=test.findtext('eNB_serverId')
+		if (eNB_serverId is None):
+			RAN.eNB_serverId[RAN.eNB_instance]='0'
+		else:
+			RAN.eNB_serverId[RAN.eNB_instance]=eNB_serverId
 		xmlBgBuildField = test.findtext('backgroundBuild')
 		if (xmlBgBuildField is None):
 			RAN.backgroundBuild=False
@@ -127,14 +130,17 @@ def GetParametersFromXML(action):
 
 	elif action == 'WaitEndBuild_eNB':
 		RAN.Build_eNB_args=test.findtext('Build_eNB_args')
+		RAN.imageKind=test.findtext('kind')
 		eNB_instance=test.findtext('eNB_instance')
 		if (eNB_instance is None):
 			RAN.eNB_instance=0
 		else:
 			RAN.eNB_instance=int(eNB_instance)
-		RAN.eNB_serverId=test.findtext('eNB_serverId')
-		if (RAN.eNB_serverId is None):
-			RAN.eNB_serverId='0'
+		eNB_serverId=test.findtext('eNB_serverId')
+		if (eNB_serverId is None):
+			RAN.eNB_serverId[RAN.eNB_instance]='0'
+		else:
+			RAN.eNB_serverId[RAN.eNB_instance]=eNB_serverId
 
 	elif action == 'Initialize_eNB':
 		RAN.Initialize_eNB_args=test.findtext('Initialize_eNB_args')
@@ -143,9 +149,11 @@ def GetParametersFromXML(action):
 			RAN.eNB_instance=0
 		else:
 			RAN.eNB_instance=int(eNB_instance)
-		RAN.eNB_serverId=test.findtext('eNB_serverId')
-		if (RAN.eNB_serverId is None):
-			RAN.eNB_serverId='0'
+		eNB_serverId=test.findtext('eNB_serverId')
+		if (eNB_serverId is None):
+			RAN.eNB_serverId[RAN.eNB_instance]='0'
+		else:
+			RAN.eNB_serverId[RAN.eNB_instance]=eNB_serverId
 			
 		#local variable air_interface
 		air_interface = test.findtext('air_interface')		
@@ -162,10 +170,12 @@ def GetParametersFromXML(action):
 			RAN.eNB_instance=0
 		else:
 			RAN.eNB_instance=int(eNB_instance)
-		RAN.eNB_serverId=test.findtext('eNB_serverId')
-		if (RAN.eNB_serverId is None):
-			RAN.eNB_serverId='0'
-			
+		eNB_serverId=test.findtext('eNB_serverId')
+		if (eNB_serverId is None):
+			RAN.eNB_serverId[RAN.eNB_instance]='0'
+		else:
+			RAN.eNB_serverId[RAN.eNB_instance]=eNB_serverId
+
 		#local variable air_interface
 		air_interface = test.findtext('air_interface')		
 		if (air_interface is None) or (air_interface.lower() not in ['nr','lte','ocp']):
@@ -288,6 +298,11 @@ def GetParametersFromXML(action):
 		if (string_field is not None):
 			EPC.mmeConfFile = string_field
 
+	elif action == 'Deploy_EPC':
+		string_field = test.findtext('parameters')
+		if (string_field is not None):
+			EPC.yamlPath = string_field
+
 	else: # ie action == 'Run_PhySim':
 		ldpc.runargs = test.findtext('physim_run_args')
 		
@@ -383,8 +398,8 @@ if re.match('^TerminateeNB$', mode, re.IGNORECASE):
 	if RAN.eNBIPAddress == '' or RAN.eNBUserName == '' or RAN.eNBPassword == '':
 		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
-	RAN.eNB_serverId='0'
 	RAN.eNB_instance=0
+	RAN.eNB_serverId[0]='0'
 	RAN.eNBSourceCodePath='/tmp/'
 	RAN.TerminateeNB()
 elif re.match('^TerminateUE$', mode, re.IGNORECASE):
@@ -495,7 +510,7 @@ elif re.match('^FinalizeHtml$', mode, re.IGNORECASE):
 	HTML.CreateHtmlFooter(CiTestObj.finalStatus)
 elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re.IGNORECASE):
 	logging.debug('\u001B[1m----------------------------------------\u001B[0m')
-	logging.debug('\u001B[1m  Starting Scenario \u001B[0m')
+	logging.debug('\u001B[1m  Starting Scenario: ' + CiTestObj.testXMLfiles[0] + '\u001B[0m')
 	logging.debug('\u001B[1m----------------------------------------\u001B[0m')
 	if re.match('^TesteNB$', mode, re.IGNORECASE):
 		if RAN.eNBIPAddress == '' or RAN.ranRepository == '' or RAN.ranBranch == '' or RAN.eNBUserName == '' or RAN.eNBPassword == '' or RAN.eNBSourceCodePath == '' or EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.Type == '' or EPC.SourceCodePath == '' or CiTestObj.ADBIPAddress == '' or CiTestObj.ADBUserName == '' or CiTestObj.ADBPassword == '':
@@ -627,6 +642,8 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 							break
 				if action == 'Build_eNB':
 					RAN.BuildeNB()
+				elif action == 'Build_Image':
+					RAN.BuildImage()
 				elif action == 'WaitEndBuild_eNB':
 					RAN.WaitBuildeNBisFinished()
 				elif action == 'Initialize_eNB':
@@ -685,6 +702,10 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					EPC.InitializeSPGW()
 				elif action == 'Terminate_SPGW':
 					EPC.TerminateSPGW()
+				elif action == 'Deploy_EPC':
+					EPC.DeployEpc()
+				elif action == 'Undeploy_EPC':
+					EPC.UndeployEpc()
 				elif action == 'Initialize_FlexranCtrl':
 					CiTestObj.InitializeFlexranCtrl(HTML,RAN,EPC)
 				elif action == 'Terminate_FlexranCtrl':
@@ -707,14 +728,14 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 						HTML.testStabilityPointReached = True
 		CiTestObj.FailReportCnt += 1
 	if CiTestObj.FailReportCnt == CiTestObj.repeatCounts[0] and RAN.prematureExit:
-		logging.debug('Testsuite failed ' + str(CiTestObj.FailReportCnt) + ' time(s)')
+		logging.debug('Scenario failed ' + str(CiTestObj.FailReportCnt) + ' time(s)')
 		HTML.CreateHtmlTabFooter(False)
 		if CiTestObj.testUnstable and (CiTestObj.testStabilityPointReached or CiTestObj.testMinStableId == '999999'):
 			logging.debug('Scenario has reached minimal stability point -- Not a Failure')
 		else:
 			sys.exit('Failed Scenario')
 	else:
-		logging.info('Testsuite passed after ' + str(CiTestObj.FailReportCnt) + ' time(s)')
+		logging.info('Scenario passed after ' + str(CiTestObj.FailReportCnt) + ' time(s)')
 		HTML.CreateHtmlTabFooter(True)
 elif re.match('^LoadParams$', mode, re.IGNORECASE):
 	pass

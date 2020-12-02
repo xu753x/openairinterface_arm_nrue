@@ -1,6 +1,7 @@
   - Build_PhySim
   - Run_PhySim
   - Build_eNB
+  - Build_Image
   - WaitEndBuild_eNB
   - Initialize_eNB
   - Terminate_eNB
@@ -19,6 +20,8 @@
   - Reboot_UE
   - Initialize_FlexranCtrl
   - Terminate_FlexranCtrl
+  - Deploy_EPC
+  - Undeploy_EPC
   - Initialize_HSS
   - Terminate_HSS
   - Initialize_MME

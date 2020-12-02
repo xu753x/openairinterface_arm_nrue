@@ -225,7 +225,16 @@ class OaiCiTest():
 		result = re.search('/opt/flexran_rtc/build/rt_controller', SSH.getBefore())
 		if result is not None:
 			RAN.flexranCtrlInstalled=True
+			RAN.flexranCtrlIpAddress=EPC.IPAddress
 			logging.debug('Flexran Controller is installed')
+		else:
+			# Maybe flexran-rtc is deployed into a container
+			SSH.command('docker inspect --format="FLEX_RTC_IP_ADDR = {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}" prod-flexran-rtc', '\$', 5)
+			result = re.search('FLEX_RTC_IP_ADDR = (?P<flex_ip_addr>[0-9\.]+)', SSH.getBefore())
+			if result is not None:
+				RAN.flexranCtrlDeployed=True
+				RAN.flexranCtrlIpAddress=result.group('flex_ip_addr')
+				logging.debug('Flexran Controller is deployed: ' + RAN.flexranCtrlIpAddress)
 		SSH.close()
 
 	def InitializeFlexranCtrl(self, HTML,RAN,EPC):
@@ -1267,12 +1276,12 @@ class OaiCiTest():
 			i += 1
 		for job in multi_jobs:
 			job.join()
-		if RAN.flexranCtrlInstalled and RAN.flexranCtrlStarted:
+		if (RAN.flexranCtrlInstalled and RAN.flexranCtrlStarted) or RAN.flexranCtrlDeployed:
 			SSH = sshconnection.SSHConnection()
 			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
-			SSH.command('cd /opt/flexran_rtc', '\$', 5)
-			SSH.command('curl http://localhost:9999/stats | jq \'.\' > log/check_status_' + self.testCase_id + '.log 2>&1', '\$', 5)
-			SSH.command('cat log/check_status_' + self.testCase_id + '.log | jq \'.eNB_config[0].UE\' | grep -c rnti | sed -e "s#^#Nb Connected UE = #"', '\$', 5)
+			SSH.command('cd ' + EPC.SourceCodePath + '/scripts', '\$', 5)
+			SSH.command('curl http://' + RAN.flexranCtrlIpAddress + ':9999/stats | jq \'.\' > check_status_' + self.testCase_id + '.log 2>&1', '\$', 5)
+			SSH.command('cat check_status_' + self.testCase_id + '.log | jq \'.eNB_config[0].UE\' | grep -c rnti | sed -e "s#^#Nb Connected UE = #"', '\$', 5)
 			result = re.search('Nb Connected UE = (?P<nb_ues>[0-9]+)', SSH.getBefore())
 			passStatus = True
 			if result is not None:
@@ -1934,15 +1943,34 @@ class OaiCiTest():
 			ret = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, encoding='utf-8')
 			if ret.stdout is not None:
 				EPC_Iperf_UE_IPAddress = ret.stdout.strip()
+		# When using a docker-based deployment, IPERF client shall be launched from trf container
+		launchFromTrfContainer = False
+		if re.match('OAI-Rel14-Docker', EPC.Type, re.IGNORECASE):
+			launchFromTrfContainer = True
+			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
+			SSH.command('docker inspect --format="TRF_IP_ADDR = {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}" prod-trf-gen', '\$', 5)
+			result = re.search('TRF_IP_ADDR = (?P<trf_ip_addr>[0-9\.]+)', SSH.getBefore())
+			if result is not None:
+				EPC_Iperf_UE_IPAddress = result.group('trf_ip_addr')
+			SSH.close()
 		port = 5001 + idx
+		udpOptions = ''
+		if udpIperf:
+			udpOptions = '-u '
 		if launchFromEpc:
 			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
 			SSH.command('cd ' + EPC.SourceCodePath + '/scripts', '\$', 5)
 			SSH.command('rm -f iperf_server_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
-			if udpIperf:
-				SSH.command('echo $USER; nohup iperf -u -s -i 1 -p ' + str(port) + ' > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', EPC.UserName, 5)
+			if launchFromTrfContainer:
+				if self.ueIperfVersion == self.dummyIperfVersion:
+					prefix = ''
+				else:
+					prefix = ''
+					if self.ueIperfVersion == '2.0.5':
+						prefix = '/iperf-2.0.5/bin/'
+				SSH.command('docker exec -d prod-trf-gen /bin/bash -c "nohup ' + prefix + 'iperf ' + udpOptions + '-s -i 1 -p ' + str(port) + ' > iperf_server_' + self.testCase_id + '_' + device_id + '.log &"', '\$', 5)
 			else:
-				SSH.command('echo $USER; nohup iperf -s -i 1 -p ' + str(port) + ' > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', EPC.UserName, 5)
+				SSH.command('echo $USER; nohup iperf ' + udpOptions + '-s -i 1 -p ' + str(port) + ' > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', EPC.UserName, 5)
 			SSH.close()
 		else:
 			if self.ueIperfVersion == self.dummyIperfVersion:
@@ -1951,10 +1979,7 @@ class OaiCiTest():
 				prefix = ''
 				if self.ueIperfVersion == '2.0.5':
 					prefix = '/opt/iperf-2.0.5/bin/'
-			if udpIperf:
-				cmd = 'nohup ' + prefix + 'iperf -u -s -i 1 -p ' + str(port) + ' > iperf_server_' + self.testCase_id + '_' + device_id + '.log 2>&1 &'
-			else:
-				cmd = 'nohup ' + prefix + 'iperf -s -i 1 -p ' + str(port) + ' > iperf_server_' + self.testCase_id + '_' + device_id + '.log 2>&1 &'
+			cmd = 'nohup ' + prefix + 'iperf ' + udpOptions + '-s -i 1 -p ' + str(port) + ' > iperf_server_' + self.testCase_id + '_' + device_id + '.log 2>&1 &'
 			logging.debug(cmd)
 			subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, encoding='utf-8')
 		time.sleep(0.5)
@@ -2000,13 +2025,16 @@ class OaiCiTest():
 		# Kill iperf server on EPC side
 		if launchFromEpc:
 			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
-			SSH.command('killall --signal SIGKILL iperf', EPC.UserName, 5)
+			if launchFromTrfContainer:
+				SSH.command('docker exec -it prod-trf-gen /bin/bash -c "killall --signal SIGKILL iperf"', '\$', 5)
+			else:
+				SSH.command('killall --signal SIGKILL iperf', EPC.UserName, 5)
 			SSH.close()
 		else:
 			cmd = 'killall --signal SIGKILL iperf'
 			logging.debug(cmd)
 			subprocess.run(cmd, shell=True)
-			time.sleep(1)			
+			time.sleep(1)
 			SSH.copyout(EPC.IPAddress, EPC.UserName, EPC.Password, 'iperf_server_' + self.testCase_id + '_' + device_id + '.log', EPC.SourceCodePath + '/scripts')
 		# in case of failure, retrieve server log
 		if (clientStatus == -1) or (clientStatus == -2):
@@ -2014,6 +2042,10 @@ class OaiCiTest():
 				time.sleep(1)
 				if (os.path.isfile('iperf_server_' + self.testCase_id + '_' + device_id + '.log')):
 					os.remove('iperf_server_' + self.testCase_id + '_' + device_id + '.log')
+				if launchFromTrfContainer:
+					SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
+					SSH.command('docker cp prod-trf-gen:/iperf-2.0.5/iperf_server_' + self.testCase_id + '_' + device_id + '.log ' + EPC.SourceCodePath + '/scripts', '\$', 5)
+					SSH.close()
 				SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, EPC.SourceCodePath+ '/scripts/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
 			self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, modified_options)
 		# in case of OAI-UE 
@@ -2212,8 +2244,16 @@ class OaiCiTest():
 				else:
 					SSH.copyin(self.ADBIPAddress, self.ADBUserName, self.ADBPassword, EPC.SourceCodePath + '/scripts/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
 				# fromdos has to be called on the python executor not on ADB server
-				cmd = 'fromdos -o iperf_server_' + self.testCase_id + '_' + device_id + '.log'
-				subprocess.run(cmd, shell=True)
+				cmd = 'fromdos -o iperf_server_' + self.testCase_id + '_' + device_id + '.log 2>&1 > /dev/null'
+				try:
+					subprocess.run(cmd, shell=True)
+				except:
+					pass
+				cmd = 'dos2unix -o iperf_server_' + self.testCase_id + '_' + device_id + '.log 2>&1 > /dev/null'
+				try:
+					subprocess.run(cmd, shell=True)
+				except:
+					pass
 				self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, modified_options)
 
 			# in case of OAI UE: 
@@ -2902,13 +2942,17 @@ class OaiCiTest():
 			self.ShowTestID()
 			self.TerminateOAIUE(HTML,RAN,COTS_UE)
 		if (RAN.Initialize_eNB_args != ''):
-			self.testCase_id = 'AUTO-KILL-eNB'
+			self.testCase_id = 'AUTO-KILL-RAN'
 			HTML.testCase_id=self.testCase_id
-			self.desc = 'Automatic Termination of eNB'
-			HTML.desc='Automatic Termination of eNB'
+			self.desc = 'Automatic Termination of all RAN nodes'
+			HTML.desc='Automatic Termination of RAN nodes'
 			self.ShowTestID()
-			RAN.eNB_instance=0
-			RAN.TerminateeNB()
+			#terminate all RAN nodes eNB/gNB/OCP
+			for instance in range(0, len(RAN.air_interface)):
+				if RAN.air_interface[instance]!='':
+					logging.debug('Auto Termination of Instance ' + str(instance) + ' : ' + RAN.air_interface[instance])
+					RAN.eNB_instance=instance
+					RAN.TerminateeNB()
 		if RAN.flexranCtrlInstalled and RAN.flexranCtrlStarted:
 			self.testCase_id = 'AUTO-KILL-flexran-ctl'
 			HTML.testCase_id=self.testCase_id
@@ -3050,7 +3094,7 @@ class OaiCiTest():
 		SSH.command('cd ' + SourceCodePath, '\$', 5)
 		SSH.command('cd cmake_targets', '\$', 5)
 		SSH.command('rm -f build.log.zip', '\$', 5)
-		SSH.command('zip build.log.zip build_log_*/*', '\$', 60)
+		SSH.command('zip -r build.log.zip build_log_*/*', '\$', 60)
 		SSH.close()
 
 	def LogCollectPing(self,EPC):
