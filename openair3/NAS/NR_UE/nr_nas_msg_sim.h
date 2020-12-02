@@ -39,6 +39,8 @@
 #include "RegistrationComplete.h"
 #include "as_message.h"
 #include "FGSUplinkNasTransport.h"
+#include "NR_NAS_defs.h"
+#include "FGSRegistrationAccept.h"
 
 #define PLAIN_5GS_MSG                                      0b0000
 #define INTEGRITY_PROTECTED                                0b0001
@@ -113,6 +115,10 @@ typedef union {
   fgs_security_mode_complete_msg         fgs_security_mode_complete;
   registration_complete_msg              registration_complete;
   fgs_uplink_nas_transport_msg           uplink_nas_transport;
+  Identityrequest_t                      fgs_identity_request;
+  authenticationrequestHeader_t          fgs_authentication_request;
+  securityModeCommand_t                  fgs_security_mode_command;
+  fgs_registration_accept_msg            fgs_registration_accept;
 } MM_msg;
 
 

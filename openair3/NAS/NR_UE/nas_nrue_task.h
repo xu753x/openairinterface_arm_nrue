@@ -32,6 +32,10 @@
 #include "TLVEncoder.h"
 #include "nr_nas_msg_sim.h"
 
+# include "FGSIdentityRequest.h"
+# include "FGSAuthenticationRequest.h"
+# include "FGSSecurityModeCommand.h"
+# include "FGSRegistrationAccept.h"
 
 void *nas_nrue_task(void *args_p);
 void nr_nas_proc_dl_transfer_ind (Byte_t *data, uint32_t len);

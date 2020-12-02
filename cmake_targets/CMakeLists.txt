@@ -2592,6 +2592,10 @@ endif()
     ${NAS_SRC}COMMON/EMM/MSG/RegistrationComplete.c
     ${NAS_SRC}COMMON/EMM/MSG/FGSUplinkNasTransport.c
     ${NAS_SRC}COMMON/ESM/MSG/PduSessionEstablishRequest.c
+    ${NAS_SRC}COMMON/EMM/MSG/FGSAuthenticationRequest.c
+    ${NAS_SRC}COMMON/EMM/MSG/FGSIdentityRequest.c
+    ${NAS_SRC}COMMON/EMM/MSG/FGSRegistrationAccept.c
+    ${NAS_SRC}COMMON/EMM/MSG/FGSSecurityModeCommand.c
   )
 
   set(libnrnas_ies_OBJS
