@@ -47,15 +47,15 @@ int decode_5gs_mobile_identity(FGSMobileIdentity *fgsmobileidentity, uint8_t iei
 {
   int decoded_rc = TLV_DECODE_VALUE_DOESNT_MATCH;
   int decoded = 0;
-  uint8_t ielen = 0;
+  uint16_t ielen = 0;
 
   if (iei > 0) {
     CHECK_IEI_DECODER(iei, *buffer);
     decoded++;
   }
 
-  ielen = *(buffer + decoded);
-  decoded++;
+  IES_DECODE_U16(buffer, decoded, ielen);
+  decoded += 2;
   CHECK_LENGTH_DECODER(len - decoded, ielen);
 
   uint8_t typeofidentity = *(buffer + decoded) & 0x7;

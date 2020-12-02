@@ -180,6 +180,8 @@ void nr_nas_proc_dl_transfer_ind (Byte_t *data, uint32_t len) {
     case REGISTRATION_ACCEPT: { 
       generateRegistrationComplete(&nas_info, 0);
       nr_nas_itti_ul_data_req(0, nas_info.data, nas_info.length, 0);
+      generatePduSessionEstablishRequest(&nas_info);
+      nr_nas_itti_ul_data_req(0, nas_info.data, nas_info.length, 0);
       break;
       }
 
@@ -280,22 +282,22 @@ int decodeNasMsg(MM_msg *msg, uint8_t *buffer, uint32_t len) {
   switch(msg->header.message_type) { 
 
     case FGS_IDENTITY_REQUEST: { 
-
+      decode_result = decode_fgs_identity_request(&msg->fgs_identity_request, buffer, len);
       break;
       }
 
-    case FGS_AUTHENTICATION_REQUEST: { 
-
+    case FGS_AUTHENTICATION_REQUEST: {
+      decode_result = decode_fgs_authentication_request(&msg->fgs_authentication_request, buffer, len);
       break;
       }
 
     case FGS_SECURITY_MODE_COMMAND: { 
-
+      decode_result = decode_fgs_security_mode_command(&msg->fgs_security_mode_command, buffer, len);
       break;
       }
     
-    case REGISTRATION_ACCEPT: { 
-
+    case REGISTRATION_ACCEPT: {
+      decode_result = decode_fgs_registration_accept(&msg->fgs_registration_accept, buffer, len);
       break;
       }
 
