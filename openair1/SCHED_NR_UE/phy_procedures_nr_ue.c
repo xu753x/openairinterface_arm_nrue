@@ -86,7 +86,7 @@ const uint8_t nr_rv_round_map_ue[4] = {0, 2, 1, 3};
 
 extern double cpuf;
 
-#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR) || defined(OAI_ADRV9371_ZC706)
+#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR) || defined(OAI_ADRV9371_ZC706) || defined(OAI_YUNSDR)
 extern uint64_t downlink_frequency[MAX_NUM_CCs][4];
 #endif
 

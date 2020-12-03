@@ -395,6 +395,34 @@ install_usrp_uhd_driver() {
     fi
 }
 
+check_install_yunsdr_driver() {
+#if modinfo riffa > /dev/null 2>&1
+    if modinfo xdma > /dev/null 2>&1
+    then
+      echo_success "YunSDR driver has loaded."
+    else
+      git clone https://github.com/v3best/riffa /tmp/riffa
+      if [ $? -ne 0 ]; then
+        echo_fatal "YunSDR driver download failed, please check your net connection."
+      else
+        cd /tmp/riffa/driver/linux
+        make && $SUDO make install
+        echo_success "YunSDR driver install success, please restart your PC later."
+      fi
+      git clone https://github.com/v3best/libyunsdr /tmp/libyunsdr
+      if [ $? -ne 0 ]; then
+        echo_fatal "YunSDR API download failed, please check your net connection."
+      else
+        cd /tmp/libyunsdr
+        mkdir build
+        cd build
+        cmake ../
+        make && $SUDO make install && $SUDO ldconfig
+        echo_success "YunSDR API install success, please restart your PC later."
+      fi
+    fi
+}
+
 install_bladerf_driver_from_source(){
     bladerf_install_log=$OPENAIR_DIR/cmake_targets/log/bladerf_install_log.txt
     echo_info "\nInstalling BladeRF driver from sources. The log file for BladeRF driver installation is here: $bladerf_install_log "
@@ -812,7 +840,8 @@ check_install_oai_software() {
 
     install_asn1c_from_source $1
     $SUDO rm -fr /opt/ssh
-    $SUDO git clone https://gist.github.com/2190472.git /opt/ssh
+    #$SUDO git clone https://gist.github.com/2190472.git /opt/ssh
+	$SUDO git clone https://gitlab.eurecom.fr/oai/ssh.git /opt/ssh
 }
 
 install_asn1c_from_source(){

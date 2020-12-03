@@ -113,7 +113,7 @@ Options
 -a | --agent
    Enables agent for software-defined control of the eNB
 -w | --hardware
-   EXMIMO, USRP, BLADERF, LMSSDR, IRIS, ADRV9371_ZC706, SIMU, None (Default)
+   EXMIMO, USRP, BLADERF, LMSSDR, IRIS, YUNSDR, ADRV9371_ZC706, SIMU, None (Default)
    Adds this RF board support (in external packages installation and in compilation)
 -P | --phy_simulators
    Makes the unitary tests Layer 1 simulators
@@ -278,7 +278,7 @@ function main() {
                 "EXMIMO")
                     HW="EXMIMO"
                     ;;
-                "USRP" | "BLADERF" | "LMSSDR" | "IRIS" | "ADRV9371_ZC706" | "SIMU")
+                "USRP" | "BLADERF" | "LMSSDR" | "IRIS" | "ADRV9371_ZC706" | "SIMU" | "YUNSDR")
                     HW="OAI_"$2
                     ;;
                 "None")
@@ -539,6 +539,10 @@ function main() {
       if [ ! "$DISABLE_HARDWARE_DEPENDENCY" == "True" ]; then
         flash_firmware_bladerf
       fi
+    fi
+    if [ "$HW" == "OAI_YUNSDR" ] ; then
+      echo_info "installing packages for YUNSDR support"
+      #check_install_yunsdr_driver
     fi
     if [ "$HW" == "OAI_IRIS" ] ; then
       echo_info "installing packages for IRIS support"
@@ -883,6 +887,16 @@ function main() {
               ln -sf liboai_bladerfdevif.so liboai_device.so
               ln -sf $dbin/liboai_bladerfdevif.so.$REL $dbin/liboai_device.so
               echo_info "liboai_device.so is linked to BLADERF device library"	 
+          elif [ "$HW" == "OAI_YUNSDR" ] ; then
+             if [ -f "/usr/local/include/yunsdr_api_ss.h" ] ; then
+                 compilations \
+                     $build_dir oai_yunsdrdevif \
+                     liboai_yunsdrdevif.so $dbin/liboai_yunsdrdevif.so.$REL
+             fi
+
+             ln -sf liboai_yunsdrdevif.so liboai_device.so
+             ln -sf $dbin/liboai_yunsdrdevif.so.$REL $dbin/liboai_device.so
+             echo_info "liboai_device.so is linked to YUNSDR device library"
           elif [ "$HW" == "OAI_LMSSDR" ] ; then
 #              if [ -f "/usr/include/libbladeRF.h" ] ; then
                   compilations \
