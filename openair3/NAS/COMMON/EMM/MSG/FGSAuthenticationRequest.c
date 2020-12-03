@@ -14,8 +14,7 @@ int decode_fgs_authentication_request(authenticationrequestHeader_t *fgs_authent
 {
   int decoded = 0;
 
-  fgs_authentication_req->ngKSI = (*(buffer + decoded)>>4) & 0x0f;
-  fgs_authentication_req->spare = *(buffer + decoded) & 0x0f;
+  fgs_authentication_req->ngKSI = *(buffer + decoded) & 0x0f;
   decoded++;
 
   IES_DECODE_U8(buffer, decoded, fgs_authentication_req->ABBALen);
@@ -35,6 +34,7 @@ int decode_fgs_authentication_request(authenticationrequestHeader_t *fgs_authent
           IES_DECODE_U8(buffer, decoded, fgs_authentication_req->AUTNlen);
           memcpy(fgs_authentication_req->AUTN, buffer+decoded, sizeof(fgs_authentication_req->AUTN));
           decoded += sizeof(fgs_authentication_req->AUTN);
+          break;
         
         default:
           return TLV_DECODE_UNEXPECTED_IEI;

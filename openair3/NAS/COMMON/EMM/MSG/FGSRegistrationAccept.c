@@ -99,6 +99,7 @@ int decode_fgs_registration_accept(fgs_registration_accept_msg *fgs_registration
   int decode_result = 0;
 
   IES_DECODE_U8(buffer, decoded, fgs_registration_acc->fgsregistrationresult.resultlength);
+  fgs_registration_acc->fgsregistrationresult.spare = (*(buffer + decoded)>>4) & 0xf;
   fgs_registration_acc->fgsregistrationresult.smsallowed = (*(buffer + decoded)>>3) & 0x1;
   fgs_registration_acc->fgsregistrationresult.registrationresult = *(buffer + decoded) & 0x7;
   decoded++;
