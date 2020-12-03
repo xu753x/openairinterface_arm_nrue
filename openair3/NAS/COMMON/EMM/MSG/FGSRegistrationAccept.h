@@ -16,10 +16,11 @@
 #ifndef FGS_REGISTRATION_ACCEPT_H_
 #define FGS_REGISTRATION_ACCEPT_H_
 
-#define REGISTRATION_ACCEPT_MOBILE_IDENTITY  0x77
-#define REGISTRATION_ACCEPT_5GS_TRACKING_AREA_IDENTITY_LIST  0x54
-#define REGISTRATION_ACCEPT_ALLOWED_NSSA  0x15
-#define REGISTRATION_ACCEPT_5GS_NETWORK_FEATURE_SUPPORT  0x21
+#define REGISTRATION_ACCEPT_MOBILE_IDENTITY                     0x77
+#define REGISTRATION_ACCEPT_5GS_TRACKING_AREA_IDENTITY_LIST     0x54
+#define REGISTRATION_ACCEPT_ALLOWED_NSSA                        0x15
+#define REGISTRATION_ACCEPT_5GS_NETWORK_FEATURE_SUPPORT         0x21
+#define REGISTRATION_ACCEPT_5GS_GPRS_timer3_T3512_value        0x5E
 
 typedef struct FGSTrackingAreaIdentityList_tag {
   #define TRACKING_AREA_IDENTITY_LIST_ONE_PLMN_NON_CONSECUTIVE_TACS 0b00
@@ -52,6 +53,13 @@ typedef struct FGSNetworkFeatureSupport_tag {
   unsigned int EMCN3:1;
 } FGSNetworkFeatureSupport;
 
+typedef struct GPRStimer3_tag {
+  uint8_t iei;
+  uint8_t length;
+  unsigned int unit:3;
+  unsigned int timervalue:5;
+} GPRStimer3;
+
 typedef struct fgs_registration_accept_msg_tag {
     /* Mandatory fields */
     ExtendedProtocolDiscriminator           protocoldiscriminator;
@@ -63,11 +71,13 @@ typedef struct fgs_registration_accept_msg_tag {
     FGSTrackingAreaIdentityList             tailist ;
     NSSAI                                   nssai;
     FGSNetworkFeatureSupport                fgsnetworkfeaturesupport;
+    GPRStimer3                              gprstimer3;
 } fgs_registration_accept_msg;
 
 int decode_fgs_tracking_area_identity_list(FGSTrackingAreaIdentityList *tailist, uint8_t iei, uint8_t *buffer, uint32_t len);
 int decode_fgs_allowed_nssa(NSSAI *nssai, uint8_t iei, uint8_t *buffer, uint32_t len);
 int decode_fgs_network_feature_support(FGSNetworkFeatureSupport *fgsnetworkfeaturesupport, uint8_t iei, uint8_t *buffer, uint32_t len);
 int decode_fgs_registration_accept(fgs_registration_accept_msg *fgs_registration_acc, uint8_t *buffer, uint32_t len);
+int decode_fgs_gprs_timer3(GPRStimer3 *gprstimer3, uint8_t iei, uint8_t *buffer, uint32_t len);
 
 #endif /* FGS REGISTRATION ACCEPT_H_*/
