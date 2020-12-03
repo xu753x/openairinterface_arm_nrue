@@ -55,7 +55,6 @@ int decode_5gs_mobile_identity(FGSMobileIdentity *fgsmobileidentity, uint8_t iei
   }
 
   IES_DECODE_U16(buffer, decoded, ielen);
-  decoded += 2;
   CHECK_LENGTH_DECODER(len - decoded, ielen);
 
   uint8_t typeofidentity = *(buffer + decoded) & 0x7;

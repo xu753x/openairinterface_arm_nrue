@@ -93,6 +93,27 @@ int decode_fgs_network_feature_support(FGSNetworkFeatureSupport *fgsnetworkfeatu
   return decoded;
 }
 
+int decode_fgs_gprs_timer3(GPRStimer3 *gprstimer3, uint8_t iei, uint8_t *buffer, uint32_t len) {
+  int decoded = 0;
+  uint8_t ielen = 0;
+
+  if (iei > 0) {
+    CHECK_IEI_DECODER(iei, *buffer);
+    gprstimer3->iei = *(buffer + decoded);
+    decoded ++;
+  }
+
+  gprstimer3->length = *(buffer + decoded);
+  decoded ++;
+  CHECK_LENGTH_DECODER(len - decoded, ielen);
+
+  gprstimer3->unit =  (*(buffer + decoded)>>5) & 0x3;
+  gprstimer3->timervalue = *(buffer + decoded) & 0x1f;
+  decoded ++;
+
+  return decoded;
+}
+
 int decode_fgs_registration_accept(fgs_registration_accept_msg *fgs_registration_acc, uint8_t *buffer, uint32_t len)
 {
   int decoded = 0;
@@ -136,6 +157,15 @@ int decode_fgs_registration_accept(fgs_registration_accept_msg *fgs_registration
 
         case REGISTRATION_ACCEPT_5GS_NETWORK_FEATURE_SUPPORT:
           if ((decode_result = decode_fgs_network_feature_support(&fgs_registration_acc->fgsnetworkfeaturesupport, REGISTRATION_ACCEPT_5GS_NETWORK_FEATURE_SUPPORT, buffer +
+                                  decoded, len - decoded)) < 0) {       //Return in case of error
+            return decode_result;
+          } else {
+            decoded += decode_result;
+            break;
+          }
+
+        case REGISTRATION_ACCEPT_5GS_GPRS_timer3_T3512_value:
+          if ((decode_result = decode_fgs_gprs_timer3(&fgs_registration_acc->gprstimer3, REGISTRATION_ACCEPT_5GS_GPRS_timer3_T3512_value, buffer +
                                   decoded, len - decoded)) < 0) {       //Return in case of error
             return decode_result;
           } else {
