@@ -15,10 +15,7 @@ int decode_fgs_security_mode_command(securityModeCommand_t *fgs_security_mode_co
 
   IES_DECODE_U8(buffer, decoded, fgs_security_mode_com->selectedNASsecurityalgorithms);
 
-  fgs_security_mode_com->ngKSI = (*(buffer + decoded)>>4) & 0x0f;
-  decoded++;
-
-  fgs_security_mode_com->spare = *(buffer + decoded) & 0x0f;
+  fgs_security_mode_com->ngKSI = *(buffer + decoded) & 0x0f;
   decoded++;
 
   return decoded;

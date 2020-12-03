@@ -230,21 +230,21 @@ void tesths(void) //CUC:test
   char Authenticationrequest[] = "7e005601020000217d003b4a2e3bb80403de19020f57b16a2010583f0d352eb89001539b2cb2cbf1da5c";
   uint32_t len1=84;
   Byte_t *data1= (uint8_t *)malloc(sizeof(uint8_t)*len1);
-  string2ByteArray(Authenticationrequest, data1);
+  len1 = string2ByteArray(Authenticationrequest, data1);
   nr_nas_proc_dl_transfer_ind(data1,len1);
   
   printf("Security mode: \n ");
   char Securitymodecommand[] = "7e005d0201028020e1360102";
   uint32_t len2=24;
   Byte_t *data2= (uint8_t *)malloc(sizeof(uint8_t)*len2);
-  string2ByteArray(Securitymodecommand, data2);
+  len2 = string2ByteArray(Securitymodecommand, data2);
   nr_nas_proc_dl_transfer_ind(data2,len2);
 
   printf("Registration: \n ");
   char Registrationrequest[] = "7e0042010177000bf202f8398000410000000154070002f83900000115020101210200005e01be";
   uint32_t len3=94;
   Byte_t *data3= (uint8_t *)malloc(sizeof(uint8_t)*len3);
-  string2ByteArray(Registrationrequest, data3);
+  len3 = string2ByteArray(Registrationrequest, data3);
   nr_nas_proc_dl_transfer_ind(data3,len3);
 
   printf("Registration request: \n ");
