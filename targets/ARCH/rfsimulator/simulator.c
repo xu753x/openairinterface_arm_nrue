@@ -556,7 +556,7 @@ static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps_for_initi
 	  }
 
           if (b->lastReceivedTS != 0 && b->th.timestamp-b->lastReceivedTS > 50 )
-            LOG_W(HW,"UEsock: %d gap of: %ld in reception\n", fd, b->th.timestamp-b->lastReceivedTS );
+            LOG_D(HW,"UEsock: %d gap of: %ld in reception\n", fd, b->th.timestamp-b->lastReceivedTS );
 
           b->lastReceivedTS=b->th.timestamp;
 	  
