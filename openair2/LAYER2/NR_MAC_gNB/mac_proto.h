@@ -422,4 +422,6 @@ int16_t ssb_index_from_prach(module_id_t module_idP,
 void find_SSB_and_RO_available(module_id_t module_idP);
 
 void handle_nr_uci(NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl, NR_mac_stats_t *stats, int target_snrx10);
+
+bool find_free_CCE(module_id_t module_id, sub_frame_t slot, NR_UE_info_t *UE_info, int UE_id);
 #endif /*__LAYER2_NR_MAC_PROTO_H__*/
