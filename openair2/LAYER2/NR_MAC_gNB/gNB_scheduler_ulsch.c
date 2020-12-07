@@ -578,6 +578,8 @@ void pf_ul(module_id_t module_id,
     /* RETRANSMISSION: Check retransmission */
 
     /* RETRANSMISSION: Find free CCE */
+    bool freeCCE = find_free_CCE(module_id, slot, UE_info, UE_id);
+    if (!freeCCE) continue;
 
     /* RETRANSMISSION: Allocate retransmission*/
 
@@ -596,30 +598,7 @@ void pf_ul(module_id_t module_id,
   if (n_rb_sched > 0){ //temp
     /* Find max coeff */
 
-    /* Find free CCE */
-    const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
-    sched_ctrl->search_space = get_searchspace(sched_ctrl->active_bwp, target_ss);
-    uint8_t nr_of_candidates;
-    find_aggregation_candidates(&sched_ctrl->aggregation_level,
-                                &nr_of_candidates,
-                                sched_ctrl->search_space);
-    sched_ctrl->coreset = get_coreset(
-            sched_ctrl->active_bwp, sched_ctrl->search_space, 1 /* dedicated */);
-    const int cid = sched_ctrl->coreset->controlResourceSetId;
-    const uint16_t Y = UE_info->Y[UE_id][cid][slot];
-    const int m = UE_info->num_pdcch_cand[UE_id][cid];
-    sched_ctrl->cce_index = allocate_nr_CCEs(RC.nrmac[module_id],
-                                             sched_ctrl->active_bwp,
-                                             sched_ctrl->coreset,
-                                             sched_ctrl->aggregation_level,
-                                             Y,
-                                             m,
-                                             nr_of_candidates);
-    if (sched_ctrl->cce_index < 0) {
-      LOG_E(MAC, "%s(): CCE list not empty, couldn't schedule PUSCH\n", __func__);
-      return;
-    }
-    UE_info->num_pdcch_cand[UE_id][cid]++;
+    max_num_ue--;
 
     /* Save PUSCH filed */
     sched_ctrl->sched_pusch.time_domain_allocation = tda;
