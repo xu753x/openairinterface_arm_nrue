@@ -24,7 +24,7 @@
 
 #include "openairinterface5g_limits.h"
 
-//CUC：add nas_nrue_task.h √
+//FINISH:add nas_nrue_task.h √
 #include "platform_types.h"
 #include "nr_nas_itti_messaging.h"
 #include "nas_log.h"
@@ -41,7 +41,7 @@ void *nas_nrue_task(void *args_p);
 void nr_nas_proc_dl_transfer_ind (Byte_t *data, uint32_t len);
 int decodeNasMsg(MM_msg *msg, uint8_t *buffer, uint32_t len);
 
-int string2ByteArray(char* input,uint8_t* output); //CUC:test
+int string2ByteArray(char* input,uint8_t* output); //FINISH:test
 void tesths(void);
 
 #endif /* NAS_TASK_H_ */

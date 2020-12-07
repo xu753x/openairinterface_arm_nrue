@@ -615,7 +615,7 @@ void *rrc_enb_process_msg(void *notUsed) {
   return NULL;
 }
 
-extern void tesths(void);//CUC:test
+extern void tesths(void);//FINISH:test
 
 int main( int argc, char **argv ) {
   //uint8_t beta_ACK=0,beta_RI=0,beta_CQI=2;
@@ -678,7 +678,7 @@ int main( int argc, char **argv ) {
 #endif
 */
 
-  printf("witcomm111witcomm: \n");//CUC:test
+  printf("witcomm111witcomm: \n");//FINISH:test
   tesths();
   printf("witcomm111witcomm \n");
 

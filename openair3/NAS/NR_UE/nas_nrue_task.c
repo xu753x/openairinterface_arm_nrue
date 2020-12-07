@@ -86,7 +86,7 @@ void *nas_nrue_task(void *args_p)
         LOG_I(NAS, "[UE %d] Received %s\n", Mod_id,  ITTI_MSG_NAME (msg_p));
         break;
 
-      case NAS_CELL_SELECTION_CNF:  //CUC：NAS_CELL_SELECTION_CNF √
+      case NAS_CELL_SELECTION_CNF:  //FINISH:NAS_CELL_SELECTION_CNF √
         LOG_I(NAS, "[UE %d] Received %s: errCode %u, cellID %u, tac %u\n", Mod_id,  ITTI_MSG_NAME (msg_p),
               NAS_CELL_SELECTION_CNF (msg_p).errCode, NAS_CELL_SELECTION_CNF (msg_p).cellID, NAS_CELL_SELECTION_CNF (msg_p).tac);
         as_stmsi_t s_tmsi={0, 0};
@@ -128,7 +128,7 @@ void *nas_nrue_task(void *args_p)
 
         break;
 
-      case NAS_DOWNLINK_DATA_IND: //CUC：NAS_DOWNLINK_DATA_IND √
+      case NAS_DOWNLINK_DATA_IND: //FINISH:NAS_DOWNLINK_DATA_IND √
         LOG_I(NAS, "[UE %d] Received %s: UEid %u, length %u\n", Mod_id,  ITTI_MSG_NAME (msg_p),
               NAS_DOWNLINK_DATA_IND (msg_p).UEid, NAS_DOWNLINK_DATA_IND (msg_p).nasMsg.length);
         nr_nas_proc_dl_transfer_ind (NAS_DOWNLINK_DATA_IND(msg_p).nasMsg.data, NAS_DOWNLINK_DATA_IND(msg_p).nasMsg.length); //handle dl info NAS mesaages.
@@ -187,7 +187,7 @@ void nr_nas_proc_dl_transfer_ind (Byte_t *data, uint32_t len) {
 
   }
 
-//   //****************************** //CUC:test
+//   //****************************** //FINISH:test
 //   printf("decodeaaadecode:");
 //   for (int i = 0; i < len; i++)
 //   {
@@ -224,7 +224,7 @@ int string2ByteArray(char* input,uint8_t* output)
     return i;
 }
 
-void tesths(void) //CUC:test
+void tesths(void) //FINISH:test
 {
   printf("Authentication: \n ");
   char Authenticationrequest[] = "7e005601020000217d003b4a2e3bb80403de19020f57b16a2010583f0d352eb89001539b2cb2cbf1da5c";
