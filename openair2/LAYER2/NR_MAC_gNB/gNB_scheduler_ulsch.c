@@ -552,6 +552,8 @@ int8_t select_ul_harq_pid(NR_UE_sched_ctrl_t *sched_ctrl) {
   return -1;
 }
 
+float ul_thr_ue[MAX_MOBILES_PER_GNB];
+
 void pf_ul(module_id_t module_id,
            frame_t frame,
            sub_frame_t slot,
@@ -574,6 +576,11 @@ void pf_ul(module_id_t module_id,
     const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth,275);
 
     /* Calculate throughput */
+    const float a = 0.0005f; // corresponds to 200ms window
+    const uint32_t b = UE_info->mac_stats[UE_id].ulsch_current_bytes;
+    ul_thr_ue[UE_id] = (1 - a) * ul_thr_ue[UE_id] + a * b;
+    LOG_D(MAC,"%4d.%2d %s() static TBS %d, ul_thr_ue[%d] %f\n",
+          frame, slot, __func__, b, UE_id, ul_thr_ue[UE_id]);
 
     /* RETRANSMISSION: Check retransmission */
 
@@ -772,6 +779,7 @@ void nr_schedule_ulsch(module_id_t module_id,
   const NR_UE_list_t *UE_list = &UE_info->list;
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+    UE_info->mac_stats[UE_id].ulsch_current_bytes = 0;
     /* dynamic PUSCH values (RB alloc, MCS, hence R, Qm, TBS) that change in
      * every TTI are pre-populated by the preprocessor and used below */
     NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
