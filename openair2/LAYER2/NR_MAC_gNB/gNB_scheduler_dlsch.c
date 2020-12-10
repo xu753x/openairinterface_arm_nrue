@@ -642,6 +642,15 @@ void nr_schedule_ue_spec(module_id_t module_id,
             harq->round,
             harq->ndi);
     } else { /* initial transmission */
+      LOG_I(MAC,
+            "%d.%2d new DL transmission RNTI %04x HARQ PID %d round %d NDI %d feedback_slot %d\n",
+            frame,
+            slot,
+            rnti,
+            current_harq_pid,
+            harq->round,
+            harq->ndi,
+            harq->feedback_slot);
 
       /* reserve space for timing advance of UE if necessary,
        * nr_generate_dlsch_pdu() checks for ta_apply and add TA CE if necessary */
