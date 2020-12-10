@@ -514,13 +514,14 @@ void pf_ul(module_id_t module_id,
            uint8_t *rballoc_mask,
            int max_num_ue) {
 
-  const int UE_id = 0;
   const int CC_id = 0;
   const int tda = 1;
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels[CC_id].ServingCellConfigCommon;
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
   const int min_rb = 5;
   float coeff_ue[MAX_MOBILES_PER_GNB];
+  NR_UE_list_t UE_sched;
+  int *uep = &UE_sched.head;
 
   /* Loop UE_list to calculate throughput and coeff */
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
@@ -583,12 +584,44 @@ void pf_ul(module_id_t module_id,
                     >> 3;
 
     /* Check BSR */
+    if (sched_ctrl->estimated_ul_buffer - sched_ctrl->sched_ul_bytes <= 0) {
+      /* if no data, pre-allocate 5RB */
+      while (rbStart < bwpSize && !rballoc_mask[rbStart]) rbStart++;
+      if (rbStart + min_rb >= bwpSize) {
+        LOG_W(MAC, "cannot allocate UL data for UE %d/RNTI %04x: no resources\n",
+              UE_id, UE_info->rnti[UE_id]);
+        return;
+      }
+      sched_pusch->rbStart = rbStart;
+      sched_pusch->rbSize = min_rb;
+      sched_pusch->tb_size = nr_compute_tbs(sched_pusch->Qm,
+                                            sched_pusch->R,
+                                            sched_pusch->rbSize,
+                                            ps->nrOfSymbols,
+                                            ps->N_PRB_DMRS * ps->num_dmrs_symb,
+                                            0, // nb_rb_oh
+                                            0,
+                                            1 /* NrOfLayers */)
+                             >> 3;
+
+      /* Mark the corresponding RBs as used */
+      n_rb_sched -= sched_pusch->rbSize;
+      for (int rb = 0; rb < sched_ctrl->sched_pusch.rbSize; rb++)
+        rballoc_mask[rb + sched_ctrl->sched_pusch.rbStart] = 0;
+
+      continue;
+    }
+
+    /* Create UE_sched for new data transmission*/
+    *uep = UE_id;
+    uep = &UE_sched.next[UE_id];
 
     /* Calculate coefficient*/
     coeff_ue[UE_id] = (float) tbs / ul_thr_ue[UE_id];
     LOG_D(MAC,"b %d, ul_thr_ue[%d] %f, tbs %d, coeff_ue[%d] %f\n",
           b, UE_id, ul_thr_ue[UE_id], tbs, UE_id, coeff_ue[UE_id]);
   }
+  *uep = -1;
 
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
   int rbStart = NRRIV2PRBOFFSET(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, 275);
