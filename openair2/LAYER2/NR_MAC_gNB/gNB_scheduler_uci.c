@@ -433,16 +433,21 @@ bool nr_acknack_scheduling(int mod_id,
 {
   const NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon;
   const int n_slots_frame = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
-  const NR_TDD_UL_DL_Pattern_t *tdd_pattern = &scc->tdd_UL_DL_ConfigurationCommon->pattern1;
-  const int nr_ulmix_slots = tdd_pattern->nrofUplinkSlots + (tdd_pattern->nrofUplinkSymbols != 0);
-  const int first_ul_slot_tdd = tdd_pattern->nrofDownlinkSlots;
+  const NR_TDD_UL_DL_Pattern_t *tdd = &scc->tdd_UL_DL_ConfigurationCommon->pattern1;
+  const int nr_ulmix_slots = tdd->nrofUplinkSlots + (tdd->nrofUplinkSymbols != 0);
+  const int nr_mix_slots = tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0;
+  const int nr_slots_period = tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + nr_mix_slots;
+  const int first_ul_slot_tdd = tdd->nrofDownlinkSlots + nr_slots_period * (slot / nr_slots_period);
+  /* TODO: remove the next two lines */
+  DevAssert(nr_slots_period == 10);
+  DevAssert(first_ul_slot_tdd == 7 || first_ul_slot_tdd == 17);
   const int CC_id = 0;
 
-  AssertFatal(slot < first_ul_slot_tdd + (tdd_pattern->nrofUplinkSymbols != 0),
+  AssertFatal(slot < first_ul_slot_tdd + (tdd->nrofUplinkSymbols != 0),
               "cannot handle multiple TDD periods (yet): slot %d first_ul_slot_tdd %d nrofUplinkSlots %ld\n",
               slot,
               first_ul_slot_tdd,
-              tdd_pattern->nrofUplinkSlots);
+              tdd->nrofUplinkSlots);
 
   /* FIXME: for the moment, we consider that
    * * only pucch_sched[0] holds HARQ (and SR)
