@@ -552,7 +552,7 @@ int8_t select_ul_harq_pid(NR_UE_sched_ctrl_t *sched_ctrl) {
   return -1;
 }
 
-void nr_simple_ulsch_preprocessor(module_id_t module_id,
+bool nr_simple_ulsch_preprocessor(module_id_t module_id,
                                   frame_t frame,
                                   sub_frame_t slot,
                                   int num_slots_per_tdd,
@@ -568,7 +568,7 @@ void nr_simple_ulsch_preprocessor(module_id_t module_id,
               __func__,
               UE_info->num_UEs);
   if (UE_info->num_UEs == 0)
-    return;
+    return false;
 
   const int UE_id = 0;
   const int CC_id = 0;
@@ -585,7 +585,7 @@ void nr_simple_ulsch_preprocessor(module_id_t module_id,
   const int sched_frame = frame + (slot + K2 >= num_slots_per_tdd);
   const int sched_slot = (slot + K2) % num_slots_per_tdd;
   if (!is_xlsch_in_slot(ulsch_in_slot_bitmap, sched_slot))
-    return;
+    return false;
 
   sched_ctrl->sched_pusch.slot = sched_slot;
   sched_ctrl->sched_pusch.frame = sched_frame;
@@ -610,7 +610,7 @@ void nr_simple_ulsch_preprocessor(module_id_t module_id,
                                            nr_of_candidates);
   if (sched_ctrl->cce_index < 0) {
     LOG_E(MAC, "%s(): CCE list not empty, couldn't schedule PUSCH\n", __func__);
-    return;
+    return false;
   }
   UE_info->num_pdcch_cand[UE_id][cid]++;
 
@@ -677,6 +677,7 @@ void nr_simple_ulsch_preprocessor(module_id_t module_id,
   /* mark the corresponding RBs as used */
   for (int rb = 0; rb < sched_ctrl->sched_pusch.rbSize; rb++)
     vrb_map_UL[rb + sched_ctrl->sched_pusch.rbStart] = 1;
+  return true;
 }
 
 void nr_schedule_ulsch(module_id_t module_id,
@@ -689,8 +690,10 @@ void nr_schedule_ulsch(module_id_t module_id,
     LOG_D(MAC, "Current slot %d is NOT DL slot, cannot schedule DCI0 for UL data\n", slot);
     return;
   }
-  RC.nrmac[module_id]->pre_processor_ul(
+  bool do_sched = RC.nrmac[module_id]->pre_processor_ul(
       module_id, frame, slot, num_slots_per_tdd, ulsch_in_slot_bitmap);
+  if (!do_sched)
+    return;
 
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon;
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
