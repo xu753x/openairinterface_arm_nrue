@@ -322,21 +322,15 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
       for (int harq_idx = harq_idx_s; harq_idx < NR_MAX_NB_HARQ_PROCESSES; harq_idx++) {
         // if the gNB received ack with a good confidence
         if ((slot - 1) == sched_ctrl->harq_processes[harq_idx].feedback_slot) {
+          sched_ctrl->harq_processes[harq_idx].feedback_slot = -1;
           if ((uci_01->harq->harq_list[harq_bit].harq_value == 1) &&
               (uci_01->harq->harq_confidence_level == 0)) {
             // toggle NDI and reset round
             sched_ctrl->harq_processes[harq_idx].ndi ^= 1;
             sched_ctrl->harq_processes[harq_idx].round = 0;
-          } else {
-            LOG_E(MAC,
-                  "%4d.%2d HARQ not received (val %d) or bad confidence (%d) for harq_idx %d (feedback_slot %d)\n",
-                  frame, slot,
-                  uci_01->harq->harq_list[harq_bit].harq_value,
-                  uci_01->harq->harq_confidence_level,
-                  harq_idx, sched_ctrl->harq_processes[harq_idx].feedback_slot);
-            sched_ctrl->harq_processes[harq_idx].round++;
           }
-          sched_ctrl->harq_processes[harq_idx].feedback_slot = -1;
+          else
+            sched_ctrl->harq_processes[harq_idx].round++;
           sched_ctrl->harq_processes[harq_idx].is_waiting = 0;
           harq_idx_s = harq_idx + 1;
           // if the max harq rounds was reached
@@ -351,7 +345,6 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
         else if (sched_ctrl->harq_processes[harq_idx].feedback_slot != -1
                  && (slot - 1) > sched_ctrl->harq_processes[harq_idx].feedback_slot
                  && sched_ctrl->harq_processes[harq_idx].is_waiting) {
-          LOG_E(MAC, "%4d.%2d HARQ not discarded for harq_idx %d (feedback_slot %d)\n", frame, slot, harq_idx, sched_ctrl->harq_processes[harq_idx].feedback_slot);
           sched_ctrl->harq_processes[harq_idx].feedback_slot = -1;
           sched_ctrl->harq_processes[harq_idx].round++;
           if (sched_ctrl->harq_processes[harq_idx].round == max_harq_rounds) {

@@ -32,7 +32,6 @@
 
 #include <stdint.h>
 #include "assertions.h"
-#include "common/utils/LOG/log.h"
 
 int NRRIV2BW(int locationAndBandwidth,int N_RB) {
   int tmp = locationAndBandwidth/N_RB;
@@ -55,11 +54,7 @@ int NRRIV2PRBOFFSET(int locationAndBandwidth,int N_RB) {
 
 /* TS 38.214 ch. 6.1.2.2.2 - Resource allocation type 1 for DL and UL */
 int PRBalloc_to_locationandbandwidth0(int NPRB,int RBstart,int BWPsize) {
-  if (!(NPRB>0 && (NPRB + RBstart <= BWPsize))) {
-    LOG_E(MAC ,"Illegal NPRB/RBstart Configuration (%d,%d) for BWPsize %d\n",NPRB,RBstart,BWPsize);
-    int *a = 0;
-    *a = 1;
-  }
+  AssertFatal(NPRB>0 && (NPRB + RBstart <= BWPsize),"Illegal NPRB/RBstart Configuration (%d,%d) for BWPsize %d\n",NPRB,RBstart,BWPsize);
 
   if (NPRB <= 1+(BWPsize>>1)) return(BWPsize*(NPRB-1)+RBstart);
   else                        return(BWPsize*(BWPsize+1-NPRB) + (BWPsize-1-RBstart));
