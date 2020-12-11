@@ -2284,8 +2284,8 @@ uint8_t get_K_ptrs(uint16_t nrb0, uint16_t nrb1, uint16_t N_RB) {
     return 4;
 }
 
-uint16_t nr_dci_size(NR_ServingCellConfigCommon_t *scc,
-                     NR_CellGroupConfig_t *secondaryCellGroup,
+uint16_t nr_dci_size(const NR_ServingCellConfigCommon_t *scc,
+                     const NR_CellGroupConfig_t *secondaryCellGroup,
                      dci_pdu_rel15_t *dci_pdu,
                      nr_dci_format_t format,
 		     nr_rnti_type_t rnti_type,
