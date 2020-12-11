@@ -477,7 +477,7 @@ bool nr_acknack_scheduling(int mod_id,
     pucch->frame = s == n_slots_frame - 1 ? (f + 1) % 1024 : f;
     pucch->ul_slot = (s + 1) % n_slots_frame;
     // we assume that only two indices over the array sched_pucch exist
-    const NR_sched_pucch_t *csi_pucch = &sched_ctrl->sched_pucch[1];
+    const NR_sched_pucch_t *csi_pucch = &sched_ctrl->sched_pucch[2];
     // skip the CSI PUCCH if it is present and if in the next frame/slot
     if (csi_pucch->csi_bits > 0
         && csi_pucch->frame == pucch->frame
