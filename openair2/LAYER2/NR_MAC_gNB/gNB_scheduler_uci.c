@@ -438,9 +438,6 @@ bool nr_acknack_scheduling(int mod_id,
   const int nr_mix_slots = tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0;
   const int nr_slots_period = tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + nr_mix_slots;
   const int first_ul_slot_tdd = tdd->nrofDownlinkSlots + nr_slots_period * (slot / nr_slots_period);
-  /* TODO: remove the next two lines */
-  DevAssert(nr_slots_period == 10);
-  DevAssert(first_ul_slot_tdd == 7 || first_ul_slot_tdd == 17);
   const int CC_id = 0;
 
   AssertFatal(slot < first_ul_slot_tdd + (tdd->nrofUplinkSymbols != 0),
@@ -451,8 +448,7 @@ bool nr_acknack_scheduling(int mod_id,
 
   /* FIXME: for the moment, we consider that
    * * only pucch_sched[0] holds HARQ (and SR)
-   * * we do not multiplex with CSI
-   * * we only use the first TDD period (5/10ms) */
+   * * we do not multiplex with CSI */
   NR_UE_sched_ctrl_t *sched_ctrl = &RC.nrmac[mod_id]->UE_info.UE_sched_ctrl[UE_id];
   NR_sched_pucch_t *pucch = &sched_ctrl->sched_pucch[0];
   AssertFatal(pucch->csi_bits == 0,
