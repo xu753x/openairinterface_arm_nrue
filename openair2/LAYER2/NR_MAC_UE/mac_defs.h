@@ -252,6 +252,8 @@ typedef struct {
   uint8_t generate_nr_prach;
   /// SSB index from MIB decoding
   uint8_t mib_ssb;
+  /// TCI ssb index
+  uint8_t tci_ssb_id;
 
   ////	FAPI-like interface message
   fapi_nr_ul_config_request_t *ul_config_request;

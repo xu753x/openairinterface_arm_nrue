@@ -144,6 +144,10 @@ void init_nr_ue_vars(PHY_VARS_NR_UE *ue,
   ue->Mod_id      = UE_id;
   ue->mac_enabled = 1;
   ue->if_inst     = nr_ue_if_module_init(0);
+  ue->measurements.gnb_beam_cnt = -1;
+  ue->measurements.ue_beam_cnt = 0;
+  ue->measurements.first_beam_meas = 1;
+  ue->measurements.frame_last_beam = 0;
 
   // Setting UE mode to NOT_SYNCHED by default
   for (gNB_id = 0; gNB_id < nb_connected_gNB; gNB_id++){

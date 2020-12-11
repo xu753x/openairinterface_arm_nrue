@@ -261,7 +261,7 @@ void nr_ue_measurement_procedures(uint16_t l,    // symbol index of each slot [0
 #if T_TRACER
     if(slot == 0)
       T(T_UE_PHY_MEAS, T_INT(eNB_id),  T_INT(ue->Mod_id), T_INT(frame_rx%1024), T_INT(nr_slot_rx),
-	T_INT((int)(10*log10(ue->measurements.rsrp[0])-ue->rx_total_gain_dB)),
+	T_INT((int)(10*log10(ue->measurements.rsrp[0][0][0])-ue->rx_total_gain_dB)),
 	T_INT((int)ue->measurements.rx_rssi_dBm[0]),
 	T_INT((int)(ue->measurements.rx_power_avg_dB[0] - ue->measurements.n0_power_avg_dB)),
 	T_INT((int)ue->measurements.rx_power_avg_dB[0]),
@@ -1701,6 +1701,55 @@ int is_pbch_in_slot(fapi_nr_config_request_t *config, int frame, int slot, NR_DL
 }
 
 
+
+void nr_get_beam_cnt(PHY_VARS_NR_UE *ue, int frame_rx, uint16_t nb_ssbri_cri) {
+	printf("before frame temp %d frame rx %d first_beam_meas %d \n", ue->measurements.frame_last_beam, frame_rx, ue->measurements.first_beam_meas);	
+	if (ue->measurements.first_beam_meas) 
+	{
+		ue->measurements.frame_last_beam = frame_rx;
+		ue->measurements.first_beam_meas = 0;
+	}
+	
+	printf("frame temp %d frame rx %d gnb beam %d ue beam %d\n", ue->measurements.frame_last_beam, frame_rx, ue->measurements.gnb_beam_cnt,ue->measurements.ue_beam_cnt);
+
+	if (ue->measurements.frame_last_beam == frame_rx){
+			ue->measurements.gnb_beam_cnt++;
+	}
+	else
+	{	
+		ue->measurements.ue_beam_cnt++;
+		ue->measurements.frame_last_beam = frame_rx;
+		ue->measurements.gnb_beam_cnt = 0;
+	}
+	
+	printf("ue procedure gnb beam cnt %d frame_temp %d ue beam %d\n", ue->measurements.gnb_beam_cnt, ue->measurements.frame_last_beam,ue->measurements.ue_beam_cnt);
+}
+
+void nr_get_best_beam(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint16_t nb_ssbri_cri) {
+
+	uint32_t rsrp_temp = 0;
+	int ue_beam_temp = 0;
+	int gnb_beam_temp = 0;
+	
+	if ((ue->measurements.ue_beam_cnt ==3) && ((nb_ssbri_cri-1)==ue->measurements.gnb_beam_cnt)){
+		for (int i = 0; i < 4; i++){
+			for (int j = 0; j < nb_ssbri_cri; j++){
+				if (ue->measurements.rsrp[gNB_id][i][j] > rsrp_temp){	
+					rsrp_temp = ue->measurements.rsrp[gNB_id][i][j];
+					ue_beam_temp = i;
+					gnb_beam_temp = j;
+					//beam_pair[cnt_gnb_beam]= cnt_ue_beam;
+					printf("loop temp %d beam ue %d gnb %d rsrp %d\n",ue_beam_temp,i,j,rsrp_temp);
+				}
+			}
+		}
+		ue->measurements.best_beam_ue = ue_beam_temp;
+		ue->measurements.best_beam_gnb = gnb_beam_temp;
+		ue->measurements.ue_beam_cnt = -1;
+		printf("best ue beam %d\n",ue_beam_temp);
+	}
+}
+
 int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            UE_nr_rxtx_proc_t *proc,
                            uint8_t gNB_id,
@@ -1717,7 +1766,14 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   uint8_t dci_cnt = 0;
   NR_DL_FRAME_PARMS *fp = &ue->frame_parms;
 
-  //NR_UE_MAC_INST_t *mac = get_mac_inst(0);
+  uint16_t nb_ssbri_cri = 0;
+
+  NR_UE_MAC_INST_t *mac = get_mac_inst(0);
+  NR_CSI_MeasConfig_t *csi_MeasConfig = mac->scg->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
+  
+  nb_ssbri_cri = *(csi_MeasConfig->csi_ReportConfigToAddModList->list.array[0]->groupBasedBeamReporting.choice.disabled->nrofReportedRS)+1;
+  
+  //printf("nb ssbri cri %d\n", nb_ssbri_cri);
   
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_IN);
 
@@ -1739,7 +1795,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 
   // looking for pbch only in slot where it is supposed to be
   if (slot_ssb) {
-    LOG_D(PHY," ------  PBCH ChannelComp/LLR: frame.slot %d.%d ------  \n", frame_rx%1024, nr_slot_rx);
+    LOG_I(PHY," ------  PBCH ChannelComp/LLR: frame.slot %d.%d ------  \n", frame_rx%1024, nr_slot_rx);
     for (int i=1; i<4; i++) {
 
       nr_slot_fep(ue,
@@ -1757,10 +1813,15 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
       stop_meas(&ue->dlsch_channel_estimation_stats);
 #endif
     }
+    
+	nr_get_beam_cnt(ue,frame_rx, nb_ssbri_cri);
 
     //if (mac->csirc->reportQuantity.choice.ssb_Index_RSRP){
-    nr_ue_rsrp_measurements(ue,proc,nr_slot_rx,0);
+    if (ue->measurements.gnb_beam_cnt<nb_ssbri_cri)
+		nr_ue_rsrp_measurements(ue,proc,nr_slot_rx, 0);
     //}
+
+	nr_get_best_beam(ue, gNB_id, nb_ssbri_cri);
 
     if ((ue->decode_MIB == 1) && slot_pbch) {
 

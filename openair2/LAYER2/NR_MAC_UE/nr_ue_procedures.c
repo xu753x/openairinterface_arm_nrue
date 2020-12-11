@@ -4715,6 +4715,11 @@ void nr_ue_process_mac_pdu(module_id_t module_idP,
     uint16_t mac_ce_len, mac_subheader_len, mac_sdu_len;
     NR_UE_MAC_INST_t *mac = get_mac_inst(module_idP);
 
+    NR_ServingCellConfig_t *scd = mac->scg->spCellConfig->spCellConfigDedicated;
+    NR_BWP_DownlinkDedicated_t *dl_bwp_Dedicated = scd->downlinkBWP_ToAddModList->list.array[0]->bwp_Dedicated;
+    NR_SetupRelease_PDSCH_Config_t *pdsch_Config = dl_bwp_Dedicated->pdsch_Config;
+
+    
     //NR_UE_MAC_INST_t *UE_mac_inst = get_mac_inst(module_idP);
     //uint8_t scs = UE_mac_inst->mib->subCarrierSpacingCommon;
     //uint16_t bwp_ul_NB_RB = UE_mac_inst->initial_bwp_ul.N_RB;
@@ -4829,6 +4834,9 @@ void nr_ue_process_mac_pdu(module_id_t module_idP,
             case DL_SCH_LCID_TCI_STATE_IND_UE_SPEC_PDCCH:
                 //  38.321 Ch6.1.3.15
                 mac_ce_len = 2;
+                uint8_t tci_stateid = ((NR_TCI_PDCCH *)pdu_ptr)[1].TciStateId;
+                uint8_t ssb_id = pdsch_Config->choice.setup->tci_StatesToAddModList->list.array[tci_stateid]->qcl_Type1.referenceSignal.choice.ssb;
+                mac->tci_ssb_id = ssb_id;
                 break;
             case DL_SCH_LCID_DUPLICATION_ACT:
                 //  38.321 Ch6.1.3.11
