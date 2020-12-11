@@ -176,8 +176,8 @@ int is_nr_DL_slot(NR_ServingCellConfigCommon_t *scc,slot_t slotP);
 
 int is_nr_UL_slot(NR_ServingCellConfigCommon_t *scc,slot_t slotP);
 
-uint16_t nr_dci_size(NR_ServingCellConfigCommon_t *scc,
-                     NR_CellGroupConfig_t *secondaryCellGroup,
+uint16_t nr_dci_size(const NR_ServingCellConfigCommon_t *scc,
+                     const NR_CellGroupConfig_t *secondaryCellGroup,
                      dci_pdu_rel15_t *dci_pdu,
                      nr_dci_format_t format,
 		     nr_rnti_type_t rnti_type,
