@@ -116,6 +116,6 @@ void nr_pdsch_ptrs_processing(PHY_VARS_NR_UE *ue,
                               uint16_t rnti,
                               RX_type_t rx_type);
 
-float_t get_nr_RSRP(module_id_t Mod_id,uint8_t CC_id,uint8_t gNB_index);
+float_t get_nr_RSRP(module_id_t Mod_id,uint8_t CC_id,uint8_t gNB_index,int i, int j);
 
 #endif

@@ -185,10 +185,16 @@ typedef struct {
   uint32_t rssi;
   int n_adj_cells;
   unsigned int adj_cell_id[6];
-  uint32_t rsrq[7];
-  uint32_t rsrp[7];
+  uint32_t rsrq[7][8][64];
+  uint32_t rsrp[7][8][64];
   float rsrp_filtered[7]; // after layer 3 filtering
   float rsrq_filtered[7];
+  int gnb_beam_cnt;
+  int ue_beam_cnt;
+  int first_beam_meas;
+  int frame_last_beam;
+  int best_beam_ue;
+  int best_beam_gnb;
   // common measurements
   //! estimated noise power (linear)
   unsigned int   n0_power[NB_ANTENNAS_RX];

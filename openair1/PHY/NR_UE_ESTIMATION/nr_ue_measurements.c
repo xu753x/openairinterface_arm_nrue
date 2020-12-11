@@ -72,7 +72,7 @@ int16_t get_nr_PL(uint8_t Mod_id, uint8_t CC_id, uint8_t gNB_index){
         10*log10((double)ue->measurements.rsrp[eNB_index]),
         ue->frame_parms.pdsch_config_common.referenceSignalPower);*/
 
-  return((int16_t)(((10*ue->rx_total_gain_dB) - dB_fixed_times10(ue->measurements.rsrp[gNB_index]))/10));
+  return((int16_t)(((10*ue->rx_total_gain_dB) - dB_fixed_times10(ue->measurements.rsrp[gNB_index][0][0]))/10));
                     //        dB_fixed_times10(RSoffset*12*ue_g[Mod_id][CC_id]->frame_parms.N_RB_DL) +
                     //(ue->frame_parms.pdsch_config_common.referenceSignalPower*10))/10));
 }
@@ -89,7 +89,7 @@ uint32_t get_nr_rx_total_gain_dB (module_id_t Mod_id,uint8_t CC_id)
 }
 
 
-float_t get_nr_RSRP(module_id_t Mod_id,uint8_t CC_id,uint8_t gNB_index)
+float_t get_nr_RSRP(module_id_t Mod_id,uint8_t CC_id,uint8_t gNB_index,int i, int j)
 {
 
   AssertFatal(PHY_vars_UE_g!=NULL,"PHY_vars_UE_g is null\n");
@@ -99,7 +99,7 @@ float_t get_nr_RSRP(module_id_t Mod_id,uint8_t CC_id,uint8_t gNB_index)
   PHY_VARS_NR_UE *ue = PHY_vars_UE_g[Mod_id][CC_id];
 
   if (ue)
-    return (10*log10(ue->measurements.rsrp[gNB_index])-
+    return (10*log10(ue->measurements.rsrp[gNB_index][i][j])-
 	    get_nr_rx_total_gain_dB(Mod_id,0) -
 	    10*log10(20*12));
   return -140.0;
@@ -231,9 +231,11 @@ void nr_ue_rsrp_measurements(PHY_VARS_NR_UE *ue,
 {
 	int aarx,rb, symbol_offset;
 	int16_t *rxF;
+	int beam_idx_gnb = ue->measurements.gnb_beam_cnt;
+    	int beam_idx_ue = ue->measurements.ue_beam_cnt;
 
 	uint16_t Nid_cell = ue->frame_parms.Nid_cell;
-	uint8_t eNB_offset=0,l,nushift;
+	uint8_t gNB_offset=0,l,nushift;
 	uint16_t off,nb_rb;
 //	NR_UE_MAC_INST_t *mac = get_mac_inst(0);
 	int **rxdataF=ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF;
@@ -245,7 +247,7 @@ void nr_ue_rsrp_measurements(PHY_VARS_NR_UE *ue,
 	
 	symbol_offset = ue->frame_parms.ofdm_symbol_size*((ue->symbol_offset+1)%(ue->frame_parms.symbols_per_slot));
 
-    ue->measurements.rsrp[eNB_offset] = 0;
+    ue->measurements.rsrp[gNB_offset][beam_idx_ue][beam_idx_gnb] = 0;
 
     //if (mac->csirc->reportQuantity.choice.ssb_Index_RSRP){ 
 		nb_rb = 20;
@@ -257,8 +259,8 @@ void nr_ue_rsrp_measurements(PHY_VARS_NR_UE *ue,
 
       for (l=0; l<1; l++) {
 
-        LOG_D(PHY,"[UE %d]  slot %d Doing ue_rrc_measurements rsrp/rssi (Nid_cell %d, nushift %d, eNB_offset %d, l %d)\n",ue->Mod_id,slot,Nid_cell,nushift,
-              eNB_offset,l);
+        LOG_D(PHY,"[UE %d]  slot %d Doing ue_rrc_measurements rsrp/rssi (Nid_cell %d, nushift %d, gNB_offset %d, l %d)\n",ue->Mod_id,slot,Nid_cell,nushift,
+              gNB_offset,l);
 
         for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++) {
           rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+ssb_offset+nushift)];
@@ -267,7 +269,7 @@ void nr_ue_rsrp_measurements(PHY_VARS_NR_UE *ue,
           if (l==0) {
             for (rb=0; rb<nb_rb; rb++) {
 
-              ue->measurements.rsrp[eNB_offset] += (((int32_t)(rxF[off])*rxF[off])+((int32_t)(rxF[off+1])*rxF[off+1]));
+              ue->measurements.rsrp[gNB_offset][beam_idx_ue][beam_idx_gnb] += (((int32_t)(rxF[off])*rxF[off])+((int32_t)(rxF[off+1])*rxF[off+1]));
                       //printf("rb %d, off %d : %d\n",rb,off,((((int32_t)rxF[off])*rxF[off])+((int32_t)(rxF[off+1])*rxF[off+1])));
 
               off = (off+4) % ue->frame_parms.ofdm_symbol_size;
@@ -276,21 +278,21 @@ void nr_ue_rsrp_measurements(PHY_VARS_NR_UE *ue,
         }
       }
 
-	  ue->measurements.rsrp[eNB_offset]/=nb_rb;
+	  ue->measurements.rsrp[gNB_offset][beam_idx_ue][beam_idx_gnb]/=nb_rb;
 
 	} else { 
 
-      ue->measurements.rsrp[eNB_offset] = -93 ;
+      ue->measurements.rsrp[gNB_offset][beam_idx_ue][beam_idx_gnb] = -93 ;
     }
 
 
-      if (eNB_offset == 0)
+      if (gNB_offset == 0)
 
       LOG_I(PHY,"[UE %d] slot %d RRC Measurements (idx %d, Cell id %d) => rsrp: %3.1f dBm/RE (%d)\n",
             ue->Mod_id,
-            slot,eNB_offset,
-            (eNB_offset>0) ? ue->measurements.adj_cell_id[eNB_offset-1] : ue->frame_parms.Nid_cell,
-            10*log10(ue->measurements.rsrp[eNB_offset])-ue->rx_total_gain_dB,
-            ue->measurements.rsrp[eNB_offset]);
+            slot,gNB_offset,
+            (gNB_offset>0) ? ue->measurements.adj_cell_id[gNB_offset-1] : ue->frame_parms.Nid_cell,
+            10*log10(ue->measurements.rsrp[gNB_offset][beam_idx_ue][beam_idx_gnb])-ue->rx_total_gain_dB,
+            ue->measurements.rsrp[gNB_offset][beam_idx_ue][beam_idx_gnb]);
 
 }

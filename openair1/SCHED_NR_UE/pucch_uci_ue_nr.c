@@ -94,6 +94,8 @@ binary_search_float_nr(
 
   return first;
 }
+
+float diff_rsrp_meas[16] = {0,-2,-4,-6,-8,-10,-12,-14,-16,-18,-20,-22,-24,-26,-28,-30};
 /*
 void nr_generate_pucch0(int32_t **txdataF,
                         NR_DL_FRAME_PARMS *frame_parms,
@@ -1362,9 +1364,18 @@ int get_csi_nr(NR_UE_MAC_INST_t *mac, PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint32
   int nElem = 98;
   int rsrp_offset = 17;
   int csi_status = 0;
+  uint16_t nb_ssbri_cri = 0;
+  int best_beam_ue = ue->measurements.best_beam_ue;
+  int best_beam_gnb = ue->measurements.best_beam_gnb;
+  NR_CSI_MeasConfig_t *csi_MeasConfig = mac->scg->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
   
+  if (NULL != csi_MeasConfig->csi_ReportConfigToAddModList->list.array[0]->groupBasedBeamReporting.choice.disabled->nrofReportedRS)
+      nb_ssbri_cri = *(csi_MeasConfig->csi_ReportConfigToAddModList->list.array[0]->groupBasedBeamReporting.choice.disabled->nrofReportedRS)+1;
+  else
+      nb_ssbri_cri = 1;
+      
   csi_status = get_nr_csi_bitlen(mac);
-  rsrp_db[0] = get_nr_RSRP(0,0,0);
+  rsrp_db[0] = get_nr_RSRP(0,0,0,best_beam_ue,best_beam_gnb);
 
 
   if (csi_status == 0) {
@@ -1372,6 +1383,12 @@ int get_csi_nr(NR_UE_MAC_INST_t *mac, PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint32
   }
   else {
     *csi_payload = binary_search_float_nr(RSRP_meas_mapping_nr,nElem, rsrp_db[0]) + rsrp_offset;
+    
+    for (int i=1; i < nb_ssbri_cri; i++){
+		if (i==best_beam_gnb) i++;
+		rsrp_db[i] = get_nr_RSRP(0,0,0,best_beam_ue,i);
+		*csi_payload = *csi_payload | binary_search_float_nr(diff_rsrp_meas,16,(rsrp_db[i]-rsrp_db[0]));
+		}
   }
 
   return (csi_status);
