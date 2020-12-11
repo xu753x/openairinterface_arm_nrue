@@ -699,7 +699,7 @@ void pf_ul(module_id_t module_id,
   }
 }
 
-void nr_simple_ulsch_preprocessor(module_id_t module_id,
+bool nr_simple_ulsch_preprocessor(module_id_t module_id,
                                   frame_t frame,
                                   sub_frame_t slot,
                                   int num_slots_per_tdd,
@@ -715,7 +715,7 @@ void nr_simple_ulsch_preprocessor(module_id_t module_id,
               __func__,
               UE_info->num_UEs);
   if (UE_info->num_UEs == 0)
-    return;
+    return false;
 
   const int CC_id = 0;
 
@@ -733,7 +733,7 @@ void nr_simple_ulsch_preprocessor(module_id_t module_id,
   const int sched_frame = frame + (slot + K2 >= num_slots_per_tdd);
   const int sched_slot = (slot + K2) % num_slots_per_tdd;
   if (!is_xlsch_in_slot(ulsch_in_slot_bitmap, sched_slot))
-    return;
+    return false;
 
   sched_ctrl->sched_pusch.slot = sched_slot;
   sched_ctrl->sched_pusch.frame = sched_frame;
@@ -775,6 +775,7 @@ void nr_simple_ulsch_preprocessor(module_id_t module_id,
         len,
         rballoc_mask,
         2);
+  return true;
 }
 
 void nr_schedule_ulsch(module_id_t module_id,
@@ -783,8 +784,10 @@ void nr_schedule_ulsch(module_id_t module_id,
                        int num_slots_per_tdd,
                        int ul_slots,
                        uint64_t ulsch_in_slot_bitmap) {
-  RC.nrmac[module_id]->pre_processor_ul(
+  bool do_sched = RC.nrmac[module_id]->pre_processor_ul(
       module_id, frame, slot, num_slots_per_tdd, ulsch_in_slot_bitmap);
+  if (!do_sched)
+    return;
 
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon;
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
