@@ -66,7 +66,6 @@ int nr_write_ce_dlsch_pdu(module_id_t module_idP,
 {
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
   NR_MAC_SUBHEADER_FIXED *mac_pdu_ptr = (NR_MAC_SUBHEADER_FIXED *) mac_pdu;
-  uint8_t last_size = 0;
   int mac_ce_size, i, timing_advance_cmd, tag_id = 0;
   // MAC CEs
   uint8_t mac_header_control_elements[16], *ce_ptr;
@@ -76,7 +75,6 @@ int nr_write_ce_dlsch_pdu(module_id_t module_idP,
   if (drx_cmd != 255) {
     mac_pdu_ptr->R = 0;
     mac_pdu_ptr->LCID = DL_SCH_LCID_DRX;
-    //last_size = 1;
     mac_pdu_ptr++;
   }
 
@@ -88,7 +86,6 @@ int nr_write_ce_dlsch_pdu(module_id_t module_idP,
   if (ue_sched_ctl->ta_apply) {
     mac_pdu_ptr->R = 0;
     mac_pdu_ptr->LCID = DL_SCH_LCID_TA_COMMAND;
-    //last_size = 1;
     mac_pdu_ptr++;
     // TA MAC CE (1 octet)
     timing_advance_cmd = ue_sched_ctl->ta_update;
@@ -115,7 +112,6 @@ int nr_write_ce_dlsch_pdu(module_id_t module_idP,
     mac_pdu_ptr->R = 0;
     mac_pdu_ptr->LCID = DL_SCH_LCID_CON_RES_ID;
     mac_pdu_ptr++;
-    //last_size = 1;
     // contention resolution identity MAC ce has a fixed 48 bit size
     // this contains the UL CCCH SDU. If UL CCCH SDU is longer than 48 bits,
     // it contains the first 48 bits of the UL CCCH SDU
@@ -185,9 +181,8 @@ int nr_write_ce_dlsch_pdu(module_id_t module_idP,
     ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->F = 0;
     ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->LCID = DL_SCH_LCID_TCI_STATE_ACT_UE_SPEC_PDSCH;
     ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->L = sizeof(NR_TCI_PDSCH_APERIODIC_CSI) + num_octects * sizeof(uint8_t);
-    last_size = 2;
     //Incrementing the PDU pointer
-    mac_pdu_ptr += last_size;
+    mac_pdu_ptr += 2;
     //allocating memory for CE Structure
     NR_TCI_PDSCH_APERIODIC_CSI *nr_UESpec_TCI_StateInd_PDSCH = (NR_TCI_PDSCH_APERIODIC_CSI *)malloc(sizeof(NR_TCI_PDSCH_APERIODIC_CSI) + num_octects * sizeof(uint8_t));
     //initializing to zero
@@ -220,9 +215,8 @@ int nr_write_ce_dlsch_pdu(module_id_t module_idP,
     ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->F = 0;
     ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->LCID = DL_SCH_LCID_APERIODIC_CSI_TRI_STATE_SUBSEL;
     ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->L = sizeof(NR_TCI_PDSCH_APERIODIC_CSI) + num_octects * sizeof(uint8_t);
-    last_size = 2;
     //Incrementing the PDU pointer
-    mac_pdu_ptr += last_size;
+    mac_pdu_ptr += 2;
     //allocating memory for CE structure
     NR_TCI_PDSCH_APERIODIC_CSI *nr_Aperiodic_CSI_Trigger = (NR_TCI_PDSCH_APERIODIC_CSI *)malloc(sizeof(NR_TCI_PDSCH_APERIODIC_CSI) + num_octects * sizeof(uint8_t));
     //initializing to zero
