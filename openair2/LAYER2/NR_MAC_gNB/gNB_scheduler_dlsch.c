@@ -67,7 +67,7 @@ int nr_write_ce_dlsch_pdu(module_id_t module_idP,
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
   NR_MAC_SUBHEADER_FIXED *mac_pdu_ptr = (NR_MAC_SUBHEADER_FIXED *) mac_pdu;
   uint8_t last_size = 0;
-  int offset = 0, mac_ce_size, i, timing_advance_cmd, tag_id = 0;
+  int mac_ce_size, i, timing_advance_cmd, tag_id = 0;
   // MAC CEs
   uint8_t mac_header_control_elements[16], *ce_ptr;
   ce_ptr = &mac_header_control_elements[0];
@@ -296,10 +296,8 @@ int nr_write_ce_dlsch_pdu(module_id_t module_idP,
     }
   }
 
-  // compute final offset
-  offset = ((unsigned char *) mac_pdu_ptr - mac_pdu);
-  //printf("Offset %d \n", ((unsigned char *) mac_pdu_ptr - mac_pdu));
-  return offset;
+  // return final offset
+  return (unsigned char *) mac_pdu_ptr - mac_pdu;
 }
 
 int getNrOfSymbols(NR_BWP_Downlink_t *bwp, int tda) {
