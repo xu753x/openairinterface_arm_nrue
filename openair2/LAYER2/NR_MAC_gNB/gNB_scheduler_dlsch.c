@@ -136,24 +136,20 @@ int nr_write_ce_dlsch_pdu(module_id_t module_idP,
 
   //TS 38.321 Sec 6.1.3.16, SP CSI reporting on PUCCH Activation/Deactivation MAC CE
   if (ue_sched_ctl->UE_mac_ce_ctrl.SP_CSI_reporting_pucch.is_scheduled) {
+    const int mac_ce_size = sizeof(NR_PUCCH_CSI_REPORTING);
+    if (size < mac_ce_size + 1)
+      return (unsigned char *) mac_pdu_ptr - mac_pdu;
     //filling the subheader
     mac_pdu_ptr->R = 0;
     mac_pdu_ptr->LCID = DL_SCH_LCID_SP_CSI_REP_PUCCH_ACT;
     mac_pdu_ptr++;
-    //creating the instance of CE structure
-    NR_PUCCH_CSI_REPORTING nr_PUCCH_CSI_reportingActDeact;
-    //filling the CE structure
-    nr_PUCCH_CSI_reportingActDeact.BWP_Id = (ue_sched_ctl->UE_mac_ce_ctrl.SP_CSI_reporting_pucch.bwpId) & 0x3; //extracting LSB 2 bibs
-    nr_PUCCH_CSI_reportingActDeact.ServingCellId = (ue_sched_ctl->UE_mac_ce_ctrl.SP_CSI_reporting_pucch.servingCellId) & 0x1F; //extracting LSB 5 bits
-    nr_PUCCH_CSI_reportingActDeact.S0 = ue_sched_ctl->UE_mac_ce_ctrl.SP_CSI_reporting_pucch.s0tos3_actDeact[0];
-    nr_PUCCH_CSI_reportingActDeact.S1 = ue_sched_ctl->UE_mac_ce_ctrl.SP_CSI_reporting_pucch.s0tos3_actDeact[1];
-    nr_PUCCH_CSI_reportingActDeact.S2 = ue_sched_ctl->UE_mac_ce_ctrl.SP_CSI_reporting_pucch.s0tos3_actDeact[2];
-    nr_PUCCH_CSI_reportingActDeact.S3 = ue_sched_ctl->UE_mac_ce_ctrl.SP_CSI_reporting_pucch.s0tos3_actDeact[3];
-    nr_PUCCH_CSI_reportingActDeact.R2 = 0;
-    mac_ce_size = sizeof(NR_PUCCH_CSI_REPORTING);
-    // Copying MAC CE data to the mac pdu pointer
-    memcpy((void *) mac_pdu_ptr, (void *)&nr_PUCCH_CSI_reportingActDeact, mac_ce_size);
-    //incrementing the PDU pointer
+    ((NR_PUCCH_CSI_REPORTING *) mac_pdu_ptr)->BWP_Id = (ue_sched_ctl->UE_mac_ce_ctrl.SP_CSI_reporting_pucch.bwpId) & 0x3; //extracting LSB 2 bibs
+    ((NR_PUCCH_CSI_REPORTING *) mac_pdu_ptr)->ServingCellId = (ue_sched_ctl->UE_mac_ce_ctrl.SP_CSI_reporting_pucch.servingCellId) & 0x1F; //extracting LSB 5 bits
+    ((NR_PUCCH_CSI_REPORTING *) mac_pdu_ptr)->S0 = ue_sched_ctl->UE_mac_ce_ctrl.SP_CSI_reporting_pucch.s0tos3_actDeact[0];
+    ((NR_PUCCH_CSI_REPORTING *) mac_pdu_ptr)->S1 = ue_sched_ctl->UE_mac_ce_ctrl.SP_CSI_reporting_pucch.s0tos3_actDeact[1];
+    ((NR_PUCCH_CSI_REPORTING *) mac_pdu_ptr)->S2 = ue_sched_ctl->UE_mac_ce_ctrl.SP_CSI_reporting_pucch.s0tos3_actDeact[2];
+    ((NR_PUCCH_CSI_REPORTING *) mac_pdu_ptr)->S3 = ue_sched_ctl->UE_mac_ce_ctrl.SP_CSI_reporting_pucch.s0tos3_actDeact[3];
+    ((NR_PUCCH_CSI_REPORTING *) mac_pdu_ptr)->R2 = 0;
     mac_pdu_ptr += (unsigned char) mac_ce_size;
   }
 
