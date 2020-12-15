@@ -120,22 +120,17 @@ int nr_write_ce_dlsch_pdu(module_id_t module_idP,
 
   //TS 38.321 Sec 6.1.3.15 TCI State indication for UE Specific PDCCH MAC CE SubPDU generation
   if (ue_sched_ctl->UE_mac_ce_ctrl.pdcch_state_ind.is_scheduled) {
-    //filling subheader
+    const int mac_ce_size = sizeof(NR_TCI_PDCCH);
+    if (size < mac_ce_size + 1)
+      return (unsigned char *) mac_pdu_ptr - mac_pdu;
     mac_pdu_ptr->R = 0;
     mac_pdu_ptr->LCID = DL_SCH_LCID_TCI_STATE_IND_UE_SPEC_PDCCH;
     mac_pdu_ptr++;
-    //Creating the instance of CE structure
-    NR_TCI_PDCCH  nr_UESpec_TCI_StateInd_PDCCH;
-    //filling the CE structre
-    nr_UESpec_TCI_StateInd_PDCCH.CoresetId1 = ((ue_sched_ctl->UE_mac_ce_ctrl.pdcch_state_ind.coresetId) & 0xF) >> 1; //extracting MSB 3 bits from LS nibble
-    nr_UESpec_TCI_StateInd_PDCCH.ServingCellId = (ue_sched_ctl->UE_mac_ce_ctrl.pdcch_state_ind.servingCellId) & 0x1F; //extracting LSB 5 Bits
-    nr_UESpec_TCI_StateInd_PDCCH.TciStateId = (ue_sched_ctl->UE_mac_ce_ctrl.pdcch_state_ind.tciStateId) & 0x7F; //extracting LSB 7 bits
-    nr_UESpec_TCI_StateInd_PDCCH.CoresetId2 = (ue_sched_ctl->UE_mac_ce_ctrl.pdcch_state_ind.coresetId) & 0x1; //extracting LSB 1 bit
-    LOG_D(MAC, "NR MAC CE TCI state indication for UE Specific PDCCH = %d \n", nr_UESpec_TCI_StateInd_PDCCH.TciStateId);
-    mac_ce_size = sizeof(NR_TCI_PDCCH);
-    // Copying  bytes for MAC CEs to the mac pdu pointer
-    memcpy((void *) mac_pdu_ptr, (void *)&nr_UESpec_TCI_StateInd_PDCCH, mac_ce_size);
-    //incrementing the PDU pointer
+    ((NR_TCI_PDCCH *) mac_pdu_ptr)->CoresetId1 = ((ue_sched_ctl->UE_mac_ce_ctrl.pdcch_state_ind.coresetId) & 0xF) >> 1; //extracting MSB 3 bits from LS nibble
+    ((NR_TCI_PDCCH *) mac_pdu_ptr)->ServingCellId = (ue_sched_ctl->UE_mac_ce_ctrl.pdcch_state_ind.servingCellId) & 0x1F; //extracting LSB 5 Bits
+    ((NR_TCI_PDCCH *) mac_pdu_ptr)->TciStateId = (ue_sched_ctl->UE_mac_ce_ctrl.pdcch_state_ind.tciStateId) & 0x7F; //extracting LSB 7 bits
+    ((NR_TCI_PDCCH *) mac_pdu_ptr)->CoresetId2 = (ue_sched_ctl->UE_mac_ce_ctrl.pdcch_state_ind.coresetId) & 0x1; //extracting LSB 1 bit
+    LOG_D(MAC, "NR MAC CE TCI state indication for UE Specific PDCCH = %d \n", ((NR_TCI_PDCCH *) mac_pdu_ptr)->TciStateId);
     mac_pdu_ptr += (unsigned char) mac_ce_size;
   }
 
