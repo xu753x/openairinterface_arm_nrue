@@ -74,6 +74,8 @@ int nr_write_ce_dlsch_pdu(module_id_t module_idP,
 
   // DRX command subheader (MAC CE size 0)
   if (drx_cmd != 255) {
+    if (size < 1)
+      return (unsigned char *) mac_pdu_ptr - mac_pdu;
     mac_pdu_ptr->R = 0;
     mac_pdu_ptr->LCID = DL_SCH_LCID_DRX;
     mac_pdu_ptr++;
