@@ -67,7 +67,7 @@ int nr_write_ce_dlsch_pdu(module_id_t module_idP,
 {
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
   NR_MAC_SUBHEADER_FIXED *mac_pdu_ptr = (NR_MAC_SUBHEADER_FIXED *) mac_pdu;
-  int mac_ce_size, timing_advance_cmd, tag_id = 0;
+  int mac_ce_size;
   // MAC CEs
   uint8_t mac_header_control_elements[16], *ce_ptr;
   ce_ptr = &mac_header_control_elements[0];
@@ -85,27 +85,19 @@ int nr_write_ce_dlsch_pdu(module_id_t module_idP,
   // this is done to avoid issues with the timeAlignmentTimer which is
   // supposed to monitor if the UE received TA or not */
   if (ue_sched_ctl->ta_apply) {
+    const int mac_ce_size = sizeof(NR_MAC_CE_TA);
+    if (size < mac_ce_size + 1)
+      return (unsigned char *) mac_pdu_ptr - mac_pdu;
     mac_pdu_ptr->R = 0;
     mac_pdu_ptr->LCID = DL_SCH_LCID_TA_COMMAND;
     mac_pdu_ptr++;
-    // TA MAC CE (1 octet)
-    timing_advance_cmd = ue_sched_ctl->ta_update;
+    const int timing_advance_cmd = ue_sched_ctl->ta_update;
     AssertFatal(timing_advance_cmd < 64, "timing_advance_cmd %d > 63\n", timing_advance_cmd);
-    ((NR_MAC_CE_TA *) ce_ptr)->TA_COMMAND = timing_advance_cmd;    //(timing_advance_cmd+31)&0x3f;
-
-    if (gNB->tag->tag_Id != 0) {
-      tag_id = gNB->tag->tag_Id;
-      ((NR_MAC_CE_TA *) ce_ptr)->TAGID = tag_id;
-    }
-
-    LOG_D(MAC, "NR MAC CE timing advance command = %d (%d) TAG ID = %d\n", timing_advance_cmd, ((NR_MAC_CE_TA *) ce_ptr)->TA_COMMAND, tag_id);
-    mac_ce_size = sizeof(NR_MAC_CE_TA);
-    // Copying  bytes for MAC CEs to the mac pdu pointer
-    memcpy((void *) mac_pdu_ptr, (void *) ce_ptr, mac_ce_size);
-    ce_ptr += mac_ce_size;
+    int tag_id = gNB->tag->tag_Id;
+    ((NR_MAC_CE_TA *) mac_pdu_ptr)->TA_COMMAND = timing_advance_cmd;    //(timing_advance_cmd+31)&0x3f;
+    ((NR_MAC_CE_TA *) mac_pdu_ptr)->TAGID = tag_id;
+    LOG_D(MAC, "NR MAC CE timing advance command = %d TAG ID = %d\n", timing_advance_cmd, tag_id);
     mac_pdu_ptr += (unsigned char) mac_ce_size;
-
-
   }
 
   // Contention resolution fixed subheader and MAC CE
