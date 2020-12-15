@@ -66,7 +66,7 @@ int nr_write_ce_dlsch_pdu(module_id_t module_idP,
 {
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
   NR_MAC_SUBHEADER_FIXED *mac_pdu_ptr = (NR_MAC_SUBHEADER_FIXED *) mac_pdu;
-  int mac_ce_size, i, timing_advance_cmd, tag_id = 0;
+  int mac_ce_size, timing_advance_cmd, tag_id = 0;
   // MAC CEs
   uint8_t mac_header_control_elements[16], *ce_ptr;
   ce_ptr = &mac_header_control_elements[0];
@@ -191,7 +191,7 @@ int nr_write_ce_dlsch_pdu(module_id_t module_idP,
     nr_UESpec_TCI_StateInd_PDSCH->BWP_Id = (ue_sched_ctl->UE_mac_ce_ctrl.pdsch_TCI_States_ActDeact.bwpId) & 0x3; //extracting LSB 2 Bits
     nr_UESpec_TCI_StateInd_PDSCH->ServingCellId = (ue_sched_ctl->UE_mac_ce_ctrl.pdsch_TCI_States_ActDeact.servingCellId) & 0x1F; //extracting LSB 5 bits
 
-    for(i = 0; i < (num_octects * 8); i++) {
+    for(int i = 0; i < (num_octects * 8); i++) {
       if(ue_sched_ctl->UE_mac_ce_ctrl.pdsch_TCI_States_ActDeact.tciStateActDeact[i])
         nr_UESpec_TCI_StateInd_PDSCH->T[i / 8] = nr_UESpec_TCI_StateInd_PDSCH->T[i / 8] | (1 << (i % 8));
     }
@@ -226,7 +226,7 @@ int nr_write_ce_dlsch_pdu(module_id_t module_idP,
     nr_Aperiodic_CSI_Trigger->ServingCellId = (ue_sched_ctl->UE_mac_ce_ctrl.aperi_CSI_trigger.servingCellId) & 0x1F; //extracting LSB 5 bits
     nr_Aperiodic_CSI_Trigger->R = 0;
 
-    for(i = 0; i < (num_octects * 8); i++) {
+    for(int i = 0; i < (num_octects * 8); i++) {
       if(ue_sched_ctl->UE_mac_ce_ctrl.aperi_CSI_trigger.triggerStateSelection[i])
         nr_Aperiodic_CSI_Trigger->T[i / 8] = nr_Aperiodic_CSI_Trigger->T[i / 8] | (1 << (i % 8));
     }
@@ -281,7 +281,7 @@ int nr_write_ce_dlsch_pdu(module_id_t module_idP,
     if (csi_rs_im_act_deact_ce.A_D ) { //Following IE is_scheduled only if A/D is 1
       mac_ce_size = sizeof ( struct TCI_S);
 
-      for ( i = 0; i < ue_sched_ctl->UE_mac_ce_ctrl.csi_im.nb_tci_resource_set_id; i++) {
+      for (int i = 0; i < ue_sched_ctl->UE_mac_ce_ctrl.csi_im.nb_tci_resource_set_id; i++) {
         csi_rs_im_act_deact_ce.TCI_STATE.R = 0;
         csi_rs_im_act_deact_ce.TCI_STATE.TCI_STATE_ID = ue_sched_ctl->UE_mac_ce_ctrl.csi_im.tci_state_id [i] & 0x7F;
         memcpy ((void *) mac_pdu_ptr, (void *) & (csi_rs_im_act_deact_ce.TCI_STATE), mac_ce_size);
