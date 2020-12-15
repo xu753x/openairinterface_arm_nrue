@@ -68,9 +68,6 @@ int nr_write_ce_dlsch_pdu(module_id_t module_idP,
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
   NR_MAC_SUBHEADER_FIXED *mac_pdu_ptr = (NR_MAC_SUBHEADER_FIXED *) mac_pdu;
   int mac_ce_size;
-  // MAC CEs
-  uint8_t mac_header_control_elements[16], *ce_ptr;
-  ce_ptr = &mac_header_control_elements[0];
 
   // DRX command subheader (MAC CE size 0)
   if (drx_cmd != 255) {
@@ -104,6 +101,9 @@ int nr_write_ce_dlsch_pdu(module_id_t module_idP,
 
   // Contention resolution fixed subheader and MAC CE
   if (ue_cont_res_id) {
+    const int mac_ce_size = 6;
+    if (size < mac_ce_size + 1)
+      return (unsigned char *) mac_pdu_ptr - mac_pdu;
     mac_pdu_ptr->R = 0;
     mac_pdu_ptr->LCID = DL_SCH_LCID_CON_RES_ID;
     mac_pdu_ptr++;
@@ -113,12 +113,8 @@ int nr_write_ce_dlsch_pdu(module_id_t module_idP,
     LOG_T(MAC, "[gNB ][RAPROC] Generate contention resolution msg: %x.%x.%x.%x.%x.%x\n",
           ue_cont_res_id[0], ue_cont_res_id[1], ue_cont_res_id[2],
           ue_cont_res_id[3], ue_cont_res_id[4], ue_cont_res_id[5]);
-    // Copying bytes (6 octects) to CEs pointer
-    mac_ce_size = 6;
-    memcpy(ce_ptr, ue_cont_res_id, mac_ce_size);
-    // Copying bytes for MAC CEs to mac pdu pointer
-    memcpy((void *) mac_pdu_ptr, (void *) ce_ptr, mac_ce_size);
-    ce_ptr += mac_ce_size;
+    // Copying bytes (6 octets) to mac pdu pointer
+    memcpy(mac_pdu_ptr, ue_cont_res_id, mac_ce_size);
     mac_pdu_ptr += (unsigned char) mac_ce_size;
   }
 
