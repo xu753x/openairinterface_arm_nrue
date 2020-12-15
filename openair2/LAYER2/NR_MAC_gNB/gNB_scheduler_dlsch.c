@@ -61,6 +61,7 @@
 int nr_write_ce_dlsch_pdu(module_id_t module_idP,
                           const NR_UE_sched_ctrl_t *ue_sched_ctl,
                           unsigned char *mac_pdu,
+                          int size,
                           unsigned char drx_cmd,
                           unsigned char *ue_cont_res_id)
 {
@@ -803,11 +804,13 @@ void nr_schedule_ue_spec(module_id_t module_id,
       int written = nr_write_ce_dlsch_pdu(module_id,
                                           sched_ctrl,
                                           (unsigned char *)buf,
+                                          TBS,
                                           255, // no drx
                                           NULL); // contention res id
       buf += written;
       int size = TBS - written;
-      DevAssert(size >= 0);
+      if (size < 4)
+        LOG_D(MAC, "nr_write_ce_dlsch_pdu(): filled TBS with CEs, cannot add MAC SDUs\n");
 
       /* next, get RLC data */
 
