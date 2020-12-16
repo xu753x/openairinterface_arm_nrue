@@ -157,34 +157,22 @@ int nr_write_ce_dlsch_pdu(module_id_t module_idP,
   if (ue_sched_ctl->UE_mac_ce_ctrl.pdsch_TCI_States_ActDeact.is_scheduled) {
     //Computing the number of octects to be allocated for Flexible array member
     //of MAC CE structure
-    uint8_t num_octects = (ue_sched_ctl->UE_mac_ce_ctrl.pdsch_TCI_States_ActDeact.highestTciStateActivated) / 8 + 1; //Calculating the number of octects for allocating the memory
-    //filling the subheader
+    const uint8_t num_octects = (ue_sched_ctl->UE_mac_ce_ctrl.pdsch_TCI_States_ActDeact.highestTciStateActivated) / 8 + 1; //Calculating the number of octects for allocating the memory
+    const int mac_ce_size = sizeof(NR_TCI_PDSCH_APERIODIC_CSI) + num_octects;
+    if (size < mac_ce_size + 2)
+      return (unsigned char *) mac_pdu_ptr - mac_pdu;
     ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->R = 0;
     ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->F = 0;
     ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->LCID = DL_SCH_LCID_TCI_STATE_ACT_UE_SPEC_PDSCH;
     ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->L = sizeof(NR_TCI_PDSCH_APERIODIC_CSI) + num_octects * sizeof(uint8_t);
-    //Incrementing the PDU pointer
     mac_pdu_ptr += 2;
-    //allocating memory for CE Structure
-    NR_TCI_PDSCH_APERIODIC_CSI *nr_UESpec_TCI_StateInd_PDSCH = (NR_TCI_PDSCH_APERIODIC_CSI *)malloc(sizeof(NR_TCI_PDSCH_APERIODIC_CSI) + num_octects * sizeof(uint8_t));
-    //initializing to zero
-    memset((void *)nr_UESpec_TCI_StateInd_PDSCH, 0, sizeof(NR_TCI_PDSCH_APERIODIC_CSI) + num_octects * sizeof(uint8_t));
-    //filling the CE Structure
-    nr_UESpec_TCI_StateInd_PDSCH->BWP_Id = (ue_sched_ctl->UE_mac_ce_ctrl.pdsch_TCI_States_ActDeact.bwpId) & 0x3; //extracting LSB 2 Bits
-    nr_UESpec_TCI_StateInd_PDSCH->ServingCellId = (ue_sched_ctl->UE_mac_ce_ctrl.pdsch_TCI_States_ActDeact.servingCellId) & 0x1F; //extracting LSB 5 bits
-
-    for(int i = 0; i < (num_octects * 8); i++) {
-      if(ue_sched_ctl->UE_mac_ce_ctrl.pdsch_TCI_States_ActDeact.tciStateActDeact[i])
-        nr_UESpec_TCI_StateInd_PDSCH->T[i / 8] = nr_UESpec_TCI_StateInd_PDSCH->T[i / 8] | (1 << (i % 8));
+    ((NR_TCI_PDSCH_APERIODIC_CSI *) mac_pdu_ptr)->BWP_Id = (ue_sched_ctl->UE_mac_ce_ctrl.pdsch_TCI_States_ActDeact.bwpId) & 0x3; //extracting LSB 2 Bits
+    ((NR_TCI_PDSCH_APERIODIC_CSI *) mac_pdu_ptr)->ServingCellId = (ue_sched_ctl->UE_mac_ce_ctrl.pdsch_TCI_States_ActDeact.servingCellId) & 0x1F; //extracting LSB 5 bits
+    for (int i = 0; i < num_octects * 8; i++) {
+      const bool tci = ue_sched_ctl->UE_mac_ce_ctrl.pdsch_TCI_States_ActDeact.tciStateActDeact[i];
+      ((NR_TCI_PDSCH_APERIODIC_CSI *) mac_pdu_ptr)->T[i / 8] |= (tci << (i % 8));
     }
-
-    mac_ce_size = sizeof(NR_TCI_PDSCH_APERIODIC_CSI) + num_octects * sizeof(uint8_t);
-    //Copying  bytes for MAC CEs to the mac pdu pointer
-    memcpy((void *) mac_pdu_ptr, (void *)nr_UESpec_TCI_StateInd_PDSCH, mac_ce_size);
-    //incrementing the mac pdu pointer
     mac_pdu_ptr += (unsigned char) mac_ce_size;
-    //freeing the allocated memory
-    free(nr_UESpec_TCI_StateInd_PDSCH);
   }
 
   //TS38.321 Sec 6.1.3.13 Aperiodic CSI Trigger State Subselection MAC CE
