@@ -595,7 +595,7 @@ bool nr_acknack_scheduling(int mod_id,
   pucch->dai_c++;
   const int pucch_res = pucch_index_used[pucch->ul_slot];
   pucch->resource_indicator = pucch_res;
-  pucch_index_used[first_ul_slot_tdd] += 1;
+  pucch_index_used[pucch->ul_slot] += 1;
 
   /* verify that at that slot and symbol, resources are free. We only do this
    * for initialCyclicShift 0 (we assume it always has that one), so other
