@@ -630,6 +630,11 @@ void pf_ul(module_id_t module_id,
     if (sched_ctrl->estimated_ul_buffer - sched_ctrl->sched_ul_bytes <= 0) {
       /* if no data, pre-allocate 5RB */
       while (rbStart < bwpSize && !rballoc_mask[rbStart]) rbStart++;
+      if (rbStart >= bwpSize) {
+        LOG_W(MAC, "cannot allocate UL data for UE %d/RNTI %04x: no resources\n",
+              UE_id, UE_info->rnti[UE_id]);
+        return;
+      }
       sched_pusch->rbStart = rbStart;
       sched_pusch->rbSize = 5;
       sched_pusch->tb_size = nr_compute_tbs(sched_pusch->Qm,
@@ -689,6 +694,11 @@ void pf_ul(module_id_t module_id,
 
     while (rbStart < bwpSize && !rballoc_mask[rbStart]) rbStart++;
     sched_pusch->rbStart = rbStart;
+    if (rbStart >= bwpSize) {
+      LOG_W(MAC, "cannot allocate UL data for UE %d/RNTI %04x: no resources\n",
+            UE_id, UE_info->rnti[UE_id]);
+      return;
+    }
 
     /* Calculate the current scheduling bytes */
     const int B = cmax(sched_ctrl->estimated_ul_buffer - sched_ctrl->sched_ul_bytes, 0);
