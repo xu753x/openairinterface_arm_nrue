@@ -40,6 +40,8 @@
 #include "flexran_agent_mac.h"
 #include "flexran_agent_rrc.h"
 #include "flexran_agent_pdcp.h"
+#include "flexran_agent_s1ap.h"
+#include "flexran_agent_app.h"
 #include "common/utils/LOG/log.h"
 #include "assertions.h"
 

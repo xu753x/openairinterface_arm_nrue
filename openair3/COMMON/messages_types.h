@@ -38,5 +38,8 @@
 #include "sgw_lite_messages_types.h"
 #include "udp_messages_types.h"
 #include "mme_app_messages_types.h"
+#include "m2ap_messages_types.h"
+#include "ngap_messages_types.h"
+
 
 #endif /* MESSAGES_TYPES_H_ */

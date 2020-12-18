@@ -61,82 +61,30 @@ enum flex_qam {
 //
 // Slice config related structures and enums
 //
-enum flex_dl_sorting {
-
-	CR_ROUND = 0;	// Highest HARQ first
-	CR_SRB12 = 1;	// Highest SRB1+2 first
-	CR_HOL   = 2;	// Highest HOL first
-	CR_LC    = 3;	// Greatest RLC buffer first
-	CR_CQI   = 4;	// Highest CQI first
-	CR_LCP   = 5;	// Highest LC priority first
+enum flex_slice_algorithm {
+  None = 0;
+  Static = 1;
+  NVS = 2;
 }
 
-enum flex_ul_sorting {
-	CRU_ROUND = 0;	// Highest HARQ first
-	CRU_BUF   = 1;	// Highest BSR first
-	CRU_BTS   = 2;	// More bytes to schedule first
-	CRU_MCS   = 3;  // Highest MCS first
-	CRU_LCP   = 4;  // Highest LC priority first
-	CRU_HOL   = 5;  // Highest HOL first
+message flex_slice_static {
+  optional uint32 posLow = 1;
+  optional uint32 posHigh = 2;
 }
 
-enum flex_dl_accounting_policy {
-	POL_FAIR   = 0;
-	POL_GREEDY = 1;
-	POL_NUM    = 2;
+message flex_slice {
+  optional uint32 id = 1;
+  optional string label = 2;
+  optional string scheduler = 3;
+  oneof params {
+    flex_slice_static static = 10;
+  }
 }
 
-enum flex_ul_accounting_policy {
-	POLU_FAIR   = 0;
-	POLU_GREEDY = 1;
-	POLU_NUM    = 2;
-}
-
-enum flex_slice_label {
-	xMBB  = 0;
-	URLLC = 1;
-	mMTC  = 2;
-	xMTC  = 3;
-	Other = 4;
-}
-
-message flex_dl_slice {
-	optional uint32 id = 1;
-	optional flex_slice_label label = 2;
-	// should be between 0 and 100
-	optional uint32 percentage = 3;
-	// whether this slice should be exempted form interslice sharing
-	optional bool   isolation = 4;
-	// increasing value means increasing prio
-	optional uint32 priority = 5;
-	// min and max RB to use (in frequency) in the range [0, N_RBG_MAX]
-	optional uint32 position_low = 6;
-	optional uint32 position_high = 7;
-	// maximum MCS to be allowed in this slice
-	optional uint32 maxmcs = 8;
-	repeated flex_dl_sorting sorting = 9;
-	optional flex_dl_accounting_policy accounting = 10;
-	optional string scheduler_name = 11;
-}
-
-message flex_ul_slice {
-	optional uint32 id = 1;
-	optional flex_slice_label label = 2;
-	// should be between 0 and 100
-	optional uint32 percentage = 3;
-	// whether this slice should be exempted form interslice sharing
-	optional bool   isolation = 4;
-	// increasing value means increasing prio
-	optional uint32 priority = 5;
-	// RB start to use (in frequency) in the range [0, N_RB_MAX]
-	optional uint32 first_rb = 6;
-	// TODO RB number
-	//optional uint32 length_rb = 7;
-	// maximum MCS to be allowed in this slice
-	optional uint32 maxmcs = 8;
-	repeated flex_ul_sorting sorting = 9;
-	optional flex_ul_accounting_policy accounting = 10;
-	optional string scheduler_name = 11;
+message flex_slice_dl_ul_config {
+  optional flex_slice_algorithm algorithm = 1;
+  repeated flex_slice slices = 2;
+  optional string scheduler = 3; // if no slicing
 }
 
 //
@@ -267,4 +215,97 @@ message flex_plmn {
         optional uint32 mcc = 1;
         optional uint32 mnc = 2;
         optional uint32 mnc_length = 3;
+}
+
+//
+// UE-related RRC configuration
+
+message flex_measurement_info {
+  // arbitrary offset OFS, from TS
+  optional int64 offset_freq_serving = 1;
+  // arbitrary offset OFN
+  optional int64 offset_freq_neighbouring = 2;
+  // arbitrary offset OCS + OCN
+  repeated int64 cell_individual_offset = 3;
+  // Parameter k for exponential moving average calculation coefficient
+  // a = 1/2^(k/4) of all measured RSRPs
+  optional int64 filter_coefficient_rsrp = 4;
+  // Parameter k for RSRQ filtering
+  optional int64 filter_coefficient_rsrq = 5;
+  optional flex_measurement_event event = 6;
+}
+
+message flex_measurement_event {
+  optional flex_per_event periodical = 1;
+  optional flex_a1_event a1 = 2;
+  optional flex_a2_event a2 = 3;
+  optional flex_a3_event a3 = 4;
+  optional flex_a4_event a4 = 5;
+  optional flex_a5_event a5 = 6;
+}
+
+message flex_per_event {
+  optional int64 max_report_cells = 1;
+}
+
+message flex_a1_event {
+  optional int64 threshold_rsrp = 1;
+  optional int64 hysteresis = 2;
+  optional int64 time_to_trigger = 3;
+  optional int64 max_report_cells = 4;
+}
+
+message flex_a2_event {
+  optional int64 threshold_rsrp = 1;
+  optional int64 hysteresis = 2;
+  optional int64 time_to_trigger = 3;
+  optional int64 max_report_cells = 4;
+}
+
+message flex_a3_event {
+  optional int64 a3_offset = 1;
+  optional int32 report_on_leave = 2;
+  optional int64 hysteresis = 3;
+  optional int64 time_to_trigger = 4;
+  optional int64 max_report_cells = 5;
+}
+
+message flex_a4_event {
+  optional int64 threshold_rsrp = 1;
+  optional int64 hysteresis = 2;
+  optional int64 time_to_trigger = 3;
+  optional int64 max_report_cells = 4;
+}
+
+message flex_a5_event {
+  optional int64 threshold_rsrp_1 = 1;
+  optional int64 threshold_rsrp_2 = 2;
+  optional int64 hysteresis = 3;
+  optional int64 time_to_trigger = 4;
+  optional int64 max_report_cells = 5;
+}
+
+//
+// S1AP cell configuration
+//
+message flex_gummei {
+        optional flex_plmn plmn = 1;
+        optional uint32 mme_group_id = 2;
+        optional uint32 mme_code = 3;
+}
+
+message flex_s1ap_mme {
+        optional string s1_ip = 1;                        // S1-MME IP of MME
+        optional string name = 2;                         // S1-MME name of MME
+        optional flex_mme_state state = 3;                // State of the MME
+        repeated flex_gummei served_gummeis = 4;          // GUMMEIs served by the MME
+        repeated flex_plmn requested_plmns = 5;           // PLMNs communicated to MME
+        optional uint32 rel_capacity = 6;                 // Relative MME capacity, TS23.401
+}
+
+enum flex_mme_state {
+        FLMMES_DISCONNECTED = 0;
+        FLMMES_WAITING = 1;
+        FLMMES_CONNECTED = 2;
+        FLMMES_OVERLOAD = 3;
 }

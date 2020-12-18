@@ -40,6 +40,16 @@ The present clause specifies several numerical functions for testing of digital 
 
 #define NB_SAMPLES_CHANNEL_OFFSET 4
 
+typedef enum {
+  UNSPECIFIED_MODID=0,
+  RFSIMU_MODULEID=1
+} channelmod_moduleid_t;
+#define MODULEID_STR_INIT {"","rfsimulator"}
+
+#define CHANMODEL_FREE_DELAY       1<<0
+#define CHANMODEL_FREE_RSQRT_6     1<<1
+#define CHANMODEL_FREE_RSQRT_NTAPS 1<<2
+#define CHANMODEL_FREE_AMPS        1<<3
 typedef struct {
   ///Number of tx antennas
   uint8_t nb_tx;
@@ -92,6 +102,14 @@ typedef struct {
   time_stats_t interp_time;
   time_stats_t interp_freq;
   time_stats_t convolution;
+  /// index in the channel descriptors array
+  unsigned int chan_idx;
+  /// id of the channel modeling algorithm
+  int modelid;
+  /// identifies channel descriptor owner (the module which created this descriptor)
+  channelmod_moduleid_t module_id;
+  /// flags to properly trigger memory free
+  unsigned int free_flags;
 } channel_desc_t;
 
 typedef struct {
@@ -147,7 +165,7 @@ typedef struct {
   /// Rice factor???
   /// Walls (penetration loss)
   /// Nodes in the scenario
-  node_desc_t* nodes;
+  node_desc_t *nodes;
 } scenario_desc_t;
 
 typedef enum {
@@ -160,6 +178,11 @@ typedef enum {
   EVA,
   ETU,
   MBSFN,
+  TDL_A,
+  TDL_B,
+  TDL_C,
+  TDL_D,
+  TDL_E,
   Rayleigh8,
   Rayleigh1,
   Rayleigh1_800,
@@ -180,65 +203,96 @@ typedef enum {
   EPA_medium,
   EPA_high,
 } SCM_t;
+#define CHANNELMOD_MAP_INIT \
+  {"custom",custom},\
+  {"SCM_A",SCM_A},\
+  {"SCM_B",SCM_B},\
+  {"SCM_C",SCM_C},\
+  {"SCM_D",SCM_D},\
+  {"EPA",EPA},\
+  {"EVA",EVA},\
+  {"ETU",ETU},\
+  {"MBSFN",MBSFN},\
+  {"TDL_A",TDL_A},\
+  {"TDL_B",TDL_B},\
+  {"TDL_C",TDL_C},\
+  {"TDL_D",TDL_D},\
+  {"TDL_E",TDL_E},\
+  {"Rayleigh8",Rayleigh8},\
+  {"Rayleigh1",Rayleigh1},\
+  {"Rayleigh1_800",Rayleigh1_800},\
+  {"Rayleigh1_corr",Rayleigh1_corr},\
+  {"Rayleigh1_anticorr",Rayleigh1_anticorr},\
+  {"Rice8",Rice8},\
+  {"Rice1",Rice1},\
+  {"Rice1_corr",Rice1_corr},\
+  {"Rice1_anticorr",Rice1_anticorr},\
+  {"AWGN",AWGN},\
+  {"Rayleigh1_orthogonal",Rayleigh1_orthogonal},\
+  {"Rayleigh1_orth_eff_ch_TM4_prec_real",Rayleigh1_orth_eff_ch_TM4_prec_real},\
+  {"Rayleigh1_orth_eff_ch_TM4_prec_imag",Rayleigh1_orth_eff_ch_TM4_prec_imag},\
+  {"Rayleigh8_orth_eff_ch_TM4_prec_real",Rayleigh8_orth_eff_ch_TM4_prec_real},\
+  {"Rayleigh8_orth_eff_ch_TM4_prec_imag",Rayleigh8_orth_eff_ch_TM4_prec_imag},\
+  {"TS_SHIFT",TS_SHIFT},\
+  {"EPA_low",EPA_low},\
+  {"EPA_medium",EPA_medium},\
+  {"EPA_high",EPA_high},\
+  {NULL, -1}
+
+#define CONFIG_HLP_SNR     "Set average SNR in dB (for --siml1 option)\n"
+#define CHANNELMOD_SECTION "channelmod"
+#define CHANNELMOD_PARAMS_DESC {  \
+    {"s"      , CONFIG_HLP_SNR,         PARAMFLAG_CMDLINE_NOPREFIXENABLED, dblptr:&snr_dB,    defdblval:25, TYPE_DOUBLE, 0},\
+    {"sinr_dB", NULL,                   0                                , dblptr:&sinr_dB,   defdblval:0 , TYPE_DOUBLE, 0},\
+    {"max_chan, CONFIG_HLP_MAX_CHAN",   0,                                 uptr:&max_chan,    defintval:10,  TYPE_UINT,   0},\
+  }
 
 #include "platform_constants.h"
 
 typedef struct {
- channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM_CCs];
- channel_desc_t *UE2RU[NUMBER_OF_UE_MAX][NUMBER_OF_RU_MAX][MAX_NUM_CCs];
- double r_re_DL[NUMBER_OF_UE_MAX][2][30720];
- double r_im_DL[NUMBER_OF_UE_MAX][2][30720];
- double r_re_UL[NUMBER_OF_eNB_MAX][2][30720];
- double r_im_UL[NUMBER_OF_eNB_MAX][2][30720];
- int RU_output_mask[NUMBER_OF_UE_MAX];
- int UE_output_mask[NUMBER_OF_RU_MAX];
- pthread_mutex_t RU_output_mutex[NUMBER_OF_UE_MAX];
- pthread_mutex_t UE_output_mutex[NUMBER_OF_RU_MAX];
- pthread_mutex_t subframe_mutex;
- int subframe_ru_mask;
- int subframe_UE_mask;
- openair0_timestamp current_ru_rx_timestamp[NUMBER_OF_RU_MAX][MAX_NUM_CCs];
- openair0_timestamp current_UE_rx_timestamp[MAX_MOBILES_PER_ENB][MAX_NUM_CCs];
- openair0_timestamp last_ru_rx_timestamp[NUMBER_OF_RU_MAX][MAX_NUM_CCs];
- openair0_timestamp last_UE_rx_timestamp[MAX_MOBILES_PER_ENB][MAX_NUM_CCs];
- double ru_amp[NUMBER_OF_RU_MAX];
- pthread_t rfsim_thread;
+  channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM_CCs];
+  channel_desc_t *UE2RU[NUMBER_OF_UE_MAX][NUMBER_OF_RU_MAX][MAX_NUM_CCs];
+  double r_re_DL[NUMBER_OF_UE_MAX][2][30720];
+  double r_im_DL[NUMBER_OF_UE_MAX][2][30720];
+  double r_re_UL[NUMBER_OF_eNB_MAX][2][30720];
+  double r_im_UL[NUMBER_OF_eNB_MAX][2][30720];
+  int RU_output_mask[NUMBER_OF_UE_MAX];
+  int UE_output_mask[NUMBER_OF_RU_MAX];
+  pthread_mutex_t RU_output_mutex[NUMBER_OF_UE_MAX];
+  pthread_mutex_t UE_output_mutex[NUMBER_OF_RU_MAX];
+  pthread_mutex_t subframe_mutex;
+  int subframe_ru_mask;
+  int subframe_UE_mask;
+  openair0_timestamp current_ru_rx_timestamp[NUMBER_OF_RU_MAX][MAX_NUM_CCs];
+  openair0_timestamp current_UE_rx_timestamp[MAX_MOBILES_PER_ENB][MAX_NUM_CCs];
+  openair0_timestamp last_ru_rx_timestamp[NUMBER_OF_RU_MAX][MAX_NUM_CCs];
+  openair0_timestamp last_UE_rx_timestamp[MAX_MOBILES_PER_ENB][MAX_NUM_CCs];
+  double ru_amp[NUMBER_OF_RU_MAX];
+  pthread_t rfsim_thread;
 } sim_t;
 
-
-/**
-\brief This routine initializes a new channel descriptor
-\param nb_tx Number of TX antennas
-\param nb_rx Number of RX antennas
-\param nb_taps Number of taps
-\param channel_length Length of the interpolated channel impulse response
-\param amps Linear amplitudes of the taps (length(amps)=channel_length). The values should sum up to 1.
-\param delays Delays of the taps. If delays==NULL the taps are assumed to be spaced equidistantly between 0 and t_max.
-\param R_sqrt Channel correlation matrix. If R_sqrt==NULL, no channel correlation is applied.
-\param Td Maximum path delay in mus.
-\param BW Channel bandwidth in MHz.
-\param ricean_factor Ricean factor applied to all taps.
-\param aoa Anlge of arrival
-\param forgetting_factor This parameter (0...1) allows for simple 1st order temporal variation
-\param max_Doppler This is the maximum Doppler frequency for Jakes' Model
-\param channel_offset This is a time delay to apply to channel
-\param path_loss_dB This is the path loss in dB
-\param random_aoa If set to 1, AoA of ricean component is randomized
-*/
-
-//channel_desc_t *new_channel_desc(uint8_t nb_tx,uint8_t nb_rx, uint8_t nb_taps, uint8_t channel_length, double *amps, double* delays, struct complex** R_sqrt, double Td, double BW, double ricean_factor, double aoa, double forgetting_factor, double max_Doppler, int32_t channel_offset, double path_loss_dB,uint8_t random_aoa);
 
 channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
                                      uint8_t nb_rx,
                                      SCM_t channel_model,
 				     double sampling_rate,
                                      double channel_bandwidth,
+				     double TDL_DS,
                                      double forgetting_factor,
                                      int32_t channel_offset,
                                      double path_loss_dB);
+/**
+\brief free memory allocated for a model descriptor
+\param ch points to the model, which cannot be used after calling this fuction
+*/
+void free_channel_desc_scm(channel_desc_t *ch);
 
-
-
+/**
+\brief This set the ownerid of a model descriptor, can be later used to check what module created a channel model
+\param cdesc points to the model descriptor
+\param module_id identifies the channel model. should be define as a macro in simu.h
+*/
+void set_channeldesc_owner(channel_desc_t *cdesc, channelmod_moduleid_t module_id);
 /** \fn void random_channel(channel_desc_t *desc)
 \brief This routine generates a random channel response (time domain) according to a tapped delay line model.
 \param desc Pointer to the channel descriptor
@@ -251,7 +305,8 @@ int random_channel(channel_desc_t *desc, uint8_t abstraction_flag);
            double rx_sig_re[2],
            double rx_sig_im[2],
            uint32_t length,
-           uint8_t keep_channel)
+           uint8_t keep_channel,
+	   int log_channel)
 
 \brief This function generates and applys a random frequency selective random channel model.
 @param desc Pointer to channel descriptor
@@ -261,6 +316,7 @@ int random_channel(channel_desc_t *desc, uint8_t abstraction_flag);
 @param rx_sig_im output signal (imaginary component)
 @param length Length of input signal
 @param keep_channel Set to 1 to keep channel constant for null-B/F
+@param log_channel=1 make channel coefficients come out for first sample of input
 */
 
 void multipath_channel(channel_desc_t *desc,
@@ -269,7 +325,8 @@ void multipath_channel(channel_desc_t *desc,
                        double *rx_sig_re[2],
                        double *rx_sig_im[2],
                        uint32_t length,
-                       uint8_t keep_channel);
+                       uint8_t keep_channel,
+		       int log_channel);
 /*
 \fn double compute_pbch_sinr(channel_desc_t *desc,
                              channel_desc_t *desc_i1,
@@ -389,14 +446,31 @@ void multipath_tv_channel(channel_desc_t *desc,
                           double **tx_sig_im,
                           double **rx_sig_re,
                           double **rx_sig_im,
-                          uint16_t length,
+                          uint32_t length,
                           uint8_t keep_channel);
 
 /**@} */
 /**@} */
 
+int modelid_fromname(char *modelname);
+double channelmod_get_snr_dB(void);
+double channelmod_get_sinr_dB(void);
+void init_channelmod(void) ;
+
 double N_RB2sampling_rate(uint16_t N_RB);
 double N_RB2channel_bandwidth(uint16_t N_RB);
+
+/* Linear phase noise model */
+/*!
+  \brief This function produce phase noise and add to input signal
+  \param ts Sampling time 
+  \param *Re *Im Real and Imag part of the signal
+*/
+//look-up table for the sine (cosine) function
+#define ResolSinCos 100
+uint16_t LUTSin[ResolSinCos+1];
+void InitSinLUT( void );
+void phase_noise(double ts, int16_t * InRe, int16_t * InIm);
 
 #include "targets/RT/USER/rfsim.h"
 
@@ -404,14 +478,17 @@ void do_DL_sig(sim_t *sim,
                uint16_t subframe,
                uint32_t offset,
                uint32_t length,
-               uint8_t abstraction_flag,LTE_DL_FRAME_PARMS *ue_frame_parms,
+               uint8_t abstraction_flag,
+               LTE_DL_FRAME_PARMS *ue_frame_parms,
                uint8_t UE_id,
                int CC_id);
 
 void do_UL_sig(sim_t *sim,
-               uint16_t subframe,uint8_t abstraction_flag,LTE_DL_FRAME_PARMS *frame_parms, 
-               uint32_t frame,int ru_id,uint8_t CC_id);
+               uint16_t subframe,
+               uint8_t abstraction_flag,
+               LTE_DL_FRAME_PARMS *frame_parms,
+               uint32_t frame,
+               int ru_id,
+               uint8_t CC_id);
 
 #endif
-
-

@@ -44,6 +44,7 @@
 #include "RRC/LTE/rrc_eNB_UE_context.h"
 #include "PHY/phy_extern.h"
 #include "common/utils/LOG/log.h"
+#include "nfapi/oai_integration/vendor_ext.h"
 
 /****************************
  * get generic info from RAN
@@ -63,7 +64,7 @@ sub_frame_t flexran_get_current_subframe(mid_t mod_id);
 
 /*Return the frame and subframe number in compact 16-bit format.
   Bits 0-3 subframe, rest for frame. Required by FlexRAN protocol*/
-uint16_t flexran_get_sfn_sf(mid_t mod_id);
+uint32_t flexran_get_sfn_sf(mid_t mod_id);
 
 /* Return a future frame and subframe number that is ahead_of_time
    subframes later in compact 16-bit format. Bits 0-3 subframe,
@@ -498,6 +499,12 @@ uint32_t flexran_get_pdcp_rx_aiat_w(mid_t mod_id, uint16_t uid, lcid_t lcid);
 uint32_t flexran_get_pdcp_rx_oo(mid_t mod_id, uint16_t uid, lcid_t lcid);
 
 /*********************RRC**********************/
+/* Call RRC Reconfiguration wrapper function */
+int flexran_call_rrc_reconfiguration (mid_t mod_id, rnti_t rnti);
+
+/* Call RRC to trigger handover wrapper function */
+int flexran_call_rrc_trigger_handover (mid_t mod_id, rnti_t rnti, int target_cell_id);
+
 /*Get primary cell measuremeant id flexRAN*/
 LTE_MeasId_t flexran_get_rrc_pcell_measid(mid_t mod_id, rnti_t rnti);
 
@@ -510,8 +517,29 @@ float flexran_get_rrc_pcell_rsrq(mid_t mod_id, rnti_t rnti);
 /* Get RRC neighbouring measurement */
 int flexran_get_rrc_num_ncell(mid_t mod_id, rnti_t rnti);
 
-/* Get physical cell id */
+/* Get neighbouring physical cell id */
 long flexran_get_rrc_neigh_phy_cell_id(mid_t mod_id, rnti_t rnti, long cell_id);
+
+/* Get neighbouring cgi */
+int flexran_get_rrc_neigh_cgi(mid_t mod_id, rnti_t rnti, long cell_id);
+
+/* Get neighbouring cgi info cell id */
+uint32_t flexran_get_rrc_neigh_cgi_cell_id(mid_t mod_id, rnti_t rnti, long cell_id);
+
+/* Get neighbouring cgi info tac */
+uint32_t flexran_get_rrc_neigh_cgi_tac(mid_t mod_id, rnti_t rnti, long cell_id);
+
+/* Get the number of neighbouring cgi mnc */
+int flexran_get_rrc_neigh_cgi_num_mnc(mid_t mod_id, rnti_t rnti, long cell_id);
+
+/* Get the number of neighbouring cgi mcc */
+int flexran_get_rrc_neigh_cgi_num_mcc(mid_t mod_id, rnti_t rnti, long cell_id);
+
+/* Get neighbouring cgi mnc */
+uint32_t flexran_get_rrc_neigh_cgi_mnc(mid_t mod_id, rnti_t rnti, long cell_id, int mnc_id);
+
+/* Get neighbouring cgi mcc */
+uint32_t flexran_get_rrc_neigh_cgi_mcc(mid_t mod_id, rnti_t rnti, long cell_id, int mcc_id);
 
 /* Get RSRP of neighbouring Cell */
 float flexran_get_rrc_neigh_rsrp(mid_t mod_id, rnti_t rnti, long cell_id);
@@ -519,13 +547,77 @@ float flexran_get_rrc_neigh_rsrp(mid_t mod_id, rnti_t rnti, long cell_id);
 /* Get RSRQ of neighbouring Cell */
 float flexran_get_rrc_neigh_rsrq(mid_t mod_id, rnti_t rnti, long cell_id);
 
-/*Get MCC PLMN identity neighbouring Cell*/
-/* currently not implemented
-int flexran_get_rrc_neigh_plmn_mcc(mid_t mod_id, rnti_t rnti, int cell_id); */
+/* Get ofp offset */
+long flexran_get_rrc_ofp(mid_t mod_id, rnti_t rnti);
 
-/*Get MNC PLMN identity neighbouring Cell*/
-/* currently not implemented
-int flexran_get_rrc_neigh_plmn_mnc(mid_t mod_id, mid_t ue_id, int cell_id); */
+/* Get ofn offset */
+long flexran_get_rrc_ofn(mid_t mod_id, rnti_t rnti);
+
+/* Get ocp offset */
+long flexran_get_rrc_ocp(mid_t mod_id, rnti_t rnti);
+
+/* Get ocn offset */
+long flexran_get_rrc_ocn(mid_t mod_id, rnti_t rnti, long cell_id);
+
+/* Get Periodic Event max reported cells */
+long flexran_get_rrc_per_event_maxReportCells(mid_t mod_id, rnti_t rnti);
+
+/* Get A3 Event hysteresis */
+long flexran_get_rrc_a3_event_hysteresis(mid_t mod_id, rnti_t rnti);
+
+/* Get A3 Event time to trigger */
+long flexran_get_rrc_a3_event_timeToTrigger(mid_t mod_id, rnti_t rnti);
+
+/* Get A3 Event max reported cells */
+long flexran_get_rrc_a3_event_maxReportCells(mid_t mod_id, rnti_t rnti);
+
+/* Get A3 Event a3 offset */
+long flexran_get_rrc_a3_event_a3_offset(mid_t mod_id, rnti_t rnti);
+
+/* Get A3 Event report on leave */
+int flexran_get_rrc_a3_event_reportOnLeave(mid_t mod_id, rnti_t rnti);
+
+/* Get filter coefficient for rsrp */
+long flexran_get_filter_coeff_rsrp(mid_t mod_id, rnti_t rnti);
+
+/* Get filter coefficient for rsrq */
+long flexran_get_filter_coeff_rsrq(mid_t mod_id, rnti_t rnti);
+
+/* Set ofp offset */
+int flexran_set_rrc_ofp(mid_t mod_id, rnti_t rnti, long offsetFreq);
+
+/* Set ofn offset */
+int flexran_set_rrc_ofn(mid_t mod_id, rnti_t rnti, long offsetFreq);
+
+/* Set ocp offset */
+int flexran_set_rrc_ocp(mid_t mod_id, rnti_t rnti, long cellIndividualOffset);
+
+/* Set ocn offset */
+int flexran_set_rrc_ocn(mid_t mod_id, rnti_t rnti, long cell_id, long cellIndividualOffset);
+
+/* Set Periodic Event max reported cells */
+int flexran_set_rrc_per_event_maxReportCells(mid_t mod_id, rnti_t rnti, long maxReportCells);
+
+/* Set A3 Event hysteresis */
+int flexran_set_rrc_a3_event_hysteresis(mid_t mod_id, rnti_t rnti, long hysteresis);
+
+/* Set A3 Event time to trigger */
+int flexran_set_rrc_a3_event_timeToTrigger(mid_t mod_id, rnti_t rnti, long timeToTrigger);
+
+/* Set A3 Event max reported cells */
+int flexran_set_rrc_a3_event_maxReportCells(mid_t mod_id, rnti_t rnti, long maxReportCells);
+
+/* Set A3 Event a3 offset */
+int flexran_set_rrc_a3_event_a3_offset(mid_t mod_id, rnti_t rnti, long a3_offset);
+
+/* Set A3 Event report on leave */
+int flexran_set_rrc_a3_event_reportOnLeave(mid_t mod_id, rnti_t rnti, int reportOnLeave);
+
+/* Set filter coefficient for rsrp */
+int flexran_set_filter_coeff_rsrp(mid_t mod_id, rnti_t rnti, long filterCoefficientRSRP);
+
+/* Set filter coefficient for rsrq */
+int flexran_set_filter_coeff_rsrq(mid_t mod_id, rnti_t rnti, long filterCoefficientRSRQ);
 
 /* Get number of PLMNs that is broadcasted in SIB1 */
 uint8_t flexran_get_rrc_num_plmn_ids(mid_t mod_id);
@@ -539,157 +631,127 @@ uint16_t flexran_get_rrc_mnc(mid_t mod_id, uint8_t index);
 /* Get index'th MNC's digit length broadcasted in SIB1 */
 uint8_t flexran_get_rrc_mnc_digit_length(mid_t mod_id, uint8_t index);
 
+/* Get X2 handover controlled by network */
+int flexran_get_x2_ho_net_control(mid_t mod_id);
+
+/* Set X2 handover controlled by network */
+int flexran_set_x2_ho_net_control(mid_t mod_id, int x2_ho_net_control);
+
+/* Get number of adjacent cells via X2 interface */
+int flexran_get_rrc_num_adj_cells(mid_t mod_id);
+
+/* Get the number of E-RABs for UE */
+int flexran_agent_rrc_gtp_num_e_rab(mid_t mod_id, rnti_t rnti);
+
+/* Get the e-RAB ID for UE */
+int flexran_agent_rrc_gtp_get_e_rab_id(mid_t mod_id, rnti_t rnti, int index);
+
+/* Get the TEID at the eNB for UE */
+int flexran_agent_rrc_gtp_get_teid_enb(mid_t mod_id, rnti_t rnti, int index);
+
+/* Get the TEID at the SGW for UE */
+int flexran_agent_rrc_gtp_get_teid_sgw(mid_t mod_id, rnti_t rnti, int index);
+
+/* gets the UEs S1AP ID at eNodeB, stored in RRC */
+uint32_t flexran_get_rrc_enb_ue_s1ap_id(mid_t mod_id, rnti_t rnti);
+
 /************************** Slice configuration **************************/
+/* Get the currently active DL slicing algorithm */
+Protocol__FlexSliceAlgorithm flexran_get_dl_slice_algo(mid_t mod_id);
+/* Set the active DL slicing algorithm */
+int flexran_set_dl_slice_algo(mid_t mod_id, Protocol__FlexSliceAlgorithm algo);
+
+/* Get the currently active UL slicing algorithm */
+Protocol__FlexSliceAlgorithm flexran_get_ul_slice_algo(mid_t mod_id);
+/* Set the active UL slicing algorithm */
+int flexran_set_ul_slice_algo(mid_t mod_id, Protocol__FlexSliceAlgorithm algo);
 
 /* Get the DL slice ID for a UE */
 int flexran_get_ue_dl_slice_id(mid_t mod_id, mid_t ue_id);
-
-/* Set the DL slice index(!) for a UE */
-void flexran_set_ue_dl_slice_idx(mid_t mod_id, mid_t ue_id, int slice_idx);
+/* Set the DL slice for a UE */
+int flexran_set_ue_dl_slice_id(mid_t mod_id, mid_t ue_id, slice_id_t slice_id);
 
 /* Get the UL slice ID for a UE */
 int flexran_get_ue_ul_slice_id(mid_t mod_id, mid_t ue_id);
+/* Set the UL slice for a UE */
+int flexran_set_ue_ul_slice_id(mid_t mod_id, mid_t ue_id, slice_id_t slice_id);
 
-/* Set the UL slice index(!) for a UE */
-void flexran_set_ue_ul_slice_idx(mid_t mod_id, mid_t ue_id, int slice_idx);
+/* Create slice in DL, returns the new slice index, object can be shared
+ * library for the scheduler or NULL */
+int flexran_create_dl_slice(mid_t mod_id, const Protocol__FlexSlice *s, void *object);
+/* Remove slice in DL, returns new number of slices or -1 on error */
+int flexran_remove_dl_slice(mid_t mod_id, const Protocol__FlexSlice *s);
 
-/* Whether intraslice sharing is active, return boolean */
-int flexran_get_intraslice_sharing_active(mid_t mod_id);
-/* Set whether intraslice sharing is active */
-void flexran_set_intraslice_sharing_active(mid_t mod_id, int intraslice_active);
-
-/* Whether intraslice sharing is active, return boolean */
-int flexran_get_interslice_sharing_active(mid_t mod_id);
-/* Set whether intraslice sharing is active */
-void flexran_set_interslice_sharing_active(mid_t mod_id, int interslice_active);
-
+/* Finds slice in DL with given slice_id and returns slice index */
+int flexran_find_dl_slice(mid_t mod_id, slice_id_t slice_id);
+/* Return the parameters of slice at index slice_idx */
+void flexran_get_dl_slice(mid_t mod_id,
+                          int slice_idx,
+                          Protocol__FlexSlice *slice,
+                          Protocol__FlexSliceAlgorithm algo);
 /* Get the number of slices in DL */
 int flexran_get_num_dl_slices(mid_t mod_id);
 
-/* Query slice existence in DL. Return is boolean value */
-int flexran_dl_slice_exists(mid_t mod_id, int slice_idx);
+/* Create slice in UL, returns the new slice index, object can be shared library
+ * for the scheduler or NULL */
+int flexran_create_ul_slice(mid_t mod_id, const Protocol__FlexSlice *s, void *object);
+/* Remove slice in UL */
+int flexran_remove_ul_slice(mid_t mod_id, const Protocol__FlexSlice *s);
 
-/* Create slice in DL, returns the new slice index */
-int flexran_create_dl_slice(mid_t mod_id, slice_id_t slice_id);
 /* Finds slice in DL with given slice_id and returns slice index */
-int flexran_find_dl_slice(mid_t mod_id, slice_id_t slice_id);
-/* Remove slice in DL, returns new number of slices or -1 on error */
-int flexran_remove_dl_slice(mid_t mod_id, int slice_idx);
-
-/* Get the ID of a slice in DL */
-slice_id_t flexran_get_dl_slice_id(mid_t mod_id, int slice_idx);
-/* Set the ID of a slice in DL */
-void flexran_set_dl_slice_id(mid_t mod_id, int slice_idx, slice_id_t slice_id);
-
-/* Get the RB share a slice in DL, value 0-100 */
-int flexran_get_dl_slice_percentage(mid_t mod_id, int slice_idx);
-/* Set the RB share a slice in DL, value 0-100 */
-void flexran_set_dl_slice_percentage(mid_t mod_id, int slice_idx, int percentage);
-
-/* Whether a slice in DL is isolated */
-int flexran_get_dl_slice_isolation(mid_t mod_id, int slice_idx);
-/* Set whether a slice in DL is isolated */
-void flexran_set_dl_slice_isolation(mid_t mod_id, int slice_idx, int is_isolated);
-
-/* Get the priority of a slice in DL */
-int flexran_get_dl_slice_priority(mid_t mod_id, int slice_idx);
-/* Get the priority of a slice in DL */
-void flexran_set_dl_slice_priority(mid_t mod_id, int slice_idx, int priority);
-
-/* Get the lower end of the frequency range for the slice positioning in DL */
-int flexran_get_dl_slice_position_low(mid_t mod_id, int slice_idx);
-/* Set the lower end of the frequency range for the slice positioning in DL */
-void flexran_set_dl_slice_position_low(mid_t mod_id, int slice_idx, int poslow);
-
-/* Get the higher end of the frequency range for the slice positioning in DL */
-int flexran_get_dl_slice_position_high(mid_t mod_id, int slice_idx);
-/* Set the higher end of the frequency range for the slice positioning in DL */
-void flexran_set_dl_slice_position_high(mid_t mod_id, int slice_idx, int poshigh);
-
-/* Get the maximum MCS for slice in DL */
-int flexran_get_dl_slice_maxmcs(mid_t mod_id, int slice_idx);
-/* Set the maximum MCS for slice in DL */
-void flexran_set_dl_slice_maxmcs(mid_t mod_id, int slice_idx, int maxmcs);
-
-/* Get the sorting order of a slice in DL, return value is number of elements
- * in sorting_list */
-int flexran_get_dl_slice_sorting(mid_t mod_id, int slice_idx, Protocol__FlexDlSorting **sorting_list);
-/* Set the sorting order of a slice in DL */
-void flexran_set_dl_slice_sorting(mid_t mod_id, int slice_idx, Protocol__FlexDlSorting *sorting_list, int n);
-
-/* Get the accounting policy for a slice in DL */
-Protocol__FlexDlAccountingPolicy flexran_get_dl_slice_accounting_policy(mid_t mod_id, int slice_idx);
-/* Set the accounting policy for a slice in DL */
-void flexran_set_dl_slice_accounting_policy(mid_t mod_id, int slice_idx, Protocol__FlexDlAccountingPolicy accounting);
-
-/* Get the scheduler name for a slice in DL */
-char *flexran_get_dl_slice_scheduler(mid_t mod_id, int slice_idx);
-/* Set the scheduler name for a slice in DL */
-int flexran_set_dl_slice_scheduler(mid_t mod_id, int slice_idx, char *name);
-
+int flexran_find_ul_slice(mid_t mod_id, slice_id_t slice_id);
+/* Return the parameters of slice at index slice_idx */
+void flexran_get_ul_slice(mid_t mod_id,
+                          int slice_idx,
+                          Protocol__FlexSlice *slice,
+                          Protocol__FlexSliceAlgorithm algo);
 /* Get the number of slices in UL */
 int flexran_get_num_ul_slices(mid_t mod_id);
 
-/* Query slice existence in UL. Return is boolean value */
-int flexran_ul_slice_exists(mid_t mod_id, int slice_idx);
+/* Get the name of/Set the DL scheduling algorithm. If slicing is active, this
+ * corresponds to the default algorithm for slices, otherwise the currently
+ * used one. object is a shared object in which to find the scheduler */
+char *flexran_get_dl_scheduler_name(mid_t mod_id);
+int flexran_set_dl_scheduler(mid_t mod_id, char *sched, void *object);
 
-/* Create slice in UL, returns the new slice index */
-int flexran_create_ul_slice(mid_t mod_id, slice_id_t slice_id);
-/* Finds slice in UL with given slice_id and returns slice index */
-int flexran_find_ul_slice(mid_t mod_id, slice_id_t slice_id);
-/* Remove slice in UL */
-int flexran_remove_ul_slice(mid_t mod_id, int slice_idx);
+/* Get the name of/Set the UL scheduler algorithm. Same applies as for the DL
+ * case. object is a shared object in which to find the scheduler */
+char *flexran_get_ul_scheduler_name(mid_t mod_id);
+int flexran_set_ul_scheduler(mid_t mod_id, char *sched, void *object);
 
-/* Get the ID of a slice in UL */
-slice_id_t flexran_get_ul_slice_id(mid_t mod_id, int slice_idx);
-/* Set the ID of a slice in UL */
-void flexran_set_ul_slice_id(mid_t mod_id, int slice_idx, slice_id_t slice_id);
+/************************** S1AP **************************/
+/* Get the number of MMEs to be connected */
+int flexran_get_s1ap_mme_pending(mid_t mod_id);
 
-/* Get the RB share a slice in UL, value 0-100 */
-int flexran_get_ul_slice_percentage(mid_t mod_id, int slice_idx);
-/* Set the RB share a slice in UL, value 0-100 */
-void flexran_set_ul_slice_percentage(mid_t mod_id, int slice_idx, int percentage);
+/* Get the number of connected MMEs */
+int flexran_get_s1ap_mme_connected(mid_t mod_id);
 
-/* TODO Whether a slice in UL is isolated */
-/*int flexran_get_ul_slice_isolation(mid_t mod_id, int slice_idx);*/
-/* TODO Set whether a slice in UL is isolated */
-/*void flexran_set_ul_slice_isolation(mid_t mod_id, int slice_idx, int is_isolated);*/
+/* Get the eNB S1AP IP address */
+char* flexran_get_s1ap_enb_s1_ip(mid_t mod_id);
 
-/* TODO Get the priority of a slice in UL */
-/*int flexran_get_ul_slice_priority(mid_t mod_id, int slice_idx);*/
-/* TODO Set the priority of a slice in UL */
-/*void flexran_set_ul_slice_priority(mid_t mod_id, int slice_idx, int priority);*/
+/* Get the name of the eNB */
+char* flexran_get_s1ap_enb_name(mid_t mod_id);
 
-/* Get the first RB for allocation in a slice in UL */
-int flexran_get_ul_slice_first_rb(mid_t mod_id, int slice_idx);
-/* Set the first RB for allocation in a slice in UL */
-void flexran_set_ul_slice_first_rb(mid_t mod_id, int slice_idx, int first_rb);
+/* Get the number of connected MMEs to this eNB */
+int flexran_get_s1ap_nb_mme(mid_t mod_id);
 
-/* TODO Get the number of RB for the allocation in a slice in UL */
-/*int flexran_get_ul_slice_length_rb(mid_t mod_id, int slice_idx);*/
-/* TODO Set the of number of RB for the allocation in a slice in UL */
-/*void flexran_set_ul_slice_length_rb(mid_t mod_id, int slice_idx, int poshigh);*/
+/* Get the number of connected UEs to this eNB */
+int flexran_get_s1ap_nb_ue(mid_t mod_id);
 
-/* Get the maximum MCS for slice in UL */
-int flexran_get_ul_slice_maxmcs(mid_t mod_id, int slice_idx);
-/* Set the maximum MCS for slice in UL */
-void flexran_set_ul_slice_maxmcs(mid_t mod_id, int slice_idx, int maxmcs);
+/* Get the S1AP MME conf */
+int flexran_get_s1ap_mme_conf(mid_t mod_id, mid_t mme_index, Protocol__FlexS1apMme * mme_conf);
 
-/* TODO Get the sorting order of a slice in UL, return value is number of elements
- * in sorting_list */
-/*int flexran_get_ul_slice_sorting(mid_t mod_id, int slice_idx, Protocol__FlexUlSorting **sorting_list);*/
-/* TODO Set the sorting order of a slice in UL */
-/*void flexran_set_ul_slice_sorting(mid_t mod_id, int slice_idx, Protocol__FlexUlSorting *sorting_list, int n);*/
+/* Get the S1AP UE conf */
+int flexran_get_s1ap_ue(mid_t mod_id, rnti_t rnti, Protocol__FlexS1apUe * ue_conf);
 
-/* TODO Get the accounting policy for a slice in UL */
-/*Protocol__UlAccountingPolicy flexran_get_ul_slice_accounting_policy(mid_t mod_id, int slice_idx);*/
-/* TODO Set the accounting policy for a slice in UL */
-/*void flexran_get_ul_slice_accounting_policy(mid_t mod_id, int slice_idx, Protocol__UlAccountingPolicy accountin);*/
+/* Add MMEs and re-issue S1AP Registration Request */
+int flexran_add_s1ap_mme(mid_t mod_id, size_t n_mme, char **mme_ipv4);
 
-/* Get the scheduler name for a slice in UL */
-char *flexran_get_ul_slice_scheduler(mid_t mod_id, int slice_idx);
-/* Set the scheduler name for a slice in UL */
-int flexran_set_ul_slice_scheduler(mid_t mod_id, int slice_idx, char *name);
+/* Remove MMEs and and cut SCTP to MME */
+int flexran_remove_s1ap_mme(mid_t mod_id, size_t n_mme, char **mme_ipv4);
+
+/* Set a new PLMN configuration */
+int flexran_set_new_plmn_id(mid_t mod_id, int CC_id, size_t n_plmn, Protocol__FlexPlmn **plmn_id);
 
 /********************* general information *****************/
 /* get an ID for this BS (or part of a BS) */
@@ -702,4 +764,9 @@ size_t flexran_get_capabilities(mid_t mod_id, Protocol__FlexBsCapability **caps)
 
 /* get the capabilities supported by the underlying network function as a bit
  * mask. */
-uint16_t flexran_get_capabilities_mask(mid_t mod_id);
+uint32_t flexran_get_capabilities_mask(mid_t mod_id);
+
+/* get the splits used by the underlying network function,
+ * return the number and stores list of this length in splits. If there are
+ * zero capabilities, splits will be NULL */
+size_t flexran_get_splits(mid_t mod_id, Protocol__FlexBsSplit **splits);

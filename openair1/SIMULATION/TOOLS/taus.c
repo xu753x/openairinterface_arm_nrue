@@ -21,6 +21,8 @@
 
 #include <time.h>
 #include <stdlib.h>
+//#include "SIMULATION/TOOLS/sim.h"
+
 
 unsigned int s0, s1, s2, b;
 
@@ -32,7 +34,6 @@ unsigned int s0, s1, s2, b;
 
 unsigned int taus(void)
 {
-
   b = (((s0 << 13) ^ s0) >> 19);
   s0 = (((s0 & 0xFFFFFFFE) << 12)^  b);
   b = (((s1 << 2) ^ s1) >> 25);
@@ -41,7 +42,7 @@ unsigned int taus(void)
   s2 = (((s2 & 0xFFFFFFF0) << 17)^  b);
   return s0 ^ s1 ^ s2;
 }
-#if 1
+
 void set_taus_seed(unsigned int seed_init)
 {
 
@@ -63,25 +64,18 @@ void set_taus_seed(unsigned int seed_init)
     s2 = result;
   }
 }
-#endif
 
 #ifdef MAIN
 
 main()
 {
-
   unsigned int i,rand;
 
   set_taus_seed();
 
   for (i=0; i<10; i++) {
-
     rand = taus();
     printf("%u\n",rand);
-
   }
 }
 #endif //MAIN
-
-
-

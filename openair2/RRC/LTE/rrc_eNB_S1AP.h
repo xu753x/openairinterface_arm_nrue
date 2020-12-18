@@ -278,10 +278,13 @@ int rrc_eNB_send_S1AP_E_RAB_RELEASE_RESPONSE(const protocol_ctxt_t *const ctxt_p
 
 int rrc_eNB_send_PATH_SWITCH_REQ(const protocol_ctxt_t *const ctxt_pP,
                                  rrc_eNB_ue_context_t          *const ue_context_pP);
+int rrc_eNB_process_X2AP_TUNNEL_SETUP_REQ(instance_t instance, rrc_eNB_ue_context_t* const ue_context_target_p);
 int rrc_eNB_process_S1AP_PATH_SWITCH_REQ_ACK (MessageDef *msg_p, const char *msg_name, instance_t instance);
 
 int rrc_eNB_send_X2AP_UE_CONTEXT_RELEASE(const protocol_ctxt_t* const ctxt_pP, rrc_eNB_ue_context_t* const ue_context_pP);
 
 int s1ap_ue_context_release(instance_t instance, const uint32_t eNB_ue_s1ap_id);
+
+int rrc_eNB_send_E_RAB_Modification_Indication(const protocol_ctxt_t *const ctxt_pP, rrc_eNB_ue_context_t *const ue_context_pP);
 
 #endif /* RRC_ENB_S1AP_H_ */

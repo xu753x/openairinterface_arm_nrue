@@ -40,6 +40,7 @@
 #include <arpa/inet.h>
 
 #include "assertions.h"
+#include "common/utils/system.h"
 #include "queue.h"
 
 #include "intertask_interface.h"
@@ -412,10 +413,16 @@ sctp_handle_new_association_req(
     }
 
     /* Subscribe to all events */
-    memset((void *)&events, 1, sizeof(struct sctp_event_subscribe));
+    events.sctp_data_io_event = 1;
+    events.sctp_association_event = 1;
+    events.sctp_address_event = 1;
+    events.sctp_send_failure_event = 1;
+    events.sctp_peer_error_event = 1;
+    events.sctp_shutdown_event = 1;
+    events.sctp_partial_delivery_event = 1;
 
     if (setsockopt(sd, IPPROTO_SCTP, SCTP_EVENTS, &events,
-                   sizeof(struct sctp_event_subscribe)) < 0) {
+                   8) < 0) {
         SCTP_ERROR("Setsockopt IPPROTO_SCTP_EVENTS failed: %s\n",
                    strerror(errno));
         close(sd);
@@ -716,8 +723,7 @@ static int sctp_create_new_listener(
         SCTP_DEBUG("ipv4 addresses:\n");
 
         for (i = 0; i < init_p->nb_ipv4_addr; i++) {
-            SCTP_DEBUG("\t- "IPV4_ADDR"\n",
-                       IPV4_ADDR_FORMAT(init_p->ipv4_address[i]));
+            SCTP_DEBUG("\t- "IPV4_ADDR"\n", IPV4_ADDR_FORMAT(init_p->ipv4_address[i]));
             ip4_addr = (struct sockaddr_in *)&addr[i];
             ip4_addr->sin_family = AF_INET;
             ip4_addr->sin_port   = htons(init_p->port);
@@ -759,10 +765,16 @@ static int sctp_create_new_listener(
         }
     }
 
-    memset((void *)&event, 1, sizeof(struct sctp_event_subscribe));
+    event.sctp_data_io_event = 1;
+    event.sctp_association_event = 1;
+    event.sctp_address_event = 1;
+    event.sctp_send_failure_event = 1;
+    event.sctp_peer_error_event = 1;
+    event.sctp_shutdown_event = 1;
+    event.sctp_partial_delivery_event = 1;
 
     if (setsockopt(sd, IPPROTO_SCTP, SCTP_EVENTS, &event,
-                   sizeof(struct sctp_event_subscribe)) < 0) {
+                   8) < 0) {
         SCTP_ERROR("setsockopt: %s:%d\n", strerror(errno), errno);
         if (sd != -1) {
             close(sd);
@@ -953,6 +965,11 @@ sctp_eNB_read_from_socket(
     } else if (n == 0) {
         SCTP_DEBUG("return of sctp_recvmsg is 0...\n");
         return;
+    }
+
+    if (!(flags & MSG_EOR)) {
+      SCTP_ERROR("fatal: partial SCTP messages are not handled\n");
+      exit(1);
     }
 
     if (flags & MSG_NOTIFICATION) {

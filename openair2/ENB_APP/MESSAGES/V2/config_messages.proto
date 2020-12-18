@@ -45,17 +45,12 @@ message flex_cell_config {
 	repeated flex_plmn plmn_id = 40;                   // The PLMN cell id of this cell
 
 	optional flex_slice_config slice_config = 42;
+        optional bool x2_ho_net_control = 43;
 }
 
 message flex_slice_config {
-	// whether remaining RBs after first intra-slice allocation will
-	// be allocated to UEs of the same slice
-	optional bool   intraslice_share_active = 3;
-	// whether remaining RBs after slice allocation will be allocated
-	// to UEs of another slice. Isolated slices will be ignored.
-	optional bool   interslice_share_active = 4;
-	repeated flex_dl_slice dl = 1;
-	repeated flex_ul_slice ul = 2;
+  optional flex_slice_dl_ul_config dl = 6;
+  optional flex_slice_dl_ul_config ul = 7;
 }
 
 message flex_ue_config {
@@ -97,6 +92,8 @@ message flex_ue_config {
 	optional uint64 imsi = 30;
 	optional uint32 dl_slice_id = 31;
 	optional uint32 ul_slice_id = 32;
+  // Configuration about RRC measurements
+  optional flex_measurement_info info = 33;
 }
 
 message flex_lc_ue_config {
@@ -104,6 +101,10 @@ message flex_lc_ue_config {
 	repeated flex_lc_config lc_config = 2;	// A list of LC configurations for the given UE
 }
 
-
-
-
+message flex_s1ap_config {
+  optional uint32 pending = 1;              // number of pending (to be connected) MMEs
+  optional uint32 connected = 2;            // number of connected MMEs
+  optional string enb_s1_ip = 3;            // S1-MME IP of eNodeB
+  optional string enb_name = 4;             // S1-MME name of eNodeB
+  repeated flex_s1ap_mme mme = 5;
+}

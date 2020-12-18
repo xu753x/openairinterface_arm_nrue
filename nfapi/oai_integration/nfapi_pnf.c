@@ -49,7 +49,6 @@ extern RAN_CONTEXT_t RC;
 #include "fapi_stub.h"
 //#include "fapi_l1.h"
 #include "common/utils/LOG/log.h"
-#include "openair2/LAYER2/MAC/mac_proto.h"
 
 #include "PHY/INIT/phy_init.h"
 #include "PHY/LTE_TRANSPORT/transport_proto.h"
@@ -83,7 +82,7 @@ nfapi_tx_request_pdu_t *tx_request_pdu[1023][10][10]; // [frame][subframe][max_n
 
 uint8_t tx_pdus[32][8][4096];
 
-
+nfapi_ue_release_request_body_t release_rntis;
 uint16_t phy_antenna_capability_values[] = { 1, 2, 4, 8, 16 };
 
 nfapi_pnf_param_response_t g_pnf_param_resp;
@@ -197,19 +196,19 @@ static pthread_t pnf_start_pthread;
 int nfapitooai_level(int nfapi_level) {
   switch(nfapi_level) {
     case NFAPI_TRACE_ERROR:
-      return LOG_ERR;
+      return OAILOG_ERR;
 
     case NFAPI_TRACE_WARN:
-      return LOG_WARNING;
+      return OAILOG_WARNING;
 
     case NFAPI_TRACE_NOTE:
-      return LOG_INFO;
+      return OAILOG_INFO;
 
     case NFAPI_TRACE_INFO:
-      return LOG_DEBUG;
+      return OAILOG_DEBUG;
   }
 
-  return LOG_ERR;
+  return OAILOG_ERR;
 }
 
 void pnf_nfapi_trace(nfapi_trace_level_t nfapi_level, const char *message, ...) {
@@ -540,7 +539,6 @@ int config_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy, nfap
   }
 
   if(req->nfapi_config.earfcn.tl.tag == NFAPI_NFAPI_EARFCN_TAG) {
-    fp->eutra_band = 0;
     fp->dl_CarrierFreq = from_earfcn(fp->eutra_band, req->nfapi_config.earfcn.value);
     fp->ul_CarrierFreq = fp->dl_CarrierFreq - (get_uldl_offset(fp->eutra_band) * 1e5);
     num_tlv++;
@@ -693,13 +691,14 @@ void pnf_phy_deallocate_p7_vendor_ext(nfapi_p7_message_header_t *header) {
   free(header);
 }
 
-int pnf_phy_hi_dci0_req(nfapi_pnf_p7_config_t *pnf_p7, nfapi_hi_dci0_request_t *req) {
+int pnf_phy_hi_dci0_req(L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, nfapi_hi_dci0_request_t *req) {
   if (req->hi_dci0_request_body.number_of_dci == 0 && req->hi_dci0_request_body.number_of_hi == 0)
     LOG_D(PHY,"[PNF] HI_DCI0_REQUEST SFN/SF:%05d dci:%d hi:%d\n", NFAPI_SFNSF2DEC(req->sfn_sf), req->hi_dci0_request_body.number_of_dci, req->hi_dci0_request_body.number_of_hi);
 
   //phy_info* phy = (phy_info*)(pnf_p7->user_data);
   struct PHY_VARS_eNB_s *eNB = RC.eNB[0][0];
-  L1_rxtx_proc_t *proc = &eNB->proc.L1_proc;
+  if (proc ==NULL) 
+    proc = &eNB->proc.L1_proc;
 
   for (int i=0; i<req->hi_dci0_request_body.number_of_dci + req->hi_dci0_request_body.number_of_hi; i++) {
     //LOG_D(PHY,"[PNF] HI_DCI0_REQ sfn_sf:%d PDU[%d]\n", NFAPI_SFNSF2DEC(req->sfn_sf), i);
@@ -720,10 +719,7 @@ int pnf_phy_hi_dci0_req(nfapi_pnf_p7_config_t *pnf_p7, nfapi_hi_dci0_request_t *
   return 0;
 }
 
-int pnf_phy_dl_config_req(nfapi_pnf_p7_config_t *pnf_p7, nfapi_dl_config_request_t *req) {
-  if (RC.ru == 0) {
-    return -1;
-  }
+int pnf_phy_dl_config_req(L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, nfapi_dl_config_request_t *req) {
 
   if (RC.eNB == 0) {
     return -2;
@@ -741,7 +737,8 @@ int pnf_phy_dl_config_req(nfapi_pnf_p7_config_t *pnf_p7, nfapi_dl_config_request
   int sfn = NFAPI_SFNSF2SFN(req->sfn_sf);
   int sf = NFAPI_SFNSF2SF(req->sfn_sf);
   struct PHY_VARS_eNB_s *eNB = RC.eNB[0][0];
-  L1_rxtx_proc_t *proc = &eNB->proc.L1_proc;
+  if (proc==NULL)
+     proc = &eNB->proc.L1_proc;
   nfapi_dl_config_request_pdu_t *dl_config_pdu_list = req->dl_config_request_body.dl_config_pdu_list;
   LTE_eNB_PDCCH *pdcch_vars = &eNB->pdcch_vars[sf&1];
   pdcch_vars->num_pdcch_symbols = req->dl_config_request_body.number_pdcch_ofdm_symbols;
@@ -798,7 +795,7 @@ int pnf_phy_dl_config_req(nfapi_pnf_p7_config_t *pnf_p7, nfapi_dl_config_request
         uint8_t *dlsch_sdu = tx_pdus[UE_id][harq_pid];
         memcpy(dlsch_sdu, tx_pdu->segments[0].segment_data, tx_pdu->segments[0].segment_length);
         //NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() DLSCH:pdu_index:%d handle_nfapi_dlsch_pdu(eNB, proc_rxtx, dlsch_pdu, transport_blocks:%d sdu:%p) eNB->pdcch_vars[proc->subframe_tx & 1].num_pdcch_symbols:%d\n", __FUNCTION__, rel8_pdu->pdu_index, rel8_pdu->transport_blocks, dlsch_sdu, eNB->pdcch_vars[proc->subframe_tx & 1].num_pdcch_symbols);
-        handle_nfapi_dlsch_pdu( eNB, sfn,sf, &eNB->proc.L1_proc, &dl_config_pdu_list[i], rel8_pdu->transport_blocks-1, dlsch_sdu);
+        handle_nfapi_dlsch_pdu( eNB, sfn,sf, proc, &dl_config_pdu_list[i], rel8_pdu->transport_blocks-1, dlsch_sdu);
       } else {
         NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s() DLSCH NULL TX PDU SFN/SF:%d PDU_INDEX:%d\n", __FUNCTION__, NFAPI_SFNSF2DEC(req->sfn_sf), rel8_pdu->pdu_index);
       }
@@ -838,7 +835,7 @@ int pnf_phy_tx_req(nfapi_pnf_p7_config_t *pnf_p7, nfapi_tx_request_t *req) {
   return 0;
 }
 
-int pnf_phy_ul_config_req(nfapi_pnf_p7_config_t *pnf_p7, nfapi_ul_config_request_t *req) {
+int pnf_phy_ul_config_req(L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, nfapi_ul_config_request_t *req) {
   if (0)LOG_D(PHY,"[PNF] UL_CONFIG_REQ %s() sfn_sf:%d pdu:%d rach_prach_frequency_resources:%d srs_present:%u\n",
                 __FUNCTION__,
                 NFAPI_SFNSF2DEC(req->sfn_sf),
@@ -847,9 +844,6 @@ int pnf_phy_ul_config_req(nfapi_pnf_p7_config_t *pnf_p7, nfapi_ul_config_request
                 req->ul_config_request_body.srs_present
                );
 
-  if (RC.ru == 0) {
-    return -1;
-  }
 
   if (RC.eNB == 0) {
     return -2;
@@ -867,7 +861,8 @@ int pnf_phy_ul_config_req(nfapi_pnf_p7_config_t *pnf_p7, nfapi_ul_config_request
   uint16_t curr_sfn = NFAPI_SFNSF2SFN(req->sfn_sf);
   uint16_t curr_sf = NFAPI_SFNSF2SF(req->sfn_sf);
   struct PHY_VARS_eNB_s *eNB = RC.eNB[0][0];
-  L1_rxtx_proc_t *proc = &eNB->proc.L1_proc;
+  if (proc==NULL)
+     proc = &eNB->proc.L1_proc;
   nfapi_ul_config_request_pdu_t *ul_config_pdu_list = req->ul_config_request_body.ul_config_pdu_list;
 
   for (int i=0; i<req->ul_config_request_body.number_of_pdus; i++) {
@@ -893,6 +888,15 @@ int pnf_phy_ul_config_req(nfapi_pnf_p7_config_t *pnf_p7, nfapi_ul_config_request
 
 int pnf_phy_lbt_dl_config_req(nfapi_pnf_p7_config_t *config, nfapi_lbt_dl_config_request_t *req) {
   //printf("[PNF] lbt dl config request\n");
+  return 0;
+}
+
+int pnf_phy_ue_release_req(nfapi_pnf_p7_config_t* config, nfapi_ue_release_request_t* req) {
+  if (req->ue_release_request_body.number_of_TLVs==0)
+    return -1;
+
+  release_rntis.number_of_TLVs = req->ue_release_request_body.number_of_TLVs;
+  memcpy(&release_rntis.ue_release_request_TLVs_list, req->ue_release_request_body.ue_release_request_TLVs_list, sizeof(nfapi_ue_release_request_TLVs_t)*req->ue_release_request_body.number_of_TLVs);
   return 0;
 }
 
@@ -1024,7 +1028,7 @@ int start_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy, nfapi
   p7_config->hi_dci0_req = &pnf_phy_hi_dci0_req;
   p7_config->tx_req = &pnf_phy_tx_req;
   p7_config->lbt_dl_config_req = &pnf_phy_lbt_dl_config_req;
-
+  p7_config->ue_release_req = &pnf_phy_ue_release_req;
   if (NFAPI_MODE==NFAPI_UE_STUB_PNF) {
     p7_config->dl_config_req = &memcpy_dl_config_req;
     p7_config->ul_config_req = &memcpy_ul_config_req;
@@ -1367,7 +1371,7 @@ void configure_nfapi_pnf(char *vnf_ip_addr, int vnf_p5_port, char *pnf_ip_addr, 
   printf("%s() PNF\n\n\n\n\n\n", __FUNCTION__);
 
   if(NFAPI_MODE!=NFAPI_UE_STUB_PNF) {
-    nfapi_setmode(NFAPI_PNF);  // PNF!
+    nfapi_setmode(NFAPI_MODE_PNF);  // PNF!
   }
 
   nfapi_pnf_config_t *config = nfapi_pnf_config_create();

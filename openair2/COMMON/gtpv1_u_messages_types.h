@@ -33,9 +33,32 @@
 #define GTPV1U_ENB_DELETE_TUNNEL_RESP(mSGpTR) (mSGpTR)->ittiMsg.Gtpv1uDeleteTunnelResp
 #define GTPV1U_ENB_TUNNEL_DATA_IND(mSGpTR)    (mSGpTR)->ittiMsg.Gtpv1uTunnelDataInd
 #define GTPV1U_ENB_TUNNEL_DATA_REQ(mSGpTR)    (mSGpTR)->ittiMsg.Gtpv1uTunnelDataReq
+#define GTPV1U_ENB_DATA_FORWARDING_REQ(mSGpTR)    (mSGpTR)->ittiMsg.Gtpv1uDataForwardingReq
+#define GTPV1U_ENB_DATA_FORWARDING_IND(mSGpTR)    (mSGpTR)->ittiMsg.Gtpv1uDataForwardingInd
+#define GTPV1U_ENB_END_MARKER_REQ(mSGpTR)     (mSGpTR)->ittiMsg.Gtpv1uEndMarkerReq
+#define GTPV1U_ENB_END_MARKER_IND(mSGpTR)     (mSGpTR)->ittiMsg.Gtpv1uEndMarkerInd
+
 #define GTPV1U_ENB_S1_REQ(mSGpTR)    (mSGpTR)->ittiMsg.gtpv1uS1Req
 
 #define GTPV1U_ALL_TUNNELS_TEID (teid_t)0xFFFFFFFF
+
+typedef struct gtpv1u_enb_create_x2u_tunnel_req_s {
+  rnti_t                 rnti;
+  int                    num_tunnels;
+  teid_t                 tenb_X2u_teid[GTPV1U_MAX_BEARERS_PER_UE];  ///< Tunnel Endpoint Identifier
+  ebi_t                  eps_bearer_id[GTPV1U_MAX_BEARERS_PER_UE];
+  transport_layer_addr_t enb_addr[GTPV1U_MAX_BEARERS_PER_UE];
+} gtpv1u_enb_create_x2u_tunnel_req_t;
+
+typedef struct gtpv1u_enb_create_x2u_tunnel_resp_s {
+  uint8_t                status;               ///< Status of S1U endpoint creation (Failed = 0xFF or Success = 0x0)
+  rnti_t                 rnti;
+  int                    num_tunnels;
+  teid_t                 enb_X2u_teid[GTPV1U_MAX_BEARERS_PER_UE];  ///< Tunnel Endpoint Identifier
+  ebi_t                  eps_bearer_id[GTPV1U_MAX_BEARERS_PER_UE];
+  transport_layer_addr_t enb_addr;
+} gtpv1u_enb_create_x2u_tunnel_resp_t;
+
 
 typedef struct gtpv1u_enb_create_tunnel_req_s {
   rnti_t                 rnti;
@@ -75,6 +98,7 @@ typedef struct gtpv1u_enb_delete_tunnel_req_s {
   uint8_t                num_erab;
   ebi_t                  eps_bearer_id[GTPV1U_MAX_BEARERS_PER_UE];
   //teid_t                 enb_S1u_teid;         ///< local SGW S11 Tunnel Endpoint Identifier
+  int                    from_gnb;             ///< Indicates if the message comes from gNB or eNB (1 = comes from gNB, 0 from eNB)
 } gtpv1u_enb_delete_tunnel_req_t;
 
 typedef struct gtpv1u_enb_delete_tunnel_resp_s {
@@ -99,8 +123,53 @@ typedef struct gtpv1u_enb_tunnel_data_req_s {
   rb_id_t                rab_id;
 } gtpv1u_enb_tunnel_data_req_t;
 
+typedef struct gtpv1u_enb_data_forwarding_req_s {
+  uint8_t               *buffer;
+  uint32_t               length;
+  uint32_t               offset;               ///< start of message offset in buffer
+  rnti_t                 rnti;
+  rb_id_t                rab_id;
+} gtpv1u_enb_data_forwarding_req_t;
+
+typedef struct gtpv1u_enb_data_forwarding_ind_s {
+  uint32_t 				 frame;
+  uint8_t 				 enb_flag;
+  rb_id_t 				 rb_id;
+  uint32_t 				 muip;
+  uint32_t 				 confirmp;
+  uint32_t 				 sdu_size;
+  uint8_t 				 *sdu_p;
+  uint8_t 				 mode;
+  uint16_t     			 rnti;
+  uint8_t      			 module_id;
+  uint8_t 				 eNB_index;
+} gtpv1u_enb_data_forwarding_ind_t;
+
+typedef struct gtpv1u_enb_end_marker_req_s {
+	  uint8_t               *buffer;
+	  uint32_t               length;
+	  uint32_t               offset;               ///< start of message offset in buffer
+	  rnti_t                 rnti;
+	  rb_id_t                rab_id;
+} gtpv1u_enb_end_marker_req_t;
+
+typedef struct gtpv1u_enb_end_marker_ind_s {
+  uint32_t 			 frame;
+  uint8_t 			 enb_flag;
+  rb_id_t 			 rb_id;
+  uint32_t 			 muip;
+  uint32_t 			 confirmp;
+  uint32_t 			 sdu_size;
+  uint8_t 			 *sdu_p;
+  uint8_t 			 mode;
+  uint16_t     			 rnti;
+  uint8_t      			 module_id;
+  uint8_t 			 eNB_index;
+} gtpv1u_enb_end_marker_ind_t;
+
 typedef struct {
   in_addr_t             enb_ip_address_for_S1u_S12_S4_up;
   tcp_udp_port_t        enb_port_for_S1u_S12_S4_up;
 } Gtpv1uS1Req;
+
 #endif /* GTPV1_U_MESSAGES_TYPES_H_ */

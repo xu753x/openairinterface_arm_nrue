@@ -35,12 +35,15 @@
 #define RRC_DCCH_DATA_IND(mSGpTR)               (mSGpTR)->ittiMsg.rrc_dcch_data_ind
 #define RRC_PCCH_DATA_REQ(mSGpTR)               (mSGpTR)->ittiMsg.rrc_pcch_data_req
 
+// gNB
+#define NR_RRC_DCCH_DATA_IND(mSGpTR)            (mSGpTR)->ittiMsg.nr_rrc_dcch_data_ind
+
 //-------------------------------------------------------------------------------------------//
 // Messages between RRC and PDCP layers
 typedef struct RrcDcchDataReq_s {
   uint32_t frame;
   uint8_t enb_flag;
-  uint32_t rb_id;
+  rb_id_t rb_id;
   uint32_t muip;
   uint32_t confirmp;
   uint32_t sdu_size;
@@ -60,6 +63,16 @@ typedef struct RrcDcchDataInd_s {
   uint8_t      module_id;
   uint8_t      eNB_index; // LG: needed in UE
 } RrcDcchDataInd;
+
+typedef struct NRRrcDcchDataInd_s {
+  uint32_t frame;
+  uint8_t dcch_index;
+  uint32_t sdu_size;
+  uint8_t *sdu_p;
+  uint16_t     rnti;
+  uint8_t      module_id;
+  uint8_t      gNB_index; // LG: needed in UE
+} NRRrcDcchDataInd;
 
 typedef struct RrcPcchDataReq_s {
   uint32_t     sdu_size;

@@ -149,10 +149,10 @@
 #define OFDM_SYMBOL_SIZE_BYTES0 (OFDM_SYMBOL_SIZE_SAMPLES0*2)
 #define OFDM_SYMBOL_SIZE_BYTES_NO_PREFIX (OFDM_SYMBOL_SIZE_SAMPLES_NO_PREFIX*2)
 
-#define SLOT_LENGTH_BYTES (frame_parms->samples_per_tti<<1) // 4 bytes * samples_per_tti/2
+#define SLOT_LENGTH_BYTES (frame_parms->samples_per_slot) // 4 bytes * samples_per_tti/2
 #define SLOT_LENGTH_BYTES_NO_PREFIX (OFDM_SYMBOL_SIZE_BYTES_NO_PREFIX * NUMBER_OF_OFDM_SYMBOLS_PER_SLOT)
 
-#define FRAME_LENGTH_COMPLEX_SAMPLES (frame_parms->samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME)
+#define FRAME_LENGTH_COMPLEX_SAMPLES (frame_parms->samples_per_subframe*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME)
 #define FRAME_LENGTH_SAMPLES (FRAME_LENGTH_COMPLEX_SAMPLES*2)
 #define FRAME_LENGTH_SAMPLES_NO_PREFIX (NUMBER_OF_SYMBOLS_PER_FRAME*OFDM_SYMBOL_SIZE_SAMPLES_NO_PREFIX)
 #define FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX (FRAME_LENGTH_SAMPLES_NO_PREFIX/2)
@@ -209,6 +209,7 @@
 
 /// First Amplitude for QAM16 (\f$ 2^{15} \times 2/\sqrt{10}\f$)
 #define QAM16_n1 20724
+
 /// Second Amplitude for QAM16 (\f$ 2^{15} \times 1/\sqrt{10}\f$)
 #define QAM16_n2 10362
 
@@ -218,6 +219,13 @@
 #define QAM64_n2 10112
 ///Third Amplitude for QAM64 (\f$ 2^{15} \times 1/\sqrt{42}\f$)
 #define QAM64_n3 5056
+
+///First Amplitude for QAM256 (\f$ 2^{15} \times 8/\sqrt{170}\f$)
+#define QAM256_n1 20106
+///Second Amplitude for QAM256 (\f$ 2^{15} \times 4/\sqrt{170}\f$)
+#define QAM256_n2 10053
+///Third Amplitude for QAM256 (\f$ 2^{15} \times 2/\sqrt{170}\f$)
+#define QAM256_n3 5026
 
 /// First Amplitude for QAM16 for TM5 (\f$ 2^{15} \times 2/sqrt(20)\f$)
 #define QAM16_TM5_n1 14654
@@ -244,10 +252,12 @@
 //#define CHBCH_RSSI_MIN -75
 
 #ifdef BIT8_TX
-#define AMP 128
+#define AMP_SHIFT 7
 #else
-#define AMP 512//1024 //4096
+#define AMP_SHIFT 9
 #endif
+
+#define AMP ((1)<<AMP_SHIFT)
 
 #define AMP_OVER_SQRT2 ((AMP*ONE_OVER_SQRT2_Q15)>>15)
 #define AMP_OVER_2 (AMP>>1)
@@ -256,6 +266,21 @@
 #define PUCCH1_THRES 0
 /// Threshold for PUCCH Format 1a/1b detection
 #define PUCCH1a_THRES 4
+
+//#if defined(UPGRADE_RAT_NR)
+#if 1
+
+#define NB_NUMEROLOGIES_NR                       (5)
+#define TDD_CONFIG_NB_FRAMES                     (2)
+#define NR_MAX_SLOTS_PER_FRAME                   (160)                    /* number of slots per frame */
+#define NR_UE_CAPABILITY_SLOT_RX_TO_TX           (6)                      /* FFS_NR_TODO it defines ue capability which is the number of slots */
+                                                                          /* - between reception of pdsch and tarnsmission of its acknowlegment */
+                                                                          /* - between reception of un uplink grant and its related transmission */
+
+#define NR_MAX_HARQ_PROCESSES                    (16)
+#define NR_MAX_ULSCH_HARQ_PROCESSES              (NR_MAX_HARQ_PROCESSES)  /* cf 38.214 6.1 UE procedure for receiving the physical uplink shared channel */
+#define NR_MAX_DLSCH_HARQ_PROCESSES              (NR_MAX_HARQ_PROCESSES)  /* cf 38.214 5.1 UE procedure for receiving the physical downlink shared channel */
+#endif
 
 /// Data structure for transmission.
 typedef struct {
@@ -283,8 +308,16 @@ typedef struct {
 #define cmax(a,b)  ((a>b) ? (a) : (b))
 #define cmax3(a,b,c) ((cmax(a,b)>c) ? (cmax(a,b)) : (c))
 #define cmin(a,b)  ((a<b) ? (a) : (b))
+
+#ifdef __cplusplus
+#ifdef min
+#undef min
+#undef max
+#endif
+#else
 #define max(a,b) cmax(a,b)
 #define min(a,b) cmin(a,b)
+#endif
 
 #ifndef malloc16
 #  ifdef __AVX2__

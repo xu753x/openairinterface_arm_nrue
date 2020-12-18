@@ -32,6 +32,8 @@
  * \warning
  */
 
+#ifndef __TELNETSRV_LTEMEASUR_DEF__H__
+#define __TELNETSRV_LTEMEASUR_DEF__H__
 
 #define LTEMAC_MEASURE \
 { \
@@ -81,8 +83,8 @@
   {"total_num_pdus",	   &(macuestatptr->total_num_pdus),TELNET_VARTYPE_INT32,0},\
   {"overhead_bytes",	   &(macuestatptr->overhead_bytes),TELNET_VARTYPE_INT64,0},\
   {"crnti",	           &(macuestatptr->crnti),TELNET_VARTYPE_INT16,0},\
-  {"normalized_rx_power",  &(macuestatptr->normalized_rx_power),TELNET_VARTYPE_INT32,0},\
-  {"target_rx_power",	   &(macuestatptr->target_rx_power),TELNET_VARTYPE_INT32,0},\
+  {"snr",                  &(macuestatptr->snr),TELNET_VARTYPE_INT32,0},\
+  {"target_snr ",          &(macuestatptr->target_snr),TELNET_VARTYPE_INT32,0},\
   {"ulsch_mcs1",	   &(macuestatptr->ulsch_mcs1),TELNET_VARTYPE_INT8,0},\
   {"ulsch_mcs2",	   &(macuestatptr->ulsch_mcs2),TELNET_VARTYPE_INT8,0},\
   {"rbs_used_rx",	   &(macuestatptr->rbs_used_rx),TELNET_VARTYPE_INT32,0},\
@@ -125,3 +127,5 @@
   {"timer_poll_retrans_tout",         NULL, TELNET_VARTYPE_UINT, 0},\
   {"timer_status_prohibit_tout",      NULL, TELNET_VARTYPE_UINT, 0},\
 }
+
+#endif
