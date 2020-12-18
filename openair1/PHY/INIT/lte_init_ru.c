@@ -63,7 +63,6 @@ int phy_init_RU(RU_t *ru) {
       for (i=0; i<ru->nb_rx; i++) {
         calibration->drs_ch_estimates_time[i] = (int32_t *)malloc16_clear(2*sizeof(int32_t)*fp->ofdm_symbol_size);
       }
-    }
 
     for (i=0; i<ru->nb_rx; i++) {
       ru->common.rxdata[i] = (int32_t *)malloc16_clear( fp->samples_per_tti*10*sizeof(int32_t) );
@@ -217,9 +216,6 @@ void phy_free_RU(RU_t *ru) {
 
       free_and_zero(calibration->rxdataF_ext);
       free_and_zero(calibration->drs_ch_estimates);
-    }
-    free_and_zero(calibration->rxdataF_ext);
-    free_and_zero(calibration->drs_ch_estimates);
 
     for (i = 0; i < ru->nb_rx; i++) {
       free_and_zero(ru->prach_rxsigF[0][i]);

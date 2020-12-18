@@ -731,7 +731,7 @@ void ru_fep_full_2thread(RU_t *ru,
                                       0,    
                                       0);
 
-	T(T_CALIBRATION_CHANNEL_ESTIMATES, T_INT(ru->idx), T_INT(proc->frame_rx), T_INT(proc->subframe_rx),
+	T(T_CALIBRATION_CHANNEL_ESTIMATES, T_INT(ru->idx), T_INT(proc->frame_rx), T_INT(proc->tti_rx),
           T_INT(l),T_BUFFER(&calibration->drs_ch_estimates[0][l*12*fp->N_RB_UL],
           12*fp->N_RB_UL*sizeof(int32_t)));
   }

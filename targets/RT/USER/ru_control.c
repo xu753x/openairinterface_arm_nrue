@@ -424,9 +424,9 @@ void configure_ru(int idx,
   config->tdd_config_S[0]        = ru->frame_parms->tdd_config_S;
   config->att_tx[0]              = ru->att_tx;
   config->att_rx[0]              = ru->att_rx;
-  config->N_RB_DL[0]             = ru->frame_parms.N_RB_DL;
-  config->N_RB_UL[0]             = ru->frame_parms.N_RB_UL;
-  config->threequarter_fs[0]     = ru->frame_parms.threequarter_fs;
+  config->N_RB_DL[0]             = ru->frame_parms->N_RB_DL;
+  config->N_RB_UL[0]             = ru->frame_parms->N_RB_UL;
+  config->threequarter_fs[0]     = ru->frame_parms->threequarter_fs;
   config->tag			 = idx;
   config->p			 = RC.nb_RU;
   if (ru->if_south==REMOTE_IF4p5) {

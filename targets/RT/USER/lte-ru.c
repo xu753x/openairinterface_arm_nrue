@@ -325,7 +325,7 @@ void fh_if4p5_south_in(RU_t *ru,
   	Ns = (ru->is_slave==0 ? 1 : 1);
 	l = (ru->is_slave==0 ? 10 : 10);
 	u = (ru->is_slave==0 ? 0 : 0);
-	ru->frame_parms.nb_antennas_rx = ru->nb_rx;		
+	ru->frame_parms->nb_antennas_rx = ru->nb_rx;		
         ulsch_extract_rbs_single(ru->common.rxdataF,
                                  calibration->rxdataF_ext,
                                  0,
@@ -919,7 +919,7 @@ void tx_rf(RU_t *ru,
 				      siglen+sf_extension,
 				      ru->nb_tx,
 				      flags);
-    if (ru->state==RU_RUN && proc->frame_tx%ru->p==ru->tag && proc->subframe_tx==1) { 
+    if (ru->state==RU_RUN && proc->frame_tx%ru->p==ru->tag && proc->tti_tx==1) { 
     	txs1 = ru->rfdevice.trx_write_func(&ru->rfdevice,                                       
 					   proc->timestamp_tx+(ru->ts_offset+sigoff2)-ru->openair0_cfg.tx_sample_advance-sf_extension,                   
                     			   txp1, 
@@ -929,7 +929,7 @@ void tx_rf(RU_t *ru,
         //LOG_M("txdata.m","txdata",&ru->common.txdata[0][0], fp->samples_per_tti*10,1,1); // save 1 frame 	
         //exit(-1); 	
         int se1 = dB_fixed(signal_energy(txp1[0],siglen2+sf_extension));  
-        LOG_D(PHY,"******** frame %d subframe %d RRU sends DMRS of energy10 %d, energy3 %d\n",proc->frame_tx,proc->subframe_tx,se1,dB_fixed(signal_energy(txp[0],siglen+sf_extension)));    
+        LOG_D(PHY,"******** frame %d subframe %d RRU sends DMRS of energy10 %d, energy3 %d\n",proc->frame_tx,proc->tti_tx,se1,dB_fixed(signal_energy(txp[0],siglen+sf_extension)));    
         LOG_D(PHY,"txs1 %d, siglen2 %d, sf_extension %d\n",txs1,siglen2,sf_extension); 
     }
 
@@ -942,7 +942,7 @@ void tx_rf(RU_t *ru,
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
 
-    if (ru->state==RU_RUN && proc->frame_tx%ru->p==ru->tag && proc->subframe_tx==1) { 
+    if (ru->state==RU_RUN && proc->frame_tx%ru->p==ru->tag && proc->tti_tx==1) { 
         if( (txs1!=siglen2+sf_extension) && (late_control==STATE_BURST_NORMAL) ){ /* add fail safe for late command */  
         	late_control=STATE_BURST_TERMINATE;     
             	LOG_E(PHY,"TX : Timeout (sent %d/%d) state =%d\n",txs1, siglen2,late_control);  
@@ -2787,7 +2787,7 @@ void init_RU(char *rf_config_file, int send_dmrssync) {
     ru->south_out_cnt = 0;
     // use eNB_list[0] as a reference for RU frame parameters
     // NOTE: multiple CC_id are not handled here yet!
-    if (ru->ota_sync_enable == 1)){
+    if (ru->ota_sync_enable == 1){
     	ru->generate_dmrs_sync = 1;
     	generate_ul_ref_sigs();
     }
