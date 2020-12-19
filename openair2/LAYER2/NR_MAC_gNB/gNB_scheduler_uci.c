@@ -626,3 +626,125 @@ uint16_t compute_pucch_prb_size(uint8_t format,
   }
 
 }
+
+
+void nr_sr_reporting (int Mod_idp, int UE_id,sub_frame_t slot, int n_slots_frame, frame_t SFN){
+
+  NR_UE_info_t *UE_info = &RC.nrmac[Mod_idp]->UE_info;
+  NR_PUCCH_ResourceSet_t *pucchresset;
+  NR_sched_pucch *curr_pucch;
+  NR_SchedulingRequestResourceConfig_t *SchedulingRequestResourceConfig;
+  NR_CellGroupConfig_t *secondaryCellGroup = UE_info->secondaryCellGroup[UE_id];
+  //NR_SchedulingRequestConfig_t *schedulingRequestConfig = secondaryCellGroup->mac_CellGroupConfig->schedulingRequestConfig;
+  NR_BWP_Uplink_t *ubwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[0];
+  NR_PUCCH_Config_t *pucch_Config = ubwp->bwp_Dedicated->pucch_Config->choice.setup;
+
+  AssertFatal(pucch_Config->schedulingRequestResourceToAddModList->list.count>0,"NO SR configuration available");
+
+  for (int SR_resource_id =0; SR_resource_id < pucch_Config->schedulingRequestResourceToAddModList->list.count;SR_resource_id++){
+    SchedulingRequestResourceConfig = pucch_Config->schedulingRequestResourceToAddModList->list.array[SR_resource_id]; // to makesure later of the index.
+    //NR_SchedulingRequestResourceId_t schedulingRequestResourceId = SchedulingRequestResourceConfig->schedulingRequestResourceId;
+    //NR_SchedulingRequestId_t schedulingRequest_ID = SchedulingRequestResourceConfig->schedulingRequestID;
+    
+
+    /*for (int SRConfig =0; SRConfig<schedulingRequestConfig->schedulingRequestToAddModList->list.count;SRConfig++){
+
+      NR_SchedulingRequestToAddMod_t *SchedulingRequestToAddMod = schedulingRequestConfig->schedulingRequestToAddModList->list.array[SRConfig];
+      if(SchedulingRequestToAddMod->schedulingRequestId == schedulingRequest_ID)
+        long *prohibitTimer = SchedulingRequestToAddMod->sr_ProhibitTimer;
+    }*/
+
+    int SR_period; int SR_offset;
+
+    periodicity__SRR(SchedulingRequestResourceConfig,&SR_period,&SR_offset);
+    //for (int SRslot=0;SRslot<n_slots_frame;j++){
+    if (((SFN*n_slots_frame)+slot-SR_offset)%SR_period ==0){
+      NR_PUCCH_ResourceId_t *PucchResourceId = SchedulingRequestResourceConfig->resource;
+
+      curr_pucch = &UE_info->UE_sched_ctrl[UE_id].sched_pucch[slot][0];
+      curr_pucch->sr_flag=true;
+      curr_pucch->frame = SFN;
+      curr_pucch->ul_slot = slot;
+
+      
+      int found = -1;
+      pucchresset = pucch_Config->resourceSetToAddModList->list.array[0]; // set with formats 0,1
+
+
+      int n_list = pucchresset->resourceList.list.count;
+       for (int i=0; i<n_list; i++) {
+        if (*pucchresset->resourceList.list.array[i] == *PucchResourceId )
+          found = i;
+      }
+      AssertFatal(found>-1,"SR resource not found among PUCCH resources");
+
+      curr_pucch->resource_indicator = found;
+
+      LOG_I(MAC,"Scheduling Request identified for frame %d slot %d with %d SR  bit\n",SFN,slot,curr_pucch->sr_flag);
+    }
+  }
+}
+
+
+void periodicity__SRR (NR_SchedulingRequestResourceConfig_t *SchedulingReqRec, int *period, int *offset){
+
+  NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR P_O = SchedulingReqRec->periodicityAndOffset->present;
+	
+  switch (P_O){
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl1:
+      *period = 1;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl1;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl2:
+      *period = 2;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl2;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl4:
+      *period = 4;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl4;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl5:
+      *period = 5;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl5;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl8:
+      *period = 8;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl8;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl10:
+      *period = 10;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl10;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl16:
+      *period = 16;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl16;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl20:
+      *period = 20;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl20;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl40:
+      *period = 40;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl40;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl80:
+      *period = 80;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl80;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl160:
+      *period = 160;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl160;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl320:
+      *period = 320;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl320;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl640:
+      *period = 640;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl640;
+      break;
+    default:
+      AssertFatal(1==0,"No periodicityAndOffset resources found in schedulingrequestresourceconfig");
+  }
+}
+
