@@ -609,7 +609,7 @@ bool nr_acknack_scheduling(int mod_id,
     const uint16_t symb = 1 << resource->format.choice.format0->startingSymbolIndex;
     AssertFatal((vrb_map_UL[resource->startingPRB] & symb) == 0,
                 "symbol %x is not free for PUCCH alloc in vrb_map_UL at RB %ld and slot %d\n",
-                symb, resource->startingPRB, first_ul_slot_tdd);
+                symb, resource->startingPRB, pucch->ul_slot);
     vrb_map_UL[resource->startingPRB] |= symb;
   }
   return true;
