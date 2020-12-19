@@ -47,7 +47,7 @@ void nr_schedule_pucch(int Mod_idP,
       NR_sched_pucch *curr_pucch = &UE_info->UE_sched_ctrl[UE_id].sched_pucch[k][l];
       const uint16_t O_ack = curr_pucch->dai_c;
       const uint16_t O_csi = curr_pucch->csi_bits;
-      const uint8_t O_sr = 0; // no SR in PUCCH implemented for now
+      const uint8_t O_sr = curr_pucch->sr_flag;
       if (O_ack + O_csi + O_sr == 0
           || frameP != curr_pucch->frame
           || slotP != curr_pucch->ul_slot)
