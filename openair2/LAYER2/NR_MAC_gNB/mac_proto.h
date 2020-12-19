@@ -407,10 +407,13 @@ void nr_sr_reporting (int Mod_idp,
                       int UE_id,
                       sub_frame_t slotP,
                       int n_slots_frame,
-                      frame_t frameP);
+                      frame_t frameP,
+                      int slots_per_tdd,
+                      int ul_slots);
 
 void periodicity__SRR (NR_SchedulingRequestResourceConfig_t *SchedulingReqRecconf,
                        int *period,
                        int *offset);
+
 
 #endif /*__LAYER2_NR_MAC_PROTO_H__*/
