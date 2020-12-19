@@ -215,7 +215,7 @@ void nr_csi_meas_reporting(int Mod_idP,
     AssertFatal(csirep->reportConfigType.choice.periodic!=NULL,"Only periodic CSI reporting is implemented currently");
     int period, offset, sched_slot;
     csi_period_offset(csirep,&period,&offset);
-    sched_slot = (period+offset)%n_slots_frame;
+    sched_slot = (period+offset)%n_slots_frame; // what's the context of the offset here, is it the same as the period ??
     // prepare to schedule csi measurement reception according to 5.2.1.4 in 38.214
     // preparation is done in first slot of tdd period
     if ( (frame%(period/n_slots_frame)==(offset/n_slots_frame)) && (slot==((sched_slot/slots_per_tdd)*slots_per_tdd))) {
