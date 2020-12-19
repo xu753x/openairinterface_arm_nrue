@@ -403,7 +403,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   }
 
   // This schedule SR
-  // TODO
+  nr_sr_reporting(module_idP, UE_id, slot, nr_slots_per_frame[*scc->ssbSubcarrierSpacing], frame);
 
   // This schedule CSI measurement reporting
   if (UE_info->active[UE_id])
