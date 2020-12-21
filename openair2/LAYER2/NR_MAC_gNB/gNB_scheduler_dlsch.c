@@ -421,7 +421,7 @@ void pf_dl(module_id_t module_id,
            int max_num_ue) {
 
   float coeff_ue[MAX_MOBILES_PER_GNB];
-  NR_UE_list_t UE_sched; // UEs that could be scheduled
+  NR_list_t UE_sched; // UEs that could be scheduled
   int *uep = &UE_sched.head;
 
   /* Loop UE_info->list to check retransmission */
@@ -645,7 +645,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
 
   nfapi_nr_dl_tti_request_body_t *dl_req = &gNB_mac->DL_req[CC_id].dl_tti_request_body;
 
-  NR_UE_list_t *UE_list = &UE_info->list;
+  NR_list_t *UE_list = &UE_info->list;
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     UE_info->mac_stats[UE_id].dlsch_current_bytes = 0;

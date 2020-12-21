@@ -558,7 +558,7 @@ void pf_ul(module_id_t module_id,
            frame_t frame,
            sub_frame_t slot,
            int num_slots_per_tdd,
-           NR_UE_list_t *UE_list,
+           NR_list_t *UE_list,
            int n_rb_sched,
            uint8_t *rballoc_mask,
            int max_num_ue) {
@@ -568,7 +568,7 @@ void pf_ul(module_id_t module_id,
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels[CC_id].ServingCellConfigCommon;
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
   float coeff_ue[MAX_MOBILES_PER_GNB];
-  NR_UE_list_t UE_sched;
+  NR_list_t UE_sched;
   int *uep = &UE_sched.head;
 
   /* Loop UE_list to calculate throughput and coeff */
@@ -831,7 +831,7 @@ void nr_schedule_ulsch(module_id_t module_id,
 
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon;
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
-  const NR_UE_list_t *UE_list = &UE_info->list;
+  const NR_list_t *UE_list = &UE_info->list;
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     UE_info->mac_stats[UE_id].ulsch_current_bytes = 0;
