@@ -67,7 +67,6 @@ int nr_write_ce_dlsch_pdu(module_id_t module_idP,
 {
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
   NR_MAC_SUBHEADER_FIXED *mac_pdu_ptr = (NR_MAC_SUBHEADER_FIXED *) mac_pdu;
-  int mac_ce_size;
 
   // DRX command subheader (MAC CE size 0)
   if (drx_cmd != 255) {
@@ -216,37 +215,34 @@ int nr_write_ce_dlsch_pdu(module_id_t module_idP,
     mac_pdu_ptr += (unsigned char) mac_ce_size;
   }
 
+  // TS 38.321 Sec. 6.1.3.12 SP CSI-RS/CSI-IM Resource Set Activation/Deactivation MAC CE
   if (ue_sched_ctl->UE_mac_ce_ctrl.csi_im.is_scheduled) {
+    const csi_rs_im_t *csi_im = &ue_sched_ctl->UE_mac_ce_ctrl.csi_im;
+    // minimum size is no TCI, no IM
+    const int mac_ce_size_1 = sizeof(CSI_RS_CSI_IM_ACT_DEACT_MAC_CE) - sizeof(struct TCI_S) - csi_im->im;
+    const int mac_ce_size_2 = csi_im->act_deact * sizeof(struct TCI_S) * csi_im->nb_tci_resource_set_id;
+    if (size < mac_ce_size_1 + mac_ce_size_2 + 1)
+      return (unsigned char *) mac_pdu_ptr - mac_pdu;
     mac_pdu_ptr->R = 0;
     mac_pdu_ptr->LCID = DL_SCH_LCID_SP_CSI_RS_CSI_IM_RES_SET_ACT;
     mac_pdu_ptr++;
-    CSI_RS_CSI_IM_ACT_DEACT_MAC_CE csi_rs_im_act_deact_ce;
-    csi_rs_im_act_deact_ce.A_D = ue_sched_ctl->UE_mac_ce_ctrl.csi_im.act_deact;
-    csi_rs_im_act_deact_ce.SCID = ue_sched_ctl->UE_mac_ce_ctrl.csi_im.serv_cellid & 0x3F;//gNB_PHY -> ssb_pdu.ssb_pdu_rel15.PhysCellId;
-    csi_rs_im_act_deact_ce.BWP_ID = ue_sched_ctl->UE_mac_ce_ctrl.csi_im.bwp_id;
-    csi_rs_im_act_deact_ce.R1 = 0;
-    csi_rs_im_act_deact_ce.IM = ue_sched_ctl->UE_mac_ce_ctrl.csi_im.im;// IF set CSI IM Rsc id will presesent else CSI IM RSC ID is abscent
-    csi_rs_im_act_deact_ce.SP_CSI_RSID = ue_sched_ctl->UE_mac_ce_ctrl.csi_im.nzp_csi_rsc_id;
-
-    if ( csi_rs_im_act_deact_ce.IM ) { //is_scheduled if IM is 1 else this field will not present
-      csi_rs_im_act_deact_ce.R2 = 0;
-      csi_rs_im_act_deact_ce.SP_CSI_IMID = ue_sched_ctl->UE_mac_ce_ctrl.csi_im.csi_im_rsc_id;
-      mac_ce_size = sizeof ( csi_rs_im_act_deact_ce ) - sizeof ( csi_rs_im_act_deact_ce.TCI_STATE );
-    } else {
-      mac_ce_size = sizeof ( csi_rs_im_act_deact_ce ) - sizeof ( csi_rs_im_act_deact_ce.TCI_STATE ) - 1;
+    ((CSI_RS_CSI_IM_ACT_DEACT_MAC_CE *) mac_pdu_ptr)->A_D = csi_im->act_deact;
+    ((CSI_RS_CSI_IM_ACT_DEACT_MAC_CE *) mac_pdu_ptr)->SCID = csi_im->serv_cellid & 0x3F;
+    ((CSI_RS_CSI_IM_ACT_DEACT_MAC_CE *) mac_pdu_ptr)->BWP_ID = csi_im->bwp_id;
+    ((CSI_RS_CSI_IM_ACT_DEACT_MAC_CE *) mac_pdu_ptr)->R1 = 0;
+    ((CSI_RS_CSI_IM_ACT_DEACT_MAC_CE *) mac_pdu_ptr)->IM = csi_im->im;// IF set CSI IM Rsc id will presesent else CSI IM RSC ID is abscent
+    ((CSI_RS_CSI_IM_ACT_DEACT_MAC_CE *) mac_pdu_ptr)->SP_CSI_RSID = csi_im->nzp_csi_rsc_id;
+    if (csi_im->im) { // is scheduled if IM is 1 else these fields are not present
+      ((CSI_RS_CSI_IM_ACT_DEACT_MAC_CE *) mac_pdu_ptr)->R2 = 0;
+      ((CSI_RS_CSI_IM_ACT_DEACT_MAC_CE *) mac_pdu_ptr)->SP_CSI_IMID = csi_im->csi_im_rsc_id;
     }
+    mac_pdu_ptr += (unsigned char) mac_ce_size_1;
 
-    memcpy ((void *) mac_pdu_ptr, (void *) & ( csi_rs_im_act_deact_ce), mac_ce_size);
-    mac_pdu_ptr += (unsigned char) mac_ce_size;
-
-    if (csi_rs_im_act_deact_ce.A_D ) { //Following IE is_scheduled only if A/D is 1
-      mac_ce_size = sizeof ( struct TCI_S);
-
-      for (int i = 0; i < ue_sched_ctl->UE_mac_ce_ctrl.csi_im.nb_tci_resource_set_id; i++) {
-        csi_rs_im_act_deact_ce.TCI_STATE.R = 0;
-        csi_rs_im_act_deact_ce.TCI_STATE.TCI_STATE_ID = ue_sched_ctl->UE_mac_ce_ctrl.csi_im.tci_state_id [i] & 0x7F;
-        memcpy ((void *) mac_pdu_ptr, (void *) & (csi_rs_im_act_deact_ce.TCI_STATE), mac_ce_size);
-        mac_pdu_ptr += (unsigned char) mac_ce_size;
+    if (csi_im->act_deact) { // Following IE is_scheduled only if A/D is 1
+      for (int i = 0; i < csi_im->nb_tci_resource_set_id; i++) {
+        ((struct TCI_S *) mac_pdu_ptr)->R = 0;
+        ((struct TCI_S *) mac_pdu_ptr)->TCI_STATE_ID = csi_im->tci_state_id[i] & 0x7F;
+        mac_pdu_ptr += sizeof(struct TCI_S);
       }
     }
   }
