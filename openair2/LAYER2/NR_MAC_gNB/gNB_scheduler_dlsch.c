@@ -198,7 +198,11 @@ int nr_write_ce_dlsch_pdu(module_id_t module_idP,
     mac_pdu_ptr += (unsigned char) mac_ce_size;
   }
 
+  // TS 38.321 Sec. 6.1.3.19 SP ZP CSI-RS Resource Set Activation/Deactivation MAC CE
   if (ue_sched_ctl->UE_mac_ce_ctrl.sp_zp_csi_rs.is_scheduled) {
+    const int mac_ce_size = sizeof(NR_MAC_CE_SP_ZP_CSI_RS_RES_SET);
+    if (size < mac_ce_size + 1)
+      return (unsigned char *) mac_pdu_ptr - mac_pdu;
     ((NR_MAC_SUBHEADER_FIXED *) mac_pdu_ptr)->R = 0;
     ((NR_MAC_SUBHEADER_FIXED *) mac_pdu_ptr)->LCID = DL_SCH_LCID_SP_ZP_CSI_RS_RES_SET_ACT;
     mac_pdu_ptr++;
@@ -209,7 +213,6 @@ int nr_write_ce_dlsch_pdu(module_id_t module_idP,
     ((NR_MAC_CE_SP_ZP_CSI_RS_RES_SET *) mac_pdu_ptr)->R = 0;
     LOG_D(MAC, "NR MAC CE of ZP CSIRS Serv cell ID = %d BWPID= %d Rsc set ID = %d\n", ue_sched_ctl->UE_mac_ce_ctrl.sp_zp_csi_rs.serv_cell_id, ue_sched_ctl->UE_mac_ce_ctrl.sp_zp_csi_rs.bwpid,
           ue_sched_ctl->UE_mac_ce_ctrl.sp_zp_csi_rs.rsc_id);
-    mac_ce_size = sizeof(NR_MAC_CE_SP_ZP_CSI_RS_RES_SET);
     mac_pdu_ptr += (unsigned char) mac_ce_size;
   }
 
