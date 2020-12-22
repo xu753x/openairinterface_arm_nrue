@@ -354,6 +354,8 @@ void nr_preprocessor_phytest(module_id_t module_id,
   sched_ctrl->mcsTableIdx = 0;
   sched_ctrl->mcs = 9;
   sched_ctrl->numDmrsCdmGrpsNoData = 1;
+  /* get the PID of a HARQ process awaiting retransmission, or -1 otherwise */
+  sched_ctrl->dl_harq_pid = sched_ctrl->retrans_dl_harq.head;
 
   /* mark the corresponding RBs as used */
   for (int rb = 0; rb < sched_ctrl->rbSize; rb++)

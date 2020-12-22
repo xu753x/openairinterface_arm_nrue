@@ -427,9 +427,8 @@ void pf_dl(module_id_t module_id,
   /* Loop UE_info->list to check retransmission */
   for (int UE_id = UE_info->list.head; UE_id >= 0; UE_id = UE_info->list.next[UE_id]) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-    // for now HARQ PID is fixed and should be the same as in post-processor
-    const int current_harq_pid = slot % 8;
-    NR_UE_harq_t *harq = &sched_ctrl->harq_processes[current_harq_pid];
+    /* get the PID of a HARQ process awaiting retransmission, or -1 otherwise */
+    sched_ctrl->dl_harq_pid = sched_ctrl->retrans_dl_harq.head;
     const rnti_t rnti = UE_info->rnti[UE_id];
 
     /* Calculate Throughput */
@@ -438,7 +437,7 @@ void pf_dl(module_id_t module_id,
     thr_ue[UE_id] = (1 - a) * thr_ue[UE_id] + a * b;
 
     /* retransmission */
-    if (harq->round != 0) {
+    if (sched_ctrl->dl_harq_pid >= 0) {
       /* Find a free CCE */
       bool freeCCEE = find_free_CCE(module_id, slot, UE_info, UE_id);
       if (!freeCCEE)
@@ -462,7 +461,7 @@ void pf_dl(module_id_t module_id,
         return;
       }
       /* Allocate retransmission */
-      bool r = allocate_retransmission(module_id, rballoc_mask, &n_rb_sched, UE_info, UE_id, current_harq_pid);
+      bool r = allocate_retransmission(module_id, rballoc_mask, &n_rb_sched, UE_info, UE_id, sched_ctrl->dl_harq_pid);
       if (!r) {
         LOG_E(MAC, "%4d.%2d retransmission can NOT be allocated\n", frame, slot);
         return;
@@ -693,11 +692,29 @@ void nr_schedule_ue_spec(module_id_t module_id,
                        nrOfLayers)
         >> 3;
 
-    const int current_harq_pid = slot % 8;
+    int current_harq_pid = sched_ctrl->dl_harq_pid;
+    if (current_harq_pid < 0) {
+      /* PP has not selected a specific HARQ Process, get a new one */
+      current_harq_pid = sched_ctrl->available_dl_harq.head;
+      AssertFatal(current_harq_pid >= 0,
+                  "no free HARQ process available for UE %d\n",
+                  UE_id);
+      remove_front_nr_list(&sched_ctrl->available_dl_harq);
+    } else {
+      /* PP selected a specific HARQ process. Check whether it will be a new
+       * transmission or a retransmission, and remove from the corresponding
+       * list */
+      if (sched_ctrl->harq_processes[current_harq_pid].round == 0)
+        remove_nr_list(&sched_ctrl->available_dl_harq, current_harq_pid);
+      else
+        remove_nr_list(&sched_ctrl->retrans_dl_harq, current_harq_pid);
+    }
     NR_UE_harq_t *harq = &sched_ctrl->harq_processes[current_harq_pid];
+    DevAssert(!harq->is_waiting);
+    add_tail_nr_list(&sched_ctrl->feedback_dl_harq, current_harq_pid);
     NR_sched_pucch_t *pucch = &sched_ctrl->sched_pucch[0];
     harq->feedback_slot = pucch->ul_slot;
-    harq->is_waiting = 1;
+    harq->is_waiting = true;
     UE_info->mac_stats[UE_id].dlsch_rounds[harq->round]++;
 
     LOG_I(MAC,
