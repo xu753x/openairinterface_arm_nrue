@@ -422,6 +422,8 @@ void pf_dl(module_id_t module_id,
 
   float coeff_ue[MAX_MOBILES_PER_GNB];
   NR_list_t UE_sched; // UEs that could be scheduled
+  int ue_array[MAX_MOBILES_PER_GNB];
+  UE_sched.next = &ue_array[0];
   int *uep = &UE_sched.head;
 
   /* Loop UE_info->list to check retransmission */

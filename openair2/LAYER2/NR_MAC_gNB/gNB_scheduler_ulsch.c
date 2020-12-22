@@ -556,6 +556,8 @@ void pf_ul(module_id_t module_id,
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
   float coeff_ue[MAX_MOBILES_PER_GNB];
   NR_list_t UE_sched;
+  int ue_array[MAX_MOBILES_PER_GNB];
+  UE_sched.next = &ue_array[0];
   int *uep = &UE_sched.head;
 
   /* Loop UE_list to calculate throughput and coeff */
