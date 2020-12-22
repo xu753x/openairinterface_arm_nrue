@@ -330,6 +330,8 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
                                 uci_01->ul_cqi,
                                 30);
 
+  NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon;
+  const int num_slots = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
   if (((uci_01->pduBitmap >> 1) & 0x01)) {
     // iterate over received harq bits
     for (int harq_bit = 0; harq_bit < uci_01->harq->num_harq; harq_bit++) {
@@ -339,7 +341,10 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
       DevAssert(pid >= 0);
       remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
       NR_UE_harq_t *harq = &sched_ctrl->harq_processes[pid];
-      DevAssert(harq->feedback_slot == slot - 1);
+      const int feedback_slot = (slot - 1 + num_slots) % num_slots;
+      AssertFatal(harq->feedback_slot == feedback_slot,
+                  "expected feedback slot %d, but found %d instead\n",
+                  harq->feedback_slot, feedback_slot);
       handle_dl_harq(mod_id, UE_id, pid, harq_value == 1 && harq_confidence == 0);
     }
   }
@@ -363,6 +368,8 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
                                 uci_234->ul_cqi,
                                 30);
 
+  NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon;
+  const int num_slots = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
   if ((uci_234->pduBitmap >> 1) & 0x01) {
     // iterate over received harq bits
     for (int harq_bit = 0; harq_bit < uci_234->harq.harq_bit_len; harq_bit++) {
@@ -371,7 +378,10 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
       DevAssert(pid >= 0);
       remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
       NR_UE_harq_t *harq = &sched_ctrl->harq_processes[pid];
-      DevAssert(harq->feedback_slot == slot - 1);
+      const int feedback_slot = (slot - 1 + num_slots) % num_slots;
+      AssertFatal(harq->feedback_slot == feedback_slot,
+                  "expected feedback slot %d, but found %d instead\n",
+                  harq->feedback_slot, feedback_slot);
       handle_dl_harq(mod_id, UE_id, pid, uci_234->harq.harq_crc != 1 && acknack);
     }
   }
