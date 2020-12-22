@@ -1573,6 +1573,26 @@ int find_nr_RA_id(module_id_t mod_idP, int CC_idP, rnti_t rntiP) {
   return -1;
 }
 
+int get_nrofHARQ_ProcessesForPDSCH(e_NR_PDSCH_ServingCellConfig__nrofHARQ_ProcessesForPDSCH n)
+{
+  switch (n) {
+  case NR_PDSCH_ServingCellConfig__nrofHARQ_ProcessesForPDSCH_n2:
+    return 2;
+  case NR_PDSCH_ServingCellConfig__nrofHARQ_ProcessesForPDSCH_n4:
+    return 4;
+  case NR_PDSCH_ServingCellConfig__nrofHARQ_ProcessesForPDSCH_n6:
+    return 6;
+  case NR_PDSCH_ServingCellConfig__nrofHARQ_ProcessesForPDSCH_n10:
+    return 10;
+  case NR_PDSCH_ServingCellConfig__nrofHARQ_ProcessesForPDSCH_n12:
+    return 12;
+  case NR_PDSCH_ServingCellConfig__nrofHARQ_ProcessesForPDSCH_n16:
+    return 16;
+  default:
+    return 8;
+  }
+}
+
 //------------------------------------------------------------------------------
 int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *secondaryCellGroup)
 {
@@ -1623,7 +1643,8 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *secon
                 "no pdsch-ServingCellConfig found for UE %d\n",
                 UE_id);
     const NR_PDSCH_ServingCellConfig_t *pdsch = servingCellConfig->pdsch_ServingCellConfig->choice.setup;
-    const int nrofHARQ = pdsch->nrofHARQ_ProcessesForPDSCH ? *pdsch->nrofHARQ_ProcessesForPDSCH : 8;
+    const int nrofHARQ = pdsch->nrofHARQ_ProcessesForPDSCH ?
+        get_nrofHARQ_ProcessesForPDSCH(*pdsch->nrofHARQ_ProcessesForPDSCH) : 8;
     create_nr_list(&sched_ctrl->available_dl_harq, nrofHARQ);
     // add all available HARQ processes for this UE
     for (int harq = 0; harq < nrofHARQ; harq++)
