@@ -540,6 +540,23 @@ const char* eurecomFunctionsNames[] = {
   "pss_synchro_nr",
   "pss_search_time_nr",
   "nr_initial_ue_sync",
+  "zz_00_ru_rx",
+  "zz_01_ru_rx_process1_fh_south_in",
+  "zz_02_ru_rx_process2_front_end",
+  "zz_03_ru_rx_process3_prach",
+  "zz_04_ru_rx_process4_wakeup_gnb_l1s",
+  "zz_30_ru_tx",
+  "zz_31_ru_tx_process1_front_end",
+  "zz_32_ru_tx_process2_ofdm",
+  "zz_33_ru_tx_process3_fh_south_out",
+  "zz_10_l1_rx",
+  "zz_11_l1_rx_process1_indication",
+  "zz_12_l1_rx_process2_prach",
+  "zz_13_l1_rx_process3_phy_procedure",
+  "zz_14_l1_rx_process4_wakeup_tx",
+  "zz_20_l1_tx",
+  "zz_21_l1_tx_process1_phy_procedure",
+  "zz_22_l1_tx_process2_wakeup_txfh",
   "beam_switching_gpio"
 };
 

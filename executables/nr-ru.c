@@ -1313,16 +1313,17 @@ void *ru_thread_tx( void *param ) {
 
   wait_on_condition(&proc->mutex_FH1,&proc->cond_FH1,&proc->instance_cnt_FH1,"ru_thread_tx");
   printf( "ru_thread_tx ready\n");
-
+  
   while (!oai_exit) {
-
+    
     LOG_D(PHY,"ru_thread_tx: Waiting for TX processing\n");
     // wait until eNBs are finished subframe RX n and TX n+4
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RU_TX_WAIT, 1 );
     wait_on_condition(&proc->mutex_gNBs,&proc->cond_gNBs,&proc->instance_cnt_gNBs,"ru_thread_tx");
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RU_TX_WAIT, 0 );
-
+    
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ZZ_RU_TX,1);
     ret = pthread_mutex_lock(&proc->mutex_gNBs);
     AssertFatal(ret == 0,"mutex_lock return %d\n",ret);
     int frame_tx=proc->frame_tx;
@@ -1337,12 +1338,17 @@ void *ru_thread_tx( void *param ) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, frame_tx );
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_TX0_RU, tti_tx );
 
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ZZ_RU_TX_PROCESS1_FRONT_END,1);
     // do TX front-end processing if needed (precoding and/or IDFTs)
     if (ru->feptx_prec) ru->feptx_prec(ru,frame_tx,tti_tx);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ZZ_RU_TX_PROCESS1_FRONT_END,0);
 
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ZZ_RU_TX_PROCESS2_OFDM,1);
     // do OFDM with/without TX front-end processing  if needed
     if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru,frame_tx,tti_tx);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ZZ_RU_TX_PROCESS2_OFDM,0);
 
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ZZ_RU_TX_PROCESS3_FH_SOUTH_OUT,1);
     if(!emulate_rf) {
       // do outgoing fronthaul (south) if needed
       if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru,frame_tx,tti_tx,timestamp_tx);
@@ -1382,8 +1388,9 @@ void *ru_thread_tx( void *param ) {
         }//for (i=0; i<ru->nb_tx; i++)
       }//if(proc->frame_tx == print_frame)
     }//else  emulate_rf
-
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ZZ_RU_TX_PROCESS3_FH_SOUTH_OUT,0);
     release_thread(&proc->mutex_gNBs,&proc->instance_cnt_gNBs,"ru_thread_tx");
+
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX1_UE, proc->instance_cnt_gNBs);
 
     for(i = 0; i<ru->num_gNB; i++) {
@@ -1424,6 +1431,7 @@ void *ru_thread_tx( void *param ) {
         AssertFatal(ret == 0,"mutex_unlock returns %d\n",ret);
       }
     }
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ZZ_RU_TX,0);
   }
 
   release_thread(&proc->mutex_FH1,&proc->instance_cnt_FH1,"ru_thread_tx");
@@ -1538,9 +1546,11 @@ void *ru_thread( void *param ) {
   proc->instance_cnt_FH1 = 0;
   pthread_mutex_unlock(&proc->mutex_FH1);
   pthread_cond_signal(&proc->cond_FH1);
-
+  
   // This is a forever while loop, it loops over subframes which are scheduled by incoming samples from HW devices
   while (!oai_exit) {
+
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ZZ_RU_RX,1);
     // these are local subframe/frame counters to check that we are in synch with the fronthaul timing.
     // They are set on the first rx/tx in the underly FH routines.
     if (slot==(fp->slots_per_frame-1)) {
@@ -1551,10 +1561,12 @@ void *ru_thread( void *param ) {
       slot++;
     }
 
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ZZ_RU_RX_PROCESS1_FH_SOUTH_IN,1);
     // synchronization on input FH interface, acquire signals/data and block
     LOG_D(PHY,"[RU_thread] read data: frame_rx = %d, tti_rx = %d\n", frame, slot);
     if (ru->fh_south_in) ru->fh_south_in(ru,&frame,&slot);
     else AssertFatal(1==0, "No fronthaul interface at south port");
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ZZ_RU_RX_PROCESS1_FH_SOUTH_IN,0);
 
     LOG_D(PHY,"AFTER fh_south_in - SFN/SL:%d%d RU->proc[RX:%d.%d TX:%d.%d] RC.gNB[0]:[RX:%d%d TX(SFN):%d]\n",
           frame,slot,
@@ -1575,10 +1587,11 @@ void *ru_thread( void *param ) {
     // adjust for timing offset between RU
     //printf("~~~~~~~~~~~~~~~~~~~~~~~~~~%d.%d in ru_thread is in process\n", proc->frame_rx, proc->tti_rx);
     if (ru->idx!=0) proc->frame_tx = (proc->frame_tx+proc->frame_offset)&1023;
-
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ZZ_RU_RX_PROCESS2_FRONT_END,1);
     // do RX front-end processing (frequency-shift, dft) if needed
 
     int slot_type = nr_slot_select(cfg,proc->frame_rx,proc->tti_rx);
+
     if (slot_type == NR_UPLINK_SLOT || slot_type == NR_MIXED_SLOT) {
     //if (proc->tti_rx==8) {
 
@@ -1592,9 +1605,9 @@ void *ru_thread( void *param ) {
       for (aa=0;aa<ru->nb_rx;aa++)
 	memcpy((void*)RC.gNB[0]->common_vars.rxdataF[aa],
 	       (void*)ru->common.rxdataF[aa], fp->symbols_per_slot*fp->ofdm_symbol_size*sizeof(int32_t));
-
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ZZ_RU_RX_PROCESS2_FRONT_END,0);  
       // Do PRACH RU processing
-
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ZZ_RU_RX_PROCESS3_PRACH,1);
       int prach_id=find_nr_prach_ru(ru,proc->frame_rx,proc->tti_rx,SEARCH_EXIST);
       uint8_t prachStartSymbol,N_dur;
       if (prach_id>=0) {
@@ -1626,14 +1639,15 @@ void *ru_thread( void *param ) {
 	}
 	free_nr_ru_prach_entry(ru,prach_id);
       }
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ZZ_RU_RX_PROCESS3_PRACH,0);
       }
     }
 
     // At this point, all information for subframe has been received on FH interface
-
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ZZ_RU_RX_PROCESS4_WAKEUP_GNB_L1S,1);
     // wakeup all gNB processes waiting for this RU
     if (ru->num_gNB>0) wakeup_gNB_L1s(ru);
-
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ZZ_RU_RX_PROCESS4_WAKEUP_GNB_L1S,0);
     if(get_thread_parallel_conf() == PARALLEL_SINGLE_THREAD || ru->num_gNB==0) {
       // do TX front-end processing if needed (precoding and/or IDFTs)
       if (ru->feptx_prec) ru->feptx_prec(ru,proc->frame_tx,proc->tti_tx);
@@ -1674,10 +1688,11 @@ void *ru_thread( void *param ) {
 
       proc->emulate_rf_busy = 0;
     }//if(get_thread_parallel_conf() == PARALLEL_SINGLE_THREAD)
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ZZ_RU_RX,0);  
   }
 
   printf( "Exiting ru_thread \n");
-
+  
   if (ru->stop_rf != NULL) {
     if (ru->stop_rf(ru) != 0)
       LOG_E(HW,"Could not stop the RF device\n");

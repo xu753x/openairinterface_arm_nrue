@@ -246,7 +246,9 @@ static inline int rxtx(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int frame_t
   gNB->UL_INFO.slot      = slot_rx;
   gNB->UL_INFO.module_id = gNB->Mod_id;
   gNB->UL_INFO.CC_id     = gNB->CC_id;
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ZZ_L1_RX_PROCESS1_INDICATION,1);
   gNB->if_inst->NR_UL_indication(&gNB->UL_INFO);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ZZ_L1_RX_PROCESS1_INDICATION,0);
   pthread_mutex_unlock(&gNB->UL_INFO_mutex);
   
   // RX processing
@@ -256,10 +258,10 @@ static inline int rxtx(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int frame_t
   if (rx_slot_type == NR_UPLINK_SLOT || rx_slot_type == NR_MIXED_SLOT) {
     // UE-specific RX processing for subframe n
     // TODO: check if this is correct for PARALLEL_RU_L1_TRX_SPLIT
-
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ZZ_L1_RX_PROCESS2_PRACH,1);
     // Do PRACH RU processing
     L1_nr_prach_procedures(gNB,frame_rx,slot_rx);
-
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ZZ_L1_RX_PROCESS2_PRACH,0);
     //apply the rx signal rotation here
     apply_nr_rotation_ul(&gNB->frame_parms,
 			 gNB->common_vars.rxdataF[0],
@@ -267,8 +269,9 @@ static inline int rxtx(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int frame_t
 			 0,
 			 gNB->frame_parms.Ncp==EXTENDED?12:14,
 			 gNB->frame_parms.ofdm_symbol_size);
-    
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ZZ_L1_RX_PROCESS3_PHY_PROCEDURE,1);
     phy_procedures_gNB_uespec_RX(gNB, frame_rx, slot_rx);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ZZ_L1_RX_PROCESS3_PHY_PROCEDURE,0);
   }
 
   if (oai_exit) return(-1);
@@ -281,7 +284,7 @@ static inline int rxtx(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int frame_t
 
   if (tx_slot_type == NR_DOWNLINK_SLOT || tx_slot_type == NR_MIXED_SLOT) {
 
-    if(get_thread_parallel_conf() != PARALLEL_RU_L1_TRX_SPLIT) {
+    if(get_thread_parallel_conf() != PARALLEL_RU_L1_TRX_SPLIT) {     
       phy_procedures_gNB_TX(gNB, frame_tx,slot_tx, 1);
     }
   }
@@ -343,7 +346,7 @@ static void *gNB_L1_thread_tx(void *param) {
     if (wait_on_condition(&L1_proc_tx->mutex,&L1_proc_tx->cond,&L1_proc_tx->instance_cnt,thread_name)<0) break;
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PROC_RXTX1, 1 );
-
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ZZ_L1_TX,1);
     if (oai_exit) break;
 
     // *****************************************
@@ -356,8 +359,9 @@ static void *gNB_L1_thread_tx(void *param) {
     uint64_t timestamp_tx = L1_proc_tx->timestamp_tx;
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SLOT_NUMBER_TX1_GNB,slot_tx);
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX1_GNB,frame_tx);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ZZ_L1_TX_PROCESS1_PHY_PROCEDURE,1);
     phy_procedures_gNB_TX(gNB, frame_tx,slot_tx, 1);
-
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ZZ_L1_TX_PROCESS1_PHY_PROCEDURE,0);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_WAKEUP_TXFH, 1 );
     pthread_mutex_lock( &L1_proc_tx->mutex );
     L1_proc_tx->instance_cnt = -1;
@@ -368,10 +372,12 @@ static void *gNB_L1_thread_tx(void *param) {
       exit_fun( "ERROR pthread_cond_signal" );
     }
     pthread_mutex_unlock(&L1_proc_tx->mutex);
-
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ZZ_L1_TX_PROCESS2_WAKEUP_TXFH,1);
     wakeup_txfh(gNB,L1_proc_tx,frame_tx,slot_tx,timestamp_tx);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ZZ_L1_TX_PROCESS2_WAKEUP_TXFH,0);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_WAKEUP_TXFH, 0 );
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PROC_RXTX1, 0 );
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ZZ_L1_TX,0);
   }
 
   return 0;
@@ -415,15 +421,17 @@ static void *gNB_L1_thread( void *param ) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_GNB,frame_rx);
 
     if (oai_exit) break;
-
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ZZ_L1_RX,1);
     if (gNB->CC_id==0) {
       if (rxtx(gNB,frame_rx,slot_rx,frame_tx,slot_tx,thread_name) < 0) break;
     }
 
     if (release_thread(&L1_proc->mutex,&L1_proc->instance_cnt,thread_name)<0) break;
-
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ZZ_L1_RX_PROCESS4_WAKEUP_TX,1); 
     if(get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT)  wakeup_tx(gNB,frame_rx,slot_rx,frame_tx,slot_tx,timestamp_tx);
     else if(get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT) wakeup_txfh(gNB,L1_proc,frame_tx,slot_tx,timestamp_tx);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ZZ_L1_RX_PROCESS4_WAKEUP_TX,0);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ZZ_L1_RX,0);
   } // while !oai_exit
 
   LOG_D(PHY, " *** Exiting gNB thread RXn_TXnp4\n");
