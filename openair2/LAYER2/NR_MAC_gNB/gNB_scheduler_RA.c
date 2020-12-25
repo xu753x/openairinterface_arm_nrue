@@ -1241,7 +1241,7 @@ nr_generate_Msg4(module_id_t module_id,
       uint16_t sdu_lengths[NB_RB_MAX] = {0};
       uint8_t mac_sdus[MAX_NR_DLSCH_PAYLOAD_BYTES];
       unsigned char sdu_lcids[NB_RB_MAX] = {0};
-      const int lcid = DL_SCH_LCID_DTCH;
+      const int lcid = DL_SCH_LCID_CCCH;
       if (sched_ctrl->num_total_bytes > 0) {
         LOG_I(MAC,
               "[gNB %d][USER-PLANE DEFAULT DRB] Frame %d : DTCH->DLSCH, Requesting "
@@ -1252,11 +1252,12 @@ nr_generate_Msg4(module_id_t module_id,
               lcid,
               header_length_total,
               TBS);
-#if 0
-        sdu_lengths[num_sdus] = mac_rrc_data_req(module_id, CC_idP, frameP, CCCH,
-                                        UE_RNTI(module_idP,UE_id),1,  // 1 transport block
-                                        &cc[CC_idP].CCCH_pdu.payload[0], 1);  
-
+#if 1
+        // sdu_lengths[num_sdus] = mac_rrc_data_req(module_id, CC_idP, frameP, CCCH,
+        //                                 UE_RNTI(module_idP,UE_id),1,  // 1 transport block
+        //                                 &cc[CC_idP].CCCH_pdu.payload[0], 1);  
+        sdu_lengths[num_sdus] = mac_rrc_nr_data_req(module_id, CC_id, frame, CCCH, ra->rnti, 1,  // 1 transport block
+                                        mac_sdus);  
 
         LOG_D(MAC,
               "[gNB %d][USER-PLANE DEFAULT DRB] Got %d bytes for DTCH %d \n",

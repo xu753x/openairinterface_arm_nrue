@@ -406,13 +406,14 @@ rrc_gNB_generate_RRCSetup(
   //   ue_context_pP->ue_context.ue_rrc_inactivity_timer = 0;
 
   log_dump(NR_RRC, ue_p->Srb0.Tx_buffer.Payload, 16, LOG_DUMP_CHAR,"RRCSetup size: ");
-  nr_rrc_data_req(ctxt_pP,
-            DCCH,
-            rrc_gNB_mui++,
-            SDU_CONFIRM_NO,
-            ue_p->Srb0.Tx_buffer.payload_size,
-            ue_p->Srb0.Tx_buffer.Payload,
-            PDCP_TRANSMISSION_MODE_CONTROL);
+  // nr_rrc_data_req(ctxt_pP,
+  //           DCCH,
+  //           rrc_gNB_mui++,
+  //           SDU_CONFIRM_NO,
+  //           ue_p->Srb0.Tx_buffer.payload_size,
+  //           ue_p->Srb0.Tx_buffer.Payload,
+  //           PDCP_TRANSMISSION_MODE_CONTROL);
+  
 
 #ifdef ITTI_SIM
   MessageDef *message_p;
@@ -739,7 +740,7 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
                           100,
                           0,
                           0);
-
+                            
   if (dec_rval.consumed == 0) {
     /* TODO */
     LOG_E(NR_RRC, PROTOCOL_NR_RRC_CTXT_UE_FMT" FATAL Error in receiving CCCH\n",
