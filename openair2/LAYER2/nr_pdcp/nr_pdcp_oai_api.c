@@ -1066,7 +1066,7 @@ void nr_DRB_preconfiguration(void)
 //       rbconfig->drb_ToReleaseList,
 //       (LTE_PMCH_InfoList_r9_t *) NULL,
 //       Rlc_Bearer_ToAdd_list);
-// }
+}
 
 uint64_t get_pdcp_optmask(void)
 {

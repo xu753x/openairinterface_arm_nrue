@@ -224,7 +224,7 @@ int8_t nr_rrc_ue_decode_secondary_cellgroup_config(
         SEQUENCE_free(&asn_DEF_NR_CellGroupConfig, (void *)cell_group_config, 0);
     }
 
-    nr_rrc_mac_config_req_ue( 0,0,0,NULL, cell_group_config->mac_CellGroupConfig, cell_group_config->physicalCellGroupConfig, cell_group_config->spCellConfig );
+    // nr_rrc_mac_config_req_ue( 0,0,0,NULL, cell_group_config->mac_CellGroupConfig, cell_group_config->physicalCellGroupConfig, cell_group_config->spCellConfig );
 
     return 0;
 }
@@ -2280,7 +2280,7 @@ nr_sa_rrc_ue_process_radioBearerConfig(
       } else {
         LOG_D(NR_RRC, "Adding DRB %ld %p\n", DRB_id-1, radioBearerConfig->drb_ToAddModList->list.array[cnt]);
         NR_UE_rrc_inst[ctxt_pP->module_id].DRB_config[gNB_index][DRB_id-1] = radioBearerConfig->drb_ToAddModList->list.array[cnt];
-        rrc_ue_establish_drb(ctxt_pP->module_id,ctxt_pP->frame,gNB_index,radioBearerConfig->drb_ToAddModList->list.array[cnt]);
+        nr_rrc_ue_establish_drb(ctxt_pP->module_id,ctxt_pP->frame,gNB_index,radioBearerConfig->drb_ToAddModList->list.array[cnt]);
         // MAC/PHY Configuration
         LOG_I(RRC, "[FRAME %05d][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ (DRB %ld eNB %d) --->][MAC_UE][MOD %02d][]\n",
               ctxt_pP->frame, ctxt_pP->module_id,
