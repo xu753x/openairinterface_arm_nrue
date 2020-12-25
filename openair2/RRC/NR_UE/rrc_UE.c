@@ -224,7 +224,7 @@ int8_t nr_rrc_ue_decode_secondary_cellgroup_config(
         SEQUENCE_free(&asn_DEF_NR_CellGroupConfig, (void *)cell_group_config, 0);
     }
 
-    //nr_rrc_mac_config_req_ue( 0,0,0,NULL, cell_group_config->mac_CellGroupConfig, cell_group_config->physicalCellGroupConfig, cell_group_config->spCellConfig );
+    nr_rrc_mac_config_req_ue( 0,0,0,NULL, cell_group_config->mac_CellGroupConfig, cell_group_config->physicalCellGroupConfig, cell_group_config->spCellConfig );
 
     return 0;
 }
@@ -819,7 +819,33 @@ int nr_decode_SI( const protocol_ctxt_t *const ctxt_pP, const uint8_t gNB_index 
           nr_dump_sib2( NR_UE_rrc_inst[ctxt_pP->module_id].sib2[gNB_index] );
           LOG_I( RRC, "[FRAME %05"PRIu32"][RRC_UE][MOD %02"PRIu8"][][--- MAC_CONFIG_REQ (SIB2 params  gNB %"PRIu8") --->][MAC_UE][MOD %02"PRIu8"][]\n",
                  ctxt_pP->frame, ctxt_pP->module_id, gNB_index, ctxt_pP->module_id );
-          //TODO rrc_mac_config_req_ue
+          //TODO rrc_mac_config_req_ue//CUC:SIB2
+          // rrc_mac_config_req_ue(ctxt_pP->module_id, 0, eNB_index,
+          //             &UE_rrc_inst[ctxt_pP->module_id].sib2[eNB_index]->radioResourceConfigCommon,
+          //             (struct LTE_PhysicalConfigDedicated *)NULL,
+          //             (LTE_SCellToAddMod_r10_t *)NULL,
+          //             (LTE_MeasObjectToAddMod_t **)NULL,
+          //             (LTE_MAC_MainConfig_t *)NULL,
+          //             0,
+          //             (struct LTE_LogicalChannelConfig *)NULL,
+          //             (LTE_MeasGapConfig_t *)NULL,
+          //             (LTE_TDD_Config_t *)NULL,
+          //             (LTE_MobilityControlInfo_t *)NULL,
+          //             NULL,
+          //             NULL,
+          //             UE_rrc_inst[ctxt_pP->module_id].sib2[eNB_index]->freqInfo.ul_CarrierFreq,
+          //             UE_rrc_inst[ctxt_pP->module_id].sib2[eNB_index]->freqInfo.ul_Bandwidth,
+          //             &UE_rrc_inst[ctxt_pP->module_id].sib2[eNB_index]->freqInfo.additionalSpectrumEmission,
+          //             UE_rrc_inst[ctxt_pP->module_id].sib2[eNB_index]->mbsfn_SubframeConfigList,0,
+          //             (LTE_MBSFN_AreaInfoList_r9_t *)NULL,
+          //             (LTE_PMCH_InfoList_r9_t *)NULL,
+          //             0,
+          //             NULL,
+          //             NULL,
+          //             0,
+          //             (struct LTE_NonMBSFN_SubframeConfig_r14 *)NULL,
+          //             (LTE_MBSFN_AreaInfoList_r9_t *)NULL
+          //             );
 
           // After SI is received, prepare RRCConnectionRequest
           if (NR_UE_rrc_inst[ctxt_pP->module_id].MBMS_flag < 3) // see -Q option
@@ -972,7 +998,34 @@ int nr_decode_SI( const protocol_ctxt_t *const ctxt_pP, const uint8_t gNB_index 
           // adding here function to store necessary parameters for using in decode_MCCH_Message + maybe transfer to PHY layer
           LOG_I( RRC, "[FRAME %05"PRIu32"][RRC_UE][MOD %02"PRIu8"][][--- MAC_CONFIG_REQ (SIB13 params gNB %"PRIu8") --->][MAC_UE][MOD %02"PRIu8"][]\n",
                  ctxt_pP->frame, ctxt_pP->module_id, gNB_index, ctxt_pP->module_id);
-          // TODO rrc_mac_config_req_ue
+          // TODO rrc_mac_config_req_ue//CUC:SIB13
+          // rrc_mac_config_req_ue(ctxt_pP->module_id,0,eNB_index,
+          //             (LTE_RadioResourceConfigCommonSIB_t *)NULL,
+          //             (struct LTE_PhysicalConfigDedicated *)NULL,
+          //             (LTE_SCellToAddMod_r10_t *)NULL,
+          //             (LTE_MeasObjectToAddMod_t **)NULL,
+          //             (LTE_MAC_MainConfig_t *)NULL,
+          //             0,
+          //             (struct LTE_LogicalChannelConfig *)NULL,
+          //             (LTE_MeasGapConfig_t *)NULL,
+          //             (LTE_TDD_Config_t *)NULL,
+          //             (LTE_MobilityControlInfo_t *)NULL,
+          //             NULL,
+          //             NULL,
+          //             NULL,
+          //             NULL,
+          //             NULL,
+          //             (LTE_MBSFN_SubframeConfigList_t *)NULL,
+          //             0,
+          //             &UE_rrc_inst[ctxt_pP->module_id].sib13[eNB_index]->mbsfn_AreaInfoList_r9,
+          //             (LTE_PMCH_InfoList_r9_t *)NULL,
+          //             0,
+          //             NULL,
+          //             NULL,
+          //             0,
+          //             (struct LTE_NonMBSFN_SubframeConfig_r14 *)NULL,
+          //             (LTE_MBSFN_AreaInfoList_r9_t *)NULL
+          //             );
         }
         break;
 
@@ -1120,7 +1173,34 @@ int nr_decode_SIB1( const protocol_ctxt_t *const ctxt_pP, const uint8_t gNB_inde
   NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIwindowsize = siWindowLength_int[sib1->si_SchedulingInfo->si_WindowLength];
   LOG_I( RRC, "[FRAME unknown][RRC_UE][MOD %02"PRIu8"][][--- MAC_CONFIG_REQ (SIB1 params gNB %"PRIu8") --->][MAC_UE][MOD %02"PRIu8"][]\n",
          ctxt_pP->module_id, gNB_index, ctxt_pP->module_id );
-  //rrc_mac_config_req_ue
+  //rrc_mac_config_req_ue //CUC:SIB1
+  // nr_rrc_mac_config_req_ue(ctxt_pP->module_id,0,gNB_index,mibP,cell_group_config);
+  // rrc_mac_config_req_ue(ctxt_pP->module_id, 0, gNB_index,
+  //                     (LTE_RadioResourceConfigCommonSIB_t *)NULL,
+  //                     (struct LTE_PhysicalConfigDedicated *)NULL,
+  //                     (LTE_SCellToAddMod_r10_t *)NULL,
+  //                     (LTE_MeasObjectToAddMod_t **)NULL,
+  //                     (LTE_MAC_MainConfig_t *)NULL,
+  //                     0,
+  //                     (struct LTE_LogicalChannelConfig *)NULL,
+  //                     (LTE_MeasGapConfig_t *)NULL,
+  //                     UE_rrc_inst[ctxt_pP->module_id].sib1[gNB_index]->tdd_Config,
+  //                     (LTE_MobilityControlInfo_t *) NULL,
+  //                     &UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIwindowsize,
+  //                     &UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIperiod,
+  //                     NULL,
+  //                     NULL,
+  //                     NULL,
+  //                     (LTE_MBSFN_SubframeConfigList_t *)NULL,0,
+  //                     (LTE_MBSFN_AreaInfoList_r9_t *)NULL,
+  //                     (LTE_PMCH_InfoList_r9_t *)NULL,
+  //                     0,
+  //                     NULL,
+  //                     NULL,
+  //                     0,
+  //                     (struct LTE_NonMBSFN_SubframeConfig_r14 *)NULL,
+  //                     (LTE_MBSFN_AreaInfoList_r9_t *)NULL
+  //                     );
   LOG_I(RRC,"Setting SIStatus bit 0 to 1\n");
   NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus = 1;
   //NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIB1systemInfoValueTag = sib1->systemInfoValueTag;
@@ -1448,15 +1528,14 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
           // Get configuration
           // Release T300 timer
           NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].T300_active = 0;
-          
-          // nr_rrc_ue_process_masterCellGroup(
-          //   ctxt_pP,
-          //   gNB_index,
-          //   &dl_ccch_msg->message.choice.c1->choice.rrcSetup->criticalExtensions.choice.rrcSetup->masterCellGroup);
-          // nr_sa_rrc_ue_process_radioBearerConfig(
-          //   ctxt_pP,
-          //   gNB_index,
-          //   &dl_ccch_msg->message.choice.c1->choice.rrcSetup->criticalExtensions.choice.rrcSetup->radioBearerConfig);
+          nr_rrc_ue_process_masterCellGroup(
+            ctxt_pP,
+            gNB_index,
+            &dl_ccch_msg->message.choice.c1->choice.rrcSetup->criticalExtensions.choice.rrcSetup->masterCellGroup);
+          nr_sa_rrc_ue_process_radioBearerConfig(
+            ctxt_pP,
+            gNB_index,
+            &dl_ccch_msg->message.choice.c1->choice.rrcSetup->criticalExtensions.choice.rrcSetup->radioBearerConfig);
           nr_rrc_set_state (ctxt_pP->module_id, RRC_STATE_CONNECTED);
           nr_rrc_set_sub_state (ctxt_pP->module_id, RRC_SUB_STATE_CONNECTED);
           NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].rnti = ctxt_pP->rnti;
@@ -1929,7 +2008,34 @@ nr_rrc_ue_process_measConfig(
     }
 
     LOG_I(NR_RRC, "call rrc_mac_config_req \n");
-    // rrc_mac_config_req_ue
+    // rrc_mac_config_req_ue//CUC:measObjectToAddModList
+    // rrc_mac_config_req_ue(ctxt_pP->module_id,0,eNB_index,
+    //                       (LTE_RadioResourceConfigCommonSIB_t *)NULL,
+    //                       (struct LTE_PhysicalConfigDedicated *)NULL,
+    //                       (LTE_SCellToAddMod_r10_t *)NULL,
+    //                       UE_rrc_inst[ctxt_pP->module_id].MeasObj[eNB_index],
+    //                       (LTE_MAC_MainConfig_t *)NULL,
+    //                       0,
+    //                       (struct LTE_LogicalChannelConfig *)NULL,
+    //                       (LTE_MeasGapConfig_t *)NULL,
+    //                       (LTE_TDD_Config_t *)NULL,
+    //                       (LTE_MobilityControlInfo_t *)NULL,
+    //                       NULL,
+    //                       NULL,
+    //                       NULL,
+    //                       NULL,
+    //                       NULL,
+    //                       NULL,
+    //                       0,
+    //                       (LTE_MBSFN_AreaInfoList_r9_t *)NULL,
+    //                       (LTE_PMCH_InfoList_r9_t *)NULL,
+    //                       0,
+    //                       NULL,
+    //                       NULL,
+    //                       0,
+    //                       (struct LTE_NonMBSFN_SubframeConfig_r14 *)NULL,
+    //                       (LTE_MBSFN_AreaInfoList_r9_t *)NULL
+    //                      );
   }
 
   if (measConfig->reportConfigToRemoveList != NULL) {
@@ -2025,7 +2131,7 @@ nr_sa_rrc_ue_process_radioBearerConfig(
 
   if( radioBearerConfig->srb3_ToRelease != NULL){
     if( *radioBearerConfig->srb3_ToRelease == TRUE){
-      //TODO (release the PDCP entity and the srb-Identity of the SRB3.)
+      //TODO (release the PDCP entity and the srb-Identity of the SRB3.)//CUC:release
     }
   }
 
@@ -2046,26 +2152,26 @@ nr_sa_rrc_ue_process_radioBearerConfig(
     derive_key_rrc_int(NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm,
                     NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &kRRCint);
     // Refresh SRBs
-    // nr_rrc_pdcp_config_asn1_req(ctxt_pP,
-    //                             radioBearerConfig->srb_ToAddModList,
-    //                             NULL,
-    //                             NULL,
-    //                             NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm |
-    //                             (NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm << 4),
-    //                             kRRCenc,
-    //                             kRRCint,
-    //                             NULL,
-    //                             NULL,
-    //                             NULL,
-    //                             NULL);
+    nr_rrc_pdcp_config_asn1_req(ctxt_pP,
+                                radioBearerConfig->srb_ToAddModList,
+                                NULL,
+                                NULL,
+                                NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm |
+                                (NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm << 4),
+                                kRRCenc,
+                                kRRCint,
+                                NULL,
+                                NULL,
+                                NULL,
+                                NULL);
     // Refresh SRBs
-    // nr_rrc_rlc_config_asn1_req(ctxt_pP,
-    //                             radioBearerConfig->srb_ToAddModList,
-    //                             NULL,
-    //                             NULL,
-    //                             NULL,
-    //                             NULL
-    //                             );
+    nr_rrc_rlc_config_asn1_req(ctxt_pP,
+                                radioBearerConfig->srb_ToAddModList,
+                                NULL,
+                                NULL,
+                                NULL,
+                                NULL
+                                );
 
     for (cnt = 0; cnt < radioBearerConfig->srb_ToAddModList->list.count; cnt++) {
       SRB_id = radioBearerConfig->srb_ToAddModList->list.array[cnt]->srb_Identity;
@@ -2083,7 +2189,34 @@ nr_sa_rrc_ue_process_radioBearerConfig(
 
           LOG_I(NR_RRC, "[FRAME %05d][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ  (SRB1 gNB %d) --->][MAC_UE][MOD %02d][]\n",
               ctxt_pP->frame, ctxt_pP->module_id, gNB_index, ctxt_pP->module_id);
-          // rrc_mac_config_req_ue
+          // rrc_mac_config_req_ue//CUC:srb_ToAddModList
+          // rrc_mac_config_req_ue(ctxt_pP->module_id,0,eNB_index,
+          //                       (LTE_RadioResourceConfigCommonSIB_t *)NULL,
+          //                       UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index],
+          //                       (LTE_SCellToAddMod_r10_t *)NULL,
+          //                       (LTE_MeasObjectToAddMod_t **)NULL,
+          //                       UE_rrc_inst[ctxt_pP->module_id].mac_MainConfig[eNB_index],
+          //                       1,
+          //                       SRB1_logicalChannelConfig,
+          //                       (LTE_MeasGapConfig_t *)NULL,
+          //                       NULL,
+          //                       NULL,
+          //                       NULL,
+          //                       NULL,
+          //                       NULL,
+          //                       NULL,
+          //                       NULL,
+          //                       NULL,
+          //                       0,
+          //                       (LTE_MBSFN_AreaInfoList_r9_t *)NULL,
+          //                       (LTE_PMCH_InfoList_r9_t *)NULL,
+          //                       0,
+          //                       NULL,
+          //                       NULL,
+          //                       0,
+          //                       (struct LTE_NonMBSFN_SubframeConfig_r14 *)NULL,
+          //                       (LTE_MBSFN_AreaInfoList_r9_t *)NULL
+          //                      );
         }
       } else {
         if (NR_UE_rrc_inst[ctxt_pP->module_id].SRB2_config[gNB_index]) {
@@ -2098,7 +2231,34 @@ nr_sa_rrc_ue_process_radioBearerConfig(
 
           LOG_I(NR_RRC, "[FRAME %05d][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ  (SRB2 gNB %d) --->][MAC_UE][MOD %02d][]\n",
               ctxt_pP->frame, ctxt_pP->module_id, gNB_index, ctxt_pP->module_id);
-          // rrc_mac_config_req_ue
+          // rrc_mac_config_req_ue//CUC:srb_ToAddModList
+          // rrc_mac_config_req_ue(ctxt_pP->module_id,0,eNB_index,
+          //                       (LTE_RadioResourceConfigCommonSIB_t *)NULL,
+          //                       UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index],
+          //                       (LTE_SCellToAddMod_r10_t *)NULL,
+          //                       (LTE_MeasObjectToAddMod_t **)NULL,
+          //                       UE_rrc_inst[ctxt_pP->module_id].mac_MainConfig[eNB_index],
+          //                       2,
+          //                       SRB2_logicalChannelConfig,
+          //                       UE_rrc_inst[ctxt_pP->module_id].measGapConfig[eNB_index],
+          //                       (LTE_TDD_Config_t *)NULL,
+          //                       (LTE_MobilityControlInfo_t *)NULL,
+          //                       NULL,
+          //                       NULL,
+          //                       NULL,
+          //                       NULL,
+          //                       NULL,
+          //                       NULL,
+          //                       0,
+          //                       (LTE_MBSFN_AreaInfoList_r9_t *)NULL,
+          //                       (LTE_PMCH_InfoList_r9_t *)NULL,
+          //                       0,
+          //                       NULL,
+          //                       NULL,
+          //                       0,
+          //                       (struct LTE_NonMBSFN_SubframeConfig_r14 *)NULL,
+          //                       (LTE_MBSFN_AreaInfoList_r9_t *)NULL
+          //                      );
         }
       } // srb2
     }
@@ -2120,6 +2280,41 @@ nr_sa_rrc_ue_process_radioBearerConfig(
       } else {
         LOG_D(NR_RRC, "Adding DRB %ld %p\n", DRB_id-1, radioBearerConfig->drb_ToAddModList->list.array[cnt]);
         NR_UE_rrc_inst[ctxt_pP->module_id].DRB_config[gNB_index][DRB_id-1] = radioBearerConfig->drb_ToAddModList->list.array[cnt];
+        rrc_ue_establish_drb(ctxt_pP->module_id,ctxt_pP->frame,gNB_index,radioBearerConfig->drb_ToAddModList->list.array[cnt]);
+        // MAC/PHY Configuration
+        LOG_I(RRC, "[FRAME %05d][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ (DRB %ld eNB %d) --->][MAC_UE][MOD %02d][]\n",
+              ctxt_pP->frame, ctxt_pP->module_id,
+              radioBearerConfig->drb_ToAddModList->list.array[cnt]->drb_Identity,
+              gNB_index,
+              ctxt_pP->module_id);
+        //CUC:drb_ToAddModList
+        // rrc_mac_config_req_ue(ctxt_pP->module_id,0,eNB_index,
+        //                       (LTE_RadioResourceConfigCommonSIB_t *)NULL,
+        //                       UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index],
+        //                       (LTE_SCellToAddMod_r10_t *)NULL,
+        //                       (LTE_MeasObjectToAddMod_t **)NULL,
+        //                       UE_rrc_inst[ctxt_pP->module_id].mac_MainConfig[eNB_index],
+        //                       *UE_rrc_inst[ctxt_pP->module_id].DRB_config[eNB_index][DRB_id]->logicalChannelIdentity,
+        //                       UE_rrc_inst[ctxt_pP->module_id].DRB_config[eNB_index][DRB_id]->logicalChannelConfig,
+        //                       UE_rrc_inst[ctxt_pP->module_id].measGapConfig[eNB_index],
+        //                       (LTE_TDD_Config_t *)NULL,
+        //                       (LTE_MobilityControlInfo_t *)NULL,
+        //                       NULL,
+        //                       NULL,
+        //                       NULL,
+        //                       NULL,
+        //                       NULL,
+        //                       NULL,
+        //                       0,
+        //                       (LTE_MBSFN_AreaInfoList_r9_t *)NULL,
+        //                       (LTE_PMCH_InfoList_r9_t *)NULL,
+        //                       0,
+        //                       NULL,
+        //                       NULL,
+        //                       0,
+        //                       (struct LTE_NonMBSFN_SubframeConfig_r14 *)NULL,
+        //                       (LTE_MBSFN_AreaInfoList_r9_t *)NULL
+        //                      );
       }
     }
 
@@ -2138,26 +2333,26 @@ nr_sa_rrc_ue_process_radioBearerConfig(
         (NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm << 4));
 
       // Refresh DRBs
-      // nr_rrc_pdcp_config_asn1_req(ctxt_pP,
-      //                             NULL,
-      //                             radioBearerConfig->drb_ToAddModList,
-      //                             NULL,
-      //                             NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm |
-      //                             (NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm << 4),
-      //                             NULL,
-      //                             NULL,
-      //                             kUPenc,
-      //                             NULL,
-      //                             NR_UE_rrc_inst[ctxt_pP->module_id].defaultDRB,
-      //                             NULL);
+      nr_rrc_pdcp_config_asn1_req(ctxt_pP,
+                                  NULL,
+                                  radioBearerConfig->drb_ToAddModList,
+                                  NULL,
+                                  NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm |
+                                  (NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm << 4),
+                                  NULL,
+                                  NULL,
+                                  kUPenc,
+                                  NULL,
+                                  NR_UE_rrc_inst[ctxt_pP->module_id].defaultDRB,
+                                  NULL);
       // Refresh DRBs
-      // nr_rrc_rlc_config_asn1_req(ctxt_pP,
-      //                             NULL,
-      //                             radioBearerConfig->drb_ToAddModList,
-      //                             NULL,
-      //                             NULL,
-      //                             NULL
-      //                             );
+      nr_rrc_rlc_config_asn1_req(ctxt_pP,
+                                  NULL,
+                                  radioBearerConfig->drb_ToAddModList,
+                                  NULL,
+                                  NULL,
+                                  NULL
+                                  );
   } // drb_ToAddModList
 
   if (radioBearerConfig->drb_ToReleaseList != NULL) {
@@ -2190,12 +2385,12 @@ rrc_ue_process_rrcReconfiguration(
     ie = rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration;
     if (ie->measConfig != NULL) {
       LOG_I(NR_RRC, "Measurement Configuration is present\n");
-//      nr_rrc_ue_process_measConfig(ctxt_pP, gNB_index, ie->measConfig);
+      nr_rrc_ue_process_measConfig(ctxt_pP, gNB_index, ie->measConfig);
     }
 
     if (ie->radioBearerConfig != NULL) {
       LOG_I(NR_RRC, "radio Bearer Configuration is present\n");
-//      nr_sa_rrc_ue_process_radioBearerConfig(ctxt_pP, gNB_index, ie->radioBearerConfig);
+      nr_sa_rrc_ue_process_radioBearerConfig(ctxt_pP, gNB_index, ie->radioBearerConfig);
     }
 
         /* Check if there is dedicated NAS information to forward to NAS */

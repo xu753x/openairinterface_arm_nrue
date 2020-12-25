@@ -1046,27 +1046,27 @@ void nr_DRB_preconfiguration(void)
   else{
     PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, 0, ENB_FLAG_NO, 0x1234, 0, 0,0);
   }
+//CUC:delete pdcp rlc
+//   nr_rrc_pdcp_config_asn1_req(
+//     &ctxt,
+//     rbconfig->srb_ToAddModList,
+//     rbconfig->drb_ToAddModList ,
+//     rbconfig->drb_ToReleaseList,
+//     0xff,
+//     NULL,
+//     NULL,
+//     NULL,
+//     NULL,
+//     NULL,
+//     Rlc_Bearer_ToAdd_list);
 
-  nr_rrc_pdcp_config_asn1_req(
-    &ctxt,
-    rbconfig->srb_ToAddModList,
-    rbconfig->drb_ToAddModList ,
-    rbconfig->drb_ToReleaseList,
-    0xff,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    Rlc_Bearer_ToAdd_list);
-
-  nr_rrc_rlc_config_asn1_req (&ctxt,
-      rbconfig->srb_ToAddModList,
-      rbconfig->drb_ToAddModList,
-      rbconfig->drb_ToReleaseList,
-      (LTE_PMCH_InfoList_r9_t *) NULL,
-      Rlc_Bearer_ToAdd_list);
-}
+//   nr_rrc_rlc_config_asn1_req (&ctxt,
+//       rbconfig->srb_ToAddModList,
+//       rbconfig->drb_ToAddModList,
+//       rbconfig->drb_ToReleaseList,
+//       (LTE_PMCH_InfoList_r9_t *) NULL,
+//       Rlc_Bearer_ToAdd_list);
+// }
 
 uint64_t get_pdcp_optmask(void)
 {
