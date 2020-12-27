@@ -379,6 +379,7 @@ int s1ap_eNB_handle_s1_setup_response(uint32_t               assoc_id,
   if (stream != 0) {
     S1AP_ERROR("[SCTP %d] Received s1 setup response on stream != 0 (%d)\n",
                assoc_id, stream);
+    return -1;
   }
 
   if ((mme_desc_p = s1ap_eNB_get_MME(NULL, assoc_id, 0)) == NULL) {
@@ -883,6 +884,7 @@ int s1ap_eNB_handle_initial_context_request(uint32_t   assoc_id,
   if (stream == 0) {
     S1AP_ERROR("[SCTP %d] Received UE-related procedure on stream (%d)\n",
                assoc_id, stream);
+    return -1;
   }
 
   ue_desc_p->rx_stream = stream;
@@ -1148,6 +1150,7 @@ int s1ap_eNB_handle_e_rab_setup_request(uint32_t         assoc_id,
   if (stream == 0) {
     S1AP_ERROR("[SCTP %d] Received UE-related procedure on stream (%d)\n",
                assoc_id, stream);
+    return -1;
   }
 
   ue_desc_p->rx_stream = stream;
@@ -1440,6 +1443,7 @@ int s1ap_eNB_handle_e_rab_modify_request(uint32_t               assoc_id,
   if (stream == 0) {
     S1AP_ERROR("[SCTP %d] Received UE-related procedure on stream (%d)\n",
                assoc_id, stream);
+    return -1;
   }
 
   ue_desc_p->rx_stream = stream;
@@ -1574,6 +1578,7 @@ int s1ap_eNB_handle_e_rab_release_command(uint32_t               assoc_id,
   if (stream == 0) {
     S1AP_ERROR("[SCTP %d] Received UE-related procedure on stream (%d)\n",
                assoc_id, stream);
+    return -1;
   }
 
   ue_desc_p->rx_stream = stream;
@@ -1798,7 +1803,7 @@ int s1ap_eNB_handle_s1_path_switch_request_failure(uint32_t               assoc_
   pathSwitchRequestFailure = &pdu->choice.unsuccessfulOutcome.value.choice.PathSwitchRequestFailure;
 
   if (stream != 0) {
-    S1AP_ERROR("[SCTP %d] Received s1 path switch request failure on stream != 0 (%d)\n",
+    S1AP_WARN("[SCTP %d] Received s1 path switch request failure on stream != 0 (%d)\n",
                assoc_id, stream);
   }
 
