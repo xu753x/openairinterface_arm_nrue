@@ -779,9 +779,11 @@ static void add_srb(int rnti, struct NR_SRB_ToAddMod *s)
           __FILE__, __LINE__, __FUNCTION__, srb_id);
     exit(1);
   }
-
+  printf("1111111\n");//QUES
   nr_pdcp_manager_lock(nr_pdcp_ue_manager);
+  printf("2222222\n");//QUES
   ue = nr_pdcp_manager_get_ue(nr_pdcp_ue_manager, rnti);
+  printf("3333333\n");//QUES
   if (ue->srb[srb_id-1] != NULL) {
     LOG_W(PDCP, "%s:%d:%s: warning DRB %d already exist for ue %d, do nothing\n",
           __FILE__, __LINE__, __FUNCTION__, srb_id, rnti);
@@ -881,6 +883,7 @@ boolean_t nr_rrc_pdcp_config_asn1_req(
 
   if (srb2add_list != NULL) {
     for (i = 0; i < srb2add_list->list.count; i++) {
+      printf("-------i:%d,count:%d-----------\n",i,srb2add_list->list.count);//QUES
       add_srb(rnti, srb2add_list->list.array[i]);
     }
   }

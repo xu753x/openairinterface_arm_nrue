@@ -1528,22 +1528,28 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
           // Get configuration
           // Release T300 timer
           NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].T300_active = 0;
+          printf("011111111111111111\n");//QUES
           nr_rrc_ue_process_masterCellGroup(
             ctxt_pP,
             gNB_index,
             &dl_ccch_msg->message.choice.c1->choice.rrcSetup->criticalExtensions.choice.rrcSetup->masterCellGroup);
+          printf("022222222222222222\n");//QUES
           nr_sa_rrc_ue_process_radioBearerConfig(
             ctxt_pP,
             gNB_index,
             &dl_ccch_msg->message.choice.c1->choice.rrcSetup->criticalExtensions.choice.rrcSetup->radioBearerConfig);
+          printf("033333333333333333\n");//QUES
           nr_rrc_set_state (ctxt_pP->module_id, RRC_STATE_CONNECTED);
+          printf("044444444444444444\n");//QUES
           nr_rrc_set_sub_state (ctxt_pP->module_id, RRC_SUB_STATE_CONNECTED);
+          printf("055555555555555555\n");//QUES
           NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].rnti = ctxt_pP->rnti;
           rrc_ue_generate_RRCSetupComplete(
             ctxt_pP,
             gNB_index,
             dl_ccch_msg->message.choice.c1->choice.rrcSetup->rrc_TransactionIdentifier,
             NR_UE_rrc_inst[ctxt_pP->module_id].selected_plmn_identity);
+          printf("066666666666666666\n");//QUES
           rval = 0;
           break;
   
@@ -2156,8 +2162,9 @@ nr_sa_rrc_ue_process_radioBearerConfig(
                                 radioBearerConfig->srb_ToAddModList,
                                 NULL,
                                 NULL,
-                                NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm |
-                                (NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm << 4),
+                                // NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm |
+                                // (NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm << 4),
+                                0xff,
                                 kRRCenc,
                                 kRRCint,
                                 NULL,
@@ -2337,8 +2344,9 @@ nr_sa_rrc_ue_process_radioBearerConfig(
                                   NULL,
                                   radioBearerConfig->drb_ToAddModList,
                                   NULL,
-                                  NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm |
-                                  (NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm << 4),
+                                  // NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm |
+                                  // (NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm << 4),
+                                  0xff,
                                   NULL,
                                   NULL,
                                   kUPenc,

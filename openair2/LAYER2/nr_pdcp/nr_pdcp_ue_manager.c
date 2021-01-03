@@ -59,10 +59,13 @@ int nr_pdcp_manager_get_enb_flag(nr_pdcp_ue_manager_t *_m)
 void nr_pdcp_manager_lock(nr_pdcp_ue_manager_t *_m)
 {
   nr_pdcp_ue_manager_internal_t *m = _m;
+  printf("aaaaaaaaa\n");//QUES
   if (pthread_mutex_lock(&m->lock)) {
     LOG_E(PDCP, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
+    printf("bbbbbbbbb\n");//QUES
     exit(1);
   }
+  printf("ccccccccc\n");//QUES
 }
 
 void nr_pdcp_manager_unlock(nr_pdcp_ue_manager_t *_m)
