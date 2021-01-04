@@ -51,6 +51,8 @@ function wait_on_vm_build {
     VM_LIST=`uvt-kvm list`
     echo "$VM_LIST"
     echo "$IS_VM_ALIVE"
+    IP=`ifconfig | grep 192`
+    echo "$IP"
 
     if [ $IS_VM_ALIVE -eq 0 ]
     then
