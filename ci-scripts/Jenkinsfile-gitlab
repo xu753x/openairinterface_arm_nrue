@@ -115,10 +115,10 @@ pipeline {
                         sh "./ci-scripts/checkCodingFormattingRules.sh --src-branch ${env.gitlabSourceBranch} --target-branch ${env.gitlabTargetBranch}"
                         def res=readFile('./oai_rules_result.txt').trim();
                         if ("0".equals(res)) {
-                            def message = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): All Changed files in Merge Request follow OAI Formatting Rules"
+                            def message = JOB_NAME + " build (" + BUILD_ID + "): All Changed files in Merge Request follow OAI Formatting Rules"
                             addGitLabMRComment comment: message
                         } else {
-                            def message = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): Some Changed files in Merge Request DO NOT follow OAI Formatting Rules"
+                            def message = JOB_NAME + " build (" + BUILD_ID + "): Some Changed files in Merge Request DO NOT follow OAI Formatting Rules"
                             addGitLabMRComment comment: message
                         }
                     } else {
@@ -152,7 +152,7 @@ pipeline {
             post {
                 failure {
                     script {
-                        def message = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): Merge Conflicts -- Cannot perform CI"
+                        def message = JOB_NAME + " build (" + BUILD_ID + "): Merge Conflicts -- Cannot perform CI"
                         addGitLabMRComment comment: message
                         currentBuild.result = 'FAILURE'
                     }
