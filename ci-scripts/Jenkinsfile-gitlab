@@ -45,7 +45,7 @@ pipeline {
     options {
         disableConcurrentBuilds()
         timestamps()
-        gitLabConnection('OAI GitLab')
+        gitLabConnection('gitlab')
         gitlabBuilds(builds: [
             "Build gNB-USRP",
             "Build nr-UE-USRP",
