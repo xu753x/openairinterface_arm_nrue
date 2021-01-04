@@ -189,7 +189,7 @@ pipeline {
             }
         }
 
-        stage ("Start VM -- nr-ue-usrp") {
+        /* stage ("Start VM -- nr-ue-usrp") {
             steps {
               lock (vmResource) {
                 timeout (time: 5, unit: 'MINUTES') {
@@ -236,7 +236,7 @@ pipeline {
                     sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant ue-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
                 }
               }
-            }
+            } */
         }
         
         
