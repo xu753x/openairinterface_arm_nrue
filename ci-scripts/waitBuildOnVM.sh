@@ -48,6 +48,9 @@ function wait_on_vm_build {
     echo "BUILD_OPTIONS       = $BUILD_OPTIONS"
 
     IS_VM_ALIVE=`uvt-kvm list | grep -c $VM_NAME`
+    VM_LIST=`uvt-kvm list`
+    echo "$VM_LIST"
+    echo "$IS_VM_ALIVE"
 
     if [ $IS_VM_ALIVE -eq 0 ]
     then
