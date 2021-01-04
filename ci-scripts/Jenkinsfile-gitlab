@@ -159,6 +159,15 @@ pipeline {
                 }
             }
         }
+        stage ("Start VM -- cppcheck") {
+            steps {
+              lock (vmResource) {
+                timeout (time: 7, unit: 'MINUTES') {
+                    sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant cppcheck --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
+                }
+              }
+            }
+        }
 
         stage ("Start VM -- basic-sim") {
             steps {
@@ -230,16 +239,7 @@ pipeline {
             }
         }
         
-        stage ("Start VM -- cppcheck") {
-            steps {
-              lock (vmResource) {
-                timeout (time: 7, unit: 'MINUTES') {
-                    sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant cppcheck --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
-                }
-              }
-            }
-        }
-
+        
         stage ("Variant Builds") {
             parallel {
                 stage ("Analysis with cppcheck") {
