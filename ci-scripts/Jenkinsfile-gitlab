@@ -370,7 +370,7 @@ pipeline {
             }
         }
 
-        stage ("Variant Tests") {
+        /* stage ("Variant Tests") {
             parallel {
                 stage ("VM-based tests") {
                     stages {
@@ -723,9 +723,9 @@ pipeline {
                     }
                 }
             }
-        }
+        } */
     }
-    post {
+    /* post {
         always {
             script {
                 // Stage destroy may not be run if error in previous stage
@@ -772,7 +772,7 @@ OAI CI Team''',
                 }
             }
         }
-    }
+    } */
 }
 
 // ----  Slave Job functions
