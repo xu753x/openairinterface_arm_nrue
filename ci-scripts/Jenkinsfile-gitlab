@@ -251,7 +251,7 @@ pipeline {
                         }
                     }
                 }
-                stage ("Build basic simulator") {
+            /*    stage ("Build basic simulator") {
                     steps {
                         gitlabCommitStatus(name: "Build basic-sim") {
                             timeout (time: 20, unit: 'MINUTES') {
@@ -316,7 +316,7 @@ pipeline {
                         }
                       }
                     }
-                }
+                } */
             }
             post {
                 failure {
