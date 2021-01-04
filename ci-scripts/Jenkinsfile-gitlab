@@ -370,7 +370,8 @@ pipeline {
             }
         }
 
-        /* stage ("Variant Tests") {
+        stage ("Variant Tests") {
+            /*
             parallel {
                 stage ("VM-based tests") {
                     stages {
@@ -701,7 +702,8 @@ pipeline {
                         }
                     }
                 }
-            }*/
+            }
+            */
             post {
                 always {
                     script {
