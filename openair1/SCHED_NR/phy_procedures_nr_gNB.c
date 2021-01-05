@@ -627,20 +627,25 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
           RU_t *ru = gNB->RU_list[0];
           int slot_offset = frame_parms->get_samples_slot_timestamp(slot_rx,frame_parms,0);
           slot_offset -= ru->N_TA_offset;
-          ((int16_t*)&gNB->common_vars.debugBuff[gNB->common_vars.debugBuff_sample_offset])[0]=(int16_t)ulsch->rnti;
-          ((int16_t*)&gNB->common_vars.debugBuff[gNB->common_vars.debugBuff_sample_offset])[1]=(int16_t)ulsch_harq->ulsch_pdu.rb_size;
-          ((int16_t*)&gNB->common_vars.debugBuff[gNB->common_vars.debugBuff_sample_offset])[2]=(int16_t)ulsch_harq->ulsch_pdu.rb_start;
-          ((int16_t*)&gNB->common_vars.debugBuff[gNB->common_vars.debugBuff_sample_offset])[3]=(int16_t)ulsch_harq->ulsch_pdu.nr_of_symbols;
-          ((int16_t*)&gNB->common_vars.debugBuff[gNB->common_vars.debugBuff_sample_offset])[4]=(int16_t)ulsch_harq->ulsch_pdu.start_symbol_index;
-          ((int16_t*)&gNB->common_vars.debugBuff[gNB->common_vars.debugBuff_sample_offset])[5]=(int16_t)ulsch_harq->ulsch_pdu.mcs_index;
-          ((int16_t*)&gNB->common_vars.debugBuff[gNB->common_vars.debugBuff_sample_offset])[6]=(int16_t)ulsch_harq->ulsch_pdu.pusch_data.rv_index;
-          ((int16_t*)&gNB->common_vars.debugBuff[gNB->common_vars.debugBuff_sample_offset])[7]=(int16_t)harq_pid;
-          memcpy(&gNB->common_vars.debugBuff[gNB->common_vars.debugBuff_sample_offset+4],&ru->common.rxdata[0][slot_offset],frame_parms->get_samples_per_slot(slot_rx,frame_parms)*sizeof(int32_t));
-          gNB->common_vars.debugBuff_sample_offset+=(frame_parms->get_samples_per_slot(slot_rx,frame_parms)+1000+4);
-          if(gNB->common_vars.debugBuff_sample_offset>((frame_parms->get_samples_per_slot(slot_rx,frame_parms)+1000+2)*20)) {
+          ((int16_t*)&gNB->common_vars.debugBuff[0][gNB->common_vars.debugBuff_sample_offset[0]])[0]=(int16_t)ulsch->rnti;
+          ((int16_t*)&gNB->common_vars.debugBuff[0][gNB->common_vars.debugBuff_sample_offset[0]])[1]=(int16_t)ulsch_harq->ulsch_pdu.rb_size;
+          ((int16_t*)&gNB->common_vars.debugBuff[0][gNB->common_vars.debugBuff_sample_offset[0]])[2]=(int16_t)ulsch_harq->ulsch_pdu.rb_start;
+          ((int16_t*)&gNB->common_vars.debugBuff[0][gNB->common_vars.debugBuff_sample_offset[0]])[3]=(int16_t)ulsch_harq->ulsch_pdu.nr_of_symbols;
+          ((int16_t*)&gNB->common_vars.debugBuff[0][gNB->common_vars.debugBuff_sample_offset[0]])[4]=(int16_t)ulsch_harq->ulsch_pdu.start_symbol_index;
+          ((int16_t*)&gNB->common_vars.debugBuff[0][gNB->common_vars.debugBuff_sample_offset[0]])[5]=(int16_t)ulsch_harq->ulsch_pdu.mcs_index;
+          ((int16_t*)&gNB->common_vars.debugBuff[0][gNB->common_vars.debugBuff_sample_offset[0]])[6]=(int16_t)ulsch_harq->ulsch_pdu.pusch_data.rv_index;
+          ((int16_t*)&gNB->common_vars.debugBuff[0][gNB->common_vars.debugBuff_sample_offset[0]])[7]=(int16_t)harq_pid;
+          memcpy(&gNB->common_vars.debugBuff[0][gNB->common_vars.debugBuff_sample_offset[0]+4],&ru->common.rxdata[0][slot_offset],frame_parms->get_samples_per_slot(slot_rx,frame_parms)*sizeof(int32_t));
+          gNB->common_vars.debugBuff_sample_offset[0]+=(frame_parms->get_samples_per_slot(slot_rx,frame_parms)+1000+4);
+          memcpy(&gNB->common_vars.debugBuff[1][gNB->common_vars.debugBuff_sample_offset[1]],&gNB->common_vars.rxdataF[0][0],frame_parms->ofdm_symbol_size*sizeof(int32_t));
+          gNB->common_vars.debugBuff_sample_offset[1]+=frame_parms->ofdm_symbol_size;
+          if(gNB->common_vars.debugBuff_sample_offset[0]>((frame_parms->get_samples_per_slot(slot_rx,frame_parms)+1000+4)*20)) {
             FILE *f;
             f = fopen("rxdata_buff.raw", "w"); if (f == NULL) exit(1);
-            fwrite((int16_t*)gNB->common_vars.debugBuff,2,(frame_parms->get_samples_per_slot(slot_rx,frame_parms)+1000+4)*20*2, f);
+            fwrite((int16_t*)gNB->common_vars.debugBuff[0],2,(frame_parms->get_samples_per_slot(slot_rx,frame_parms)+1000+4)*20*2, f);
+            fclose(f);
+            f = fopen("rxdataF_buff.raw", "w"); if (f == NULL) exit(1);
+            fwrite((int16_t*)gNB->common_vars.debugBuff[1],2,frame_parms->ofdm_symbol_size*20*2, f);
             fclose(f);
             exit(-1);
           }

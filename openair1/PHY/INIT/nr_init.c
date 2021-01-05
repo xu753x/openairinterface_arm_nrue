@@ -217,8 +217,10 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
     common_vars->rxdataF[i] = (int32_t*)malloc16_clear(fp->samples_per_frame_wCP*sizeof(int32_t));
     common_vars->rxdata[i] = (int32_t*)malloc16_clear(fp->samples_per_frame*sizeof(int32_t));
   }
-  common_vars->debugBuff = (int32_t*)malloc16_clear(fp->samples_per_frame*sizeof(int32_t)*100);	
-  common_vars->debugBuff_sample_offset = 0; 
+  common_vars->debugBuff[0] = (int32_t*)malloc16_clear(fp->samples_per_frame*sizeof(int32_t)*100);	
+  common_vars->debugBuff[1] = (int32_t*)malloc16_clear(fp->samples_per_frame*sizeof(int32_t)*100);	
+  common_vars->debugBuff_sample_offset[0] = 0; 
+  common_vars->debugBuff_sample_offset[1] = 0; 
 
 
   // Channel estimates for SRS
