@@ -95,6 +95,8 @@ function create_vm {
     echo "Waiting for VM to be started"
     uvt-kvm wait $VM_NAME --insecure
 
+    VM_LIST=`uvt-kvm list`
+    echo "$VM_LIST"
     VM_IP_ADDR=`uvt-kvm ip $VM_NAME`
     echo "$VM_NAME has for IP addr = $VM_IP_ADDR"
     release_vm_create_lock
