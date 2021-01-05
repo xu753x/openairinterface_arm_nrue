@@ -47,7 +47,9 @@ function wait_on_vm_build {
     echo "ARCHIVES_LOC        = $ARCHIVES_LOC"
     echo "BUILD_OPTIONS       = $BUILD_OPTIONS"
 
-    IS_VM_ALIVE=`uvt-kvm list | grep -c $VM_NAME`
+    //IS_VM_ALIVE=`uvt-kvm list | grep -c $VM_NAME`
+    IS_VM_ALIVE=`uvt-kvm ip $VM_NAME | grep -c 192`
+    
     VM_LIST=`uvt-kvm list`
     echo "$VM_LIST"
     echo "$IS_VM_ALIVE"
