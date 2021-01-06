@@ -958,7 +958,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     tx_req->PDU_index  = pduindex;
     tx_req->num_TLV = 1;
     tx_req->TLVs[0].length = TBS + 2;
-    tx_req->TLVs[0].value.ptr = harq->tb;
+    memcpy(tx_req->TLVs[0].value.direct, harq->tb, TBS);
     gNB_mac->TX_req[CC_id].Number_of_PDUs++;
     gNB_mac->TX_req[CC_id].SFN = frame;
     gNB_mac->TX_req[CC_id].Slot = slot;
