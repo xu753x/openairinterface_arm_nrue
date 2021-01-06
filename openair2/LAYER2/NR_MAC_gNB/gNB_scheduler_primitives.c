@@ -1613,6 +1613,7 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *secon
     UE_info->rnti[UE_id] = rntiP;
     UE_info->secondaryCellGroup[UE_id] = secondaryCellGroup;
     add_nr_list(&UE_info->list, UE_id);
+    memset(UE_info->mac_stats[UE_id], 0, sizeof(NR_mac_stats_t));
     set_Y(UE_info->Y[UE_id], rntiP);
     compute_csi_bitlen(secondaryCellGroup, UE_info, UE_id);
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
