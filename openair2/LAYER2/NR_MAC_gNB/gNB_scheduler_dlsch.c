@@ -421,7 +421,6 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
   uint16_t *vrb_map = RC.nrmac[module_id]->common_channels[CC_id].vrb_map;
   /* get the PID of a HARQ process awaiting retransmission, or -1 otherwise */
   sched_ctrl->dl_harq_pid = sched_ctrl->retrans_dl_harq.head;
-  NR_UE_harq_t *harq = &sched_ctrl->harq_processes[sched_ctrl->dl_harq_pid];
   const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, 275);
   int rbStart = NRRIV2PRBOFFSET(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, 275);
 
