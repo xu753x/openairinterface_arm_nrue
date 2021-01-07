@@ -1007,10 +1007,10 @@ nr_generate_Msg4(module_id_t module_id,
   /* PREPROCESSOR */
    NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
   //NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
-  int16_t rrc_sdu_length = 0;
-  uint16_t msg4_padding = 0;
-  uint16_t msg4_post_padding = 0;
-  uint16_t msg4_header = 0;
+  // int16_t rrc_sdu_length = 0;  //Not used for the time being, comment temporarily
+  // uint16_t msg4_padding = 0;   //Not used for the time being, comment temporarily
+  // uint16_t msg4_post_padding = 0;  //Not used for the time being, comment temporarily
+  // uint16_t msg4_header = 0;    //Not used for the time being, comment temporarily
   
   int UE_id = find_nr_UE_id_msg4(module_id, ra->rnti);
 

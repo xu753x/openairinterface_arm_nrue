@@ -821,7 +821,7 @@ void nr_configure_pdcch(gNB_MAC_INST *nr_mac,
     pdcch_pdu->BWPStart = NRRIV2PRBOFFSET(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth,275);
     pdcch_pdu->SubcarrierSpacing = scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.subcarrierSpacing;
     pdcch_pdu->CyclicPrefix = (scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.cyclicPrefix==NULL) ? 0 : scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.cyclicPrefix;
-    LOG_I(PHY, "initial dl bwp %d %d (%d)\n", pdcch_pdu->BWPSize, pdcch_pdu->BWPStart, scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth);
+    LOG_I(PHY, "initial dl bwp %d %d (%ld)\n", pdcch_pdu->BWPSize, pdcch_pdu->BWPStart, scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth);
     // first symbol
     //AssertFatal(pdcch_scs==kHz15, "PDCCH SCS above 15kHz not allowed if a symbol above 2 is monitored");
     sps = scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.cyclicPrefix == NULL ? 14 : 12;

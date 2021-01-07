@@ -1672,7 +1672,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
         uint16_t TBS_bytes = ul_config_list->pusch_config_pdu.pusch_data.tb_size;
 
         uint16_t size_sdu = 0;
-        int CC_id;
+        // int CC_id; //Not used for the time being, comment temporarily
         uint8_t mac_sdus[MAX_NR_ULSCH_PAYLOAD_BYTES];
         uint8_t sdu_lcids[NB_RB_MAX] = {0};
         uint16_t sdu_lengths[NB_RB_MAX] = {0};
@@ -4740,7 +4740,7 @@ int nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
         pos+=1;
         dci_pdu_rel15->dmrs_sequence_initialization.val = (*dci_pdu>>(dci_size-pos))&0x1;
 #ifdef DEBUG_EXTRACT_DCI
-	      LOG_D(MAC,"dmrs_sequence_initialization %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->dmrs_sequence_initialization,3,dci_size-pos,*dci_pdu);
+	      LOG_D(MAC,"dmrs_sequence_initialization %u (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->dmrs_sequence_initialization,3,dci_size-pos,*dci_pdu);
 #endif 
         break;
       }

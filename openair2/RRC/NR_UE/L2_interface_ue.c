@@ -49,7 +49,7 @@ nr_mac_rrc_data_ind_ue(
     const uint8_t*        pduP,
     const sdu_size_t      pdu_len){
     sdu_size_t      sdu_size = 0;
-    protocol_ctxt_t ctxt;
+    // protocol_ctxt_t ctxt;  //Not used for the time being, comment temporarily
 
     switch(channel){
         case NR_BCCH_BCH:
@@ -57,7 +57,7 @@ nr_mac_rrc_data_ind_ue(
             break;
         case CCCH:
              if (pdu_len>0) {
-                LOG_T(RRC,"[UE %d] Received SDU for CCCH on SRB %ld from gNB %d\n",module_id,channel & RAB_OFFSET,gNB_index);
+                LOG_T(RRC,"[UE %d] Received SDU for CCCH on SRB %u from gNB %d\n",module_id,channel & RAB_OFFSET,gNB_index);
                 {
                   MessageDef *message_p;
                   int msg_sdu_size = CCCH_SDU_SIZE;

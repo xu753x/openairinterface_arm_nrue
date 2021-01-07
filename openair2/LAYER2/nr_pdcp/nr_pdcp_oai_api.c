@@ -137,7 +137,7 @@ nr_rrc_data_ind_ccch(
 //------------------------------------------------------------------------------
 {
   rb_id_t    DCCH_index = Srb_id;
-  LOG_I(RRC, "[UE %x] Frame %d: received a CCCH %ld message on SRB %d with Size %d from gNB %d\n",
+  LOG_I(RRC, "[UE %x] Frame %d: received a CCCH %ld message on SRB %ld with Size %d from gNB %d\n",
         ctxt_pP->module_id, ctxt_pP->frame, DCCH_index,Srb_id,sdu_sizeP,  ctxt_pP->eNB_index);
   {
     MessageDef *message_p;
@@ -456,7 +456,7 @@ uint64_t pdcp_module_init(uint64_t _pdcp_optmask)
   }
   return pdcp_optmask ;
 }
-static int liuyu=0;
+// static int liuyu=0;  //Not used for the time being, comment temporarily
 static void deliver_sdu_drb(protocol_ctxt_t *ctxt_pP,void *_ue, nr_pdcp_entity_t *entity,
                             char *buf, int size)
 {
@@ -605,8 +605,8 @@ static void deliver_sdu_srb(protocol_ctxt_t *ctxt_pP, void *_ue, nr_pdcp_entity_
   /* Implementation to be added */
   
   nr_pdcp_ue_t *ue = _ue;
-  MessageDef  *message_p;
-  uint8_t     *gtpu_buffer_p;
+  // MessageDef  *message_p;  //Not used for the time being, comment temporarily
+  // uint8_t     *gtpu_buffer_p;  //Not used for the time being, comment temporarily
   int srb_id;
   int i;
 
@@ -622,7 +622,7 @@ static void deliver_sdu_srb(protocol_ctxt_t *ctxt_pP, void *_ue, nr_pdcp_entity_
   exit(1);
 
 rb_found:
-  nr_rrc_data_ind( ctxt_pP, srb_id, size, buf);
+  nr_rrc_data_ind( ctxt_pP, srb_id, size, (const uint8_t *const )buf);
  
   return;
 }

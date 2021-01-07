@@ -583,6 +583,7 @@ rb_found:
 #endif
 }
 
+#if 0   //Not used for the time being, comment temporarily
 static void add_srb(int rnti, struct LTE_SRB_ToAddMod *s)
 {
   nr_rlc_entity_t            *nr_rlc_am;
@@ -684,6 +685,7 @@ static void add_srb(int rnti, struct LTE_SRB_ToAddMod *s)
   }
   nr_rlc_manager_unlock(nr_rlc_ue_manager);
 }
+#endif
 
 static void add_drb_am(int rnti, struct NR_DRB_ToAddMod *s, NR_RLC_BearerConfig_t *rlc_BearerConfig)
 {
@@ -774,7 +776,7 @@ static void srb_add_drb_am(int rnti, struct NR_DRB_ToAddMod *s, NR_RLC_BearerCon
   struct NR_RLC_Config *r = rlc_BearerConfig->rlc_Config;
   struct NR_LogicalChannelConfig *l = rlc_BearerConfig->mac_LogicalChannelConfig;
   int srb_id = 1;
-  int channel_id = 1;//rlc_BearerConfig->logicalChannelIdentity;
+  // int channel_id = 1;//rlc_BearerConfig->logicalChannelIdentity; //Not used for the time being, comment temporarily
   int logical_channel_group;
 
   int t_status_prohibit;
@@ -906,6 +908,7 @@ static void add_drb_um(int rnti, struct NR_DRB_ToAddMod *s, NR_RLC_BearerConfig_
   }
   nr_rlc_manager_unlock(nr_rlc_ue_manager);
 }
+#if 0 //Not used for the time being, comment temporarily
 static void srb_add_drb_um(int rnti, struct NR_DRB_ToAddMod *s, NR_RLC_BearerConfig_t *rlc_BearerConfig)
 {
   nr_rlc_entity_t            *nr_rlc_um;
@@ -914,7 +917,7 @@ static void srb_add_drb_um(int rnti, struct NR_DRB_ToAddMod *s, NR_RLC_BearerCon
   struct NR_RLC_Config *r = rlc_BearerConfig->rlc_Config;
   struct NR_LogicalChannelConfig *l = rlc_BearerConfig->mac_LogicalChannelConfig;
   int srb_id = 1;
-  int channel_id = rlc_BearerConfig->logicalChannelIdentity;
+  // int channel_id = rlc_BearerConfig->logicalChannelIdentity; //Not used for the time being, comment temporarily
   int logical_channel_group;
 
   int sn_field_length;
@@ -975,6 +978,7 @@ static void srb_add_drb_um(int rnti, struct NR_DRB_ToAddMod *s, NR_RLC_BearerCon
   }
   nr_rlc_manager_unlock(nr_rlc_ue_manager);
 }
+#endif
 
 static void add_drb(int rnti, struct NR_DRB_ToAddMod *s, struct NR_RLC_BearerConfig *rlc_BearerConfig)
 {

@@ -436,4 +436,24 @@ int16_t ssb_index_from_prach(module_id_t module_idP,
 
 void find_SSB_and_RO_available(module_id_t module_idP);
 
+void nr_generate_Msg4(module_id_t module_id,
+                 int CC_id,
+                 frame_t frame,
+                 sub_frame_t slot,
+                 int num_slots_per_tdd,
+                 NR_RA_t *ra);
+
+void nr_check_Msg4_Ack(module_id_t module_id,
+                  int CC_id,
+                 frame_t frame,
+                 sub_frame_t slot,
+                 NR_RA_t *ra,
+                 int num_slots_per_tdd);
+
+int find_nr_UE_id_msg4(module_id_t mod_idP, rnti_t rntiP);
+
+uint8_t getN_PRB_DMRS(NR_BWP_Downlink_t *bwp, int numDmrsCdmGrpsNoData);
+
+nfapi_nr_dmrs_type_e getDmrsConfigType(NR_BWP_Downlink_t *bwp);
+
 #endif /*__LAYER2_NR_MAC_PROTO_H__*/
