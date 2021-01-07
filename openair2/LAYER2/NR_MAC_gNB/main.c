@@ -96,7 +96,7 @@ void mac_top_init_gNB(void)
     // These should be out of here later
     pdcp_layer_init();
 
-    if(IS_SOFTMODEM_NOS1 && !get_softmodem_params()->do_ra)
+    if(IS_SOFTMODEM_NOS1 && !get_softmodem_params()->do_ra && !get_softmodem_params()->sa_ra)
       nr_DRB_preconfiguration(0x1234);
 
     rrc_init_nr_global_param();
@@ -117,6 +117,7 @@ void mac_top_init_gNB(void)
     for (list_el = 0; list_el < MAX_MOBILES_PER_GNB; list_el++) {
       UE_info->list.next[list_el] = -1;
       UE_info->active[list_el] = false;
+      UE_info->rnti[list_el] = 0;
       for (int list_harq = 0; list_harq < NR_MAX_NB_HARQ_PROCESSES; list_harq++) {
         UE_info->UE_sched_ctrl[list_el].harq_processes[list_harq].round = 0;
         UE_info->UE_sched_ctrl[list_el].harq_processes[list_harq].ndi = 0;

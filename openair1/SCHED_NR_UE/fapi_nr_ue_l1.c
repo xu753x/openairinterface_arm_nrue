@@ -94,8 +94,6 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
           dlsch0->rnti = dl_config->dl_config_list[i].dlsch_config_pdu.rnti;
           dlsch0_harq = dlsch0->harq_processes[current_harq_pid];
 
-          LOG_D(PHY,"current_harq_pid = %d\n", current_harq_pid);
-
           if (dlsch0_harq){
 
             dlsch0_harq->BWPStart = dlsch_config_pdu->BWPStart;

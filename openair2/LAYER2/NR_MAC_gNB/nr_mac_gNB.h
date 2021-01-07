@@ -476,7 +476,9 @@ typedef struct {
 typedef void (*nr_pp_impl_dl)(module_id_t mod_id,
                               frame_t frame,
                               sub_frame_t slot,
-                              int num_slots_per_tdd);
+                              int num_slots_per_tdd,
+                              int rnti_type,
+                              int UE_id);
 typedef void (*nr_pp_impl_ul)(module_id_t mod_id,
                               frame_t frame,
                               sub_frame_t slot,

@@ -84,7 +84,9 @@ void nr_schedule_ue_spec(module_id_t module_id,
 void nr_simple_dlsch_preprocessor(module_id_t module_id,
                                   frame_t frame,
                                   sub_frame_t slot,
-                                  int num_slots_per_tdd);
+                                  int num_slots_per_tdd,
+                                  int rnti_type,
+                                  int UE_id);
 
 void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, uint8_t slots_per_frame);
 
@@ -104,7 +106,7 @@ void nr_simple_ulsch_preprocessor(module_id_t module_id,
 
 /////// Random Access MAC-PHY interface functions and primitives ///////
 
-void nr_schedule_RA(module_id_t module_idP, frame_t frameP, sub_frame_t slotP);
+void nr_schedule_RA(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, int num_slots_per_tdd);
 
 /* \brief Function to indicate a received preamble on PRACH.  It initiates the RA procedure.
 @param module_idP Instance ID of gNB
@@ -178,7 +180,8 @@ void nr_fill_nfapi_dl_pdu(int Mod_id,
                           int NrOfSymbols,
                           int harq_pid,
                           int ndi,
-                          int round);
+                          int round,
+                          int rnit_type);
 
 void handle_nr_uci_pucch_0_1(module_id_t mod_id,
                              frame_t frame,
@@ -221,7 +224,8 @@ void nr_acknack_scheduling(int Mod_idP,
                            sub_frame_t slotP,
                            int slots_per_tdd,
                            int *pucch_id,
-                           int *pucch_occ);
+                           int *pucch_occ,
+                           int isUEspec);
 
 int get_pucch_resource(NR_UE_info_t *UE_info,int UE_id,int k,int l);
 
@@ -338,7 +342,7 @@ int find_nr_UE_id(module_id_t mod_idP, rnti_t rntiP);
 
 int find_nr_RA_id(module_id_t mod_idP, int CC_idP, rnti_t rntiP);
 
-int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP);
+int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, bool isActive);
 
 void mac_remove_nr_ue(module_id_t mod_id, rnti_t rnti);
 

@@ -665,8 +665,8 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
     return((1 + dlsch->max_ldpc_iterations));
   } else {
 //#if UE_DEBUG_TRACE
-    LOG_D(PHY,"[UE %d] DLSCH: Setting ACK for nr_slot_rx %d TBS %d mcs %d nb_rb %d harq_process->round %d\n",
-	  phy_vars_ue->Mod_id,nr_slot_rx,harq_process->TBS,harq_process->mcs,harq_process->nb_rb, harq_process->round);
+    LOG_D(PHY,"[UE %d] DLSCH: Setting ACK for SFN %d nr_slot_rx %d TBS %d mcs %d nb_rb %d harq_process->round %d\n",
+	  phy_vars_ue->Mod_id,frame,nr_slot_rx,harq_process->TBS,harq_process->mcs,harq_process->nb_rb, harq_process->round);
 //#endif
 
     harq_process->status = SCH_IDLE;

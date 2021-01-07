@@ -242,7 +242,7 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
   //LOG_M("txdata.m","txs",ue->common_vars.txdata[0],1228800,1,1);
 
   /* RACH */
-  if (get_softmodem_params()->do_ra==1) {
+  if ((get_softmodem_params()->do_ra==1) || (get_softmodem_params()->sa_ra==1)) {
     if ((ue->UE_mode[gNB_id] > NOT_SYNCHED && ue->UE_mode[gNB_id] < PUSCH) && (ue->prach_vars[gNB_id]->prach_Config_enabled == 1)) {
       nr_ue_prach_procedures(ue, proc, gNB_id, mode);
     }
@@ -800,19 +800,25 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
       else { // This is to adjust the llr offset in the case of skipping over a dmrs symbol (i.e. in case of no PDSCH REs in DMRS)
 	if      (pdsch == RA_PDSCH) ue->pdsch_vars[proc->thread_id][eNB_id]->llr_offset[m]=ue->pdsch_vars[proc->thread_id][eNB_id]->llr_offset[m-1];
 	else if (pdsch == PDSCH) {
-          if (nr_rx_pdsch(ue,
-                    proc,
-                    pdsch,
-                    eNB_id,
-                    eNB_id_i,
-                    frame_rx,
-                    nr_slot_rx,
-                    m,
-                    first_symbol_flag,
-                    dual_stream_UE,
-                    i_mod,
-                    dlsch0->current_harq_pid) < 0)
-                      return -1;
+          if (dlsch0->harq_processes[harq_pid]->n_dmrs_cdm_groups == 2) 
+          {  
+            ue->pdsch_vars[proc->thread_id][eNB_id]->llr_offset[m]=ue->pdsch_vars[proc->thread_id][eNB_id]->llr_offset[m-1];
+          }
+          else  {
+            if (nr_rx_pdsch(ue,
+                      proc,
+                      pdsch,
+                      eNB_id,
+                      eNB_id_i,
+                      frame_rx,
+                      nr_slot_rx,
+                      m,
+                      first_symbol_flag,
+                      dual_stream_UE,
+                      i_mod,
+                      dlsch0->current_harq_pid) < 0)
+                        return -1;
+          }
         }
 	else AssertFatal(1==0,"not RA_PDSCH or PDSCH\n");
       }
