@@ -520,7 +520,6 @@ static void deliver_sdu_drb(protocol_ctxt_t *ctxt_pP,void *_ue, nr_pdcp_entity_t
       
     }
     #else
-    printf("----------------%d send data to tun -----------------\n",ctxt_pP->enb_flag);
     len = write(nas_sock_fd[0], buf, size);
     if (len != size) {
       LOG_E(PDCP, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
@@ -600,7 +599,6 @@ rb_found:
   enqueue_rlc_data_req(&ctxt, 0, MBMS_FLAG_NO, rb_id, sdu_id, 0, size, memblock, NULL, NULL);
 }
 
-static int ccch_or_dcch = 0;
 static void deliver_sdu_srb(protocol_ctxt_t *ctxt_pP, void *_ue, nr_pdcp_entity_t *entity,
                             char *buf, int size)
 {
@@ -611,18 +609,21 @@ static void deliver_sdu_srb(protocol_ctxt_t *ctxt_pP, void *_ue, nr_pdcp_entity_
   uint8_t     *gtpu_buffer_p;
   int srb_id;
   int i;
-  
-  if (ccch_or_dcch == 0)
-  {
-    nr_rrc_data_ind_ccch( ctxt_pP, 1, size, buf);
-    ccch_or_dcch = 1;
+
+  for (i = 0; i < 2; i++) {
+    if (entity == ue->srb[i]) {
+      srb_id = i+1;
+      goto rb_found;
+    }
   }
-  else 
-  {
-    nr_rrc_data_ind( ctxt_pP, 1, size, buf);
-  }
-  
-  
+
+  LOG_E(PDCP, "%s:%d:%s: fatal, no RB found for ue %d\n",
+        __FILE__, __LINE__, __FUNCTION__, ue->rnti);
+  exit(1);
+
+rb_found:
+  nr_rrc_data_ind( ctxt_pP, srb_id, size, buf);
+ 
   return;
 }
 
@@ -663,9 +664,6 @@ rb_found:
   memblock = get_free_mem_block(size, __FUNCTION__);
   memcpy(memblock->data, buf, size);
 
-printf("!!!!!!! deliver_pdu_srb (srb %d) calling rlc_data_req size %d: ", srb_id, size);
-//for (i = 0; i < size; i++) printf(" %2.2x", (unsigned char)memblock->data[i]);
-printf("\n");
   enqueue_rlc_data_req(&ctxt, 1, MBMS_FLAG_NO, srb_id, sdu_id, 0, size, memblock, NULL, NULL);
 }
 

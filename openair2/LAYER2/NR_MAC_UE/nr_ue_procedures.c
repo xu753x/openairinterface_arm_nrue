@@ -962,7 +962,7 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
-  nr_mac_rrc_data_ind_ue( module_id, cc_id, gNB_index, NR_BCCH_BCH, (uint8_t *) pduP, 3 );    //  fixed 3 bytes MIB PDU
+  nr_mac_rrc_data_ind_ue( module_id, cc_id, gNB_index, 0, 0, 0, NR_BCCH_BCH, (uint8_t *) pduP, 3 );    //  fixed 3 bytes MIB PDU
     
   AssertFatal(mac->mib != NULL, "nr_ue_decode_mib() mac->mib == NULL\n");
   //if(mac->mib != NULL){
@@ -1671,32 +1671,79 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
         fapi_nr_ul_config_request_pdu_t *ul_config_list = &ul_config->ul_config_list[ul_config->number_pdus];
         uint16_t TBS_bytes = ul_config_list->pusch_config_pdu.pusch_data.tb_size;
 
-        //if (IS_SOFTMODEM_NOS1){
-        //  // Getting IP traffic to be transmitted
-        //  data_existing = nr_ue_get_sdu(mod_id,
-        //                                cc_id,
-        //                                frame_tx,
-        //                                slot_tx,
-        //                                0,
-        //                                ulsch_input_buffer,
-        //                                TBS_bytes,
-        //                                &access_mode);
-        //}
+        uint16_t size_sdu = 0;
+        int CC_id;
+        uint8_t mac_sdus[MAX_NR_ULSCH_PAYLOAD_BYTES];
+        uint8_t sdu_lcids[NB_RB_MAX] = {0};
+        uint16_t sdu_lengths[NB_RB_MAX] = {0};
+        uint8_t lcid = UL_SCH_LCID_CCCH;
+        // uint8_t *payload;
+        // payload = (uint8_t*) &mac->CCCH_pdu.payload;
+        // int TBS_bytes_new = 848;
+        int mac_ce_len = 0;
+        int header_length_total = 0;
+        int num_sdus = 1;
+        unsigned short post_padding = 1;
+        int offset;
 
-        //Random traffic to be transmitted if there is no IP traffic available for this Tx opportunity
-        //if (!IS_SOFTMODEM_NOS1 || !data_existing) {
-          //Use zeros for the header bytes in noS1 mode, in order to make sure that the LCID is not valid
-          //and block this traffic from being forwarded to the upper layers at the gNB
-          LOG_D(MAC, "Random data to be tranmsitted (TBS_bytes %d): \n", TBS_bytes);
-          //Give the first byte a dummy value (a value not corresponding to any valid LCID based on 38.321, Table 6.2.1-2)
-          //in order to distinguish the PHY random packets at the MAC layer of the gNB receiver from the normal packets that should
-          //have a valid LCID (nr_process_mac_pdu function)
-          ulsch_input_buffer[0] = 0x31;
-          for (int i = 1; i < TBS_bytes; i++) {
-            ulsch_input_buffer[i] = (unsigned char) rand();
-            //printf(" input encoder a[%d]=0x%02x\n",i,harq_process_ul_ue->a[i]);
-          }
-        //}
+        // //if (IS_SOFTMODEM_NOS1){
+        // //  // Getting IP traffic to be transmitted
+        // //  data_existing = nr_ue_get_sdu(mod_id,
+        // //                                cc_id,
+        // //                                frame_tx,
+        // //                                slot_tx,
+        // //                                0,
+        // //                                ulsch_input_buffer,
+        // //                                TBS_bytes,
+        // //                                &access_mode);
+        // //}
+
+        // //Random traffic to be transmitted if there is no IP traffic available for this Tx opportunity
+        // //if (!IS_SOFTMODEM_NOS1 || !data_existing) {
+        //   //Use zeros for the header bytes in noS1 mode, in order to make sure that the LCID is not valid
+        //   //and block this traffic from being forwarded to the upper layers at the gNB
+        //   LOG_D(MAC, "Random data to be tranmsitted (TBS_bytes %d): \n", TBS_bytes);
+        //   //Give the first byte a dummy value (a value not corresponding to any valid LCID based on 38.321, Table 6.2.1-2)
+        //   //in order to distinguish the PHY random packets at the MAC layer of the gNB receiver from the normal packets that should
+        //   //have a valid LCID (nr_process_mac_pdu function)
+        //   ulsch_input_buffer[0] = 0x31;
+        //   for (int i = 1; i < TBS_bytes; i++) {
+        //     ulsch_input_buffer[i] = (unsigned char) rand();
+        //     //printf(" input encoder a[%d]=0x%02x\n",i,harq_process_ul_ue->a[i]);
+        //   }
+        // //}
+
+        size_sdu = (uint16_t) mac_rrc_nr_data_req_ue(ul_info->module_id,
+                                                  ul_info->cc_id,
+                                                  ul_info->frame_rx,
+                                                  CCCH,
+                                                  1,
+                                                  mac_sdus,
+                                                  ul_info->gNB_index,
+                                                  0);
+        sdu_lcids[0] = lcid;
+        sdu_lengths[0] = TBS_bytes - 3 - post_padding - mac_ce_len;
+        header_length_total += 2 + (sdu_lengths[0] >= 128);
+        size_sdu += sdu_lengths[0];
+
+        offset = nr_generate_ulsch_pdu((uint8_t *) mac_sdus,              // sdus buffer
+                                       (uint8_t *) ulsch_input_buffer,               // UL MAC pdu pointer
+                                       num_sdus,                          // num sdus
+                                       sdu_lengths,                       // sdu length
+                                       sdu_lcids,                         // sdu lcid
+                                       0,                                 // power headroom
+                                       0,                                 // crnti
+                                       0,                                 // truncated bsr
+                                       0,                                 // short bsr
+                                       0,                                 // long_bsr
+                                       post_padding,
+                                       0);
+
+        // Padding: fill remainder with 0
+        if (post_padding > 0){
+          for (int j = 0; j < (TBS_bytes - offset); j++)
+            ulsch_input_buffer[offset + j] = 0; // mac_pdu[offset + j] = 0;
+        }
 
         LOG_D(MAC, "[UE %d] Frame %d, Subframe %d Adding Msg3 UL Config Request for rnti: %x\n",
           ul_info->module_id,
@@ -4879,10 +4926,13 @@ void nr_ue_process_mac_pdu(module_id_t module_idP,
                                  | ((uint16_t)((NR_MAC_SUBHEADER_LONG *) pdu_ptr)->L2 & 0xff);
                     mac_subheader_len = 3;
                 }
-                else{
-                    mac_sdu_len |= (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->L;
-                    mac_subheader_len = 2;
+                else
+                {
+                  mac_sdu_len = ((NR_MAC_SUBHEADER_LONG *) pdu_ptr)->L1;
+                  mac_subheader_len = 2;
                 }
+                
+                nr_mac_rrc_data_ind_ue(module_idP, CC_id, gNB_index, frameP, 0, mac->crnti, CCCH, pdu_ptr+mac_subheader_len, mac_sdu_len);
 
                 break;
 
@@ -4995,7 +5045,7 @@ void nr_ue_process_mac_pdu(module_id_t module_idP,
                 // WIP todo: handle CCCH_pdu
                 mac_ce_len = 6;
                 
-                LOG_I(MAC, "[UE %d][RAPROC] Frame %d : received contention resolution msg: %x.%x.%x.%x.%x.%x, Terminating RA procedure\n", module_idP, frameP, pdu_ptr[0], pdu_ptr[1], pdu_ptr[2], pdu_ptr[3], pdu_ptr[4], pdu_ptr[5]);
+                LOG_I(MAC, "[UE %d][RAPROC] Frame %d : received contention resolution msg: %x.%x.%x.%x.%x.%x, Terminating RA procedure\n", module_idP, frameP, pdu_ptr[1], pdu_ptr[2], pdu_ptr[3], pdu_ptr[4], pdu_ptr[5], pdu_ptr[6]);
 
                 if (mac->RA_active == 1) {
                   LOG_I(MAC, "[UE %d][RAPROC] Frame %d : Clearing RA_active flag\n", module_idP, frameP);
@@ -5059,7 +5109,7 @@ void nr_ue_process_mac_pdu(module_id_t module_idP,
                 #endif
 
                 if (IS_SOFTMODEM_NOS1){
-                  if (rx_lcid < NB_RB_MAX && rx_lcid >= DL_SCH_LCID_CCCH) {
+                  if (rx_lcid < NB_RB_MAX && rx_lcid >= DL_SCH_LCID_DCCH) {
 
                     mac_rlc_data_ind(module_idP,
                                      mac->crnti,
@@ -5139,7 +5189,10 @@ uint16_t nr_generate_ulsch_pdu(uint8_t *sdus_payload,
       }
     } else { // UL CCCH SDU
       mac_pdu_ptr->R = 0;
+      ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->F = 0;
       mac_pdu_ptr->LCID = sdu_lcids[i];
+      ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->L = (unsigned char) sdu_lengths[i];
+      last_size = 2;
     }
 
     mac_pdu_ptr += last_size;
