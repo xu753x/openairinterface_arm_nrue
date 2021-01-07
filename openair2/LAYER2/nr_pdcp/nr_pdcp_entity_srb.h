@@ -1,4 +1,4 @@
-/*
+ /*
  * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -19,24 +19,20 @@
  *      contact@openairinterface.org
  */
 
-#ifndef _NR_PDCP_ENTITY_DRB_AM_H_
-#define _NR_PDCP_ENTITY_DRB_AM_H_
+#ifndef _NR_PDCP_ENTITY_SRB_H_
+#define _NR_PDCP_ENTITY_SRB_H_
 
 #include "nr_pdcp_entity.h"
-#include "platform_types.h"
 
 typedef struct {
   nr_pdcp_entity_t common;
-  int rb_id;
-  int sn_size;               /* unit: bits */
-  int t_reordering;          /* unit: ms */
-  int discard_timer;         /* unit: ms, -1 means infinity */
-} nr_pdcp_entity_drb_am_t;
+  int srb_id;
+} nr_pdcp_entity_srb_t;
 
-void nr_pdcp_entity_drb_am_recv_pdu(protocol_ctxt_t *ctxt_pP,nr_pdcp_entity_t *entity, char *buffer, int size);
-void nr_pdcp_entity_drb_am_recv_sdu(nr_pdcp_entity_t *entity, char *buffer, int size,
-                                    int sdu_id);
-void nr_pdcp_entity_drb_am_set_integrity_key(nr_pdcp_entity_t *entity, char *key);
-void nr_pdcp_entity_drb_am_delete(nr_pdcp_entity_t *entity);
+void nr_pdcp_entity_srb_recv_pdu(protocol_ctxt_t *ctxt_pP, nr_pdcp_entity_t *_entity, char *buffer, int size);
+void nr_pdcp_entity_srb_recv_sdu(nr_pdcp_entity_t *_entity, char *buffer, int size, int sdu_id);
+void nr_pdcp_entity_srb_set_integrity_key(nr_pdcp_entity_t *_entity, char *key);
+void nr_pdcp_entity_srb_delete(nr_pdcp_entity_t *_entity);
 
-#endif /* _NR_PDCP_ENTITY_DRB_AM_H_ */
+
+#endif /* _NR_PDCP_ENTITY_SRB_H_ */
