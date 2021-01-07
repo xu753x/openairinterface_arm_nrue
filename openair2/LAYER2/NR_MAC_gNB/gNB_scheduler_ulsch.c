@@ -191,6 +191,17 @@ void nr_process_mac_pdu(
         case UL_SCH_LCID_CCCH:
               // todo
               mac_subheader_len = 2;
+               nr_mac_rrc_data_ind(module_idP,
+                           CC_id,
+                           frameP, 0,
+                           0,
+                           rnti,
+                           CCCH,
+                           pdu_ptr+2,
+                           pdu_len-2,
+                           0,0
+                          );
+              
               break;
 
         // MAC SDUs
@@ -419,22 +430,19 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
       // re-initialize ta update variables afrer RA procedure completion
       UE_info->UE_sched_ctrl[UE_id].ta_frame = frameP;
 
-      if (isActive) // NSA mode
-      {
-        free(ra->preambles.preamble_list);
-        ra->state = RA_IDLE;
-        LOG_I(MAC,
-              "reset RA state information for RA-RNTI %04x/index %d\n",
-              ra->rnti,
-              i);
-      }
-      else  // SA mode
-      {
-        ra->state = Msg4;
-        ra->Msg4_frame = ( frameP +2 ) % 1024;
-        ra->Msg4_slot = 1;
-        LOG_I(MAC, "set RA state to Msg4 for RA-RNTI %04x, msg4 frame %d %d\n", ra->rnti, ra->Msg4_frame, ra->Msg4_slot);
-      }
+      nr_process_mac_pdu(gnb_mod_idP, current_rnti, CC_idP, frameP, sduP, sdu_lenP);
+
+      free(ra->preambles.preamble_list);
+      //ra->state = RA_IDLE;
+      // LOG_I(MAC,
+      //       "reset RA state information for RA-RNTI %04x/index %d\n",
+      //      ra->rnti,
+      //      i);
+            //ra->state = RA_IDLE;
+      ra->state = Msg4;
+      ra->Msg4_frame = ( frameP +2 ) % 1024;
+      ra->Msg4_slot = 1;
+      LOG_I(MAC, "set RA state to Msg4 for RA-RNTI %04x, msg4 frame %d %d\n", ra->rnti, ra->Msg4_frame, ra->Msg4_slot);
       return;
     }
   }
