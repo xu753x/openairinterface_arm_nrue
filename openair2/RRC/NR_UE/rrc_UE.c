@@ -2041,26 +2041,27 @@ nr_sa_rrc_ue_process_radioBearerConfig(
     derive_key_rrc_int(NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm,
                     NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &kRRCint);
     // Refresh SRBs
-    // nr_rrc_pdcp_config_asn1_req(ctxt_pP,
-    //                             radioBearerConfig->srb_ToAddModList,
-    //                             NULL,
-    //                             NULL,
-    //                             NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm |
-    //                             (NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm << 4),
-    //                             kRRCenc,
-    //                             kRRCint,
-    //                             NULL,
-    //                             NULL,
-    //                             NULL,
-    //                             NULL);
+    nr_rrc_pdcp_config_asn1_req(ctxt_pP,
+                                radioBearerConfig->srb_ToAddModList,
+                                NULL,
+                                NULL,
+                                // NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm |
+                                // (NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm << 4),
+                                0xff,
+                                kRRCenc,
+                                kRRCint,
+                                NULL,
+                                NULL,
+                                NULL,
+                                NULL);
     // Refresh SRBs
-    // nr_rrc_rlc_config_asn1_req(ctxt_pP,
-    //                             radioBearerConfig->srb_ToAddModList,
-    //                             NULL,
-    //                             NULL,
-    //                             NULL,
-    //                             NULL
-    //                             );
+    nr_rrc_rlc_config_asn1_req(ctxt_pP,
+                                radioBearerConfig->srb_ToAddModList,
+                                NULL,
+                                NULL,
+                                NULL,
+                                NULL
+                                );
 
     for (cnt = 0; cnt < radioBearerConfig->srb_ToAddModList->list.count; cnt++) {
       SRB_id = radioBearerConfig->srb_ToAddModList->list.array[cnt]->srb_Identity;
@@ -2115,6 +2116,13 @@ nr_sa_rrc_ue_process_radioBearerConfig(
       } else {
         LOG_D(NR_RRC, "Adding DRB %ld %p\n", DRB_id-1, radioBearerConfig->drb_ToAddModList->list.array[cnt]);
         NR_UE_rrc_inst[ctxt_pP->module_id].DRB_config[gNB_index][DRB_id-1] = radioBearerConfig->drb_ToAddModList->list.array[cnt];
+        nr_rrc_ue_establish_drb(ctxt_pP->module_id,ctxt_pP->frame,gNB_index,radioBearerConfig->drb_ToAddModList->list.array[cnt]);
+        // MAC/PHY Configuration
+        LOG_I(RRC, "[FRAME %05d][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ (DRB %ld eNB %d) --->][MAC_UE][MOD %02d][]\n",
+              ctxt_pP->frame, ctxt_pP->module_id,
+              radioBearerConfig->drb_ToAddModList->list.array[cnt]->drb_Identity,
+              gNB_index,
+              ctxt_pP->module_id);
       }
     }
 
@@ -2133,26 +2141,27 @@ nr_sa_rrc_ue_process_radioBearerConfig(
         (NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm << 4));
 
       // Refresh DRBs
-      // nr_rrc_pdcp_config_asn1_req(ctxt_pP,
-      //                             NULL,
-      //                             radioBearerConfig->drb_ToAddModList,
-      //                             NULL,
-      //                             NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm |
-      //                             (NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm << 4),
-      //                             NULL,
-      //                             NULL,
-      //                             kUPenc,
-      //                             NULL,
-      //                             NR_UE_rrc_inst[ctxt_pP->module_id].defaultDRB,
-      //                             NULL);
+      nr_rrc_pdcp_config_asn1_req(ctxt_pP,
+                                  NULL,
+                                  radioBearerConfig->drb_ToAddModList,
+                                  NULL,
+                                  // NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm |
+                                  // (NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm << 4),
+                                  0xff,
+                                  NULL,
+                                  NULL,
+                                  kUPenc,
+                                  NULL,
+                                  NR_UE_rrc_inst[ctxt_pP->module_id].defaultDRB,
+                                  NULL);
       // Refresh DRBs
-      // nr_rrc_rlc_config_asn1_req(ctxt_pP,
-      //                             NULL,
-      //                             radioBearerConfig->drb_ToAddModList,
-      //                             NULL,
-      //                             NULL,
-      //                             NULL
-      //                             );
+      nr_rrc_rlc_config_asn1_req(ctxt_pP,
+                                  NULL,
+                                  radioBearerConfig->drb_ToAddModList,
+                                  NULL,
+                                  NULL,
+                                  NULL
+                                  );
   } // drb_ToAddModList
 
   if (radioBearerConfig->drb_ToReleaseList != NULL) {
