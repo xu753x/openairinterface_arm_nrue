@@ -5059,7 +5059,7 @@ void nr_ue_process_mac_pdu(module_id_t module_idP,
                 #endif
 
                 if (IS_SOFTMODEM_NOS1){
-                  if (rx_lcid < NB_RB_MAX && rx_lcid >= DL_SCH_LCID_DTCH) {
+                  if (rx_lcid < NB_RB_MAX && rx_lcid >= DL_SCH_LCID_CCCH) {
 
                     mac_rlc_data_ind(module_idP,
                                      mac->crnti,
