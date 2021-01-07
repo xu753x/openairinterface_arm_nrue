@@ -564,6 +564,8 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
            mac->RA_active = 0;
            mac->ra_state = RA_SUCCEEDED;
            mac->generate_nr_prach = 2;
+           mac->crnti = mac->t_crnti;
+           mac->t_crnti = 0;  
         }
         mac->RA_window_cnt = -1;       
         LOG_I(MAC, "[MAC][UE %d][RAPROC]: RAR successfully received \n", mod_id);
