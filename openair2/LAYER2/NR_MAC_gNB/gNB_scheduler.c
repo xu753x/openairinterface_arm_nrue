@@ -412,7 +412,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   // This schedule RA procedure if not in phy_test mode
   // Otherwise already consider 5G already connected
   if (get_softmodem_params()->phy_test == 0) {
-    nr_schedule_RA(module_idP, frame, slot);
+    nr_schedule_RA(module_idP, frame, slot, num_slots_per_tdd);
   }
 
   // This schedules the DCI for Uplink and subsequently PUSCH
@@ -427,7 +427,8 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   }
 
 
-  if (UE_info->active[UE_id])
+  //if (UE_info->active[UE_id])
+    if (UE_info->rnti[UE_id] > 0)
     nr_schedule_pucch(module_idP, UE_id, nr_ulmix_slots, frame, slot);
 
   stop_meas(&RC.nrmac[module_idP]->eNB_scheduler);

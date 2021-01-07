@@ -99,6 +99,7 @@ extern "C"
 #define SPLIT73             softmodem_params.split73
 #define TP_CONFIG           softmodem_params.threadPoolConfig
 #define PHY_TEST            softmodem_params.phy_test
+#define SA_RA                  softmodem_params.sa_ra
 #define DO_RA               softmodem_params.do_ra
 #define WAIT_FOR_SYNC       softmodem_params.wait_for_sync
 #define SINGLE_THREAD_FLAG  softmodem_params.single_thread_flag
@@ -118,6 +119,7 @@ extern "C"
     {"split73",              CONFIG_HLP_SPLIT73,      0,              strptr:(char **)&SPLIT73,           defstrval:NULL,        TYPE_STRING, sizeof(SPLIT73)},\
     {"thread-pool",          CONFIG_HLP_TPOOL,        0,              strptr:(char **)&TP_CONFIG,         defstrval:"n",         TYPE_STRING, sizeof(TP_CONFIG)}, \
     {"phy-test",             CONFIG_HLP_PHYTST,       PARAMFLAG_BOOL, iptr:&PHY_TEST,                     defintval:0,           TYPE_INT,    0},                     \
+    {"sa-ra",                  CONFIG_HLP_PHYTST,       PARAMFLAG_BOOL, iptr:&SA_RA,                            defintval:0,           TYPE_INT,    0},                     \
     {"do-ra",                CONFIG_HLP_DORA,         PARAMFLAG_BOOL, iptr:&DO_RA,                        defintval:0,           TYPE_INT,    0},                     \
     {"usim-test",            CONFIG_HLP_USIM,         PARAMFLAG_BOOL, u8ptr:&USIM_TEST,                   defintval:0,           TYPE_UINT8,  0},                     \
     {"clock-source",                CONFIG_HLP_CLK,          0,              uptr:&CLOCK_SOURCE,                 defintval:0,           TYPE_UINT,   0},                     \
@@ -212,6 +214,7 @@ typedef struct {
   char           split73[1024];
   char           threadPoolConfig[1024];
   int            phy_test;
+  int            sa_ra;
   int            do_ra;
   uint8_t        usim_test;
   int            emulate_rf;

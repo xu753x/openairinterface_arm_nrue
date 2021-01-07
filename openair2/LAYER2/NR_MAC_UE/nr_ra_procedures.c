@@ -553,12 +553,19 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
       if (mac->RA_window_cnt >= 0 && mac->RA_RAPID_found == 1) {
 
-        // Reset RA_active flag: it disables Msg3 retransmission (8.3 of TS 38.213)
-        // TbD Msg3 Retransmissions to be scheduled by DCI 0_0
-        mac->RA_active = 0;
-        mac->RA_window_cnt = -1;
-        mac->ra_state = RA_SUCCEEDED;
-        mac->generate_nr_prach = 2;
+        if (get_softmodem_params()->sa_ra)
+        {
+           mac->ra_state = WAIT_CONTENTION_RESOLUTION;
+        }
+        else
+        {
+           // Reset RA_active flag: it disables Msg3 retransmission (8.3 of TS 38.213)
+           // TbD Msg3 Retransmissions to be scheduled by DCI 0_0
+           mac->RA_active = 0;
+           mac->ra_state = RA_SUCCEEDED;
+           mac->generate_nr_prach = 2;
+        }
+        mac->RA_window_cnt = -1;       
         LOG_I(MAC, "[MAC][UE %d][RAPROC]: RAR successfully received \n", mod_id);
 
       } else if (mac->RA_window_cnt == 0 && !mac->RA_RAPID_found) {

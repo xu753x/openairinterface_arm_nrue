@@ -375,60 +375,94 @@ uint8_t getN_PRB_DMRS(NR_BWP_Downlink_t *bwp, int numDmrsCdmGrpsNoData) {
 void nr_simple_dlsch_preprocessor(module_id_t module_id,
                                   frame_t frame,
                                   sub_frame_t slot,
-                                  int num_slots_per_tdd) {
+                                  int num_slots_per_tdd,
+                                  int rnti_type,
+                                  int UE_id) {
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
 
-  AssertFatal(UE_info->num_UEs <= 1,
-              "%s() cannot handle more than one UE, but found %d\n",
-              __func__,
-              UE_info->num_UEs);
-  if (UE_info->num_UEs == 0)
-    return;
-
-  const int UE_id = 0;
   const int CC_id = 0;
-
+  rnti_t rnti;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+  uint16_t Y = 0;
+  int m = 0;
+  int ss_type;
+  int cid;
+  rnti = UE_info->rnti[UE_id];
 
-  /* Retrieve amount of data to send for this UE */
-  sched_ctrl->num_total_bytes = 0;
-  const int lcid = DL_SCH_LCID_DTCH;
-  const rnti_t rnti = UE_info->rnti[UE_id];
-  sched_ctrl->rlc_status[lcid] = mac_rlc_status_ind(module_id,
-                                                    rnti,
-                                                    module_id,
-                                                    frame,
-                                                    slot,
-                                                    ENB_FLAG_YES,
-                                                    MBMS_FLAG_NO,
-                                                    lcid,
-                                                    0,
-                                                    0);
-  sched_ctrl->num_total_bytes += sched_ctrl->rlc_status[lcid].bytes_in_buffer;
-  if (sched_ctrl->num_total_bytes == 0
+  if (rnti_type == NR_RNTI_C)
+  {
+    /* Retrieve amount of data to send for this UE */
+    sched_ctrl->num_total_bytes = 0;
+    const int lcid = DL_SCH_LCID_DTCH;
+    
+    sched_ctrl->rlc_status[lcid] = mac_rlc_status_ind(module_id,
+                                                      rnti,
+                                                      module_id,
+                                                      frame,
+                                                      slot,
+                                                      ENB_FLAG_YES,
+                                                      MBMS_FLAG_NO,
+                                                      lcid,
+                                                      0,
+                                                      0);
+    sched_ctrl->num_total_bytes += sched_ctrl->rlc_status[lcid].bytes_in_buffer;
+    if (sched_ctrl->num_total_bytes == 0
       && !sched_ctrl->ta_apply) /* If TA should be applied, give at least one RB */
     return;
 
-  LOG_D(MAC, "[%s][%d.%d], DTCH%d->DLSCH, RLC status %d bytes TA %d\n",
+    LOG_D(MAC, "[%s][%d.%d], DTCH%d->DLSCH, RLC status %d bytes TA %d\n",
         __FUNCTION__,
         frame,
         slot,
         lcid,
         sched_ctrl->rlc_status[lcid].bytes_in_buffer,
         sched_ctrl->ta_apply);
+    ss_type = 1; // UE_Specific
+    const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
+ 
+    sched_ctrl->search_space = get_searchspace(sched_ctrl->active_bwp, target_ss);
+    sched_ctrl->coreset = get_coreset(sched_ctrl->active_bwp, sched_ctrl->search_space, ss_type);
 
+    cid = sched_ctrl->coreset->controlResourceSetId;
+    Y = UE_info->Y[UE_id][cid][slot];
+    m = UE_info->num_pdcch_cand[UE_id][cid];
+  }
+  else if (rnti_type == NR_RNTI_TC)
+  { 
+    gNB_MAC_INST                      *nr_mac = RC.nrmac[module_id];
+    NR_COMMON_channels_t                  *cc = &nr_mac->common_channels[CC_id];
+    NR_RA_t *ra = &cc->ra[0];
+    /*
+    rrc_sdu_length = mac_rrc_data_req(module_idP, CC_idP, frameP, CCCH,
+                                          UE_RNTI(module_idP,UE_id),1,  // 1 transport block
+                                          &cc[CC_idP].CCCH_pdu.payload[0], 0);  // not used in this case
+    */
+    int rrc_sdu_length = 500;
+    sched_ctrl->num_total_bytes += rrc_sdu_length;
+    if (sched_ctrl->num_total_bytes == 0)
+    return;
+    LOG_D(MAC,
+              "[gNB %d][RAPROC] CC_id %d Frame %d, slot %d: UE_id %d, rrc_sdu_length %d\n",
+              module_id, CC_id, frame, slot, UE_id, rrc_sdu_length);
+    sched_ctrl->search_space = ra->ra_ss;
+    ss_type = 0; // Common
+    sched_ctrl->coreset = get_coreset(sched_ctrl->active_bwp, sched_ctrl->search_space, ss_type);
+    cid = sched_ctrl->coreset->controlResourceSetId;
+    rnti = ra->rnti;
+  }
+  else
+  {
+    return;
+  }
+  
+   
   /* Find a free CCE */
-  const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
-  sched_ctrl->search_space = get_searchspace(sched_ctrl->active_bwp, target_ss);
+
   uint8_t nr_of_candidates;
   find_aggregation_candidates(&sched_ctrl->aggregation_level,
                               &nr_of_candidates,
                               sched_ctrl->search_space);
-  sched_ctrl->coreset = get_coreset(
-      sched_ctrl->active_bwp, sched_ctrl->search_space, 1 /* dedicated */);
-  int cid = sched_ctrl->coreset->controlResourceSetId;
-  const uint16_t Y = UE_info->Y[UE_id][cid][slot];
-  const int m = UE_info->num_pdcch_cand[UE_id][cid];
+
   sched_ctrl->cce_index = allocate_nr_CCEs(RC.nrmac[module_id],
                                            sched_ctrl->active_bwp,
                                            sched_ctrl->coreset,
@@ -436,6 +470,9 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
                                            Y,
                                            m,
                                            nr_of_candidates);
+
+  LOG_D(PHY, "simple: frame %d %d, rnti %d, cce index %d, ss_type %d, ue is active %d\n",  frame,
+                        slot, rnti, sched_ctrl->cce_index, ss_type, UE_info->active[UE_id]);                                         
   if (sched_ctrl->cce_index < 0) {
     LOG_E(MAC, "%s(): could not find CCE for UE %d\n", __func__, UE_id);
     return;
@@ -449,7 +486,8 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
                         slot,
                         num_slots_per_tdd,
                         &sched_ctrl->pucch_sched_idx,
-                        &sched_ctrl->pucch_occ_idx);
+                        &sched_ctrl->pucch_occ_idx,
+                        ss_type);
 
   AssertFatal(sched_ctrl->pucch_sched_idx >= 0, "no uplink slot for PUCCH found!\n");
 
@@ -496,7 +534,7 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
     // modulation scheme
     sched_ctrl->mcsTableIdx = 0;
     sched_ctrl->mcs = 9;
-    sched_ctrl->numDmrsCdmGrpsNoData = 1;
+    sched_ctrl->numDmrsCdmGrpsNoData = (ss_type == 1)? 1 : 2;
 
     // Freq-demain allocation
     while (rbStart < bwpSize && vrb_map[rbStart]) rbStart++;
@@ -505,13 +543,22 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
         getN_PRB_DMRS(sched_ctrl->active_bwp, sched_ctrl->numDmrsCdmGrpsNoData);
     int nrOfSymbols = getNrOfSymbols(sched_ctrl->active_bwp,
                                      sched_ctrl->time_domain_allocation);
-    uint8_t N_DMRS_SLOT = get_num_dmrs_symbols(sched_ctrl->active_bwp->bwp_Dedicated->pdsch_Config->choice.setup,
+    uint8_t N_DMRS_SLOT = get_num_dmrs_symbols((ss_type == 1)? sched_ctrl->active_bwp->bwp_Dedicated->pdsch_Config->choice.setup : NULL,
                                                RC.nrmac[module_id]->common_channels->ServingCellConfigCommon->dmrs_TypeA_Position ,
                                                nrOfSymbols);
 
     int rbSize = 0;
-    const int oh = 2 + (sched_ctrl->num_total_bytes >= 256)
-                 + 2 * (frame == (sched_ctrl->ta_frame + 10) % 1024);
+    int oh;
+    if (rnti_type == NR_RNTI_C)
+    {
+        oh = 2 + (sched_ctrl->num_total_bytes >= 256)
+                       + 2 * (frame == (sched_ctrl->ta_frame + 10) % 1024);
+    }
+    else 
+    {   // NR_RNTI_TC, msg4
+        oh = 2 + (sched_ctrl->num_total_bytes >= 256)
+                 + 1 + 6; // UE Contention Resolution Identity CE
+    }
     uint32_t TBS = 0;
     do {
       rbSize++;
@@ -540,15 +587,19 @@ void nr_schedule_ue_spec(module_id_t module_id,
                          int num_slots_per_tdd) {
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_id];
 
-  /* PREPROCESSOR */
-  gNB_mac->pre_processor_dl(module_id, frame, slot, num_slots_per_tdd);
 
   NR_UE_info_t *UE_info = &gNB_mac->UE_info;
 
   const int CC_id = 0;
   NR_UE_list_t *UE_list = &UE_info->list;
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
+    
+    if (!UE_info->active[UE_id])
+       continue;
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+
+      /* PREPROCESSOR */
+    gNB_mac->pre_processor_dl(module_id, frame, slot, num_slots_per_tdd, NR_RNTI_C, UE_id);
 
     /* update TA and set ta_apply every 10 frames.
      * Possible improvement: take the periodicity from input file.
@@ -620,7 +671,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
                          nrOfSymbols,
                          current_harq_pid,
                          harq->ndi,
-                         harq->round);
+                         harq->round,
+                         NR_RNTI_C);
 
     NR_UE_ret_info_t *retInfo = &sched_ctrl->retInfo[current_harq_pid];
     if (harq->round != 0) { /* retransmission */
@@ -712,7 +764,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
         header_length_total += header_length_last;
         num_sdus++;
       }
-      else if (get_softmodem_params()->phy_test || get_softmodem_params()->do_ra) {
+      else if (get_softmodem_params()->phy_test || get_softmodem_params()->do_ra || get_softmodem_params()->sa_ra) {
         LOG_D(MAC, "Configuring DL_TX in %d.%d: random data\n", frame, slot);
         // fill dlsch_buffer with random data
         for (int i = 0; i < TBS; i++)

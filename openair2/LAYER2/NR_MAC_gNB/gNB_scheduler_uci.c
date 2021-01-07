@@ -40,8 +40,10 @@ void nr_schedule_pucch(int Mod_idP,
                        frame_t frameP,
                        sub_frame_t slotP) {
   NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
-  AssertFatal(UE_info->active[UE_id],"Cannot find UE_id %d is not active\n",UE_id);
-
+  //AssertFatal(UE_info->active[UE_id],"Cannot find UE_id %d is not active\n",UE_id);
+  if (UE_info->active[UE_id] <= 0)
+      LOG_D(MAC, "Cannot find UE_id %d is not active\n",UE_id);
+  
   for (int k=0; k<nr_ulmix_slots; k++) {
     for (int l=0; l<2; l++) {
       NR_sched_pucch *curr_pucch = &UE_info->UE_sched_ctrl[UE_id].sched_pucch[k][l];
@@ -280,6 +282,8 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
                              const nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_01)
 {
   int UE_id = find_nr_UE_id(mod_id, uci_01->rnti);
+  
+  LOG_D(MAC, "handle_nr_uci_pucch_0_1, ue id %d, rnti %d\n", UE_id, uci_01->rnti);
   if (UE_id < 0) {
     LOG_E(MAC, "%s(): unknown RNTI %04x in PUCCH UCI\n", __func__, uci_01->rnti);
     return;
@@ -314,6 +318,10 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
           else
             sched_ctrl->harq_processes[harq_idx].round++;
           sched_ctrl->harq_processes[harq_idx].is_waiting = 0;
+          LOG_D(MAC, "%s():  RNTI %04x in PUCCH UCI, harq bit %d, idx %d, feedbanck slot %d, round %d, harq value %d, confidence %d\n", __func__, uci_01->rnti,
+          harq_bit, harq_idx, sched_ctrl->harq_processes[harq_idx].feedback_slot, sched_ctrl->harq_processes[harq_idx].round,
+          uci_01->harq->harq_list[harq_bit].harq_value,
+          uci_01->harq->harq_confidence_level);
           harq_idx_s = harq_idx + 1;
           // if the max harq rounds was reached
           if (sched_ctrl->harq_processes[harq_idx].round == max_harq_rounds) {
@@ -334,6 +342,10 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
             sched_ctrl->harq_processes[harq_idx].round = 0;
           }
           sched_ctrl->harq_processes[harq_idx].is_waiting = 0;
+          LOG_D(MAC, "%s():  RNTI %04x in PUCCH UCI, harq bit %d, idx %d, feedbanck slot %d, round %d, harq value %d, confidence %d\n", __func__, uci_01->rnti,
+          harq_bit, harq_idx, sched_ctrl->harq_processes[harq_idx].feedback_slot, sched_ctrl->harq_processes[harq_idx].round,
+          uci_01->harq->harq_list[harq_bit].harq_value,
+          uci_01->harq->harq_confidence_level);          
         }
       }
     }
@@ -380,6 +392,10 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
           else
             sched_ctrl->harq_processes[harq_idx].round++;
           sched_ctrl->harq_processes[harq_idx].is_waiting = 0;
+          LOG_D(MAC, "%s():  RNTI %04x in PUCCH UCI, harq bit %d, idx %d, feedbanck slot %d, round %d, harq crc %d, acknack %d\n", __func__, uci_234->rnti,
+          harq_bit, harq_idx, sched_ctrl->harq_processes[harq_idx].feedback_slot, sched_ctrl->harq_processes[harq_idx].round,
+          uci_234->harq.harq_crc,
+          acknack);          
           harq_idx_s = harq_idx + 1;
           // if the max harq rounds was reached
           if (sched_ctrl->harq_processes[harq_idx].round == max_harq_rounds) {
@@ -400,6 +416,10 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
             sched_ctrl->harq_processes[harq_idx].round = 0;
           }
           sched_ctrl->harq_processes[harq_idx].is_waiting = 0;
+          LOG_D(MAC, "%s():  RNTI %04x in PUCCH UCI, harq bit %d, idx %d, feedbanck slot %d, round %d, harq crc %d, acknack %d\n", __func__, uci_234->rnti,
+          harq_bit, harq_idx, sched_ctrl->harq_processes[harq_idx].feedback_slot, sched_ctrl->harq_processes[harq_idx].round,
+          uci_234->harq.harq_crc,
+          acknack);           
         }
       }
     }
@@ -414,7 +434,8 @@ void nr_acknack_scheduling(int Mod_idP,
                            sub_frame_t slotP,
                            int slots_per_tdd,
                            int *pucch_id,
-                           int *pucch_occ) {
+                           int *pucch_occ,
+                           int isUEspec) {
 
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[Mod_idP]->common_channels->ServingCellConfigCommon;
   NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
@@ -440,7 +461,15 @@ void nr_acknack_scheduling(int Mod_idP,
     max_acknacks=2;
 
   // this is hardcoded for now as ue specific
-  NR_SearchSpace__searchSpaceType_PR ss_type = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
+  NR_SearchSpace__searchSpaceType_PR ss_type;
+  if( isUEspec == 1)
+  {
+      ss_type = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
+  }
+  else
+  {
+      ss_type = NR_SearchSpace__searchSpaceType_PR_common;
+  }
   get_pdsch_to_harq_feedback(Mod_idP,UE_id,ss_type,pdsch_to_harq_feedback);
 
   // for each possible ul or mixed slot
