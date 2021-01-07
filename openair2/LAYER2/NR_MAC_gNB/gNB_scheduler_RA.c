@@ -1150,7 +1150,7 @@ nr_generate_Msg4(module_id_t module_id,
       const int lcid = DL_SCH_LCID_CCCH;
       if (sched_ctrl->num_total_bytes > 0) {
         LOG_I(MAC,
-              "[gNB %d][USER-PLANE DEFAULT DRB] Frame %d : DTCH->DLSCH, Requesting "
+              "[gNB %d][MSG4] Frame %d : CCCH->DLSCH, Requesting "
               "%d bytes from RLC (lcid %d total hdr len %d), TBS: %d \n \n",
               module_id,
               frame,

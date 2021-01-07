@@ -4926,7 +4926,13 @@ void nr_ue_process_mac_pdu(module_id_t module_idP,
                                  | ((uint16_t)((NR_MAC_SUBHEADER_LONG *) pdu_ptr)->L2 & 0xff);
                     mac_subheader_len = 3;
                 }
-                nr_mac_rrc_data_ind_ue(module_idP, CC_id, gNB_index, frameP, 0, mac->crnti, CCCH, pdu_ptr+2, pdu_len-2);
+                else
+                {
+                  mac_sdu_len = ((NR_MAC_SUBHEADER_LONG *) pdu_ptr)->L1;
+                  mac_subheader_len = 2;
+                }
+                
+                nr_mac_rrc_data_ind_ue(module_idP, CC_id, gNB_index, frameP, 0, mac->crnti, CCCH, pdu_ptr+mac_subheader_len, mac_sdu_len);
 
                 break;
 
@@ -5103,7 +5109,7 @@ void nr_ue_process_mac_pdu(module_id_t module_idP,
                 #endif
 
                 if (IS_SOFTMODEM_NOS1){
-                  if (rx_lcid < NB_RB_MAX && rx_lcid >= DL_SCH_LCID_DTCH) {
+                  if (rx_lcid < NB_RB_MAX && rx_lcid >= DL_SCH_LCID_DCCH) {
 
                     mac_rlc_data_ind(module_idP,
                                      mac->crnti,
