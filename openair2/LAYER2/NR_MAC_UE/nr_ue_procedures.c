@@ -1784,6 +1784,7 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
   uint16_t format, format0, format1, ncs;
   int is_nr_prach_slot;
   prach_occasion_info_t *prach_occasion_info_p;
+  int best_ssb_id;
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_idP);
 
@@ -1800,6 +1801,9 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
 
   mac->RA_offset = 2; // to compensate the rx frame offset at the gNB
   mac->generate_nr_prach = 0; // Reset flag for PRACH generation
+  
+  best_ssb_id = mac->best_init_ssb_id;
+  printf("mac best init beam id %d\n", best_ssb_id);
 
   if (is_nr_UL_slot(scc, slotP)) {
 

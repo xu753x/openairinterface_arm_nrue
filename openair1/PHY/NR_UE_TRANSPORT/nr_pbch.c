@@ -443,6 +443,8 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   //time_stats_t path_metric,sorting,update_LLR;
 // FT ?? cppcheck fix  memset(&pbch_a[0], 0, sizeof(uint8_t) * NR_POLAR_PBCH_PAYLOAD_BITS);
   //printf("nr_pbch_ue nid_cell %d\n",frame_parms->Nid_cell);
+  
+ // NR_UE_MAC_INST_t *mac = get_mac_inst(0);
 
   pbch_e_rx = &nr_ue_pbch_vars->llr[0];
   // clear LLR buffer
@@ -606,6 +608,14 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   }
 #endif
 
+//if (ue->measurements.best_beam_gnb == ue->measurements.gnb_beam_cnt)
+	//mac->best_init_ssb_id = i_ssb;
+	
+	//if (ue->measurements.best_beam_gnb == ue->measurements.gnb_beam_cnt || ue->measurements.first_beam_meas)
+	
+	
+  //if (ue->measurements.best_beam_gnb == ue->measurements.gnb_beam_cnt || ue->measurements.first_beam_meas)
+  {
   nr_downlink_indication_t dl_indication;
   fapi_nr_rx_indication_t rx_ind;
     
@@ -628,6 +638,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 
   if (ue->if_inst && ue->if_inst->dl_indication)
     ue->if_inst->dl_indication(&dl_indication, NULL);
+  }
 
   return 0;
 }

@@ -1683,6 +1683,8 @@ int is_ssb_in_slot(fapi_nr_config_request_t *config, int frame, int slot, NR_DL_
 int is_pbch_in_slot(fapi_nr_config_request_t *config, int frame, int slot, NR_DL_FRAME_PARMS *fp)  {
 
   int ssb_slot_decoded = (fp->ssb_index>>1) + ((fp->ssb_index>>4)<<1); //slot in which the decoded SSB can be found
+  
+  printf("ssb_slot_decoded %d fp ssb index %d period %d\n", ssb_slot_decoded,fp->ssb_index,config->ssb_table.ssb_period);
 
   if (config->ssb_table.ssb_period == 0) {  
     // check for pbch in corresponding slot each half frame
@@ -1712,6 +1714,9 @@ void nr_get_beam_cnt(PHY_VARS_NR_UE *ue, int frame_rx, uint16_t nb_ssbri_cri) {
 	
 	printf("frame temp %d frame rx %d gnb beam %d ue beam %d\n", ue->measurements.frame_last_beam, frame_rx, ue->measurements.gnb_beam_cnt,ue->measurements.ue_beam_cnt);
 
+	//if (ue->measurements.ue_beam_cnt == -1)
+	//	ue->measurements.beam_select_ready = 0;
+		
 	if (ue->measurements.frame_last_beam == frame_rx){
 			ue->measurements.gnb_beam_cnt++;
 	}
@@ -1722,7 +1727,7 @@ void nr_get_beam_cnt(PHY_VARS_NR_UE *ue, int frame_rx, uint16_t nb_ssbri_cri) {
 		ue->measurements.gnb_beam_cnt = 0;
 	}
 	
-	printf("ue procedure gnb beam cnt %d frame_temp %d ue beam %d\n", ue->measurements.gnb_beam_cnt, ue->measurements.frame_last_beam,ue->measurements.ue_beam_cnt);
+	printf("ue procedure gnb beam cnt %d frame_temp %d ue beam %d ready %d\n", ue->measurements.gnb_beam_cnt, ue->measurements.frame_last_beam,ue->measurements.ue_beam_cnt,ue->measurements.beam_select_ready);
 }
 
 void nr_get_best_beam(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint16_t nb_ssbri_cri) {
@@ -1730,6 +1735,7 @@ void nr_get_best_beam(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint16_t nb_ssbri_cri)
 	uint32_t rsrp_temp = 0;
 	int ue_beam_temp = 0;
 	int gnb_beam_temp = 0;
+	printf("nb_ssbri_cri %d\n", nb_ssbri_cri);
 	
 	if ((ue->measurements.ue_beam_cnt ==3) && ((nb_ssbri_cri-1)==ue->measurements.gnb_beam_cnt)){
 		for (int i = 0; i < 4; i++){
@@ -1746,7 +1752,8 @@ void nr_get_best_beam(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint16_t nb_ssbri_cri)
 		ue->measurements.best_beam_ue = ue_beam_temp;
 		ue->measurements.best_beam_gnb = gnb_beam_temp;
 		ue->measurements.ue_beam_cnt = -1;
-		printf("best ue beam %d\n",ue_beam_temp);
+		ue->measurements.beam_select_ready = 1;
+		printf("best ue beam %d gnb %d ready %d\n",ue_beam_temp, gnb_beam_temp, ue->measurements.beam_select_ready);
 	}
 }
 
@@ -1771,7 +1778,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   NR_UE_MAC_INST_t *mac = get_mac_inst(0);
   NR_CSI_MeasConfig_t *csi_MeasConfig = mac->scg->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
   
-  nb_ssbri_cri = *(csi_MeasConfig->csi_ReportConfigToAddModList->list.array[0]->groupBasedBeamReporting.choice.disabled->nrofReportedRS)+1;
+  nb_ssbri_cri = 4; //*(csi_MeasConfig->csi_ReportConfigToAddModList->list.array[0]->groupBasedBeamReporting.choice.disabled->nrofReportedRS)+1;
   
   //printf("nb ssbri cri %d\n", nb_ssbri_cri);
   
@@ -1822,14 +1829,24 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
     //}
 
 	nr_get_best_beam(ue, gNB_id, nb_ssbri_cri);
+	
+	//mac->best_init_ssb_id = ue->measurements.best_beam_gnb;
+	
+	//if (ue->measurements.best_beam_gnb == ue->measurements.gnb_beam_cnt || ue->measurements.first_beam_meas)
+	//LOG_I(PHY," ------ before frame.slot %d.%d ------  best beam %d gnb beam cnt %d\n", frame_rx%1024, nr_slot_rx, ue->measurements.best_beam_gnb, ue->measurements.gnb_beam_cnt);
+      
 
-    if ((ue->decode_MIB == 1) && slot_pbch) {
+    //if ((ue->decode_MIB == 1) && (ue->measurements.best_beam_gnb == ue->measurements.gnb_beam_cnt)) { //&& slot_pbch
+     if ((ue->decode_MIB == 1) ) { //&& slot_pbch
 
-      LOG_D(PHY," ------  Decode MIB: frame.slot %d.%d ------  \n", frame_rx%1024, nr_slot_rx);
+      LOG_I(PHY," ------  Decode MIB: frame.slot %d.%d ------  best beam %d gnb beam cnt %d\n", frame_rx%1024, nr_slot_rx, ue->measurements.best_beam_gnb, ue->measurements.gnb_beam_cnt);
       nr_ue_pbch_procedures(gNB_id, ue, proc, 0);
+      
+      if (ue->measurements.best_beam_gnb == ue->measurements.gnb_beam_cnt)
+		mac->best_init_ssb_id = mac->mib_ssb;
 
       if (ue->no_timing_correction==0) {
-        LOG_D(PHY,"start adjust sync slot = %d no timing %d\n", nr_slot_rx, ue->no_timing_correction);
+        LOG_I(PHY,"start adjust sync slot = %d no timing %d\n", nr_slot_rx, ue->no_timing_correction);
         nr_adjust_synch_ue(fp,
                            ue,
                            gNB_id,

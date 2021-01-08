@@ -148,6 +148,7 @@ void init_nr_ue_vars(PHY_VARS_NR_UE *ue,
   ue->measurements.ue_beam_cnt = 0;
   ue->measurements.first_beam_meas = 1;
   ue->measurements.frame_last_beam = 0;
+  ue->measurements.beam_select_ready = 0;
 
   // Setting UE mode to NOT_SYNCHED by default
   for (gNB_id = 0; gNB_id < nb_connected_gNB; gNB_id++){

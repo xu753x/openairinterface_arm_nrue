@@ -254,6 +254,8 @@ typedef struct {
   uint8_t mib_ssb;
   /// TCI ssb index
   uint8_t tci_ssb_id;
+    /// Best init ssb index
+  uint8_t best_init_ssb_id;
 
   ////	FAPI-like interface message
   fapi_nr_ul_config_request_t *ul_config_request;

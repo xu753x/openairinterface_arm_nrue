@@ -100,7 +100,7 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
           
       //printf("adjust sync count_max_pos_ok = %d\n",count_max_pos_ok);
 
-      if(count_max_pos_ok > 10 && first_time == 1)
+      if((count_max_pos_ok > 10) && (first_time == 1)&& (ue->measurements.beam_select_ready))
       {
           first_time = 0;
           ue->time_sync_cell = 1;

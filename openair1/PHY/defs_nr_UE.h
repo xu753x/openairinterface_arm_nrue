@@ -195,6 +195,7 @@ typedef struct {
   int frame_last_beam;
   int best_beam_ue;
   int best_beam_gnb;
+  int beam_select_ready;
   // common measurements
   //! estimated noise power (linear)
   unsigned int   n0_power[NB_ANTENNAS_RX];

@@ -267,6 +267,8 @@ int nr_init_frame_parms(nfapi_nr_config_request_scf_t* cfg,
 
   int Ncp = NFAPI_CP_NORMAL;
   int mu = cfg->ssb_config.scs_common.value;
+  
+  LOG_I(PHY,"Initializing frame parms for mu %d, N_RB %d, Ncp %d l_ssb %lx \n",mu, fp->N_RB_DL, Ncp, fp->L_ssb);
 
 #if DISABLE_LOG_X
   printf("Initializing frame parms for mu %d, N_RB %d, Ncp %d\n",mu, fp->N_RB_DL, Ncp);
