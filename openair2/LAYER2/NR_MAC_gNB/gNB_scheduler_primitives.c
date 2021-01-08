@@ -1597,7 +1597,7 @@ int get_nrofHARQ_ProcessesForPDSCH(e_NR_PDSCH_ServingCellConfig__nrofHARQ_Proces
 int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *secondaryCellGroup)
 {
   NR_UE_info_t *UE_info = &RC.nrmac[mod_idP]->UE_info;
-  LOG_W(MAC, "[gNB %d] Adding UE with rnti %x (num_UEs %d)\n",
+  LOG_I(MAC, "[gNB %d] Adding UE with rnti %x (num_UEs %d)\n",
         mod_idP,
         rntiP,
         UE_info->num_UEs);
@@ -1646,13 +1646,14 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *secon
     const int nrofHARQ = pdsch->nrofHARQ_ProcessesForPDSCH ?
         get_nrofHARQ_ProcessesForPDSCH(*pdsch->nrofHARQ_ProcessesForPDSCH) : 8;
     create_nr_list(&sched_ctrl->available_dl_harq, nrofHARQ);
-    // add all available HARQ processes for this UE
+    // add all available DL HARQ processes for this UE
     for (int harq = 0; harq < nrofHARQ; harq++)
       add_tail_nr_list(&sched_ctrl->available_dl_harq, harq);
     create_nr_list(&sched_ctrl->feedback_dl_harq, nrofHARQ);
     create_nr_list(&sched_ctrl->retrans_dl_harq, nrofHARQ);
+
+    // add all available UL HARQ processes for this UE
     create_nr_list(&sched_ctrl->available_ul_harq, 16);
-    // add all available HARQ processes for this UE
     for (int harq = 0; harq < 16; harq++)
       add_tail_nr_list(&sched_ctrl->available_ul_harq, harq);
     create_nr_list(&sched_ctrl->feedback_ul_harq, 16);
