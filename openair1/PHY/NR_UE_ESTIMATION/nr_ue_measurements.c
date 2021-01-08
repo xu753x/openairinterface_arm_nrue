@@ -278,7 +278,13 @@ void nr_ue_rsrp_measurements(PHY_VARS_NR_UE *ue,
         }
       }
 
+      if (beam_idx_ue == ue->UE_beam_config){
+		 // printf("ue beam config %d\n",ue->UE_beam_config);
 	  ue->measurements.rsrp[gNB_offset][beam_idx_ue][beam_idx_gnb]/=nb_rb;
+	  }
+	  else{
+	  ue->measurements.rsrp[gNB_offset][beam_idx_ue][beam_idx_gnb]/=(10*nb_rb);
+	  }
 
 	} else { 
 

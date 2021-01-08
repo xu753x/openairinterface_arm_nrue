@@ -106,6 +106,7 @@ unsigned int mmapped_dma=0;
 int single_thread_flag=1;
 
 int8_t threequarter_fs=0;
+uint8_t gNB_beam_config = 0;
 
 uint64_t downlink_frequency[MAX_NUM_CCs][4];
 int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
@@ -838,6 +839,9 @@ int main( int argc, char **argv )
   configure_linux();
   printf("Reading in command-line options\n");
   get_options ();
+  
+  //RC.gNB[0]->gNB_beam_config = gNB_beam_config;
+  printf("gnb beam config %d\n", gNB_beam_config);
 
   if (CONFIG_ISFLAGSET(CONFIG_ABORT) ) {
     fprintf(stderr,"Getting configuration failed\n");
@@ -989,6 +993,9 @@ if(!IS_SOFTMODEM_NOS1)
     p.ru=RC.ru[0];
     load_softscope("nr",&p);
   }
+  
+    RC.gNB[0]->gNB_beam_config = gNB_beam_config;
+  printf("rc.gnb 0 beam config %d\n", RC.gNB[0]->gNB_beam_config);
 
   if (nfapi_mode != 1 && nfapi_mode != 2) {
     printf("Not NFAPI mode - call init_eNB_afterRU()\n");

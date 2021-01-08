@@ -785,6 +785,25 @@ void *UE_thread(void *arg) {
       LOG_E(PHY,"Decoded frame index (%d) is not compatible with current context (%d), UE should go back to synch mode\n",
             decoded_frame_rx, curMsg->proc.frame_rx  );
 
+  /*int slot_type;
+  
+  for (int i =0 ; i< slots_per_frame;i++){
+   slot_type = nr_ue_slot_select(cfg, proc->frame_rx, i);
+    if (slot_type == NR_UPLINK_SLOT && !first_uplink_save){
+		slot_first_uplink = i;
+		first_uplink_save = 1;   
+	}
+	
+	if (slot_type == NR_DOWNLINK_SLOT && first_uplink_save){
+		slot_last_uplink = i-1;
+		first_uplink_save = 0;   
+	}
+	
+	}*/
+	
+
+ 
+	  
     int flags = 0;
     int slot_tx_usrp = slot_nr + DURATION_RX_TO_TX - RX_NB_TH;
     if (slot_tx_usrp%10==7)

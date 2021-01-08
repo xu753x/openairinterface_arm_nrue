@@ -1803,11 +1803,12 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
   mac->generate_nr_prach = 0; // Reset flag for PRACH generation
   
   best_ssb_id = mac->best_init_ssb_id;
-  printf("mac best init beam id %d\n", best_ssb_id);
+  //printf("mac best init beam id %d\n", best_ssb_id);
 
   if (is_nr_UL_slot(scc, slotP)) {
 
-    uint8_t selected_gnb_ssb_idx = mac->mib_ssb;
+    uint8_t selected_gnb_ssb_idx = best_ssb_id; //mac->mib_ssb;
+      //printf("mac selected gnb beam id %d\n", mac->mib_ssb);
 
     // Get any valid PRACH occasion in the current slot for the selected SSB index
     is_nr_prach_slot = get_nr_prach_info_from_ssb_index(selected_gnb_ssb_idx,

@@ -853,6 +853,7 @@ typedef struct {
   /// \brief Frame parame before ho used to recover if ho fails.
   NR_DL_FRAME_PARMS  frame_parms_before_ho;
   NR_UE_COMMON    common_vars;
+  uint8_t UE_beam_config;
 
   nr_ue_if_module_t *if_inst;
 

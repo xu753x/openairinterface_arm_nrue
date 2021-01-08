@@ -76,6 +76,15 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
   uint16_t ssb_start_symbol, rel_slot;
   int txdataF_offset = (slot%2)*fp->samples_per_slot_wCP;
   uint16_t slots_per_hf = (fp->slots_per_frame)>>1;
+  int16_t amp_beam[4] = {AMP, AMP, AMP, AMP};
+  int beamid = 0; 
+  
+  for (int i= 0; i<4; i++){
+	if (gNB->gNB_beam_config !=i)
+	{
+		amp_beam[i] = amp_beam[i]-60;
+	}
+	}
 
   n_hf = fp->half_frame_bit;
 
@@ -106,14 +115,16 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
 
 	nr_set_ssb_first_subcarrier(cfg, fp);  // setting the first subcarrier
 	
+	beamid = cfg->ssb_table.ssb_beam_id_list[ssb_index].beam_id.value;
+	
 	LOG_D(PHY,"SS TX: frame %d, slot %d, start_symbol %d\n",frame,slot, ssb_start_symbol);
-	nr_generate_pss(gNB->d_pss, &txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
-	nr_generate_sss(gNB->d_sss, &txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
+	nr_generate_pss(gNB->d_pss, &txdataF[0][txdataF_offset], amp_beam[beamid], ssb_start_symbol, cfg, fp);
+	nr_generate_sss(gNB->d_sss, &txdataF[0][txdataF_offset], amp_beam[beamid], ssb_start_symbol, cfg, fp);
 	
         if (cfg->carrier_config.num_tx_ant.value <= 4)
-	  nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[n_hf][ssb_index&7],&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
+	  nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[n_hf][ssb_index&7],&txdataF[0][txdataF_offset], amp_beam[beamid], ssb_start_symbol, cfg, fp);
         else
-	  nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[0][ssb_index&7],&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
+	  nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[0][ssb_index&7],&txdataF[0][txdataF_offset], amp_beam[beamid], ssb_start_symbol, cfg, fp);
 
         if (T_ACTIVE(T_GNB_PHY_MIB)) {
           unsigned char bch[3];
@@ -127,7 +138,7 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
 	                 &gNB->ssb_pdu,
 	                 gNB->nr_pbch_interleaver,
 			 &txdataF[0][txdataF_offset],
-			 AMP,
+			 amp_beam[beamid],
 			 ssb_start_symbol,
 			 n_hf, frame, cfg, fp);
 
@@ -137,7 +148,7 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
 	  LOG_W(PHY,"beamforming currently not supported for more than one SSB per slot\n");
 	}
 	else if (ssb_per_slot==1) {
-	  LOG_D(PHY,"slot %d, ssb_index %d, beam %d\n",slot,ssb_index,cfg->ssb_table.ssb_beam_id_list[ssb_index].beam_id.value);
+	  LOG_D(PHY,"slot %d, ssb_index %d, beam %d AMP %d\n",slot,ssb_index,cfg->ssb_table.ssb_beam_id_list[ssb_index].beam_id.value,amp_beam[beamid]);
 	  for (int j=0;j<fp->symbols_per_slot;j++) 
 	    gNB->common_vars.beam_id[0][slot*fp->symbols_per_slot+j] = cfg->ssb_table.ssb_beam_id_list[ssb_index].beam_id.value;
 	}	

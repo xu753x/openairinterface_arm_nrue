@@ -27,6 +27,7 @@
     {"t" ,                    CONFIG_HLP_ULMCS,       0,                uptr:&target_ul_mcs,                defintval:0,                   TYPE_UINT,   0},        \
     {"usrp-tx-thread-config", CONFIG_HLP_USRP_THREAD, 0,                iptr:&usrp_tx_thread,               defstrval:0,                   TYPE_INT,    0},        \
     {"s" ,                    CONFIG_HLP_SNR,         0,                dblptr:&snr_dB,                     defdblval:25,                  TYPE_DOUBLE, 0},        \
+    {"gnb-beam-config" ,      CONFIG_HLP_GNBBC,       0,                u8ptr:&gNB_beam_config,              defintval:0,                  TYPE_UINT8,   0},        \
   }
 
 #include "threads_t.h"

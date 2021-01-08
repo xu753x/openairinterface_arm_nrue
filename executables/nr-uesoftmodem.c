@@ -126,6 +126,7 @@ uint32_t     timing_advance = 0;
 char             *usrp_args = NULL;
 char       *rrc_config_path = NULL;
 int               dumpframe = 0;
+uint8_t  	 UE_beam_config = 0;
 
 uint64_t        downlink_frequency[MAX_NUM_CCs][4];
 int32_t         uplink_frequency_offset[MAX_NUM_CCs][4];
@@ -306,8 +307,9 @@ void set_options(int CC_id, PHY_VARS_NR_UE *UE){
   UE->rx_total_gain_dB     = (int)rx_gain[CC_id][0] + rx_gain_off;
   UE->tx_total_gain_dB     = (int)tx_gain[CC_id][0];
   UE->tx_power_max_dBm     = tx_max_power[CC_id];
+  UE->UE_beam_config       = UE_beam_config;
 
-  LOG_I(PHY,"Set UE mode %d, UE_fo_compensation %d, UE_scan %d, UE_scan_carrier %d, UE_no_timing_correction %d \n", mode, UE_fo_compensation, UE_scan, UE_scan_carrier, UE_no_timing_correction);
+  LOG_I(PHY,"Set UE mode %d, UE_fo_compensation %d, UE_scan %d, UE_scan_carrier %d, UE_no_timing_correction %d UE_beam_config %d\n", mode, UE_fo_compensation, UE_scan, UE_scan_carrier, UE_no_timing_correction,UE_beam_config);
 
   // Set FP variables
   NR_DL_FRAME_PARMS *fp = &UE->frame_parms;

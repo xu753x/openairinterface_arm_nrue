@@ -779,6 +779,8 @@ typedef struct PHY_VARS_gNB_s {
   double N0;
 
   unsigned char first_run_I0_measurements;
+  
+  uint8_t gNB_beam_config;
 
 
   unsigned char    is_secondary_gNB; // primary by default
