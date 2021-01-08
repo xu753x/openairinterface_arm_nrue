@@ -173,7 +173,6 @@ void nr_dlsim_preprocessor(module_id_t module_id,
       sched_ctrl->active_bwp, sched_ctrl->search_space, 1 /* dedicated */);
   sched_ctrl->cce_index = 0;
 
-  /* set "any" value for PUCCH (simulator evaluates PDSCH only) */
   sched_ctrl->dl_harq_pid = 0;
   sched_ctrl->harq_processes[0].round=0;
   sched_ctrl->rbStart = g_rbStart;
