@@ -536,7 +536,7 @@ void pf_ul(module_id_t module_id,
     /* RETRANSMISSION: Check retransmission */
 
     /* RETRANSMISSION: Find free CCE */
-    bool freeCCE = find_free_CCE(module_id, slot, UE_info, UE_id);
+    bool freeCCE = find_free_CCE(module_id, slot, UE_id);
     if (!freeCCE) {
       LOG_E(MAC, "%4d.%2d could not find CCE for UE %d/RNTI %04x\n", frame, slot, UE_id, UE_info->rnti[UE_id]);
       continue;
