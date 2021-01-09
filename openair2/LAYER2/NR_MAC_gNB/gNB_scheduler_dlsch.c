@@ -447,7 +447,9 @@ void pf_dl(module_id_t module_id,
 
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
   float coeff_ue[MAX_MOBILES_PER_GNB];
-  NR_UE_list_t UE_sched; // UEs that could be scheduled
+  // UEs that could be scheduled
+  int ue_array[MAX_MOBILES_PER_GNB];
+  NR_list_t UE_sched = { .head = -1, .next = ue_array, .tail = -1, .len = MAX_MOBILES_PER_GNB };
   int *uep = &UE_sched.head;
 
   /* Loop UE_info->list to check retransmission */
