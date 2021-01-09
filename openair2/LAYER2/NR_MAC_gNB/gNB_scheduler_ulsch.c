@@ -559,15 +559,11 @@ void pf_ul(module_id_t module_id,
       nr_save_pusch_fields(scc, sched_ctrl->active_ubwp, dci_format, tda, num_dmrs_cdm_grps_no_data, ps);
 
     /* RETRANSMISSION: Check if retransmission is necessary */
-    int8_t harq_id = select_ul_harq_pid(sched_ctrl);
-    if (harq_id < 0) {
-      LOG_E(MAC, "%s(): cannot find free UL HARQ PID for UE %d\n", __func__, UE_id);
-      return;
-    }
-    NR_UE_ul_harq_t *cur_harq = &sched_ctrl->ul_harq_processes[harq_id];
-    if (cur_harq->round != 0) {
+    const int8_t harq_id = sched_ctrl->retrans_ul_harq.head;
+    if (harq_id >= 0) {
       /* RETRANSMISSION: Allocate retransmission*/
       /* Save shced_frame and sched_slot before overwrite by previous PUSCH filed */
+      NR_UE_ul_harq_t *cur_harq = &sched_ctrl->ul_harq_processes[harq_id];
       cur_harq->sched_pusch.frame = sched_ctrl->sched_pusch.frame;
       cur_harq->sched_pusch.slot = sched_ctrl->sched_pusch.slot;
       /* Get previous PSUCH filed info */
