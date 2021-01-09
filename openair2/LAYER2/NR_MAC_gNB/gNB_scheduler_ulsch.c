@@ -534,16 +534,12 @@ void pf_ul(module_id_t module_id,
     const uint32_t b = UE_info->mac_stats[UE_id].ulsch_current_bytes;
     ul_thr_ue[UE_id] = (1 - a) * ul_thr_ue[UE_id] + a * b;
 
-    /* RETRANSMISSION: Check retransmission */
-
-    /* RETRANSMISSION: Find free CCE */
+    /* Find free CCE */
     bool freeCCE = find_free_CCE(module_id, slot, UE_id);
     if (!freeCCE) {
       LOG_E(MAC, "%4d.%2d could not find CCE for UE %d/RNTI %04x\n", frame, slot, UE_id, UE_info->rnti[UE_id]);
       continue;
     }
-
-    /* RETRANSMISSION: Allocate retransmission*/
 
     /* Save PUSCH field */
     /* we want to avoid a lengthy deduction of DMRS and other parameters in
@@ -582,6 +578,42 @@ void pf_ul(module_id_t module_id,
                                   0,
                                   1 /* NrOfLayers */)
                     >> 3;
+
+    /* RETRANSMISSION: Check retransmission */
+    int8_t harq_id = select_ul_harq_pid(sched_ctrl);
+    if (harq_id < 0) return;
+    NR_UE_ul_harq_t *cur_harq = &sched_ctrl->ul_harq_processes[harq_id];
+    if (cur_harq->round != 0) {
+      /* RETRANSMISSION: Allocate retransmission*/
+      NR_UE_ret_info_t *retInfo = &sched_ctrl->retInfo[harq_id];
+      LOG_W(MAC, "%4d.%2d Allocate UL retransmission UE %d/RNTI %04x\n",
+            frame, slot, UE_id, UE_info->rnti[UE_id]);
+
+      while (rbStart < bwpSize && !rballoc_mask[rbStart]) rbStart++;
+      if (rbStart + min_rb >= bwpSize) {
+        LOG_W(MAC, "cannot allocate UL data for UE %d/RNTI %04x: no resources\n",
+              UE_id, UE_info->rnti[UE_id]);
+        return;
+      }
+      sched_pusch->rbStart = rbStart;
+      sched_pusch->rbSize = retInfo->rbSize;
+      sched_pusch->tb_size = nr_compute_tbs(sched_pusch->Qm,
+                                            sched_pusch->R,
+                                            sched_pusch->rbSize,
+                                            ps->nrOfSymbols,
+                                            ps->N_PRB_DMRS * ps->num_dmrs_symb,
+                                            0, // nb_rb_oh
+                                            0,
+                                            1 /* NrOfLayers */)
+              >> 3;
+
+      /* Mark the corresponding RBs as used */
+      n_rb_sched -= sched_pusch->rbSize;
+      for (int rb = 0; rb < sched_ctrl->sched_pusch.rbSize; rb++)
+        rballoc_mask[rb + sched_ctrl->sched_pusch.rbStart] = 0;
+
+      continue;
+    }
 
     /* Check BSR */
     if (sched_ctrl->estimated_ul_buffer - sched_ctrl->sched_ul_bytes <= 0) {
@@ -832,6 +864,7 @@ void nr_schedule_ulsch(module_id_t module_id,
     add_tail_nr_list(&sched_ctrl->feedback_ul_harq, harq_id);
     cur_harq->feedback_slot = sched_pusch->slot;
     cur_harq->is_waiting = true;
+    NR_UE_ret_info_t *retInfo = &sched_ctrl->retInfo[harq_id];
 
     int rnti_types[2] = { NR_RNTI_C, 0 };
 
@@ -962,6 +995,7 @@ void nr_schedule_ulsch(module_id_t module_id,
 
     UE_info->mac_stats[UE_id].ulsch_current_bytes = sched_pusch->tb_size;
     sched_ctrl->sched_ul_bytes += sched_pusch->tb_size;
+    retInfo->rbSize = sched_pusch->rbSize;
 
     /* PUSCH PTRS */
     if (ps->NR_DMRS_UplinkConfig->phaseTrackingRS != NULL) {
