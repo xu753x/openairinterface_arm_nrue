@@ -959,7 +959,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
       }
 
       T(T_GNB_MAC_DL_PDU_WITH_DATA, T_INT(module_id), T_INT(CC_id), T_INT(rnti),
-        T_INT(frame), T_INT(slot), T_INT(current_harq_pid), T_BUFFER(buf, TBS));
+        T_INT(frame), T_INT(slot), T_INT(current_harq_pid), T_BUFFER(harq->tb, TBS));
     }
 
     const int ntx_req = gNB_mac->TX_req[CC_id].Number_of_PDUs;
