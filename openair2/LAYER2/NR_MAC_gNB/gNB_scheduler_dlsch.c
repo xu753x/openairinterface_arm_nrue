@@ -450,7 +450,6 @@ void pf_dl(module_id_t module_id,
   // UEs that could be scheduled
   int ue_array[MAX_MOBILES_PER_GNB];
   NR_list_t UE_sched = { .head = -1, .next = ue_array, .tail = -1, .len = MAX_MOBILES_PER_GNB };
-  int *uep = &UE_sched.head;
 
   /* Loop UE_info->list to check retransmission */
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
@@ -528,13 +527,10 @@ void pf_dl(module_id_t module_id,
       coeff_ue[UE_id] = (float) tbs / thr_ue[UE_id];
       LOG_D(MAC,"b %d, thr_ue[%d] %f, tbs %d, coeff_ue[%d] %f\n",
             b, UE_id, thr_ue[UE_id], tbs, UE_id, coeff_ue[UE_id]);
-
-      /* Create UE_sched list for transmission*/
-      *uep = UE_id;
-      uep = &UE_sched.next[UE_id];
+      /* Create UE_sched list for UEs eligible for new transmission*/
+      add_tail_nr_list(&UE_sched, UE_id);
     }
   }
-  *uep = -1;
 
   /* Loop UE_sched to find max coeff and allocate transmission */
   while (max_num_ue > 0 && n_rb_sched > 0 && UE_sched.head >= 0) {
@@ -548,7 +544,9 @@ void pf_dl(module_id_t module_id,
         max = p;
       p = &UE_sched.next[*p];
     }
-    /* remove the max one */
+    /* remove the max one: do not use remove_nr_list() it goes through the
+     * whole list every time. Note that UE_sched.tail might not be set
+     * correctly anymore */
     const int UE_id = *max;
     p = &UE_sched.next[*max];
     *max = UE_sched.next[*max];
