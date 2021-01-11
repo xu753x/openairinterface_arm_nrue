@@ -250,6 +250,8 @@ typedef struct {
   uint8_t RA_BI_found;
   /// Flag for the Msg1 generation: enabled at every occurrence of nr prach slot
   uint8_t generate_nr_prach;
+  /// Last NDI of UL HARQ processes
+  uint8_t UL_ndi[NR_MAX_HARQ_PROCESSES];
 
   ////	FAPI-like interface message
   fapi_nr_ul_config_request_t *ul_config_request;
