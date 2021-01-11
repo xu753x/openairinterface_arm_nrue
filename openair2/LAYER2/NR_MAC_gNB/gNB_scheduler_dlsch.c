@@ -371,14 +371,16 @@ bool allocate_retransmission(module_id_t module_id,
                              uint8_t *rballoc_mask,
                              int *n_rb_sched,
                              int UE_id,
-                             int current_harq_pid){
-  NR_UE_sched_ctrl_t *sched_ctrl = &RC.nrmac[module_id]->UE_info.UE_sched_ctrl[UE_id];
+                             int current_harq_pid) {
+  NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
   NR_UE_ret_info_t *retInfo = &sched_ctrl->retInfo[current_harq_pid];
   const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
   int rbStart = NRRIV2PRBOFFSET(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
 
   sched_ctrl->time_domain_allocation = retInfo->time_domain_allocation;
 
+  /* Check the resource is enough for retransmission */
   /* ensure that there is a free place for RB allocation */
   int rbSize = 0;
   while (rbSize < retInfo->rbSize) {
@@ -389,7 +391,7 @@ bool allocate_retransmission(module_id_t module_id,
       LOG_D(MAC,
             "cannot allocate retransmission for UE %d/RNTI %04x: no resources\n",
             UE_id,
-            RC.nrmac[module_id]->UE_info.rnti[UE_id]);
+            UE_info->rnti[UE_id]);
       return false;
     }
     while (rbStart + rbSize < bwpSize
@@ -397,6 +399,34 @@ bool allocate_retransmission(module_id_t module_id,
            && rbSize < retInfo->rbSize)
       rbSize++;
   }
+
+  /* Find a free CCE */
+  bool freeCCE = find_free_CCE(module_id, slot, UE_id);
+  if (!freeCCE) {
+    LOG_D(MAC, "%4d.%2d could not find CCE for DL DCI retransmission UE %d/RNTI %04x\n",
+          frame, slot, UE_id, UE_info->rnti[UE_id]);
+    return false;
+  }
+
+  /* Find PUCCH occasion: if it fails, undo CCE allocation (undoing PUCCH
+   * allocation after CCE alloc fail would be more complex) */
+  const bool alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot);
+  if (!alloc) {
+    LOG_W(MAC, "%s(): could not find PUCCH for UE %d/%04x@%d.%d\n",
+          __func__,
+          UE_id,
+          UE_info->rnti[UE_id],
+          frame,
+          slot);
+    int cid = sched_ctrl->coreset->controlResourceSetId;
+    UE_info->num_pdcch_cand[UE_id][cid]--;
+    int *cce_list = RC.nrmac[module_id]->cce_list[sched_ctrl->active_bwp->bwp_Id][cid];
+    for (int i = 0; i < sched_ctrl->aggregation_level; i++)
+      cce_list[sched_ctrl->cce_index + i] = 0;
+    return false;
+  }
+
+  /* Allocate retransmission */
   sched_ctrl->rbSize = retInfo->rbSize;
   sched_ctrl->rbStart = rbStart;
 
@@ -435,7 +465,6 @@ void pf_dl(module_id_t module_id,
     sched_ctrl->coreset = get_coreset(sched_ctrl->active_bwp, sched_ctrl->search_space, 1 /* dedicated */);
     /* get the PID of a HARQ process awaiting retrnasmission, or -1 otherwise */
     sched_ctrl->dl_harq_pid = sched_ctrl->retrans_dl_harq.head;
-    const rnti_t rnti = UE_info->rnti[UE_id];
 
     /* Calculate Throughput */
     const float a = 0.0005f; // corresponds to 200ms window
@@ -444,30 +473,6 @@ void pf_dl(module_id_t module_id,
 
     /* retransmission */
     if (sched_ctrl->dl_harq_pid >= 0) {
-      /* Find a free CCE */
-      bool freeCCE = find_free_CCE(module_id, slot, UE_id);
-      if (!freeCCE){
-        LOG_D(MAC, "%4d.%2d could not find CCE for DL DCI retransmission UE %d/RNTI %04x\n", frame, slot, UE_id, rnti);
-        continue;
-      }
-      /* Find PUCCH occasion: if it fails, undo CCE allocation (undoing PUCCH
-       * allocation after CCE alloc fail would be more complex) */
-      const bool alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot);
-      if (!alloc) {
-        LOG_W(MAC,
-              "%s(): could not find PUCCH for UE %d/%04x@%d.%d\n",
-              __func__,
-              UE_id,
-              rnti,
-              frame,
-              slot);
-        int cid = sched_ctrl->coreset->controlResourceSetId;
-        UE_info->num_pdcch_cand[UE_id][cid]--;
-        int *cce_list = RC.nrmac[module_id]->cce_list[sched_ctrl->active_bwp->bwp_Id][cid];
-        for (int i = 0; i < sched_ctrl->aggregation_level; i++)
-          cce_list[sched_ctrl->cce_index + i] = 0;
-        return;
-      }
       /* Allocate retransmission */
       bool r = allocate_retransmission(module_id,
                                        frame,
