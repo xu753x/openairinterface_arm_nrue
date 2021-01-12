@@ -530,9 +530,9 @@ void pf_ul(module_id_t module_id,
            frame_t frame,
            sub_frame_t slot,
            NR_list_t *UE_list,
+           int max_num_ue,
            int n_rb_sched,
-           uint8_t *rballoc_mask,
-           int max_num_ue) {
+           uint8_t *rballoc_mask) {
 
   const int CC_id = 0;
   const int tda = 1;
@@ -841,9 +841,9 @@ bool nr_simple_ulsch_preprocessor(module_id_t module_id,
         frame,
         slot,
         &UE_info->list,
+        2,
         len,
-        rballoc_mask,
-        2);
+        rballoc_mask);
   return true;
 }
 
