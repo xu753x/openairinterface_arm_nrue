@@ -502,6 +502,11 @@ typedef struct {
   /// estimation of the UL buffer size
   int estimated_ul_buffer;
 
+  /// PHR info: power headroom level (dB)
+  int ph;
+  /// PHR info: nominal UE transmit power levels (dBm)
+  int pcmax;
+
   // time-domain allocation for scheduled RBs
   int time_domain_allocation;
 

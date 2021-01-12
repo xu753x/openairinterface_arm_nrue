@@ -196,6 +196,20 @@ void nr_process_mac_pdu(
         	//fixed length
         	mac_ce_len = 2;
         	/* Extract SINGLE ENTRY PHR elements for PHR calculation */
+                ce_ptr = &pdu_ptr[mac_subheader_len];
+                NR_SINGLE_ENTRY_PHR_MAC_CE *phr = (NR_SINGLE_ENTRY_PHR_MAC_CE *) ce_ptr;
+                /* Save the phr info */
+                const int PH = phr->PH;
+                const int PCMAX = phr->PCMAX;
+                /* 38.133 Table10.1.17.1-1 */
+                if (PH < 55)
+                  sched_ctrl->ph = PH - 32;
+                else
+                  sched_ctrl->ph = PH - 32 + (PH - 54);
+                /* 38.133 Table10.1.18.1-1 */
+                sched_ctrl->pcmax = PCMAX - 29;
+                LOG_D(MAC, "SINGLE ENTRY PHR R1 %d PH %d (%d dB) R2 %d PCMAX %d (%d dBm)\n",
+                      phr->R1, PH, sched_ctrl->ph, phr->R2, PCMAX, sched_ctrl->pcmax);
         	break;
 
         case UL_SCH_LCID_MULTI_ENTRY_PHR_1_OCT:
