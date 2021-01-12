@@ -529,7 +529,6 @@ int bsr0ue = -1;
 void pf_ul(module_id_t module_id,
            frame_t frame,
            sub_frame_t slot,
-           int num_slots_per_tdd,
            NR_list_t *UE_list,
            int n_rb_sched,
            uint8_t *rballoc_mask,
@@ -772,7 +771,6 @@ void pf_ul(module_id_t module_id,
 bool nr_simple_ulsch_preprocessor(module_id_t module_id,
                                   frame_t frame,
                                   sub_frame_t slot,
-                                  int num_slots_per_tdd,
                                   uint64_t ulsch_in_slot_bitmap) {
   gNB_MAC_INST *nr_mac = RC.nrmac[module_id];
   NR_COMMON_channels_t *cc = nr_mac->common_channels;
@@ -842,7 +840,6 @@ bool nr_simple_ulsch_preprocessor(module_id_t module_id,
   pf_ul(module_id,
         frame,
         slot,
-        num_slots_per_tdd,
         &UE_info->list,
         len,
         rballoc_mask,
@@ -853,7 +850,6 @@ bool nr_simple_ulsch_preprocessor(module_id_t module_id,
 void nr_schedule_ulsch(module_id_t module_id,
                        frame_t frame,
                        sub_frame_t slot,
-                       int num_slots_per_tdd,
                        int ul_slots,
                        uint64_t ulsch_in_slot_bitmap) {
   /* Uplink data ONLY can be scheduled when the current slot is downlink slot,
@@ -863,7 +859,7 @@ void nr_schedule_ulsch(module_id_t module_id,
     return;
   }
   bool do_sched = RC.nrmac[module_id]->pre_processor_ul(
-      module_id, frame, slot, num_slots_per_tdd, ulsch_in_slot_bitmap);
+      module_id, frame, slot, ulsch_in_slot_bitmap);
   if (!do_sched)
     return;
 

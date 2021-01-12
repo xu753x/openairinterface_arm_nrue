@@ -592,7 +592,6 @@ typedef void (*nr_pp_impl_dl)(module_id_t mod_id,
 typedef bool (*nr_pp_impl_ul)(module_id_t mod_id,
                               frame_t frame,
                               sub_frame_t slot,
-                              int num_slots_per_tdd,
                               uint64_t ulsch_in_slot_bitmap);
 
 /*! \brief top level eNB MAC structure */

@@ -89,14 +89,12 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t subfram
 void nr_schedule_ulsch(module_id_t module_id,
                        frame_t frame,
                        sub_frame_t slot,
-                       int num_slots_per_tdd,
                        int ul_slots,
                        uint64_t ulsch_in_slot_bitmap);
 
 bool nr_simple_ulsch_preprocessor(module_id_t module_id,
                                   frame_t frame,
                                   sub_frame_t slot,
-                                  int num_slots_per_tdd,
                                   uint64_t ulsch_in_slot_bitmap);
 
 /////// Random Access MAC-PHY interface functions and primitives ///////
@@ -153,7 +151,6 @@ void nr_preprocessor_phytest(module_id_t module_id,
 bool nr_ul_preprocessor_phytest(module_id_t module_id,
                                 frame_t frame,
                                 sub_frame_t slot,
-                                int num_slots_per_tdd,
                                 uint64_t ulsch_in_slot_bitmap);
 
 void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,

@@ -375,7 +375,6 @@ void nr_preprocessor_phytest(module_id_t module_id,
 bool nr_ul_preprocessor_phytest(module_id_t module_id,
                                 frame_t frame,
                                 sub_frame_t slot,
-                                int num_slots_per_tdd,
                                 uint64_t ulsch_in_slot_bitmap) {
   gNB_MAC_INST *nr_mac = RC.nrmac[module_id];
   NR_COMMON_channels_t *cc = nr_mac->common_channels;
