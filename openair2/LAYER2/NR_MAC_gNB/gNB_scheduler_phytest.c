@@ -338,7 +338,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
   AssertFatal(sched_ctrl->pucch_sched_idx >= 0, "no uplink slot for PUCCH found!\n");
 
   sched_ctrl->rbStart = rbStart;
-  sched_ctrl->rbSize = rbSize;
+  sched_ctrl->rbSize = target_dl_bw;
   sched_ctrl->time_domain_allocation = 2;
   if (!UE_info->secondaryCellGroup[UE_id]->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->mcs_Table)
     sched_ctrl->mcsTableIdx = 0;
@@ -348,7 +348,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
     else
       sched_ctrl->mcsTableIdx = 2;
   }
-  sched_ctrl->mcs = 9;
+  sched_ctrl->mcs = target_dl_mcs;
   sched_ctrl->numDmrsCdmGrpsNoData = 1;
 
   /* mark the corresponding RBs as used */
@@ -396,7 +396,7 @@ void nr_ul_preprocessor_phytest(module_id_t module_id,
     return;
 
   const uint16_t rbStart = 0;
-  const uint16_t rbSize = 50; /* due to OAI UE limitations */
+  const uint16_t rbSize = target_ul_bw;
   uint16_t *vrb_map_UL =
       &RC.nrmac[module_id]->common_channels[CC_id].vrb_map_UL[sched_slot * 275];
   for (int i = rbStart; i < rbStart + rbSize; ++i) {
@@ -456,7 +456,7 @@ void nr_ul_preprocessor_phytest(module_id_t module_id,
                          num_dmrs_cdm_grps_no_data,
                          ps);
 
-  const int mcs = 9;
+  const int mcs = target_ul_mcs;
   NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
   sched_pusch->mcs = mcs;
   sched_pusch->rbStart = rbStart;

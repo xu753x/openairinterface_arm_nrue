@@ -25,12 +25,22 @@
     {"K" ,                    CONFIG_HLP_ITTIL,       PARAMFLAG_NOFREE, strptr:&itti_dump_file,             defstrval:"/tmp/itti.dump",    TYPE_STRING, 0},        \
     {"m" ,                    CONFIG_HLP_DLMCS,       0,                uptr:&target_dl_mcs,                defintval:0,                   TYPE_UINT,   0},        \
     {"t" ,                    CONFIG_HLP_ULMCS,       0,                uptr:&target_ul_mcs,                defintval:0,                   TYPE_UINT,   0},        \
+    {"M" ,                    CONFIG_HLP_DLBW,        0,                uptr:&target_dl_bw,                 defintval:0,                   TYPE_UINT,   0},        \
+    {"T" ,                    CONFIG_HLP_ULBW,        0,                uptr:&target_ul_bw,                 defintval:0,                   TYPE_UINT,   0},        \
+    {"D" ,                    CONFIG_HLP_DLBM,        0,                uptr:&dlsch_slot_bitmap,            defintval:0,                   TYPE_UINT,   0},        \
+    {"U" ,                    CONFIG_HLP_ULBM,        0,                uptr:&ulsch_slot_bitmap,            defintval:0,                   TYPE_UINT,   0},        \
     {"usrp-tx-thread-config", CONFIG_HLP_USRP_THREAD, 0,                iptr:&usrp_tx_thread,               defstrval:0,                   TYPE_INT,    0},        \
     {"s" ,                    CONFIG_HLP_SNR,         0,                dblptr:&snr_dB,                     defdblval:25,                  TYPE_DOUBLE, 0},        \
   }
 
 #include "threads_t.h"
 extern threads_t threads;
+extern uint32_t target_dl_mcs;
+extern uint32_t target_ul_mcs;
+extern uint32_t target_dl_bw;
+extern uint32_t target_ul_bw;
+extern uint64_t dlsch_slot_bitmap;
+extern uint64_t ulsch_slot_bitmap;
 
 // In nr-gnb.c
 extern void init_gNB(int single_thread_flag,int wait_for_sync);
