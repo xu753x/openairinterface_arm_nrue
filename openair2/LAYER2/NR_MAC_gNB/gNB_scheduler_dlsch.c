@@ -448,9 +448,9 @@ void pf_dl(module_id_t module_id,
            frame_t frame,
            sub_frame_t slot,
            NR_list_t *UE_list,
+           int max_num_ue,
            int n_rb_sched,
-           uint8_t *rballoc_mask,
-           int max_num_ue) {
+           uint8_t *rballoc_mask) {
 
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
   float coeff_ue[MAX_MOBILES_PER_GNB];
@@ -655,9 +655,9 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
         frame,
         slot,
         &UE_info->list,
+        2,
         n_rb_sched,
-        rballoc_mask,
-        2);
+        rballoc_mask);
 }
 
 void nr_schedule_ue_spec(module_id_t module_id,
