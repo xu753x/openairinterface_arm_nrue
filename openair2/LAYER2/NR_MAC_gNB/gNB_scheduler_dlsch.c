@@ -366,6 +366,8 @@ void nr_store_dlsch_buffer(module_id_t module_id,
 }
 
 bool allocate_retransmission(module_id_t module_id,
+                             frame_t frame,
+                             sub_frame_t slot,
                              uint8_t *rballoc_mask,
                              int *n_rb_sched,
                              int UE_id,
@@ -467,7 +469,13 @@ void pf_dl(module_id_t module_id,
         return;
       }
       /* Allocate retransmission */
-      bool r = allocate_retransmission(module_id, rballoc_mask, &n_rb_sched, UE_id, sched_ctrl->dl_harq_pid);
+      bool r = allocate_retransmission(module_id,
+                                       frame,
+                                       slot,
+                                       rballoc_mask,
+                                       &n_rb_sched,
+                                       UE_id,
+                                       sched_ctrl->dl_harq_pid);
       if (!r) {
         LOG_D(MAC, "%4d.%2d retransmission can NOT be allocated\n", frame, slot);
         continue;
