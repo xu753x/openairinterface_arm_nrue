@@ -1586,18 +1586,20 @@ void *ru_thread( void *param ) {
 
     // adjust for timing offset between RU
     //printf("~~~~~~~~~~~~~~~~~~~~~~~~~~%d.%d in ru_thread is in process\n", proc->frame_rx, proc->tti_rx);
+
     if (ru->idx!=0) proc->frame_tx = (proc->frame_tx+proc->frame_offset)&1023;
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ZZ_RU_RX_PROCESS2_FRONT_END,1);
     // do RX front-end processing (frequency-shift, dft) if needed
 
     int slot_type = nr_slot_select(cfg,proc->frame_rx,proc->tti_rx);
 
     if (slot_type == NR_UPLINK_SLOT || slot_type == NR_MIXED_SLOT) {
     //if (proc->tti_rx==8) {
-
+    
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ZZ_RU_RX_PROCESS2_FRONT_END,1);
       if (ru->feprx) {
       ru->feprx(ru,proc->tti_rx);
       //LOG_M("rxdata.m","rxs",ru->common.rxdata[0],1228800,1,1);
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ZZ_RU_RX_PROCESS2_FRONT_END,0);  
 
       LOG_D(PHY,"RU proc: frame_rx = %d, tti_rx = %d\n", proc->frame_rx, proc->tti_rx);
       LOG_D(PHY,"Copying rxdataF from RU to gNB\n");
@@ -1605,10 +1607,11 @@ void *ru_thread( void *param ) {
       for (aa=0;aa<ru->nb_rx;aa++)
 	memcpy((void*)RC.gNB[0]->common_vars.rxdataF[aa],
 	       (void*)ru->common.rxdataF[aa], fp->symbols_per_slot*fp->ofdm_symbol_size*sizeof(int32_t));
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ZZ_RU_RX_PROCESS2_FRONT_END,0);  
       // Do PRACH RU processing
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ZZ_RU_RX_PROCESS3_PRACH,1);
+
       int prach_id=find_nr_prach_ru(ru,proc->frame_rx,proc->tti_rx,SEARCH_EXIST);
+
       uint8_t prachStartSymbol,N_dur;
       if (prach_id>=0) {
 	N_dur = get_nr_prach_duration(ru->prach_list[prach_id].fmt);
@@ -1629,7 +1632,6 @@ void *ru_thread( void *param ) {
 	for (int prach_oc = 0; prach_oc<ru->prach_list[prach_id].num_prach_ocas; prach_oc++) {
 	  prachStartSymbol = ru->prach_list[prach_id].prachStartSymbol+prach_oc*N_dur;
 	  //comment FK: the standard 38.211 section 5.3.2 has one extra term +14*N_RA_slot. This is because there prachStartSymbol is given wrt to start of the 15kHz slot or 60kHz slot. Here we work slot based, so this function is anyway only called in slots where there is PRACH. Its up to the MAC to schedule another PRACH PDU in the case there are there N_RA_slot \in {0,1}. 
-
 	  rx_nr_prach_ru(ru,
 			 ru->prach_list[prach_id].fmt, //could also use format
 			 ru->prach_list[prach_id].numRA,

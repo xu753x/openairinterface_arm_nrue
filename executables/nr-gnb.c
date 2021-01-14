@@ -262,6 +262,7 @@ static inline int rxtx(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int frame_t
     // Do PRACH RU processing
     L1_nr_prach_procedures(gNB,frame_rx,slot_rx);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ZZ_L1_RX_PROCESS2_PRACH,0);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ZZ_L1_RX_PROCESS2_ROTATION,1);    
     //apply the rx signal rotation here
     apply_nr_rotation_ul(&gNB->frame_parms,
 			 gNB->common_vars.rxdataF[0],
@@ -269,6 +270,7 @@ static inline int rxtx(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int frame_t
 			 0,
 			 gNB->frame_parms.Ncp==EXTENDED?12:14,
 			 gNB->frame_parms.ofdm_symbol_size);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ZZ_L1_RX_PROCESS2_ROTATION,0);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ZZ_L1_RX_PROCESS3_PHY_PROCEDURE,1);
     phy_procedures_gNB_uespec_RX(gNB, frame_rx, slot_rx);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ZZ_L1_RX_PROCESS3_PHY_PROCEDURE,0);
