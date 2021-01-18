@@ -95,6 +95,65 @@ extern rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * con
     const LTE_PMCH_InfoList_r9_t * const pmch_InfoList_r9_pP,
     struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
 
+//------------------------------------------------------------------------------
+void
+nr_rrc_data_ind(
+  const protocol_ctxt_t *const ctxt_pP,
+  const rb_id_t                Srb_id,
+  const sdu_size_t             sdu_sizeP,
+  const uint8_t   *const       buffer_pP
+)
+//------------------------------------------------------------------------------
+{
+  rb_id_t    DCCH_index = Srb_id;
+  LOG_I(RRC, "[UE %x] Frame %d: received a DCCH %ld message on SRB %ld with Size %d from eNB %d\n",
+        ctxt_pP->module_id, ctxt_pP->frame, DCCH_index,Srb_id,sdu_sizeP,  ctxt_pP->eNB_index);
+  {
+    MessageDef *message_p;
+    // Uses a new buffer to avoid issue with PDCP buffer content that could be changed by PDCP (asynchronous message handling).
+    uint8_t *message_buffer;
+    message_buffer = itti_malloc (ctxt_pP->enb_flag ? TASK_RRC_GNB : TASK_RRC_NRUE, ctxt_pP->enb_flag ? TASK_RRC_GNB : TASK_RRC_NRUE, sdu_sizeP);
+    memcpy (message_buffer, buffer_pP, sdu_sizeP);
+    message_p = itti_alloc_new_message (ctxt_pP->enb_flag ? TASK_RRC_GNB : TASK_RRC_NRUE, NR_RRC_DCCH_DATA_IND);
+    NR_RRC_DCCH_DATA_IND (message_p).frame      = ctxt_pP->frame;
+    NR_RRC_DCCH_DATA_IND (message_p).dcch_index = DCCH_index;
+    NR_RRC_DCCH_DATA_IND (message_p).sdu_size   = sdu_sizeP;
+    NR_RRC_DCCH_DATA_IND (message_p).sdu_p      = message_buffer;
+    NR_RRC_DCCH_DATA_IND (message_p).rnti       = ctxt_pP->rnti;
+    NR_RRC_DCCH_DATA_IND (message_p).module_id  = ctxt_pP->module_id;
+    NR_RRC_DCCH_DATA_IND (message_p).gNB_index  = ctxt_pP->eNB_index;
+    itti_send_msg_to_task (ctxt_pP->enb_flag ? TASK_RRC_GNB : TASK_RRC_NRUE, ctxt_pP->instance, message_p);
+  }
+}
+
+//------------------------------------------------------------------------------
+void
+nr_rrc_data_ind_ccch(
+  const protocol_ctxt_t *const ctxt_pP,
+  const rb_id_t                Srb_id,
+  const sdu_size_t             sdu_sizeP,
+  const uint8_t   *const       buffer_pP
+)
+//------------------------------------------------------------------------------
+{
+  rb_id_t    DCCH_index = Srb_id;
+  LOG_I(RRC, "[UE %x] Frame %d: received a CCCH %ld message on SRB %d with Size %d from gNB %d\n",
+        ctxt_pP->module_id, ctxt_pP->frame, DCCH_index,Srb_id,sdu_sizeP,  ctxt_pP->eNB_index);
+  {
+    MessageDef *message_p;
+    // Uses a new buffer to avoid issue with PDCP buffer content that could be changed by PDCP (asynchronous message handling).
+    message_p = itti_alloc_new_message (ctxt_pP->enb_flag ? TASK_RRC_GNB : TASK_RRC_NRUE, NR_RRC_MAC_CCCH_DATA_IND);
+    NR_RRC_MAC_CCCH_DATA_IND (message_p).frame      = ctxt_pP->frame;
+    NR_RRC_MAC_CCCH_DATA_IND (message_p).sub_frame  = 0;
+    NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu_size   = sdu_sizeP;
+    NR_RRC_MAC_CCCH_DATA_IND (message_p).gnb_index  = 0;
+    NR_RRC_MAC_CCCH_DATA_IND (message_p).CC_id      = 0;
+    NR_RRC_MAC_CCCH_DATA_IND (message_p).rnti       = ctxt_pP->rnti;
+    memcpy(NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu,buffer_pP,sdu_sizeP);
+    itti_send_msg_to_task (ctxt_pP->enb_flag ? TASK_RRC_GNB : TASK_RRC_NRUE, ctxt_pP->instance, message_p);
+  }
+}
+
 static void *rlc_data_req_thread(void *_)
 {
   int i;
@@ -210,7 +269,7 @@ static void *enb_tun_read_thread(void *_)
   int rnti;
   protocol_ctxt_t ctxt;
 
-  int rb_id = 1;
+  int lc_id = 4;
   pthread_setname_np( pthread_self(),"enb_tun_read");
 
   while (1) {
@@ -239,7 +298,7 @@ printf("\n\n\n########## nas_sock_fd read returns len %d\n", len);
 
     ctxt.rnti = rnti;
 
-    pdcp_data_req(&ctxt, SRB_FLAG_NO, rb_id, RLC_MUI_UNDEFINED,
+    pdcp_data_req(&ctxt, SRB_FLAG_NO, lc_id, RLC_MUI_UNDEFINED,
                   RLC_SDU_CONFIRM_NO, len, (unsigned char *)rx_buf,
                   PDCP_TRANSMISSION_MODE_DATA, NULL, NULL);
   }
@@ -255,7 +314,7 @@ static void *ue_tun_read_thread(void *_)
   int rnti;
   protocol_ctxt_t ctxt;
 
-  int rb_id = 1;
+  int lc_id = 4;
   pthread_setname_np( pthread_self(),"ue_tun_read"); 
   while (1) {
     len = read(nas_sock_fd[0], &rx_buf, NL_MAX_PAYLOAD);
@@ -283,7 +342,7 @@ printf("\n\n\n########## nas_sock_fd read returns len %d\n", len);
 
     ctxt.rnti = rnti;
 
-    pdcp_data_req(&ctxt, SRB_FLAG_NO, rb_id, RLC_MUI_UNDEFINED,
+    pdcp_data_req(&ctxt, SRB_FLAG_NO, lc_id, RLC_MUI_UNDEFINED,
                   RLC_SDU_CONFIRM_NO, len, (unsigned char *)rx_buf,
                   PDCP_TRANSMISSION_MODE_DATA, NULL, NULL);
   }
@@ -397,8 +456,8 @@ uint64_t pdcp_module_init(uint64_t _pdcp_optmask)
   }
   return pdcp_optmask ;
 }
-
-static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
+static int liuyu=0;
+static void deliver_sdu_drb(protocol_ctxt_t *ctxt_pP,void *_ue, nr_pdcp_entity_t *entity,
                             char *buf, int size)
 {
   extern int nas_sock_fd[];
@@ -409,11 +468,63 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
   int rb_id;
   int i;
 
-  if(IS_SOFTMODEM_NOS1){
+  if (IS_SOFTMODEM_NOS1 ||  ctxt_pP->enb_flag==ENB_FLAG_NO){
+    #if 0
+    log_dump(PDCP,buf,size,LOG_DUMP_CHAR,"   PDCP Received SDU:\n");
+    if (size > 4700)
+    {
+      LOG_I(PDCP,"maybe ip data \n");
+    }
+    else
+    {
+      LOG_I(PDCP,"send to gNB RRC \n");
+      
+      if(liuyu==2)
+          liuyu=1;
+      if(liuyu==0)
+          nr_rrc_data_ind_ccch( ctxt_pP, 1, size, buf);
+      if(liuyu==1)
+      {
+        for (i = 0; i < 5; i++) {
+           if (entity == ue->drb[i]) {
+              rb_id = i+1;
+              goto rb_found;
+           }
+        }
+
+      LOG_I(PDCP, "%s:%d:%s: fatal, no RB found for ue %d\n",
+            __FILE__, __LINE__, __FUNCTION__, ue->rnti);
+      exit(1);
+
+    rb_found:
+      gtpu_buffer_p = itti_malloc(TASK_PDCP_ENB, TASK_GTPV1_U,
+                                  size + GTPU_HEADER_OVERHEAD_MAX);
+      AssertFatal(gtpu_buffer_p != NULL, "OUT OF MEMORY");
+      memcpy(&gtpu_buffer_p[GTPU_HEADER_OVERHEAD_MAX], buf, size);
+      message_p = itti_alloc_new_message(TASK_PDCP_ENB, GTPV1U_ENB_TUNNEL_DATA_REQ);
+      AssertFatal(message_p != NULL, "OUT OF MEMORY");
+      GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).buffer       = gtpu_buffer_p;
+      GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).length       = size;
+      GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).offset       = GTPU_HEADER_OVERHEAD_MAX;
+      GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).rnti         = ue->rnti;
+      GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).rnti         = 0x1234;
+      GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).rab_id       = rb_id + 4;
+      LOG_I(PDCP, "%s() (drb %d) sending message to gtp size %d\n", __func__, rb_id, size);
+      //for (i = 0; i < size; i++) printf(" %2.2x", (unsigned char)buf[i]);
+      //printf("\n");
+      itti_send_msg_to_task(TASK_GTPV1_U, INSTANCE_DEFAULT, message_p); 
+      }
+          //nr_rrc_data_ind( ctxt_pP, 1, size, buf);
+      
+      liuyu++;
+      
+    }
+    #else
     len = write(nas_sock_fd[0], buf, size);
     if (len != size) {
       LOG_E(PDCP, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
     }
+    #endif
   }
   else{
     for (i = 0; i < 5; i++) {
@@ -488,6 +599,74 @@ rb_found:
   enqueue_rlc_data_req(&ctxt, 0, MBMS_FLAG_NO, rb_id, sdu_id, 0, size, memblock, NULL, NULL);
 }
 
+static void deliver_sdu_srb(protocol_ctxt_t *ctxt_pP, void *_ue, nr_pdcp_entity_t *entity,
+                            char *buf, int size)
+{
+  /* Implementation to be added */
+  
+  nr_pdcp_ue_t *ue = _ue;
+  MessageDef  *message_p;
+  uint8_t     *gtpu_buffer_p;
+  int srb_id;
+  int i;
+
+  for (i = 0; i < 2; i++) {
+    if (entity == ue->srb[i]) {
+      srb_id = i+1;
+      goto rb_found;
+    }
+  }
+
+  LOG_E(PDCP, "%s:%d:%s: fatal, no RB found for ue %d\n",
+        __FILE__, __LINE__, __FUNCTION__, ue->rnti);
+  exit(1);
+
+rb_found:
+  nr_rrc_data_ind( ctxt_pP, srb_id, size, buf);
+ 
+  return;
+}
+
+
+
+static void deliver_pdu_srb(void *_ue, nr_pdcp_entity_t *entity,
+                            char *buf, int size, int sdu_id)
+{
+  nr_pdcp_ue_t *ue = _ue;
+  int srb_id;
+  protocol_ctxt_t ctxt;
+  int i;
+  mem_block_t *memblock;
+
+  for (i = 0; i < 2; i++) {
+    if (entity == ue->srb[i]) {
+      srb_id = i+1;
+      goto rb_found;
+    }
+  }
+
+  LOG_E(PDCP, "%s:%d:%s: fatal, no RB found for ue %d\n",
+        __FILE__, __LINE__, __FUNCTION__, ue->rnti);
+  exit(1);
+
+rb_found:
+  ctxt.module_id = 0;
+  ctxt.enb_flag = 1;
+  ctxt.instance = 0;
+  ctxt.frame = 0;
+  ctxt.subframe = 0;
+  ctxt.eNB_index = 0;
+  ctxt.configured = 1;
+  ctxt.brOption = 0;
+
+  ctxt.rnti = ue->rnti;
+
+  memblock = get_free_mem_block(size, __FUNCTION__);
+  memcpy(memblock->data, buf, size);
+
+  enqueue_rlc_data_req(&ctxt, 1, MBMS_FLAG_NO, srb_id, sdu_id, 0, size, memblock, NULL, NULL);
+}
+
 boolean_t pdcp_data_ind(
   const protocol_ctxt_t *const  ctxt_pP,
   const srb_flag_t srb_flagP,
@@ -530,7 +709,7 @@ boolean_t pdcp_data_ind(
   }
 
   if (rb != NULL) {
-    rb->recv_pdu(rb, (char *)sdu_buffer->data, sdu_buffer_size);
+    rb->recv_pdu(ctxt_pP,rb, (char *)sdu_buffer->data, sdu_buffer_size);
   } else {
     LOG_E(PDCP, "%s:%d:%s: fatal: no RB found (rb_id %ld, srb_flag %d)\n",
           __FILE__, __LINE__, __FUNCTION__, rb_id, srb_flagP);
@@ -565,7 +744,7 @@ void pdcp_run(const protocol_ctxt_t *const  ctxt_pP)
           0,
           RRC_DCCH_DATA_REQ(msg_p).eNB_index);
       result = pdcp_data_req(&ctxt,
-                             SRB_FLAG_YES,
+                             SRB_FLAG_YES,//not used, use lcid to check
                              RRC_DCCH_DATA_REQ(msg_p).rb_id,
                              RRC_DCCH_DATA_REQ(msg_p).muip,
                              RRC_DCCH_DATA_REQ(msg_p).confirmp,
@@ -588,7 +767,32 @@ void pdcp_run(const protocol_ctxt_t *const  ctxt_pP)
 
 static void add_srb(int rnti, struct NR_SRB_ToAddMod *s)
 {
-  TODO;
+  nr_pdcp_entity_t *pdcp_srb;
+  nr_pdcp_ue_t *ue;
+
+  int srb_id = s->srb_Identity;
+
+  printf("\n\n################# rnti %d add srb %d\n\n\n", rnti, srb_id);
+
+  if (srb_id > 3) {
+    LOG_E(PDCP, "%s:%d:%s: fatal, bad drb id %d\n",
+          __FILE__, __LINE__, __FUNCTION__, srb_id);
+    exit(1);
+  }
+
+  nr_pdcp_manager_lock(nr_pdcp_ue_manager);
+  ue = nr_pdcp_manager_get_ue(nr_pdcp_ue_manager, rnti);
+  if (ue->srb[srb_id-1] != NULL) {
+    LOG_W(PDCP, "%s:%d:%s: warning DRB %d already exist for ue %d, do nothing\n",
+          __FILE__, __LINE__, __FUNCTION__, srb_id, rnti);
+  } else {
+    pdcp_srb = new_nr_pdcp_entity_srb(srb_id, deliver_sdu_srb, ue, deliver_pdu_srb, ue);
+    nr_pdcp_ue_add_srb_pdcp_entity(ue, srb_id, pdcp_srb);
+
+    LOG_I(PDCP, "%s:%d:%s: added drb %d to ue %d\n",
+          __FILE__, __LINE__, __FUNCTION__, srb_id, rnti);
+  }
+  nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
 }
 
 static void add_drb_am(int rnti, struct NR_DRB_ToAddMod *s)
@@ -736,7 +940,17 @@ void nr_DRB_preconfiguration(uint16_t crnti)
   //fill_default_rbconfig(rb_config, 5, 1);
   rbconfig = calloc(1, sizeof(*rbconfig));
 
-  rbconfig->srb_ToAddModList = NULL;
+  rbconfig->srb_ToAddModList = calloc(1,sizeof(*rbconfig->srb_ToAddModList));
+  NR_SRB_ToAddMod_t *srb_ToAddMod = calloc(1,sizeof(*srb_ToAddMod));
+  srb_ToAddMod->srb_Identity = 1;
+  srb_ToAddMod->reestablishPDCP = NULL;
+  srb_ToAddMod->discardOnPDCP = NULL;
+  srb_ToAddMod->pdcp_Config = NULL;
+  ASN_SEQUENCE_ADD(&rbconfig->srb_ToAddModList->list,srb_ToAddMod);
+  // srb_ToAddMod = calloc(1,sizeof(*srb_ToAddMod));
+  // srb_ToAddMod->srb_Identity = 2;
+  // ASN_SEQUENCE_ADD(&rbconfig->srb_ToAddModList->list,srb_ToAddMod);
+
   rbconfig->srb3_ToRelease = NULL;
   rbconfig->drb_ToAddModList = calloc(1,sizeof(*rbconfig->drb_ToAddModList));
   NR_DRB_ToAddMod_t *drb_ToAddMod = calloc(1,sizeof(*drb_ToAddMod));
@@ -780,9 +994,58 @@ void nr_DRB_preconfiguration(uint16_t crnti)
   xer_fprint(stdout, &asn_DEF_NR_RadioBearerConfig, (const void*)rbconfig);
 
   NR_RLC_BearerConfig_t *RLC_BearerConfig = calloc(1,sizeof(*RLC_BearerConfig));
-  nr_rlc_bearer_init(RLC_BearerConfig);
-  nr_drb_config(RLC_BearerConfig->rlc_Config, NR_RLC_Config_PR_um_Bi_Directional);
-  nr_rlc_bearer_init_ul_spec(RLC_BearerConfig->mac_LogicalChannelConfig);
+
+
+  RLC_BearerConfig->logicalChannelIdentity = 4;
+  RLC_BearerConfig->servedRadioBearer = calloc(1,sizeof(*RLC_BearerConfig->servedRadioBearer));
+  RLC_BearerConfig->servedRadioBearer->present =    NR_RLC_BearerConfig__servedRadioBearer_PR_drb_Identity;
+
+  RLC_BearerConfig->servedRadioBearer->choice.drb_Identity=1;
+  RLC_BearerConfig->reestablishRLC=calloc(1,sizeof(*RLC_BearerConfig->reestablishRLC));
+  *RLC_BearerConfig->reestablishRLC=NR_RLC_BearerConfig__reestablishRLC_true;
+  RLC_BearerConfig->rlc_Config=calloc(1,sizeof(*RLC_BearerConfig->rlc_Config));
+
+#if 0
+  // RLC UM Bi-directional Bearer configuration
+  RLC_BearerConfig->rlc_Config->present = NR_RLC_Config_PR_um_Bi_Directional;
+  RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional = calloc(1,sizeof(*RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional));
+  RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional->ul_UM_RLC.sn_FieldLength = calloc(1,sizeof(*RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional->ul_UM_RLC.sn_FieldLength));
+  *RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional->ul_UM_RLC.sn_FieldLength   =    NR_SN_FieldLengthUM_size12;
+
+  RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional->dl_UM_RLC.sn_FieldLength = calloc(1,sizeof(*RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional->dl_UM_RLC.sn_FieldLength));
+  *RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional->dl_UM_RLC.sn_FieldLength   =    NR_SN_FieldLengthUM_size12;
+  RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional->dl_UM_RLC.t_Reassembly = NR_T_Reassembly_ms15;
+ #else
+  // RLC AM Bearer configuration
+  RLC_BearerConfig->rlc_Config->present = NR_RLC_Config_PR_am;
+  RLC_BearerConfig->rlc_Config->choice.am = calloc(1,sizeof(*RLC_BearerConfig->rlc_Config->choice.am));
+  RLC_BearerConfig->rlc_Config->choice.am->ul_AM_RLC.sn_FieldLength = calloc(1,sizeof(*RLC_BearerConfig->rlc_Config->choice.am->ul_AM_RLC.sn_FieldLength));
+  *RLC_BearerConfig->rlc_Config->choice.am->ul_AM_RLC.sn_FieldLength   =  NR_SN_FieldLengthAM_size18;
+  RLC_BearerConfig->rlc_Config->choice.am->ul_AM_RLC.t_PollRetransmit = NR_T_PollRetransmit_ms45;
+  RLC_BearerConfig->rlc_Config->choice.am->ul_AM_RLC.pollPDU          = NR_PollPDU_p64;
+  RLC_BearerConfig->rlc_Config->choice.am->ul_AM_RLC.pollByte         = NR_PollByte_kB500;
+  RLC_BearerConfig->rlc_Config->choice.am->ul_AM_RLC.maxRetxThreshold = NR_UL_AM_RLC__maxRetxThreshold_t32;
+  RLC_BearerConfig->rlc_Config->choice.am->dl_AM_RLC.sn_FieldLength = calloc(1,sizeof(*RLC_BearerConfig->rlc_Config->choice.am->dl_AM_RLC.sn_FieldLength));
+  *RLC_BearerConfig->rlc_Config->choice.am->dl_AM_RLC.sn_FieldLength = NR_SN_FieldLengthAM_size18;
+  RLC_BearerConfig->rlc_Config->choice.am->dl_AM_RLC.t_Reassembly   = NR_T_Reassembly_ms15;
+  RLC_BearerConfig->rlc_Config->choice.am->dl_AM_RLC.t_StatusProhibit = NR_T_StatusProhibit_ms15;
+#endif
+  RLC_BearerConfig->mac_LogicalChannelConfig = calloc(1,sizeof(*RLC_BearerConfig->mac_LogicalChannelConfig));
+  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters = calloc(1,sizeof(*RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters));
+  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->priority            = 1;
+  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->prioritisedBitRate  = NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity;
+  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->bucketSizeDuration  = NR_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50;
+  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->allowedServingCells = NULL;
+  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->allowedSCS_List     = NULL;
+  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->maxPUSCH_Duration   = NULL;
+  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->configuredGrantType1Allowed = NULL;
+  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelGroup   = calloc(1,sizeof(*RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelGroup));
+  *RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelGroup  = 1;
+  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->schedulingRequestID   = NULL;
+  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelSR_Mask = false;
+  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelSR_DelayTimerApplied = false;
+  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->bitRateQueryProhibitTimer   = NULL;
+
 
   Rlc_Bearer_ToAdd_list = calloc(1,sizeof(*Rlc_Bearer_ToAdd_list));
   ASN_SEQUENCE_ADD(&Rlc_Bearer_ToAdd_list->list, RLC_BearerConfig);
@@ -796,7 +1059,7 @@ void nr_DRB_preconfiguration(uint16_t crnti)
 
   nr_rrc_pdcp_config_asn1_req(
     &ctxt,
-    (NR_SRB_ToAddModList_t *) NULL,
+    rbconfig->srb_ToAddModList,
     rbconfig->drb_ToAddModList ,
     rbconfig->drb_ToReleaseList,
     0xff,
@@ -808,7 +1071,7 @@ void nr_DRB_preconfiguration(uint16_t crnti)
     Rlc_Bearer_ToAdd_list);
 
   nr_rrc_rlc_config_asn1_req (&ctxt,
-      (NR_SRB_ToAddModList_t *) NULL,
+      rbconfig->srb_ToAddModList,
       rbconfig->drb_ToAddModList,
       rbconfig->drb_ToReleaseList,
       (LTE_PMCH_InfoList_r9_t *) NULL,
@@ -876,6 +1139,52 @@ void pdcp_config_set_security(
   }
 }
 
+
+static boolean_t pdcp_data_req_srb(
+  protocol_ctxt_t  *ctxt_pP,
+  const rb_id_t rb_id,
+  const mui_t muiP,
+  const confirm_t confirmP,
+  const sdu_size_t sdu_buffer_size,
+  unsigned char *const sdu_buffer)
+{
+  LOG_D(PDCP, "%s() called, size %d\n", __func__, sdu_buffer_size);
+  nr_pdcp_ue_t *ue;
+  nr_pdcp_entity_t *rb;
+  int rnti = ctxt_pP->rnti;
+
+  if (ctxt_pP->module_id != 0 ||
+      //ctxt_pP->enb_flag != 1 ||
+      ctxt_pP->instance != 0 ||
+      ctxt_pP->eNB_index != 0 /*||
+      ctxt_pP->configured != 1 ||
+      ctxt_pP->brOption != 0*/) {
+    LOG_E(PDCP, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
+    exit(1);
+  }
+
+  nr_pdcp_manager_lock(nr_pdcp_ue_manager);
+
+  ue = nr_pdcp_manager_get_ue(nr_pdcp_ue_manager, rnti);
+
+  if (rb_id < 1 || rb_id > 3)
+    rb = NULL;
+  else
+    rb = ue->srb[rb_id - 1];
+
+  if (rb == NULL) {
+    LOG_E(PDCP, "%s:%d:%s: no SRB found (rnti %d, rb_id %ld)\n",
+          __FILE__, __LINE__, __FUNCTION__, rnti, rb_id);
+    return 0;
+  }
+
+  rb->recv_sdu(rb, (char *)sdu_buffer, sdu_buffer_size, muiP);
+
+  nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
+
+  return 1;
+}
+
 static boolean_t pdcp_data_req_drb(
   protocol_ctxt_t  *ctxt_pP,
   const rb_id_t rb_id,
@@ -936,8 +1245,12 @@ boolean_t pdcp_data_req(
 #endif
   )
 {
-  if (srb_flagP) { TODO; }
-  return pdcp_data_req_drb(ctxt_pP, rb_id, muiP, confirmP, sdu_buffer_size,
+  if (rb_id < 4) { 
+    return pdcp_data_req_srb(ctxt_pP, rb_id, muiP, confirmP, sdu_buffer_size,
+                           sdu_buffer); 
+  }
+  // use rbid to check drb or srb.
+  return pdcp_data_req_drb(ctxt_pP, rb_id - 3, muiP, confirmP, sdu_buffer_size,
                            sdu_buffer);
 }
 

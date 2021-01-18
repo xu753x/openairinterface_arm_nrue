@@ -402,6 +402,17 @@ rrc_gNB_generate_RRCSetup(
   ue_context_pP->ue_context.ue_release_timer_thres = 1000;
   /* init timers */
   //   ue_context_pP->ue_context.ue_rrc_inactivity_timer = 0;
+
+  log_dump(NR_RRC, ue_p->Srb0.Tx_buffer.Payload, 16, LOG_DUMP_CHAR,"RRCSetup size: ");
+  // nr_rrc_data_req(ctxt_pP,
+  //           DCCH,
+  //           rrc_gNB_mui++,
+  //           SDU_CONFIRM_NO,
+  //           ue_p->Srb0.Tx_buffer.payload_size,
+  //           ue_p->Srb0.Tx_buffer.Payload,
+  //           PDCP_TRANSMISSION_MODE_CONTROL);
+  
+
 #ifdef ITTI_SIM
   MessageDef *message_p;
   uint8_t *message_buffer;
@@ -727,7 +738,7 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
                           100,
                           0,
                           0);
-
+                            
   if (dec_rval.consumed == 0) {
     /* TODO */
     LOG_E(NR_RRC, PROTOCOL_NR_RRC_CTXT_UE_FMT" FATAL Error in receiving CCCH\n",
@@ -946,7 +957,7 @@ rrc_gNB_decode_dcch(
                   sdu_sizeP,
                   0,
                   0);
-  // xer_fprint(stdout, &asn_DEF_NR_UL_DCCH_Message, (void *)&ul_dcch_msg);
+  xer_fprint(stdout, &asn_DEF_NR_UL_DCCH_Message, (void *)ul_dcch_msg);
 
   {
     for (i = 0; i < sdu_sizeP; i++) {
@@ -1298,13 +1309,14 @@ void *rrc_gnb_task(void *args_p) {
 
       /* Messages from MAC */
       case NR_RRC_MAC_CCCH_DATA_IND:
-      // PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt,
-      //                               NR_RRC_MAC_CCCH_DATA_IND(msg_p).gnb_index,
-      //                               GNB_FLAG_YES,
-      //                               NR_RRC_MAC_CCCH_DATA_IND(msg_p).rnti,
-      //                               msg_p->ittiMsgHeader.lte_time.frame,
-      //                               msg_p->ittiMsgHeader.lte_time.slot);
-        LOG_I(NR_RRC,"Decoding CCCH : inst %d, CC_id %d, ctxt %p, sib_info_p->Rx_buffer.payload_size %d\n",
+        PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt,
+                                    NR_RRC_MAC_CCCH_DATA_IND(msg_p).gnb_index,
+                                    GNB_FLAG_YES,
+                                    NR_RRC_MAC_CCCH_DATA_IND(msg_p).rnti,
+                                    msg_p->ittiMsgHeader.lte_time.frame,
+                                    msg_p->ittiMsgHeader.lte_time.slot);
+        LOG_I(NR_RRC,"Decoding CCCH : ue %d, inst %d, CC_id %d, ctxt %p, size %d\n",
+                ctxt.rnti,
                 instance,
                 NR_RRC_MAC_CCCH_DATA_IND(msg_p).CC_id,
                 &ctxt,
@@ -1324,12 +1336,17 @@ void *rrc_gnb_task(void *args_p) {
 
       /* Messages from PDCP */
       case NR_RRC_DCCH_DATA_IND:
-        // PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt,
-        //                               instance,
-        //                               ENB_FLAG_YES,
-        //                               RRC_DCCH_DATA_IND(msg_p).rnti,
-        //                               msg_p->ittiMsgHeader.lte_time.frame,
-        //                               msg_p->ittiMsgHeader.lte_time.slot);
+        PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt,
+                                      instance,
+                                      ENB_FLAG_YES,
+                                      RRC_DCCH_DATA_IND(msg_p).rnti,
+                                      msg_p->ittiMsgHeader.lte_time.frame,
+                                      msg_p->ittiMsgHeader.lte_time.slot);
+        LOG_I(NR_RRC,"Decoding DCCH : ue %d, inst %d, ctxt %p, size %d\n",
+                ctxt.rnti,
+                instance,
+                &ctxt,
+                NR_RRC_DCCH_DATA_IND(msg_p).sdu_size);
         LOG_D(NR_RRC, PROTOCOL_NR_RRC_CTXT_UE_FMT" Received on DCCH %d %s\n",
                 PROTOCOL_NR_RRC_CTXT_UE_ARGS(&ctxt),
                 NR_RRC_DCCH_DATA_IND(msg_p).dcch_index,

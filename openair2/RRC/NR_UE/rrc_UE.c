@@ -995,7 +995,7 @@ int nr_decode_SI( const protocol_ctxt_t *const ctxt_pP, const uint8_t gNB_index 
       if (NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIcnt == sib1->si_SchedulingInfo->schedulingInfoList.list.count)
         nr_rrc_set_sub_state( ctxt_pP->module_id, RRC_SUB_STATE_IDLE_SIB_COMPLETE );
   
-      LOG_I(RRC,"SIStatus %x, SIcnt %d/%d\n",
+      LOG_I(NR_RRC,"SIStatus %x, SIcnt %d/%d\n",
             NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus,
             NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIcnt,
             sib1->si_SchedulingInfo->schedulingInfoList.list.count);
@@ -1162,7 +1162,7 @@ int nr_decode_SIB1( const protocol_ctxt_t *const ctxt_pP, const uint8_t gNB_inde
         ) {
           /* PLMN match, send a confirmation to NAS */
           MessageDef  *msg_p;
-          msg_p = itti_alloc_new_message(TASK_RRC_UE, NAS_CELL_SELECTION_CNF);
+          msg_p = itti_alloc_new_message(TASK_RRC_NRUE, NAS_CELL_SELECTION_CNF);
           NAS_CELL_SELECTION_CNF (msg_p).errCode = AS_SUCCESS;
           NAS_CELL_SELECTION_CNF (msg_p).cellID = BIT_STRING_to_uint32(&sib1->cellAccessRelatedInfo.plmn_IdentityList.list.array[0]->cellIdentity);
           NAS_CELL_SELECTION_CNF (msg_p).tac = BIT_STRING_to_uint16(sib1->cellAccessRelatedInfo.plmn_IdentityList.list.array[0]->trackingAreaCode);
@@ -1180,7 +1180,7 @@ int nr_decode_SIB1( const protocol_ctxt_t *const ctxt_pP, const uint8_t gNB_inde
     if (cell_valid == 0) {
       /* Cell can not be used, ask PHY to try the next one */
       MessageDef  *msg_p;
-      msg_p = itti_alloc_new_message(TASK_RRC_UE, PHY_FIND_NEXT_CELL_REQ);
+      msg_p = itti_alloc_new_message(TASK_RRC_NRUE, PHY_FIND_NEXT_CELL_REQ);
       itti_send_msg_to_task(TASK_PHY_UE, ctxt_pP->instance, msg_p);
       LOG_E(RRC,
             "Synched with a cell, but PLMN doesn't match our SIM "
@@ -1416,6 +1416,7 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
     return -1;
   }
   
+  NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].State = NR_RRC_SI_RECEIVED;
   if (dl_ccch_msg->message.present == NR_DL_CCCH_MessageType_PR_c1) {
     if (NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].State == NR_RRC_SI_RECEIVED) {
       switch (dl_ccch_msg->message.choice.c1->present) {
@@ -1723,7 +1724,7 @@ nr_rrc_ue_process_securityModeCommand(
     GNB_RRC_DCCH_DATA_IND (message_p).size    = (enc_rval.encoded + 7) / 8;
     itti_send_msg_to_task (TASK_RRC_GNB_SIM, ctxt_pP->instance, message_p);
 #else
-    rrc_data_req (
+    rrc_data_req_ue (
       ctxt_pP,
       DCCH,
       nr_rrc_mui++,
@@ -1755,11 +1756,11 @@ void rrc_ue_generate_RRCSetupRequest( const protocol_ctxt_t *const ctxt_pP, cons
     }
 
     LOG_T(NR_RRC,"\n");
-    // NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size =
-    //   do_RRCSetupRequest(
-    //     ctxt_pP->module_id,
-    //     (uint8_t *)NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.Payload,
-    //     rv);
+    NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size =
+      do_RRCSetupRequest(
+        ctxt_pP->module_id,
+        (uint8_t *)NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.Payload,
+        rv);
     LOG_I(NR_RRC,"[UE %d] : Frame %d, Logical Channel UL-CCCH (SRB0), Generating RRCSetupRequest (bytes %d, eNB %d)\n",
           ctxt_pP->module_id, ctxt_pP->frame, NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size, gNB_index);
 
@@ -1770,6 +1771,17 @@ void rrc_ue_generate_RRCSetupRequest( const protocol_ctxt_t *const ctxt_pP, cons
     LOG_T(NR_RRC,"\n");
     /*UE_rrc_inst[ue_mod_idP].Srb0[Idx].Tx_buffer.Payload[i] = taus()&0xff;
     UE_rrc_inst[ue_mod_idP].Srb0[Idx].Tx_buffer.payload_size =i; */
+
+    log_dump(RRC,NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.Payload,NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size,
+    LOG_DUMP_CHAR,"RRCSetupRequest :\n");
+    rrc_data_req_ue (
+      ctxt_pP,
+      DCCH,
+      nr_rrc_mui++,
+      SDU_CONFIRM_NO,
+      NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size,
+      (uint8_t *)NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.Payload,
+      PDCP_TRANSMISSION_MODE_CONTROL);
 
 #ifdef ITTI_SIM
     MessageDef *message_p;
@@ -1934,7 +1946,7 @@ nr_rrc_ue_process_measConfig(
                   (char *)measConfig->reportConfigToAddModList->list.array[i],
                   sizeof(NR_ReportConfigToAddMod_t));
       } else {
-        LOG_D(RRC,"Adding Report Configuration %ld %p \n", ind-1, measConfig->reportConfigToAddModList->list.array[i]);
+        LOG_D(NR_RRC,"Adding Report Configuration %ld %p \n", ind-1, measConfig->reportConfigToAddModList->list.array[i]);
         if (reportConfig->reportConfig.present == NR_ReportConfigToAddMod__reportConfig_PR_reportConfigNR) {
             NR_UE_rrc_inst[ctxt_pP->module_id].ReportConfig[gNB_index][ind-1] = measConfig->reportConfigToAddModList->list.array[i];
         }
@@ -1967,7 +1979,7 @@ nr_rrc_ue_process_measConfig(
 
   if (measConfig->quantityConfig != NULL) {
     if (NR_UE_rrc_inst[ctxt_pP->module_id].QuantityConfig[gNB_index]) {
-      LOG_D(RRC,"Modifying Quantity Configuration \n");
+      LOG_D(NR_RRC,"Modifying Quantity Configuration \n");
       memcpy((char *)NR_UE_rrc_inst[ctxt_pP->module_id].QuantityConfig[gNB_index],
               (char *)measConfig->quantityConfig,
               sizeof(NR_QuantityConfig_t));
@@ -2191,7 +2203,30 @@ rrc_ue_process_rrcReconfiguration(
       for (list_count = 0; list_count < ie->nonCriticalExtension->dedicatedNAS_MessageList->list.count; list_count++) {
         pdu_length = ie->nonCriticalExtension->dedicatedNAS_MessageList->list.array[list_count]->size;
         pdu_buffer = ie->nonCriticalExtension->dedicatedNAS_MessageList->list.array[list_count]->buf;
-        msg_p = itti_alloc_new_message(TASK_RRC_UE, NAS_CONN_ESTABLI_CNF);
+
+        uint8_t msg_type = 0;
+        if((pdu_buffer + 1) != NULL){
+          if (*(pdu_buffer + 1) > 0 ) {
+            if(pdu_buffer + 9){
+                msg_type = *(pdu_buffer + 9);
+            } else {
+              LOG_W(NR_RRC, "[UE] Received invalid downlink message\n");
+              return;
+            }
+          } else {
+            if(pdu_buffer + 2){
+              msg_type = *(pdu_buffer + 2);
+            } else {
+                LOG_W(NR_RRC, "[UE] Received invalid downlink message\n");
+                return;
+            }
+          }
+        }
+        if(msg_type == 0x42 /*REGISTRATION_ACCEPT*/){
+          LOG_I(NR_RRC, "[UE] Received REGISTRATION ACCEPT message\n");
+        }
+
+        msg_p = itti_alloc_new_message(TASK_RRC_NRUE, NAS_CONN_ESTABLI_CNF);
         NAS_CONN_ESTABLI_CNF(msg_p).errCode = AS_SUCCESS;
         NAS_CONN_ESTABLI_CNF(msg_p).nasMsg.length = pdu_length;
         NAS_CONN_ESTABLI_CNF(msg_p).nasMsg.data = pdu_buffer;
@@ -2284,23 +2319,25 @@ nr_rrc_ue_decode_dcch(
   // }
 
   if (dl_dcch_msg->message.present == NR_DL_DCCH_MessageType_PR_c1) {
-    switch (dl_dcch_msg->message.choice.c1->present) {
-      case NR_DL_DCCH_MessageType__c1_PR_NOTHING:
+switch (dl_dcch_msg->message.choice.c1->present) {
+    case NR_DL_DCCH_MessageType__c1_PR_NOTHING:
         LOG_I(NR_RRC, "Received PR_NOTHING on DL-DCCH-Message\n");
         break;
 
-      case NR_DL_DCCH_MessageType__c1_PR_rrcReconfiguration:
+    case NR_DL_DCCH_MessageType__c1_PR_rrcReconfiguration:
+    {
         rrc_ue_process_rrcReconfiguration(ctxt_pP,
                                             dl_dcch_msg->message.choice.c1->choice.rrcReconfiguration,
                                             gNB_indexP);
         nr_rrc_ue_generate_RRCReconfigurationComplete(ctxt_pP,
                                     gNB_indexP,
                                     dl_dcch_msg->message.choice.c1->choice.rrcReconfiguration->rrc_TransactionIdentifier);
+    }
         break;
 
       case NR_DL_DCCH_MessageType__c1_PR_rrcResume:
       case NR_DL_DCCH_MessageType__c1_PR_rrcRelease:
-        msg_p = itti_alloc_new_message(TASK_RRC_UE, NAS_CONN_RELEASE_IND);
+        msg_p = itti_alloc_new_message(TASK_RRC_NRUE, NAS_CONN_RELEASE_IND);
 
         if((dl_dcch_msg->message.choice.c1->choice.rrcRelease->criticalExtensions.present == NR_RRCRelease__criticalExtensions_PR_rrcRelease) &&
            (dl_dcch_msg->message.choice.c1->present == NR_DL_DCCH_MessageType__c1_PR_rrcRelease)){
@@ -2313,7 +2350,7 @@ nr_rrc_ue_decode_dcch(
          itti_send_msg_to_task(TASK_NAS_UE, ctxt_pP->instance, msg_p);
          break;
       case NR_DL_DCCH_MessageType__c1_PR_ueCapabilityEnquiry:
-        LOG_I(RRC, "[UE %d] Received Capability Enquiry (gNB %d)\n",
+        LOG_I(NR_RRC, "[UE %d] Received Capability Enquiry (gNB %d)\n",
               ctxt_pP->module_id,gNB_indexP);
         nr_rrc_ue_process_ueCapabilityEnquiry(
           ctxt_pP,
@@ -2321,7 +2358,30 @@ nr_rrc_ue_decode_dcch(
           gNB_indexP);
          break;
       case NR_DL_DCCH_MessageType__c1_PR_rrcReestablishment:
+         break;
       case NR_DL_DCCH_MessageType__c1_PR_dlInformationTransfer:
+        {
+          NR_DLInformationTransfer_t *dlInformationTransfer = dl_dcch_msg->message.choice.c1->choice.dlInformationTransfer;
+
+          if (dlInformationTransfer->criticalExtensions.present
+                == NR_DLInformationTransfer__criticalExtensions_PR_dlInformationTransfer) {
+            /* This message hold a dedicated info NAS payload, forward it to NAS */
+            NR_DedicatedNAS_Message_t *dedicatedNAS_Message =
+                dlInformationTransfer->criticalExtensions.choice.dlInformationTransfer->dedicatedNAS_Message;
+            uint32_t pdu_length;
+            uint8_t *pdu_buffer;
+            pdu_length = dedicatedNAS_Message->size;
+            pdu_buffer = dedicatedNAS_Message->buf;
+
+            MessageDef *msg_p;
+            msg_p = itti_alloc_new_message(TASK_RRC_NRUE, NAS_DOWNLINK_DATA_IND);
+            NAS_DOWNLINK_DATA_IND(msg_p).UEid = ctxt_pP->module_id; // TODO set the UEid to something else ?
+            NAS_DOWNLINK_DATA_IND(msg_p).nasMsg.length = pdu_length;
+            NAS_DOWNLINK_DATA_IND(msg_p).nasMsg.data = pdu_buffer;
+            itti_send_msg_to_task(TASK_NAS_UE, ctxt_pP->instance, msg_p);
+          }
+        }
+        break;
       case NR_DL_DCCH_MessageType__c1_PR_mobilityFromNRCommand:
       case NR_DL_DCCH_MessageType__c1_PR_dlDedicatedMessageSegment_r16:
       case NR_DL_DCCH_MessageType__c1_PR_ueInformationRequest_r16:
@@ -2333,7 +2393,7 @@ nr_rrc_ue_decode_dcch(
       case NR_DL_DCCH_MessageType__c1_PR_counterCheck:
           break;
       case NR_DL_DCCH_MessageType__c1_PR_securityModeCommand:
-        LOG_I(RRC, "[UE %d] Received securityModeCommand (gNB %d)\n",
+        LOG_I(NR_RRC, "[UE %d] Received securityModeCommand (gNB %d)\n",
             ctxt_pP->module_id, gNB_indexP);
         nr_rrc_ue_process_securityModeCommand(
           ctxt_pP,
@@ -2385,7 +2445,7 @@ void *rrc_nrue_task( void *args_p ) {
                                    NR_RRC_MAC_BCCH_DATA_IND (msg_p).rsrp);
 
       case NR_RRC_MAC_CCCH_DATA_IND:
-        LOG_D(NR_RRC, "[UE %d] RNTI %x Received %s: frameP %d, gNB %d\n",
+        LOG_I(NR_RRC, "[UE %d] RNTI %x Received %s: frameP %d, gNB %d\n",
               ue_mod_id,
               NR_RRC_MAC_CCCH_DATA_IND (msg_p).rnti,
               ITTI_MSG_NAME (msg_p),
@@ -2405,7 +2465,7 @@ void *rrc_nrue_task( void *args_p ) {
       /* PDCP messages */
       case NR_RRC_DCCH_DATA_IND:
         PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, NR_RRC_DCCH_DATA_IND (msg_p).module_id, GNB_FLAG_NO, NR_RRC_DCCH_DATA_IND (msg_p).rnti, NR_RRC_DCCH_DATA_IND (msg_p).frame, 0,NR_RRC_DCCH_DATA_IND (msg_p).gNB_index);
-        LOG_D(NR_RRC, "[UE %d] Received %s: frameP %d, DCCH %d, gNB %d\n",
+        LOG_I(NR_RRC, "[UE %d] Received %s: frameP %d, DCCH %d, gNB %d\n",
               NR_RRC_DCCH_DATA_IND (msg_p).module_id,
               ITTI_MSG_NAME (msg_p),
               NR_RRC_DCCH_DATA_IND (msg_p).frame,
@@ -2469,7 +2529,7 @@ nr_rrc_ue_process_ueCapabilityEnquiry(
   NR_UE_CapabilityRAT_Container_t ue_CapabilityRAT_Container;
   uint8_t buffer[200];
   int i;
-  LOG_I(RRC,"[UE %d] Frame %d: Receiving from SRB1 (DL-DCCH), Processing UECapabilityEnquiry (gNB %d)\n",
+  LOG_I(NR_RRC,"[UE %d] Frame %d: Receiving from SRB1 (DL-DCCH), Processing UECapabilityEnquiry (gNB %d)\n",
         ctxt_pP->module_id,
         ctxt_pP->frame,
         gNB_index);

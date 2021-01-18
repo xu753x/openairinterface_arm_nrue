@@ -19,32 +19,27 @@
  *      contact@openairinterface.org
  */
 
-#include "nr_pdcp_entity_drb_am.h"
+#include "nr_pdcp_entity_srb.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "common/utils/LOG/log.h"
 
-void nr_pdcp_entity_drb_am_recv_pdu( protocol_ctxt_t *ctxt_pP , nr_pdcp_entity_t *_entity, char *buffer, int size)
+void nr_pdcp_entity_srb_recv_pdu(protocol_ctxt_t *ctxt_pP, nr_pdcp_entity_t *_entity, char *buffer, int size)
 {
-  nr_pdcp_entity_drb_am_t *entity = (nr_pdcp_entity_drb_am_t *)_entity;
+  nr_pdcp_entity_srb_t *entity = (nr_pdcp_entity_srb_t *)_entity;
 
-  if (size < 3) abort();
-
-  if (!(buffer[0] & 0x80))
-    LOG_E(PDCP, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
-
+  if (size < 2) abort();
   entity->common.deliver_sdu(ctxt_pP, entity->common.deliver_sdu_data,
-                             (nr_pdcp_entity_t *)entity, buffer+3, size-3);
+                             (nr_pdcp_entity_t *)entity, buffer+2, size-6);
 }
 
-void nr_pdcp_entity_drb_am_recv_sdu(nr_pdcp_entity_t *_entity, char *buffer, int size,
+void nr_pdcp_entity_srb_recv_sdu(nr_pdcp_entity_t *_entity, char *buffer, int size,
                               int sdu_id)
 {
-  nr_pdcp_entity_drb_am_t *entity = (nr_pdcp_entity_drb_am_t *)_entity;
+  nr_pdcp_entity_srb_t *entity = (nr_pdcp_entity_srb_t *)_entity;
   int sn;
-  char buf[size+3];
+  char buf[size+6];
 
   sn = entity->common.next_nr_pdcp_tx_sn;
 
@@ -54,22 +49,27 @@ void nr_pdcp_entity_drb_am_recv_sdu(nr_pdcp_entity_t *_entity, char *buffer, int
     entity->common.tx_hfn++;
   }
 
-  buf[0] = 0x80 | ((sn >> 16) & 0x3);
-  buf[1] = (sn >> 8) & 0xff;
-  buf[2] = sn & 0xff;
-  memcpy(buf+3, buffer, size);
+  buf[0] = (sn >> 8) & 0x0f;
+  buf[1] = sn & 0xff;
+  memcpy(buf+2, buffer, size);
+
+  /* For now use padding for the MAC-I bytes (normally carrying message authentication code)
+   * which come after the data payload bytes (38.323, section 6.2.2.1) */
+  for (int i=size+2; i<size+6; i++)
+    buf[i] = 0x11*(i-size-1);
 
   entity->common.deliver_pdu(entity->common.deliver_pdu_data,
-                             (nr_pdcp_entity_t *)entity, buf, size+3, sdu_id);
+                             (nr_pdcp_entity_t *)entity, buf, size+6, sdu_id);
 }
 
-void nr_pdcp_entity_drb_am_set_integrity_key(nr_pdcp_entity_t *_entity, char *key)
+void nr_pdcp_entity_srb_set_integrity_key(nr_pdcp_entity_t *_entity, char *key)
 {
   /* nothing to do */
 }
 
-void nr_pdcp_entity_drb_am_delete(nr_pdcp_entity_t *_entity)
+void nr_pdcp_entity_srb_delete(nr_pdcp_entity_t *_entity)
 {
-  nr_pdcp_entity_drb_am_t *entity = (nr_pdcp_entity_drb_am_t *)_entity;
+  nr_pdcp_entity_srb_t *entity = (nr_pdcp_entity_srb_t *)_entity;
   free(entity);
 }
+

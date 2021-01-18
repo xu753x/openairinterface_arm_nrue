@@ -310,6 +310,21 @@ void get_num_re_dmrs(nfapi_nr_ue_pusch_pdu_t *pusch_pdu,
 
 void build_ssb_to_ro_map(NR_ServingCellConfigCommon_t *scc, uint8_t unpaired);
 
+/**\brief
+   \param module_id  module id
+   \param CC_id      component carrier id
+   \param frame_t    frameP
+   \param rb_id_t    SRB id
+   \param buffer_pP  pointer to buffer*/
+int8_t mac_rrc_nr_data_req_ue(  
+  const module_id_t Mod_idP,
+  const int         CC_id,
+  const frame_t     frameP,
+  const rb_id_t     Srb_id,
+  const uint8_t     Nb_tb,
+  uint8_t    *const buffer_pP,
+  const uint8_t     gNB_index,
+  const uint8_t     mbsfn_sync_area);
 
 #endif
 /** @}*/
