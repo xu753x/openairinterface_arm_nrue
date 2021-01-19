@@ -726,6 +726,8 @@ void nr_sr_reporting(int Mod_idP, frame_t SFN, sub_frame_t slot)
   const int n_slots_frame = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
   const int UE_id = 0;
   NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
+  if (!UE_info->active[UE_id])
+    return;
   NR_PUCCH_ResourceSet_t *pucchresset;
   NR_sched_pucch_t *curr_pucch;
   NR_SchedulingRequestResourceConfig_t *SchedulingRequestResourceConfig;
