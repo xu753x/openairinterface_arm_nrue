@@ -764,30 +764,43 @@ void nr_sr_reporting(int Mod_idP, frame_t SFN, sub_frame_t slot)
     int SR_period; int SR_offset;
 
     periodicity__SRR(SchedulingRequestResourceConfig,&SR_period,&SR_offset);
-    //for (int SRslot=0;SRslot<n_slots_frame;j++){
-    if (((SFN*n_slots_frame)+slot-SR_offset)%SR_period ==0){
-      NR_PUCCH_ResourceId_t *PucchResourceId = SchedulingRequestResourceConfig->resource;
+    const int num_SRs = n_slots_frame / SR_period;
+    AssertFatal(num_SRs <= 2,
+                "cannot handle more than 2 SRs per frame, but have %d!\n",
+                num_SRs);
+    const bool SR_even = !(n_slots_frame % SR_period);
+    AssertFatal(SR_even, "cannot handle SR periodicity not evenly dividing number of slots\n");
+    // first condition: SR every frame; second condition: less than every frame
+    if (!(SR_period < n_slots_frame || SFN % (SR_period / n_slots_frame) == SR_offset / n_slots_frame))
+      return;
 
-      curr_pucch = &UE_info->UE_sched_ctrl[UE_id].sched_pucch[0];
+    NR_PUCCH_ResourceId_t *PucchResourceId = SchedulingRequestResourceConfig->resource;
+
+    int found = -1;
+    pucchresset = pucch_Config->resourceSetToAddModList->list.array[0]; // set with formats 0,1
+
+
+    int n_list = pucchresset->resourceList.list.count;
+     for (int i=0; i<n_list; i++) {
+      if (*pucchresset->resourceList.list.array[i] == *PucchResourceId )
+        found = i;
+    }
+    AssertFatal(found>-1,"SR resource not found among PUCCH resources");
+
+    for (int i = 0; i < num_SRs; ++i) {
+      curr_pucch = &UE_info->UE_sched_ctrl[UE_id].sched_pucch[i];
       curr_pucch->sr_flag=true;
       curr_pucch->frame = SFN;
-      curr_pucch->ul_slot = slot;
-
-      
-      int found = -1;
-      pucchresset = pucch_Config->resourceSetToAddModList->list.array[0]; // set with formats 0,1
-
-
-      int n_list = pucchresset->resourceList.list.count;
-       for (int i=0; i<n_list; i++) {
-        if (*pucchresset->resourceList.list.array[i] == *PucchResourceId )
-          found = i;
-      }
-      AssertFatal(found>-1,"SR resource not found among PUCCH resources");
-
+      curr_pucch->ul_slot = (i * SR_period + SR_offset) % n_slots_frame; // first, start on slot 0
       curr_pucch->resource_indicator = found;
 
-      LOG_I(MAC,"Scheduling Request identified for frame %d slot %d with %d SR  bit\n",SFN,slot,curr_pucch->sr_flag);
+      LOG_D(MAC,
+            "Scheduling Request for %4d.%2d with SR bit %d sched_pucch %d resource %d\n",
+            curr_pucch->frame,
+            curr_pucch->ul_slot,
+            curr_pucch->sr_flag,
+            i,
+            curr_pucch->resource_indicator);
     }
   }
 }

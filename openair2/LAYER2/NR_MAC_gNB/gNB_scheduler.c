@@ -417,8 +417,9 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     schedule_nr_prach(module_idP, f, s);
   }
 
-  // This schedule SR
-  nr_sr_reporting(module_idP, frame, slot);
+  // Schedule SR: check in slot 0 for the whole frame
+  if (slot == 0)
+    nr_sr_reporting(module_idP, frame, slot);
 
   // Schedule CSI measurement reporting: check in slot 0 for the whole frame
   if (slot == 0)
