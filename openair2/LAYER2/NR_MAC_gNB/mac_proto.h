@@ -403,13 +403,7 @@ void find_SSB_and_RO_available(module_id_t module_idP);
 
 bool find_free_CCE(module_id_t module_id, sub_frame_t slot, int UE_id);
 
-void nr_sr_reporting (int Mod_idp,
-                      int UE_id,
-                      sub_frame_t slotP,
-                      int n_slots_frame,
-                      frame_t frameP,
-                      int slots_per_tdd,
-                      int ul_slots);
+void nr_sr_reporting(int Mod_idP, frame_t frameP, sub_frame_t slotP);
 
 void periodicity__SRR (NR_SchedulingRequestResourceConfig_t *SchedulingReqRecconf,
                        int *period,

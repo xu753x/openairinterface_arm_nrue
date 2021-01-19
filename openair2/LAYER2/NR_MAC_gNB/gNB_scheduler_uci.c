@@ -720,13 +720,14 @@ uint16_t compute_pucch_prb_size(uint8_t format,
 
 }
 
-
-void nr_sr_reporting (int Mod_idp, int UE_id,sub_frame_t slot, int n_slots_frame, frame_t SFN, int slots_per_tdd,
-                           int ul_slots){
-
-  NR_UE_info_t *UE_info = &RC.nrmac[Mod_idp]->UE_info;
+void nr_sr_reporting(int Mod_idP, frame_t SFN, sub_frame_t slot)
+{
+  NR_ServingCellConfigCommon_t *scc = RC.nrmac[Mod_idP]->common_channels->ServingCellConfigCommon;
+  const int n_slots_frame = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
+  const int UE_id = 0;
+  NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
   NR_PUCCH_ResourceSet_t *pucchresset;
-  NR_sched_pucch *curr_pucch;
+  NR_sched_pucch_t *curr_pucch;
   NR_SchedulingRequestResourceConfig_t *SchedulingRequestResourceConfig;
   NR_CellGroupConfig_t *secondaryCellGroup = UE_info->secondaryCellGroup[UE_id];
   //NR_SchedulingRequestConfig_t *schedulingRequestConfig = secondaryCellGroup->mac_CellGroupConfig->schedulingRequestConfig;
@@ -755,7 +756,7 @@ void nr_sr_reporting (int Mod_idp, int UE_id,sub_frame_t slot, int n_slots_frame
     if (((SFN*n_slots_frame)+slot-SR_offset)%SR_period ==0){
       NR_PUCCH_ResourceId_t *PucchResourceId = SchedulingRequestResourceConfig->resource;
 
-      curr_pucch = &UE_info->UE_sched_ctrl[UE_id].sched_pucch[(slot%slots_per_tdd)-slots_per_tdd+ul_slots][0];
+      curr_pucch = &UE_info->UE_sched_ctrl[UE_id].sched_pucch[0];
       curr_pucch->sr_flag=true;
       curr_pucch->frame = SFN;
       curr_pucch->ul_slot = slot;
@@ -778,7 +779,6 @@ void nr_sr_reporting (int Mod_idp, int UE_id,sub_frame_t slot, int n_slots_frame
     }
   }
 }
-
 
 void periodicity__SRR (NR_SchedulingRequestResourceConfig_t *SchedulingReqRec, int *period, int *offset){
 
