@@ -360,6 +360,8 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
   // check scheduling request result, confidence_level == 0 is good
   if (uci_01->pduBitmap & 0x1) {
     sched_ctrl->SR |= uci_01->sr->sr_indication && uci_01->sr->sr_confidence_level == 0;
+    if (uci_01->sr->sr_indication && uci_01->sr->sr_confidence_level == 0)
+      LOG_I(MAC, "UE %d scheduling request\n", UE_id);
   }
 }
 
