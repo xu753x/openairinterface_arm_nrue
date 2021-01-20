@@ -32,6 +32,7 @@
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "executables/softmodem-common.h"
 #include "common/utils/nr/nr_common.h"
+#include "UTIL/OPT/opt.h"
 
 
 void nr_process_mac_pdu(
@@ -325,6 +326,9 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
   int target_snrx10 = gNB_mac->pusch_target_snrx10;
 
   if (sduP != NULL) {
+
+    trace_nr_pdu(DIRECTION_UPLINK, sduP, sdu_lenP, UE_id ,harq_pid ,WS_NR_C_RNTI ,current_rnti ,
+                true , frameP, slotP);
     T(T_GNB_MAC_UL_PDU_WITH_DATA, T_INT(gnb_mod_idP), T_INT(CC_idP),
       T_INT(rntiP), T_INT(frameP), T_INT(slotP), T_INT(-1) /* harq_pid */,
       T_BUFFER(sduP, sdu_lenP));

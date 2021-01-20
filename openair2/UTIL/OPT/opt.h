@@ -60,7 +60,9 @@ typedef uint32_t guint32;
 typedef guint8   gboolean;
 
 #include "packet-mac-lte.h"
+#include "packet-mac-nr.h"
 #include "mac_pcap.h"
+#include "stdbool.h"
 
 /* OPT parameters definitions */
 #define OPT_CONFIGPREFIX "opt"
@@ -112,6 +114,12 @@ extern int opt_enabled;
 void trace_pdu_implementation(int direction, uint8_t *pdu_buffer, unsigned int pdu_buffer_size,
                               int ueid, int rntiType, int rnti, uint16_t sysFrame, uint8_t subframe,
                               int oob_event, int oob_event_value);
+
+#define trace_nr_pdu(x...) if (opt_enabled) trace_nr_pdu_implementation(x)
+void trace_nr_pdu_implementation(int direction, uint8_t *pdu_buffer, unsigned int pdu_buffer_size,
+                              int ueid, int harqid, int rntiType, int rnti, 
+                              bool sfnSlotInfoPresent, uint16_t sysframeNumber, uint16_t slotNumber);
+                               
 
 int init_opt(void);
 

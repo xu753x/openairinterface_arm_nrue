@@ -47,6 +47,7 @@
 
 /*Softmodem params*/
 #include "executables/softmodem-common.h"
+#include "UTIL/OPT/opt.h"
 
 ////////////////////////////////////////////////////////
 /////* DLSCH MAC PDU generation (6.1.2 TS 38.321) */////
@@ -778,6 +779,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
               UE_id);
       }
 
+      trace_nr_pdu(DIRECTION_DOWNLINK, (uint8_t *)buf , TBS , 0 , current_harq_pid , WS_C_RNTI , rnti ,true , frame , slot );
       T(T_GNB_MAC_DL_PDU_WITH_DATA, T_INT(module_id), T_INT(CC_id), T_INT(rnti),
         T_INT(frame), T_INT(slot), T_INT(current_harq_pid), T_BUFFER(buf, TBS));
 

@@ -134,6 +134,11 @@ static void SendFrame(guint8 radioType, guint8 direction, guint8 rntiType,
                       guint8 oob_event, guint8 oob_event_value,
                       uint8_t *pdu_buffer, unsigned int pdu_buffer_size);
 
+static void SendNRFrame(guint8 radioType, guint8 direction, guint8 rntiType,
+                        guint16 rnti, guint16 ueid, guint8 harqid, 
+                        gboolean sfnSlotInfoPresent, guint16 sysframeNumber, guint16 slotNumber,
+                        uint8_t *pdu_buffer, unsigned int pdu_buffer_size);
+
 unsigned short checksum(unsigned short *ptr, int length) {
   int sum = 0;
   u_short answer = 0;
@@ -409,6 +414,79 @@ static void SendFrame(guint8 radioType, guint8 direction, guint8 rntiType,
   }
 }
 
+
+static void SendNRFrame(guint8 radioType, guint8 direction, guint8 rntiType,
+                      guint16 rnti, guint16 ueid, guint8 harqid, gboolean sfnSlotInfoPresent, guint16 sysframeNumber, guint16 slotNumber,
+                      uint8_t *pdu_buffer, unsigned int pdu_buffer_size) {
+  unsigned char frameBuffer[9000];
+  unsigned int frameOffset;
+  ssize_t bytesSent;
+  frameOffset = 0;
+  uint16_t tmp16;
+
+  memcpy(frameBuffer+frameOffset, MAC_NR_START_STRING,
+        strlen(MAC_NR_START_STRING));
+  frameOffset += strlen(MAC_NR_START_STRING);
+  /******************************************************************************/
+  /* Now write out fixed fields (the mandatory elements of struct mac_nr_info) */
+  frameBuffer[frameOffset++] = radioType;
+  frameBuffer[frameOffset++] = direction;
+  frameBuffer[frameOffset++] = rntiType;
+  /*************************************/
+  /* Now optional fields               */
+  /* RNTI */
+  frameBuffer[frameOffset++] = MAC_NR_RNTI_TAG;
+  tmp16 = htons(rnti);
+  memcpy(frameBuffer+frameOffset, &tmp16, 2);
+  frameOffset += 2;
+  /* UEId */
+  frameBuffer[frameOffset++] = MAC_NR_UEID_TAG;
+  tmp16 = htons(ueid);
+  memcpy(frameBuffer+frameOffset, &tmp16, 2);
+  frameOffset += 2;
+  /* HARQId */
+  frameBuffer[frameOffset++] = MAC_NR_HARQID;
+  frameBuffer[frameOffset++] = harqid;
+
+  if (sfnSlotInfoPresent)
+  {
+    frameBuffer[frameOffset++] = MAC_NR_FRAME_SLOT_TAG;
+    tmp16 = htons(sysframeNumber);
+    memcpy(frameBuffer+frameOffset, &tmp16, 2);
+    frameOffset += 2;
+
+    tmp16 = htons(slotNumber);
+    memcpy(frameBuffer+frameOffset, &tmp16, 2);
+    frameOffset += 2;
+
+  }
+
+  /***************************************/
+  /* Now write the MAC PDU               */
+  frameBuffer[frameOffset++] = MAC_NR_PAYLOAD_TAG;
+
+  /* Append actual PDU  */
+  //memcpy(frameBuffer+frameOffset, g_PDUBuffer, g_PDUOffset);
+  //frameOffset += g_PDUOffset;
+  if (pdu_buffer != NULL) {
+    memcpy(frameBuffer+frameOffset, (void *)pdu_buffer, pdu_buffer_size);
+    frameOffset += pdu_buffer_size;
+  }
+
+  if ( opt_type ==  OPT_WIRESHARK )
+    /* Send out the data over the UDP socket */
+    bytesSent = sendto(g_socksd, frameBuffer, frameOffset, 0,
+                       (const struct sockaddr *)&g_serv_addr, sizeof(g_serv_addr));
+  else
+    bytesSent = MAC_LTE_PCAP_WritePDU(frameBuffer, frameOffset);
+
+  if (bytesSent != frameOffset) {
+    LOG_W(OPT, "trace_pdu expected %d bytes, got %ld (errno=%d)\n",
+          frameOffset, bytesSent, errno);
+    //exit(1);
+  }
+}
+
 #include <common/ran_context.h>
 extern RAN_CONTEXT_t RC;
 #include <openair1/PHY/phy_extern_ue.h>
@@ -453,6 +531,48 @@ void trace_pdu_implementation(int direction, uint8_t *pdu_buffer, unsigned int p
              rntiType, rnti, ueid, (sysFrameNumber<<4) + subFrameNumber,
              1, 0, 1,  //guint8 isPredefinedData, guint8 retx, guint8 crcStatus
              oob_event,oob_event_value,
+             pdu_buffer, pdu_buffer_size);
+}
+
+void trace_nr_pdu_implementation(int direction, uint8_t *pdu_buffer, unsigned int pdu_buffer_size,
+                              int ueid, int harqid, int rntiType, int rnti, 
+                              bool sfnSlotInfoPresent, uint16_t sysframeNumber, uint16_t slotNumber
+                              ) {
+  int radioType=FDD_RADIO;
+  LOG_D(OPT,"sending packet to wireshark: direction=%s, size: %d, ueid: %d, rnti: %x, frame/slot: %d.%d\n",
+        direction?"DL":"UL", pdu_buffer_size, ueid, rnti, sysframeNumber, slotNumber); 
+
+  if (RC.gNB && RC.gNB[0] != NULL)
+    radioType=(RC.gNB[0]->frame_parms.frame_type== FDD ?  FDD_RADIO:TDD_RADIO);
+  else if (PHY_vars_UE_g && PHY_vars_UE_g[0][0] != NULL)
+    radioType=PHY_vars_UE_g[0][0]->frame_parms.frame_type== FDD ? FDD_RADIO:TDD_RADIO;
+  else {
+    LOG_E(OPT,"not a gNB neither a UE!!! \n");
+    return;
+  }
+
+  switch (opt_type) {
+    case OPT_WIRESHARK :
+      if (g_socksd == -1)
+        return;
+
+      break;
+
+    case OPT_PCAP:
+      if (file_fd == NULL)
+        return;
+
+      break;
+
+    case OPT_TSHARK:
+    default:
+      return;
+      break;
+  }
+
+  SendNRFrame( radioType,
+             (direction == DIRECTION_DOWNLINK) ? DIRECTION_DOWNLINK : DIRECTION_UPLINK,
+             rntiType, rnti, ueid, harqid, sfnSlotInfoPresent, sysframeNumber, slotNumber,
              pdu_buffer, pdu_buffer_size);
 }
 
