@@ -614,6 +614,9 @@ void pf_ul(module_id_t module_id,
       sched_pusch->Qm <<= 1;
     }
 
+    if (sched_ctrl->estimated_ul_buffer - sched_ctrl->sched_ul_bytes <= 0 && !sched_ctrl->SR)
+      continue;
+
     /* Schedule UE if there is a SR and no data (otherwise, will be scheduled
      * baded on data to transmit) */
     if (sched_ctrl->estimated_ul_buffer - sched_ctrl->sched_ul_bytes <= 0
@@ -865,6 +868,7 @@ void nr_schedule_ulsch(module_id_t module_id,
       continue;
 
     uint16_t rnti = UE_info->rnti[UE_id];
+    sched_ctrl->SR = false;
 
     int8_t harq_id = sched_pusch->ul_harq_pid;
     if (harq_id < 0) {
