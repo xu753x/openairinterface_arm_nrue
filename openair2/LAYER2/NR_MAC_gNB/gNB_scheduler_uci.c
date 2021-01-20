@@ -346,6 +346,13 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
                   "expected feedback slot %d, but found %d instead\n",
                   harq->feedback_slot, feedback_slot);
       DevAssert(harq->is_waiting);
+      LOG_D(MAC,
+            "%s(): in %d.%d handle feedback for HARQ PID %d feedback_slot %d\n",
+            __func__,
+            frame,
+            slot,
+            pid,
+            feedback_slot);
       handle_dl_harq(mod_id, UE_id, pid, harq_value == 1 && harq_confidence == 0);
     }
   }
@@ -383,6 +390,14 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
       AssertFatal(harq->feedback_slot == feedback_slot,
                   "expected feedback slot %d, but found %d instead\n",
                   harq->feedback_slot, feedback_slot);
+      DevAssert(harq->is_waiting);
+      LOG_D(MAC,
+            "%s(): in %d.%d handle feedback for HARQ PID %d feedback_slot %d\n",
+            __func__,
+            frame,
+            slot,
+            pid,
+            feedback_slot);
       handle_dl_harq(mod_id, UE_id, pid, uci_234->harq.harq_crc != 1 && acknack);
     }
   }
