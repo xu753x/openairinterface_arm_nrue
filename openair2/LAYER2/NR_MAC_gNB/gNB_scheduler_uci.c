@@ -412,6 +412,7 @@ bool nr_acknack_scheduling(int mod_id,
 
   /* for the moment, we consider:
    * * only pucch_sched[0] holds HARQ (and SR)
+   * * pucch_sched[1] holds a second SR, if at all
    * * we do not multiplex with CSI, which is always in pucch_sched[2]
    * * SR uses format 0 and is allocated in the first UL (mixed) slot (and not
    *   later)
@@ -521,6 +522,15 @@ bool nr_acknack_scheduling(int mod_id,
                 __func__);
     pucch->frame = frame;
     pucch->ul_slot = first_ul_slot_tdd;
+  }
+
+  /* check if the next occasion coincides with a pre-scheduled PUCCH occasion,
+   * i.e., scheduling request. If yes, rerun algorithm on this information */
+  NR_sched_pucch_t *pucch1 = &sched_ctrl->sched_pucch[1];
+  if (pucch1->sr_flag > 0 && pucch1->frame == pucch->frame && pucch1->ul_slot == pucch->ul_slot) {
+    *pucch = *pucch1;
+    memset(pucch1, 0, sizeof(*pucch1));
+    return nr_acknack_scheduling(mod_id, UE_id, frame, slot);
   }
 
   // increase to first slot in which PUCCH resources are available
