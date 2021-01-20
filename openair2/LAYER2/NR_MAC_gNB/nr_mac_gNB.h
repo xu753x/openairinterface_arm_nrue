@@ -450,6 +450,7 @@ typedef struct {
   uint8_t tpc0;
   uint8_t tpc1;
   uint16_t ul_rssi;
+  bool SR;
   /// information about every HARQ process
   NR_UE_harq_t harq_processes[NR_MAX_NB_HARQ_PROCESSES];
   /// HARQ processes that are free
