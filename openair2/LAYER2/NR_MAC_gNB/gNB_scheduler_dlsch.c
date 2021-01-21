@@ -424,8 +424,7 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
   find_aggregation_candidates(&sched_ctrl->aggregation_level,
                               &nr_of_candidates,
                               sched_ctrl->search_space);
-  sched_ctrl->coreset = get_coreset(
-      sched_ctrl->active_bwp, sched_ctrl->search_space, 1 /* dedicated */);
+  sched_ctrl->coreset = get_coreset(sched_ctrl->active_bwp, sched_ctrl->search_space, 1 /*dedicated*/);
   int cid = sched_ctrl->coreset->controlResourceSetId;
   const uint16_t Y = UE_info->Y[UE_id][cid][slot];
   const int m = UE_info->num_pdcch_cand[UE_id][cid];
@@ -505,6 +504,9 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
         getN_PRB_DMRS(sched_ctrl->active_bwp, sched_ctrl->numDmrsCdmGrpsNoData);
     int nrOfSymbols = getNrOfSymbols(sched_ctrl->active_bwp,
                                      sched_ctrl->time_domain_allocation);
+    uint8_t N_DMRS_SLOT = get_num_dmrs_symbols(sched_ctrl->active_bwp->bwp_Dedicated->pdsch_Config->choice.setup,
+                                               RC.nrmac[module_id]->common_channels->ServingCellConfigCommon->dmrs_TypeA_Position ,
+                                               nrOfSymbols);
 
     int rbSize = 0;
     const int oh = 2 + (sched_ctrl->num_total_bytes >= 256)
@@ -516,8 +518,7 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
                            nr_get_code_rate_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx),
                            rbSize,
                            nrOfSymbols,
-                           N_PRB_DMRS, // FIXME // This should be multiplied by the
-                                       // number of dmrs symbols
+                           N_PRB_DMRS * N_DMRS_SLOT,
                            0 /* N_PRB_oh, 0 for initialBWP */,
                            0 /* tb_scaling */,
                            1 /* nrOfLayers */)
@@ -577,13 +578,16 @@ void nr_schedule_ue_spec(module_id_t module_id,
 
     uint8_t N_PRB_DMRS =
         getN_PRB_DMRS(sched_ctrl->active_bwp, sched_ctrl->numDmrsCdmGrpsNoData);
+
+    uint8_t N_DMRS_SLOT = get_num_dmrs_symbols(sched_ctrl->active_bwp->bwp_Dedicated->pdsch_Config->choice.setup,
+                                               RC.nrmac[module_id]->common_channels->ServingCellConfigCommon->dmrs_TypeA_Position ,
+                                               nrOfSymbols);
     const uint32_t TBS =
         nr_compute_tbs(nr_get_Qm_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx),
                        nr_get_code_rate_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx),
                        sched_ctrl->rbSize,
                        nrOfSymbols,
-                       N_PRB_DMRS, // FIXME // This should be multiplied by the
-                                   // number of dmrs symbols
+                       N_PRB_DMRS * N_DMRS_SLOT,
                        0 /* N_PRB_oh, 0 for initialBWP */,
                        0 /* tb_scaling */,
                        1 /* nrOfLayers */)
