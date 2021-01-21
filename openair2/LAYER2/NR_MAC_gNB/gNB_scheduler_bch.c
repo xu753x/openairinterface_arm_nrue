@@ -441,8 +441,6 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
                      pdsch_pdu_rel15->BWPSize,
                      gNB_mac->sched_ctrlCommon->active_bwp->bwp_Id);
 
-  dl_req->nPDUs += 2;
-
   LOG_D(MAC,"BWPSize: %i\n", pdcch_pdu_rel15->BWPSize);
   LOG_D(MAC,"BWPStart: %i\n", pdcch_pdu_rel15->BWPStart);
   LOG_D(MAC,"SubcarrierSpacing: %i\n", pdcch_pdu_rel15->SubcarrierSpacing);
