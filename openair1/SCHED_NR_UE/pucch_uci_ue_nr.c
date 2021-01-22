@@ -447,7 +447,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     return (FALSE);
   }
 
-  int max_code_rate = 0;
+  //int max_code_rate = 0;
   //int Q_m = BITS_PER_SYMBOL_QPSK; /* default pucch modulation type is QPSK with 2 bits per symbol */
   int N_sc_ctrl_RB = 0;
   int O_CRC = 0;
@@ -504,7 +504,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   if (format !=  pucch_format0_nr) {
 
     if (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format1 != NULL) {
-      max_code_rate = code_rate_r_time_100[mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format1->choice.setup->maxCodeRate[0]]; /* it is code rate * 10 */
+      //max_code_rate = code_rate_r_time_100[mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format1->choice.setup->maxCodeRate[0]]; /* it is code rate * 10 */
 
       if ((O_ACK != 0) && (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format1->choice.setup->simultaneousHARQ_ACK_CSI[0] == 0)) {
         N_UCI = N_UCI - O_CSI;
@@ -809,6 +809,7 @@ uint8_t get_downlink_ack(PHY_VARS_NR_UE *ue, uint8_t gNB_id,  UE_nr_rxtx_proc_t 
             number_harq_feedback++;
             ack_data[code_word][dai_current - 1] = harq_status->ack;
             dai[code_word][dai_current - 1] = dai_current;
+            harq_status->slot_for_feedback_ack = NR_MAX_SLOTS_PER_FRAME;
           }
           if (do_reset == TRUE) {
             init_downlink_harq_status(ue->dlsch[thread_idx][gNB_id][code_word]->harq_processes[dl_harq_pid]);
