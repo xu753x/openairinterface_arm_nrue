@@ -2115,6 +2115,33 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
   //  rrc_rlc_remove_ue(&ctxt_prior);
   //  pdcp_remove_UE(&ctxt_prior);
   // add UE info to freeList for RU_thread to remove the UE instead of remove it here
+    /* Refresh SRBs/DRBs */
+  rrc_pdcp_config_asn1_req(ctxt_pP,
+                           *SRB_configList2, // NULL,
+                           DRB_configList,
+                           NULL,
+                           0xff, // already configured during the securitymodecommand
+                           NULL,
+                           NULL,
+                           NULL
+#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
+                           , (LTE_PMCH_InfoList_r9_t *) NULL
+#endif
+                           , NULL);
+
+  /* Refresh SRBs/DRBs */
+  if (!NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
+    rrc_rlc_config_asn1_req(ctxt_pP,
+                            *SRB_configList2, // NULL,
+                            DRB_configList,
+                            NULL
+#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
+                            , (LTE_PMCH_InfoList_r9_t *) NULL,
+                            0,
+                            0
+#endif
+                           );
+  }
   LOG_I(RRC, "[RRCConnectionReestablishment]put UE %x into freeList\n", reestablish_rnti);
   put_UE_in_freelist(ctxt_pP->module_id, reestablish_rnti, 0);
 }
