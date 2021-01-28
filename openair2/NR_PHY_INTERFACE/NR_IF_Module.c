@@ -36,7 +36,7 @@
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "common/ran_context.h"
 #include "executables/softmodem-common.h"
-
+#include "../../..//nfapi/oai_integration/vendor_ext.h" 
 #define MAX_IF_MODULES 100
 //#define UL_HARQ_PRINT
 
@@ -105,7 +105,19 @@ void handle_nr_uci(NR_UL_IND_t *UL_info)
 
   UL_info->uci_ind.num_ucis = 0;
 }
+  // if(nfapi_mode == NFAPI_MODE_PNF) {
+  //   if (UL_info->crc_ind.number_crcs>0) {
+  //     //LOG_D(PHY,"UL_info->crc_ind.crc_indication_body.number_of_crcs:%d CRC_IND:SFN/SF:%d\n", UL_info->crc_ind.crc_indication_body.number_of_crcs, NFAPI_SFNSF2DEC(UL_info->crc_ind.sfn_sf));
+  //     //      oai_nfapi_crc_indication(&UL_info->crc_ind);
 
+  //     UL_info->crc_ind.number_crcs = 0;
+  //   }
+
+  //   if (UL_info->rx_ind.number_of_pdus>0) {
+  //     //LOG_D(PHY,"UL_info->rx_ind.number_of_pdus:%d RX_IND:SFN/SF:%d\n", UL_info->rx_ind.rx_indication_body.number_of_pdus, NFAPI_SFNSF2DEC(UL_info->rx_ind.sfn_sf));
+  //     //      oai_nfapi_rx_ind(&UL_info->rx_ind);
+  //     UL_info->rx_ind.number_of_pdus = 0;
+  //   }
 
 void handle_nr_ulsch(NR_UL_IND_t *UL_info)
 {
@@ -181,7 +193,7 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
         module_id,CC_id, UL_info->rach_ind.number_of_pdus,
         UL_info->rx_ind.number_of_pdus, UL_info->crc_ind.number_crcs);
 
-  if (nfapi_mode != 1) {
+  if (NFAPI_MODE != NFAPI_MODE_PNF) {
     if (ifi->CC_mask==0) {
       ifi->current_frame    = UL_info->frame;
       ifi->current_slot = UL_info->slot;
@@ -200,7 +212,7 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
   mac->UL_dci_req[CC_id].numPdus = 0;
   handle_nr_ulsch(UL_info);
 
-  if (nfapi_mode != 1) {
+  if (NFAPI_MODE != NFAPI_MODE_PNF) {
     if (ifi->CC_mask == ((1<<MAX_NUM_CCs)-1)) {
       /*
       eNB_dlsch_ulsch_scheduler(module_id,
@@ -208,11 +220,12 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
           (UL_info->slot+sl_ahead)%10);
       */
       nfapi_nr_config_request_scf_t *cfg = &mac->config[CC_id];
+      
       int spf = get_spf(cfg);
+
       gNB_dlsch_ulsch_scheduler(module_id,
 				(UL_info->frame+((UL_info->slot>(spf-1-sl_ahead))?1:0)) % 1024,
 				(UL_info->slot+sl_ahead)%spf);
-      
       ifi->CC_mask            = 0;
       sched_info->module_id   = module_id;
       sched_info->CC_id       = CC_id;
@@ -227,7 +240,6 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
 #ifdef DUMP_FAPI
       dump_dl(sched_info);
 #endif
-
       if (ifi->NR_Schedule_response) {
         AssertFatal(ifi->NR_Schedule_response!=NULL,
                     "nr_schedule_response is null (mod %d, cc %d)\n",
@@ -235,11 +247,11 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
                     CC_id);
         ifi->NR_Schedule_response(sched_info);
       }
-
       LOG_D(PHY,"NR_Schedule_response: SFN_SF:%d%d dl_pdus:%d\n",
 	    sched_info->frame,
 	    sched_info->slot,
 	    sched_info->DL_req->dl_tti_request_body.nPDUs);
+      
     }
   }
 }
