@@ -410,13 +410,21 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
 
   nr_configure_pdcch(gNB_mac,
                      pdcch_pdu_rel15,
-                     SI_RNTI,
                      gNB_mac->sched_ctrlCommon->search_space,
                      gNB_mac->sched_ctrlCommon->coreset,
                      scc,
-                     bwp,
-                     gNB_mac->sched_ctrlCommon->aggregation_level,
-                     gNB_mac->sched_ctrlCommon->cce_index);
+                     bwp);
+
+  nr_configure_dci(gNB_mac,
+                   pdcch_pdu_rel15,
+                   SI_RNTI,
+                   gNB_mac->sched_ctrlCommon->search_space,
+                   gNB_mac->sched_ctrlCommon->coreset,
+                   scc,
+                   bwp,
+                   0, // beam index is not used in configure dci
+                   gNB_mac->sched_ctrlCommon->aggregation_level,
+                   gNB_mac->sched_ctrlCommon->cce_index);
 
   int dci_formats[2];
   int rnti_types[2];

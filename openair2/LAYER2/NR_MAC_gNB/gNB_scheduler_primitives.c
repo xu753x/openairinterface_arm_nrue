@@ -506,6 +506,7 @@ void nr_configure_dci(gNB_MAC_INST *nr_mac,
      		      uint8_t beam_index,
                       uint8_t aggregation_level,
                       int CCEIndex) {
+
   pdcch_pdu->dci_pdu.RNTI[pdcch_pdu->numDlDci]=rnti;
 
   if (coreset->pdcch_DMRS_ScramblingID != NULL &&
@@ -701,7 +702,7 @@ void nr_fill_nfapi_dl_pdu(int Mod_idP,
                    sched_ctrl->coreset,
                    scc,
                    bwp,
-	           UE_beam_index,
+                   UE_beam_index,
                    sched_ctrl->aggregation_level,
                    sched_ctrl->cce_index);
   pdcch_pdu_rel15->numDlDci++;

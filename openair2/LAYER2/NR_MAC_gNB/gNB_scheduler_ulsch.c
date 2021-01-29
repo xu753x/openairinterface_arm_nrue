@@ -787,9 +787,10 @@ void nr_schedule_ulsch(module_id_t module_id,
                      sched_ctrl->coreset,
                      scc,
                      sched_ctrl->active_bwp,
-	                   UE_info->UE_beam_index[UE_id],
+                     UE_info->UE_beam_index[UE_id],
                      sched_ctrl->aggregation_level,
                      sched_ctrl->cce_index);
+
     pdcch_pdu_rel15->numDlDci++;
 
     dci_pdu_rel15_t dci_pdu_rel15[MAX_DCI_CORESET];
