@@ -2170,27 +2170,36 @@ rrc_eNB_generate_RRCConnectionReestablishmentReject(
 
   T(T_ENB_RRC_CONNECTION_REESTABLISHMENT_REJECT, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
-  eNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
-  ue_p->Srb0.Tx_buffer.payload_size =
-    do_RRCConnectionReestablishmentReject(ctxt_pP->module_id,
-                                          (uint8_t *) ue_p->Srb0.Tx_buffer.Payload);
+  SRB_INFO *Srb_info;
+  if(ue_context_pP == NULL){
+     RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Active = 1;
+     RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size = 0;
+     Srb_info = &RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0;
+  }else{
+     //eNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
+     Srb_info = &ue_context_pP->ue_context.Srb0;
+  }
+  Srb_info->Tx_buffer.payload_size =
+     do_RRCConnectionReestablishmentReject(ctxt_pP->module_id,
+                           (uint8_t*) Srb_info->Tx_buffer.Payload);
+
   LOG_DUMPMSG(RRC,DEBUG_RRC,
-              (char *)(ue_p->Srb0.Tx_buffer.Payload),
-              ue_p->Srb0.Tx_buffer.payload_size,
+              (char *)(Srb_info->Tx_buffer.Payload),
+              Srb_info->Tx_buffer.payload_size,
               "[MSG] RRCConnectionReestablishmentReject\n");
   MSC_LOG_TX_MESSAGE(
     MSC_RRC_ENB,
     MSC_RRC_UE,
-    ue_p->Srb0.Tx_buffer.Header,
-    ue_p->Srb0.Tx_buffer.payload_size,
+    Srb_info->Tx_buffer.Header,
+    Srb_info->Tx_buffer.payload_size,
     MSC_AS_TIME_FMT" LTE_RRCConnectionReestablishmentReject UE %x size %u",
     MSC_AS_TIME_ARGS(ctxt_pP),
     ue_context_pP == NULL ? -1 : ue_context_pP->ue_context.rnti,
-    ue_p->Srb0.Tx_buffer.payload_size);
+    Srb_info->Tx_buffer.payload_size);
   LOG_I(RRC,
         PROTOCOL_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel DL-CCCH, Generating LTE_RRCConnectionReestablishmentReject (bytes %d)\n",
         PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
-        ue_p->Srb0.Tx_buffer.payload_size);
+        Srb_info->Tx_buffer.payload_size);
 }
 #if 0
 void rrc_generate_SgNBReleaseRequest(

@@ -206,12 +206,12 @@ mac_rrc_data_req(
             return(0);
           }
         } else {
-           if(ue_context_p->ue_context.Srb0.Active==0) {
+           if(RC.rrc[Mod_idP]->carrier[CC_id].Srb0.Active==0) {
              LOG_E(RRC,"[eNB %d] CCCH Not active\n",Mod_idP);
              return(0);
            }
 
-           Srb_info=&ue_context_p->ue_context.Srb0;
+           Srb_info=&RC.rrc[Mod_idP]->carrier[CC_id].Srb0;
            if(Srb_info->Tx_buffer.payload_size <= 0){
              return(0);
            }
@@ -233,7 +233,7 @@ mac_rrc_data_req(
     }
     if(flag == 1){
       Srb_info->Tx_buffer.payload_size = 0;
-      ue_context_p->ue_context.Srb0.Active = 0;
+      RC.rrc[Mod_idP]->carrier[CC_id].Srb0.Active = 0;
     }
     return (Sdu_size);
   }

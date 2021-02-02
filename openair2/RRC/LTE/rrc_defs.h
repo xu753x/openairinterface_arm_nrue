@@ -750,6 +750,7 @@ typedef struct {
   LTE_SystemInformationBlockType21_r14_t *sib21;
   // End - TTN
   SRB_INFO                          SI;
+  SRB_INFO                          Srb0;
   uint8_t                           *paging[MAX_MOBILES_PER_ENB];
   uint32_t                           sizeof_paging[MAX_MOBILES_PER_ENB];
 } rrc_eNB_carrier_data_t;
