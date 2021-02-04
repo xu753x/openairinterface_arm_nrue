@@ -919,34 +919,37 @@ void tx_rf(RU_t *ru,
 				      siglen+sf_extension,
 				      ru->nb_tx,
 				      flags);
-    if (ru->state==RU_RUN && proc->frame_tx%ru->p==ru->tag && proc->tti_tx==1) { 
-    	txs1 = ru->rfdevice.trx_write_func(&ru->rfdevice,                                       
-					   proc->timestamp_tx+(ru->ts_offset+sigoff2)-ru->openair0_cfg.tx_sample_advance-sf_extension,                   
-                    			   txp1, 
-                                           siglen2+sf_extension,    
-                                           ru->nb_tx,       
-                                	   flags);      
-        //LOG_M("txdata.m","txdata",&ru->common.txdata[0][0], fp->samples_per_tti*10,1,1); // save 1 frame 	
-        //exit(-1); 	
-        int se1 = dB_fixed(signal_energy(txp1[0],siglen2+sf_extension));  
-        LOG_D(PHY,"******** frame %d subframe %d RRU sends DMRS of energy10 %d, energy3 %d\n",proc->frame_tx,proc->tti_tx,se1,dB_fixed(signal_energy(txp[0],siglen+sf_extension)));    
-        LOG_D(PHY,"txs1 %d, siglen2 %d, sf_extension %d\n",txs1,siglen2,sf_extension); 
-    }
+    if (ru->p!=0){	
+    	if (ru->state==RU_RUN && proc->frame_tx%ru->p==ru->tag && proc->tti_tx==1) { 
+    		txs1 = ru->rfdevice.trx_write_func(&ru->rfdevice,                                       
+					   	proc->timestamp_tx+(ru->ts_offset+sigoff2)-ru->openair0_cfg.tx_sample_advance-sf_extension,                   
+                    			   	txp1, 
+                                           	siglen2+sf_extension,    
+                                           	ru->nb_tx,       
+                                	   	flags);      
+        	//LOG_M("txdata.m","txdata",&ru->common.txdata[0][0], fp->samples_per_tti*10,1,1); // save 1 frame 	
+        	//exit(-1); 	
+        	int se1 = dB_fixed(signal_energy(txp1[0],siglen2+sf_extension));  
+        	LOG_D(PHY,"******** frame %d subframe %d RRU sends DMRS of energy10 %d, energy3 %d\n",proc->frame_tx,proc->tti_tx,se1,dB_fixed(signal_energy(txp[0],siglen+sf_extension)));    
+        	LOG_D(PHY,"txs1 %d, siglen2 %d, sf_extension %d\n",txs1,siglen2,sf_extension); 
+    	}
+     }
 
     ru->south_out_cnt++;
     LOG_D(PHY,"south_out_cnt %d\n",ru->south_out_cnt);
-    int se = dB_fixed(signal_energy(txp[0],siglen+sf_extension));
+    //int se = dB_fixed(signal_energy(txp[0],siglen+sf_extension));
 
-    if (SF_type == SF_S) LOG_D(PHY,"[TXPATH] RU %d tx_rf (en %d,len %d), writing to TS %llu, frame %d, unwrapped_frame %d, subframe %d\n",ru->idx, se,
-                                 siglen+sf_extension, (long long unsigned int)timestamp, frame, proc->frame_tx_unwrap, subframe);
+    //if (SF_type == SF_S) LOG_D(PHY,"[TXPATH] RU %d tx_rf (en %d,len %d), writing to TS %llu, frame %d, unwrapped_frame %d, subframe %d\n",ru->idx, se,
+      //                           siglen+sf_extension, (long long unsigned int)timestamp, frame, proc->frame_tx_unwrap, subframe);
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
-
-    if (ru->state==RU_RUN && proc->frame_tx%ru->p==ru->tag && proc->tti_tx==1) { 
-        if( (txs1!=siglen2+sf_extension) && (late_control==STATE_BURST_NORMAL) ){ /* add fail safe for late command */  
-        	late_control=STATE_BURST_TERMINATE;     
-            	LOG_E(PHY,"TX : Timeout (sent %d/%d) state =%d\n",txs1, siglen2,late_control);  
-        }  
+    if (ru->p!=0) {
+    	if (ru->state==RU_RUN && proc->frame_tx%ru->p==ru->tag && proc->tti_tx==1) { 
+        	if( (txs1!=siglen2+sf_extension) && (late_control==STATE_BURST_NORMAL) ){ /* add fail safe for late command */  
+        		late_control=STATE_BURST_TERMINATE;     
+            		LOG_E(PHY,"TX : Timeout (sent %d/%d) state =%d\n",txs1, siglen2,late_control);  
+        	}  
+    	}
     }
 
     if( (txs !=  siglen+sf_extension) && (late_control==STATE_BURST_NORMAL) ) { /* add fail safe for late command */
