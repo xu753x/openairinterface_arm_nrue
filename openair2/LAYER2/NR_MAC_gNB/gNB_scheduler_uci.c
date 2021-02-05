@@ -761,10 +761,10 @@ void nr_sr_reporting(int Mod_idP, frame_t SFN, sub_frame_t slot)
 {
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[Mod_idP]->common_channels->ServingCellConfigCommon;
   const int n_slots_frame = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
-  const int UE_id = 0;
   NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
-  if (!UE_info->active[UE_id])
-    return;
+  NR_list_t *UE_list = &UE_info->list;
+  for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
+  if (UE_info->active[UE_id]) {
   NR_PUCCH_ResourceSet_t *pucchresset;
   NR_sched_pucch_t *curr_pucch;
   NR_SchedulingRequestResourceConfig_t *SchedulingRequestResourceConfig;
@@ -829,7 +829,9 @@ void nr_sr_reporting(int Mod_idP, frame_t SFN, sub_frame_t slot)
             i,
             curr_pucch->resource_indicator);
     }
+   }
   }
+ }
 }
 
 void periodicity__SRR (NR_SchedulingRequestResourceConfig_t *SchedulingReqRec, int *period, int *offset){
