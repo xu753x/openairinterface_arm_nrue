@@ -82,13 +82,15 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
 				     int scg_id,
 				     int servCellIndex,
 				     int n_physical_antenna_ports,
-				     int initial_csi_index);
+				     int initial_csi_index,
+                                     int UEID);
 
 void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
 			   NR_RRCReconfiguration_IEs_t *reconfig,
 			   NR_CellGroupConfig_t *secondaryCellGroup,
 			   int n_physical_antenna_ports,
-			   int initial_csi_index);
+			   int initial_csi_index,
+                           int UEID);
 
 void fill_default_rbconfig(NR_RadioBearerConfig_t *rbconfig);
 

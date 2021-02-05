@@ -166,11 +166,14 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
     ue_context_p->ue_context.rb_config = calloc(1,sizeof(NR_RRCReconfiguration_t));
     fill_default_rbconfig(ue_context_p->ue_context.rb_config);
   }
+
+  ue_uid_t LocalUEID = ue_context_p->local_uid;
   fill_default_reconfig(carrier->servingcellconfigcommon,
                         reconfig_ies,
                         ue_context_p->ue_context.secondaryCellGroup,
                         carrier->pdsch_AntennaPorts,
-                        carrier->initial_csi_index[rrc->Nb_ue]);
+                        carrier->initial_csi_index[rrc->Nb_ue],
+                        LocalUEID);
   ue_context_p->ue_id_rnti = ue_context_p->ue_context.secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity;
   NR_CG_Config_t *CG_Config = calloc(1,sizeof(*CG_Config));
   memset((void *)CG_Config,0,sizeof(*CG_Config));
