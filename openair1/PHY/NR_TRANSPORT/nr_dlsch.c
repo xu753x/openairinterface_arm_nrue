@@ -420,7 +420,7 @@ void dump_pdsch_stats(PHY_VARS_gNB *gNB) {
 
   for (int i=0;i<NUMBER_OF_NR_SCH_STATS_MAX;i++)
     if (gNB->dlsch_stats[i].rnti > 0)
-      LOG_D(PHY,"DLSCH RNTI %x: current_Qm %d, current_RI %d, total_bytes TX %d\n",
+      LOG_D(PHY,"DLSCH RNTI %x: round_trials %d(%1.1e):%d(%1.1e):%d(%1.1e):%d, current_Qm %d, current_RI %d, total_bytes TX %d\n",
 	    gNB->dlsch_stats[i].rnti,
 	    gNB->dlsch_stats[i].current_Qm,
 	    gNB->dlsch_stats[i].current_RI,
