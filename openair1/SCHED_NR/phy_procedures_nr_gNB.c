@@ -653,7 +653,7 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
 	  for(uint8_t symbol = symbol_start; symbol < symbol_end; symbol++) {
 	    no_sig = nr_rx_pusch(gNB, ULSCH_id, frame_rx, slot_rx, symbol, harq_pid);
             if (no_sig) {
-              LOG_I(PHY, "PUSCH not detected in symbol %d\n",symbol);
+              LOG_I(PHY, "PUSCH not detected for %4d.%2d in symbol %d\n",frame_rx,slot_rx,symbol);
               nr_fill_indication(gNB,frame_rx, slot_rx, ULSCH_id, harq_pid, 1);
               return;
             }

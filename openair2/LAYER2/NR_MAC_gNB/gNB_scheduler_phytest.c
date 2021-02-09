@@ -406,12 +406,12 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id,
   /* check if slot is UL, and that slot is 8 (assuming K2=6 because of UE
    * limitations).  Note that if K2 or the TDD configuration is changed, below
    * conditions might exclude each other and never be true */
-  if (!(is_xlsch_in_slot(ulsch_in_slot_bitmap, sched_slot) && sched_slot == 8))
+  if (!(is_xlsch_in_slot(ulsch_in_slot_bitmap, sched_slot) ))
     return false;
 
   const int bw = NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
   uint16_t rbStart = 0;
-  uint16_t rbSize = 50; /* due to OAI UE limitations */
+  uint16_t rbSize = 106;
   if (rbSize>bw)
     rbSize = bw;
 

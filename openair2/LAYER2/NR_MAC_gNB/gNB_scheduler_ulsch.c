@@ -962,7 +962,7 @@ void nr_schedule_ulsch(module_id_t module_id,
     memset(pusch_pdu, 0, sizeof(nfapi_nr_pusch_pdu_t));
     future_ul_tti_req->n_pdus += 1;
 
-    LOG_D(MAC, "%4d.%2d Scheduling UE specific PUSCH\n", frame, slot);
+    LOG_D(MAC, "%4d.%2d Scheduling UE specific PUSCH for %4d.%2d\n", frame, slot,sched_pusch->frame,sched_pusch->slot);
 
     pusch_pdu->pdu_bit_map = PUSCH_PDU_BITMAP_PUSCH_DATA;
     pusch_pdu->rnti = rnti;
