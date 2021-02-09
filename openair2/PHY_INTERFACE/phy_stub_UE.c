@@ -1235,8 +1235,7 @@ void *ue_standalone_pnf_task(void *context)
 {
   struct sockaddr_in server_address;
   socklen_t addr_len = sizeof(server_address);
-  char buffer[1024];
-
+  char buffer[NFAPI_MAX_PACKED_MESSAGE_SIZE];
   int sd = ue_rx_sock_descriptor;
   assert(sd > 0);
 
@@ -1246,7 +1245,7 @@ void *ue_standalone_pnf_task(void *context)
   bool dl_config_req_valid = false;
   while (true)
   {
-    ssize_t len = recvfrom(sd, buffer, sizeof(buffer), 0, (struct sockaddr *)&server_address, &addr_len);
+    ssize_t len = recvfrom(sd, buffer, sizeof(buffer), MSG_TRUNC, (struct sockaddr *)&server_address, &addr_len);
     if (len == -1)
     {
       LOG_E(MAC, "reading from standalone pnf sctp socket failed \n");
@@ -1256,6 +1255,12 @@ void *ue_standalone_pnf_task(void *context)
        the length of the message. This works because sizeof(uint16_t) < sizeof(nfapi_p7_message_header_t)
        and sizeof(phy_channel_params_t) < sizeof(nfapi_p7_message_header_t) and
        sizeof(uint16_t) != sizeof(phy_channel_params_t). */
+    if (len > sizeof(buffer))
+    {
+      LOG_E(MAC, "%s(%d). Message truncated. %zd\n", __FUNCTION__, __LINE__, len);
+      continue;
+    }
+
     if (len == sizeof(uint16_t))
     {
       uint16_t sfn_sf = 0;
@@ -1568,7 +1573,7 @@ static void print_rx_ind(nfapi_rx_indication_t *p)
   void send_standalone_msg(UL_IND_t *UL, nfapi_message_id_e msg_type)
   {
     int encoded_size = -1;
-    char buffer[1024];
+    char buffer[NFAPI_MAX_PACKED_MESSAGE_SIZE];
 
     switch (msg_type)
     {

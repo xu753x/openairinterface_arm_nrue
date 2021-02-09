@@ -644,9 +644,20 @@ void pdcp_fifo_read_input_sdus_frompc5s (const protocol_ctxt_t *const  ctxt_pP) 
   //TTN for D2D (PC5S)
   // receive a message from ProSe App
   memset(receive_buf, 0, BUFSIZE);
-  bytes_received = recvfrom(pdcp_pc5_sockfd, receive_buf, BUFSIZE, 0,
+  bytes_received = recvfrom(pdcp_pc5_sockfd, receive_buf, BUFSIZE, MSG_TRUNC,
                             (struct sockaddr *) &prose_pdcp_addr, (socklen_t *)&prose_addr_len);
 
+  if (bytes_received == -1){
+    LOG_E(PDCP, "%s(%d). recvfrom failed. %s\n", __FUNCTION__, __LINE__, strerror(errno));
+    return;
+  }
+  if (bytes_received == 0){
+    LOG_E(PDCP, "%s(%d). EOF pdcp_pc5_sockfd.\n", __FUNCTION__, __LINE__);
+  }
+  if (bytes_received > BUFSIZE) {
+    LOG_E(PDCP, "%s(%d). Message truncated. %d\n", __FUNCTION__, __LINE__, bytes_received);
+    return;
+  }
   if (bytes_received > 0) {
     pc5s_header = calloc(1, sizeof(pc5s_header_t));
     memcpy((void *)pc5s_header, (void *)receive_buf, sizeof(pc5s_header_t));
