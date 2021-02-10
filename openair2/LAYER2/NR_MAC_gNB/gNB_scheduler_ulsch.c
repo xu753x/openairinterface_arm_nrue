@@ -600,9 +600,9 @@ void pf_ul(module_id_t module_id,
 
       while (rbStart < bwpSize && !rballoc_mask[rbStart]) rbStart++;
       if (rbStart + sched_pusch->rbSize >= bwpSize) {
-        LOG_W(MAC, "cannot allocate UL data for UE %d/RNTI %04x: no resources\n",
+        LOG_D(MAC, "cannot allocate retransmission of UE %d/RNTI %04x: no resources\n",
               UE_id, UE_info->rnti[UE_id]);
-        return;
+        continue;
       }
       sched_pusch->rbStart = rbStart;
       /* no need to recompute the TBS, it will be the same */
@@ -645,9 +645,9 @@ void pf_ul(module_id_t module_id,
 
       while (rbStart < bwpSize && !rballoc_mask[rbStart]) rbStart++;
       if (rbStart + min_rb >= bwpSize) {
-        LOG_W(MAC, "cannot allocate UL data for UE %d/RNTI %04x: no resources\n",
+        LOG_D(MAC, "cannot allocate continuous data for UE %d/RNTI %04x: no resources\n",
               UE_id, UE_info->rnti[UE_id]);
-        return;
+        continue;
       }
       sched_pusch->rbStart = rbStart;
       sched_pusch->rbSize = min_rb;
@@ -727,9 +727,9 @@ void pf_ul(module_id_t module_id,
     while (rbStart < bwpSize && !rballoc_mask[rbStart]) rbStart++;
     sched_pusch->rbStart = rbStart;
     if (rbStart + min_rb >= bwpSize) {
-      LOG_W(MAC, "cannot allocate UL data for UE %d/RNTI %04x: no resources\n",
+      LOG_D(MAC, "cannot allocate UL data for UE %d/RNTI %04x: no resources\n",
             UE_id, UE_info->rnti[UE_id]);
-      return;
+      continue;
     }
 
     /* Calculate the current scheduling bytes */
