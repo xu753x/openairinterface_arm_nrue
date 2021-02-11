@@ -89,7 +89,6 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t subfram
 void nr_schedule_ulsch(module_id_t module_id,
                        frame_t frame,
                        sub_frame_t slot,
-                       int ul_slots,
                        uint64_t ulsch_in_slot_bitmap);
 
 bool nr_simple_ulsch_preprocessor(module_id_t module_id,

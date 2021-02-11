@@ -322,8 +322,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
   NR_COMMON_channels_t *cc = gNB->common_channels;
   NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
-  NR_TDD_UL_DL_Pattern_t *tdd_pattern = &scc->tdd_UL_DL_ConfigurationCommon->pattern1;
-  const int nr_ulmix_slots = tdd_pattern->nrofUplinkSlots + (tdd_pattern->nrofUplinkSymbols!=0);
 
   start_meas(&RC.nrmac[module_idP]->eNB_scheduler);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ULSCH_SCHEDULER,VCD_FUNCTION_IN);
@@ -410,7 +408,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
   // This schedules the DCI for Uplink and subsequently PUSCH
   {
-    nr_schedule_ulsch(module_idP, frame, slot, nr_ulmix_slots, ulsch_in_slot_bitmap);
+    nr_schedule_ulsch(module_idP, frame, slot, ulsch_in_slot_bitmap);
   }
 
   // This schedules the DCI for Downlink and PDSCH

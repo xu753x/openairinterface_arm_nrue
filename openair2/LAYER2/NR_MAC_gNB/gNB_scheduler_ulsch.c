@@ -866,7 +866,6 @@ bool nr_simple_ulsch_preprocessor(module_id_t module_id,
 void nr_schedule_ulsch(module_id_t module_id,
                        frame_t frame,
                        sub_frame_t slot,
-                       int ul_slots,
                        uint64_t ulsch_in_slot_bitmap) {
   /* Uplink data ONLY can be scheduled when the current slot is downlink slot,
    * because we have to schedule the DCI0 first before schedule uplink data */
