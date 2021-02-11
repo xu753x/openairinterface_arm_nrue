@@ -346,14 +346,6 @@ void config_nr_mib(int Mod_idP,
 
 void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP, NR_RA_t *ra);
 
-void nr_process_mac_pdu(
-    module_id_t module_idP,
-    rnti_t rnti,
-    uint8_t CC_id,
-    frame_t frameP,
-    uint8_t *pduP,
-    uint16_t mac_pdu_len);
-
 int binomial(int n, int k);
 
 bool is_xlsch_in_slot(uint64_t bitmap, sub_frame_t slot);
