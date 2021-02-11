@@ -319,6 +319,24 @@ void nr_process_mac_pdu(
     }
 }
 
+void abort_nr_ul_harq(module_id_t mod_id, int UE_id, int8_t harq_pid)
+{
+  NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+  NR_UE_ul_harq_t *harq = &sched_ctrl->ul_harq_processes[harq_pid];
+
+  harq->ndi ^= 1;
+  harq->round = 0;
+  UE_info->mac_stats[UE_id].ulsch_errors++;
+  add_tail_nr_list(&sched_ctrl->available_ul_harq, harq_pid);
+
+  /* the transmission failed: the UE won't send the data we expected initially,
+   * so retrieve to correctly schedule after next BSR */
+  sched_ctrl->sched_ul_bytes -= harq->sched_pusch.tb_size;
+  if (sched_ctrl->sched_ul_bytes < 0)
+    sched_ctrl->sched_ul_bytes = 0;
+}
+
 void handle_nr_ul_harq(module_id_t mod_id,
                        frame_t frame,
                        sub_frame_t slot,
@@ -361,14 +379,11 @@ void handle_nr_ul_harq(module_id_t mod_id,
           crc_pdu->rnti);
     add_tail_nr_list(&sched_ctrl->available_ul_harq, harq_pid);
   } else if (harq->round == MAX_HARQ_ROUNDS) {
-    harq->ndi ^= 1;
-    harq->round = 0;
+    abort_nr_ul_harq(mod_id, UE_id, harq_pid);
     LOG_D(MAC,
           "RNTI %04x: Ulharq id %d crc failed in all rounds\n",
           crc_pdu->rnti,
           harq_pid);
-    UE_info->mac_stats[UE_id].ulsch_errors++;
-    add_tail_nr_list(&sched_ctrl->available_ul_harq, harq_pid);
   } else {
     harq->round++;
     LOG_D(MAC,
@@ -453,16 +468,6 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
         UE_scheduling_control->sched_ul_bytes = 0;
 
       nr_process_mac_pdu(gnb_mod_idP, current_rnti, CC_idP, frameP, sduP, sdu_lenP);
-    }
-    else {
-      NR_UE_ul_harq_t *cur_harq = &UE_scheduling_control->ul_harq_processes[harq_pid];
-      /* reduce sched_ul_bytes when cur_harq->round == 3 */
-      if (cur_harq->round == 3){
-        const uint32_t tb_size = UE_scheduling_control->ul_harq_processes[harq_pid].sched_pusch.tb_size;
-        UE_scheduling_control->sched_ul_bytes -= tb_size;
-        if (UE_scheduling_control->sched_ul_bytes < 0)
-          UE_scheduling_control->sched_ul_bytes = 0;
-      }
     }
   } else {
     if (!sduP) // check that CRC passed
