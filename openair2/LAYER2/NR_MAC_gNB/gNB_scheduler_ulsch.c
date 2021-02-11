@@ -298,7 +298,7 @@ void nr_process_mac_pdu(module_id_t module_idP,
           break;
 
         default:
-          LOG_D(MAC, "Received unknown MAC header (LCID = 0x%02x)\n", rx_lcid);
+          LOG_E(MAC, "Received unknown MAC header (LCID = 0x%02x)\n", rx_lcid);
           return;
           break;
         }
