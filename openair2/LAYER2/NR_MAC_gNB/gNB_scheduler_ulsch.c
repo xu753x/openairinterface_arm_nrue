@@ -33,6 +33,8 @@
 #include "executables/softmodem-common.h"
 #include "common/utils/nr/nr_common.h"
 
+FILE *ulsch_log_file;
+
 //38.321 Table 6.1.3.1-1
 const uint32_t NR_SHORT_BSR_TABLE[32] = {
     0,    10,    14,    20,    28,     38,     53,     74,
@@ -933,23 +935,24 @@ void nr_schedule_ulsch(module_id_t module_id,
     }
     UE_info->mac_stats[UE_id].ulsch_current_bytes = sched_pusch->tb_size;
 
-    LOG_I(MAC,
-          "%4d.%2d RNTI %04x UL sched %4d.%2d start %2d RBs %3d MCS %2d TBS %4d HARQ PID %2d round %d NDI %d est %6d sched %6d est BSR %6d\n",
-          frame,
-          slot,
-          rnti,
-          sched_pusch->frame,
-          sched_pusch->slot,
-          sched_pusch->rbStart,
-          sched_pusch->rbSize,
-          sched_pusch->mcs,
-          sched_pusch->tb_size,
-          harq_id,
-          cur_harq->round,
-          cur_harq->ndi,
-          sched_ctrl->estimated_ul_buffer,
-          sched_ctrl->sched_ul_bytes,
-          sched_ctrl->estimated_ul_buffer - sched_ctrl->sched_ul_bytes);
+    fprintf(ulsch_log_file,
+            "%4d.%2d RNTI %04x UL sched %4d.%2d start %2d RBs %3d MCS %2d TBS %4d HARQ PID %2d round %d NDI %d est %6d "
+            "sched %6d est BSR %6d\n",
+            frame,
+            slot,
+            rnti,
+            sched_pusch->frame,
+            sched_pusch->slot,
+            sched_pusch->rbStart,
+            sched_pusch->rbSize,
+            sched_pusch->mcs,
+            sched_pusch->tb_size,
+            harq_id,
+            cur_harq->round,
+            cur_harq->ndi,
+            sched_ctrl->estimated_ul_buffer,
+            sched_ctrl->sched_ul_bytes,
+            sched_ctrl->estimated_ul_buffer - sched_ctrl->sched_ul_bytes);
 
     /* PUSCH in a later slot, but corresponding DCI now! */
     nfapi_nr_ul_tti_request_t *future_ul_tti_req = &RC.nrmac[module_id]->UL_tti_req_ahead[0][sched_pusch->slot];

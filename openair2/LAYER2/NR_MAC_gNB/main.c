@@ -43,7 +43,7 @@
 #include "executables/softmodem-common.h"
 
 extern RAN_CONTEXT_t RC;
-
+extern FILE *ulsch_log_file;
 
 void mac_top_init_gNB(void)
 {
@@ -118,6 +118,9 @@ void mac_top_init_gNB(void)
       UE_info->active[list_el] = false;
     }
   }
+
+  ulsch_log_file = fopen("ulsch.log", "w");
+  DevAssert(ulsch_log_file);
 
   srand48(0);
 }
