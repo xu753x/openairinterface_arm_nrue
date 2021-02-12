@@ -416,15 +416,23 @@ static int rfsimulator_write_internal(rfsimulator_state_t *t, openair0_timestamp
   int flags_msb = (flags>>8)&0xff;
   int beam_enabled = (flags_msb>>3)&1;
   int beam_id = flags_msb&7;
-  LOG_I(HW,"sending %d samples at time: %ld, beam_enabled %d, beam_id %d\n", nsamps, timestamp, beam_enabled, beam_id);
+  if(t->typeStamp == ENB_MAGICDL_FDD){
+  LOG_I(HW,"sending %d timestamp: %ld, beam_enabled %d, beam_id %d\n", nsamps, timestamp, beam_enabled, beam_id);
+  }
+
+
+	
+
+
 
 
   for (int i=0; i<FD_SETSIZE; i++) {
     buffer_t *b=&t->buf[i];
 
     if (b->conn_sock >= 0 ) {
-      samplesBlockHeader_t header= {t->typeStamp, nsamps, nbAnt, timestamp};
+      samplesBlockHeader_t header= {t->typeStamp, nsamps, nbAnt, timestamp, beam_id};
       fullwrite(b->conn_sock,&header, sizeof(header), t);
+     // LOG_I(HW,"Hello,World %d \n",header.beam_id);
       sample_t tmpSamples[nsamps][nbAnt];
 
       for(int a=0; a<nbAnt; a++) {
@@ -466,7 +474,6 @@ static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps_for_initi
   // store the data in lists
   struct epoll_event events[FD_SETSIZE]= {{0}};
   int nfds = epoll_wait(t->epollfd, events, FD_SETSIZE, timeout);
-
   if ( nfds==-1 ) {
     if ( errno==EINTR || errno==EAGAIN ) {
       return false;
@@ -499,6 +506,8 @@ static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps_for_initi
       }
 
       buffer_t *b=&t->buf[fd];
+        
+      //LOG_I(HW,"======= beam index ==========\n", b);
 
       if ( b->circularBuf == NULL ) {
         LOG_E(HW, "received data on not connected socket %d\n", events[nbEv].data.fd);
@@ -507,8 +516,20 @@ static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps_for_initi
 
       ssize_t blockSz;
 
-      if ( b->headerMode)
+      if(t->typeStamp == ENB_MAGICDL_FDD){
+
+	      LOG_I(HW,"Server side info: Beam index %d, path loss %lf\n", b->th.option_value, t->chan_pathloss);
+      }else {
+	      LOG_I(HW,"Receiver side info: Beam index %d, path loss %lf\n", b->th.option_value,t->chan_pathloss);
+      }
+
+     //pathloss = beam_id*10
+      t->chan_pathloss = b->th.option_value * 10;
+
+      if ( b->headerMode){
         blockSz=b->remainToTransfer;
+        //LOG_I(HW,"====== Timestamp %lu  ===== Beam Index ======  %d , path loss %lf \n ", b->th.timestamp, b->th.option_value, t->chan_pathloss);
+	}
       else
         blockSz= b->transferPtr+b->remainToTransfer < b->circularBufEnd ?
                  b->remainToTransfer :
@@ -528,8 +549,7 @@ static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps_for_initi
       AssertFatal((b->remainToTransfer-=sz) >= 0, "");
       b->transferPtr+=sz;
 
-      if (b->transferPtr==b->circularBufEnd - 1)
-        b->transferPtr=(char *)b->circularBuf;
+      if (b->transferPtr==b->circularBufEnd - 1)         b->transferPtr=(char *)b->circularBuf;
 
       // check the header and start block transfer
       if ( b->headerMode==true && b->remainToTransfer==0) {
@@ -546,7 +566,19 @@ static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps_for_initi
                             nsamps_for_initial;
           LOG_W(HW,"UE got first timestamp: starting at %lu\n",  t->nextTimestamp);
           b->trashingPacket=true;
-        } else if ( b->lastReceivedTS < b->th.timestamp) {
+
+        }
+
+
+
+
+
+
+
+
+
+ 
+ else if ( b->lastReceivedTS < b->th.timestamp) {
           int nbAnt= b->th.nbAnt;
 
           if ( b->th.timestamp-b->lastReceivedTS < CirSize ) {
@@ -556,7 +588,9 @@ static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps_for_initi
                 b->circularBuf[(index*nbAnt+a)%CirSize].i = 0;
               }
             }
-          } else {
+       
+         
+ } else {
 	    memset(b->circularBuf, 0, sampleToByte(CirSize,1));
 	  }
 
@@ -610,8 +644,20 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
   if (nbAnt != 1) {
     LOG_W(HW, "rfsimulator: only 1 antenna tested\n");
   }
-
   rfsimulator_state_t *t = device->priv;
+  for(int sock=0;sock<FD_SETSIZE;sock++){
+  buffer_t *b=&t->buf[sock];
+  //LOG_W(HW,"beam index %d",b->th.option_value);
+  }
+
+
+ //Printing the pathloss
+  if(t->typeStamp == UE_MAGICDL_FDD){
+  LOG_I(HW," RX side, pathLoss-defualt %lf\n", t->chan_pathloss);
+  }
+
+
+
   LOG_D(HW, "Enter rfsimulator_read, expect %d samples, will release at TS: %ld\n", nsamps, t->nextTimestamp+nsamps);
   // deliver data from received data
   // check if a UE is connected
@@ -640,7 +686,7 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
     }
   } else {
     pthread_mutex_lock(&Sockmutex);
-
+    
     if ( t->nextTimestamp > 0 && t->lastWroteTS < t->nextTimestamp) {
       pthread_mutex_unlock(&Sockmutex);
       usleep(10000);
@@ -662,6 +708,7 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
 
         LOG_I(HW, "No samples Tx occured, so we send 1 sample to notify it: Tx:%lu, Rx:%lu\n",
               t->lastWroteTS, t->nextTimestamp);
+        //LOG_I(HW,"Testing Log");
         rfsimulator_write_internal(t, t->nextTimestamp,
                                    samplesVoid, 1,
                                    t->tx_num_channels, 1, true);
@@ -703,6 +750,8 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
   // Add all input nodes signal in the output buffer
   for (int sock=0; sock<FD_SETSIZE; sock++) {
     buffer_t *ptr=&t->buf[sock];
+    //LOG_I(HW,"Beam id %d\n", ptr->th.option_value);
+    
 
     if ( ptr->circularBuf ) {
       bool reGenerateChannel=false;
@@ -710,23 +759,33 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
       //fixme: when do we regenerate
       // it seems legacy behavior is: never in UL, each frame in DL
       if (reGenerateChannel)
-        random_channel(ptr->channel_model,0);
+        {
+	  random_channel(ptr->channel_model,0);
+        }
       if (t->poll_telnetcmdq)
       	  t->poll_telnetcmdq(t->telnetcmd_qid,t);
 
       for (int a=0; a<nbAnt; a++) {//loop over number of Rx antennas
         if ( ptr->channel_model != NULL ) // apply a channel model
-          rxAddInput( ptr->circularBuf, (struct complex16 *) samplesVoid[a],
+
+
+  {
+        rxAddInput( ptr->circularBuf, (struct complex16 *) samplesVoid[a],
                       a,
                       ptr->channel_model,
                       nsamps,
                       t->nextTimestamp,
                       CirSize
                     );
-        else { // no channel modeling
+buffer_t *b=&t->buf[a];
+//ptr->channel_model->path_loss_dB=-132.24+10* b->th.option_value -RC.ru[0]->frame_parms->pdsch_config_common.referenceSignalPower; 
+//LOG_I(HW,"====== path loss in dB %f  \n ", ptr->channel_model->path_loss_dB); 
+}
+       else { // no channel modeling
           sample_t *out=(sample_t *)samplesVoid[a];
           int nbAnt_tx = ptr->th.nbAnt;//number of Tx antennas
-          //LOG_I(HW, "nbAnt_tx %d\n",nbAnt_tx);
+          //int UEbeam_id = ptr->th.beam_id;
+          //LOG_I(HW, "***** beam id at UE **** %d\n",UEbeam_id);
           for (int i=0; i < nsamps; i++) {//loop over nsamps
         	  for (int a_tx=0; a_tx<nbAnt_tx; a_tx++){//sum up signals from nbAnt_tx antennas
         		  out[i].r+=ptr->circularBuf[((t->nextTimestamp+i)*nbAnt_tx+a_tx)%CirSize].r;
@@ -745,6 +804,7 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
         *ptimestamp, t->nextTimestamp,
         signal_energy(samplesVoid[0], nsamps));
   return nsamps;
+
 }
 int rfsimulator_request(openair0_device *device, void *msg, ssize_t msg_len) {
   abort();

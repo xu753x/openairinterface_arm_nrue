@@ -200,14 +200,17 @@ void start_background_system(void) {
 void threadCreate(pthread_t* t, void * (*func)(void*), void * param, char* name, int affinity, int priority){
   pthread_attr_t attr;
   pthread_attr_init(&attr);
+/*
   pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
   pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
   pthread_attr_setschedpolicy(&attr, SCHED_FIFO);
   struct sched_param sparam={0};
   sparam.sched_priority = priority;
   pthread_attr_setschedparam(&attr, &sparam);
+ pthread_create(t, &attr, func, param);
+*/
+AssertFatal(pthread_create(t, &attr, func, param)==0, "Error creating thread");
 
-  pthread_create(t, &attr, func, param);
 
   pthread_setname_np(*t, name);
   if (affinity != -1 ) {
