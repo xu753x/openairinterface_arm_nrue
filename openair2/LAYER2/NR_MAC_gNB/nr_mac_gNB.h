@@ -356,6 +356,7 @@ typedef struct NR_UE_harq {
   bool is_waiting;
   uint8_t ndi;
   uint8_t round;
+  uint16_t feedback_frame;
   uint16_t feedback_slot;
 
   /* Transport block to be sent using this HARQ process */
