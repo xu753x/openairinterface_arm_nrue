@@ -444,7 +444,7 @@ void pf_dl(module_id_t module_id,
            int max_num_ue,
            int n_rb_sched,
            uint8_t *rballoc_mask) {
-
+  const NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels->ServingCellConfigCommon;
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
   float coeff_ue[MAX_MOBILES_PER_GNB];
   // UEs that could be scheduled
@@ -487,14 +487,17 @@ void pf_dl(module_id_t module_id,
       sched_pdsch->mcsTableIdx = 0;
       sched_pdsch->mcs = 9;
       sched_pdsch->numDmrsCdmGrpsNoData = 1;
-      uint8_t N_PRB_DMRS = getN_PRB_DMRS(sched_ctrl->active_bwp, sched_ctrl->sched_pdsch.numDmrsCdmGrpsNoData);
+      sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, sched_pdsch->mcsTableIdx);
+      sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, sched_pdsch->mcsTableIdx);
       int nrOfSymbols = getNrOfSymbols(sched_ctrl->active_bwp, sched_pdsch->time_domain_allocation);
-      uint32_t tbs = nr_compute_tbs(nr_get_Qm_dl(sched_pdsch->mcs, sched_pdsch->mcsTableIdx),
-                                    nr_get_code_rate_dl(sched_pdsch->mcs, sched_pdsch->mcsTableIdx),
+      const uint8_t N_PRB_DMRS = getN_PRB_DMRS(sched_ctrl->active_bwp, sched_ctrl->sched_pdsch.numDmrsCdmGrpsNoData);
+      const uint8_t N_DMRS_SLOT = get_num_dmrs_symbols(
+          sched_ctrl->active_bwp->bwp_Dedicated->pdsch_Config->choice.setup, scc->dmrs_TypeA_Position, nrOfSymbols);
+      uint32_t tbs = nr_compute_tbs(sched_pdsch->Qm,
+                                    sched_pdsch->R,
                                     1, // rbSize
                                     nrOfSymbols,
-                                    N_PRB_DMRS, // FIXME // This should be multiplied by the
-                                    // number of dmrs symbols
+                                    N_PRB_DMRS * N_DMRS_SLOT,
                                     0 /* N_PRB_oh, 0 for initialBWP */,
                                     0 /* tb_scaling */,
                                     1 /* nrOfLayers */)
@@ -568,7 +571,6 @@ void pf_dl(module_id_t module_id,
 
     const uint8_t N_PRB_DMRS = getN_PRB_DMRS(sched_ctrl->active_bwp, sched_ctrl->sched_pdsch.numDmrsCdmGrpsNoData);
     const int nrOfSymbols = getNrOfSymbols(sched_ctrl->active_bwp, sched_ctrl->sched_pdsch.time_domain_allocation);
-    const NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels->ServingCellConfigCommon;
     const uint8_t N_DMRS_SLOT = get_num_dmrs_symbols(
         sched_ctrl->active_bwp->bwp_Dedicated->pdsch_Config->choice.setup,
         scc->dmrs_TypeA_Position,
@@ -581,8 +583,8 @@ void pf_dl(module_id_t module_id,
     NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
     do {
       rbSize++;
-      TBS = nr_compute_tbs(nr_get_Qm_dl(sched_pdsch->mcs, sched_pdsch->mcsTableIdx),
-                           nr_get_code_rate_dl(sched_pdsch->mcs, sched_pdsch->mcsTableIdx),
+      TBS = nr_compute_tbs(sched_pdsch->Qm,
+                           sched_pdsch->R,
                            rbSize,
                            nrOfSymbols,
                            N_PRB_DMRS * N_DMRS_SLOT,
@@ -593,6 +595,7 @@ void pf_dl(module_id_t module_id,
     } while (rbStart + rbSize < bwpSize && rballoc_mask[rbStart + rbSize] && TBS < sched_ctrl->num_total_bytes + oh);
     sched_pdsch->rbSize = rbSize;
     sched_pdsch->rbStart = rbStart;
+    sched_pdsch->tb_size = TBS;
 
     /* transmissions: directly allocate */
     n_rb_sched -= sched_pdsch->rbSize;
@@ -686,24 +689,11 @@ void nr_schedule_ue_spec(module_id_t module_id,
     int startSymbolIndex, nrOfSymbols;
     SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
 
-    uint8_t N_PRB_DMRS = getN_PRB_DMRS(sched_ctrl->active_bwp, sched_pdsch->numDmrsCdmGrpsNoData);
-    uint8_t N_DMRS_SLOT = get_num_dmrs_symbols(sched_ctrl->active_bwp->bwp_Dedicated->pdsch_Config->choice.setup,
-                                               RC.nrmac[module_id]->common_channels->ServingCellConfigCommon->dmrs_TypeA_Position ,
-                                               nrOfSymbols);
     const nfapi_nr_dmrs_type_e dmrsConfigType = getDmrsConfigType(sched_ctrl->active_bwp);
     const int nrOfLayers = 1;
-    /* TODO avoid recomputation! */
-    const uint16_t R = nr_get_code_rate_dl(sched_pdsch->mcs, sched_pdsch->mcsTableIdx);
-    const uint8_t Qm = nr_get_Qm_dl(sched_pdsch->mcs, sched_pdsch->mcsTableIdx);
-    const uint32_t TBS = nr_compute_tbs(nr_get_Qm_dl(sched_pdsch->mcs, sched_pdsch->mcsTableIdx),
-                                        nr_get_code_rate_dl(sched_pdsch->mcs, sched_pdsch->mcsTableIdx),
-                                        sched_pdsch->rbSize,
-                                        nrOfSymbols,
-                                        N_PRB_DMRS * N_DMRS_SLOT,
-                                        0 /* N_PRB_oh, 0 for initialBWP */,
-                                        0 /* tb_scaling */,
-                                        nrOfLayers)
-                         >> 3;
+    const uint16_t R = sched_pdsch->R;
+    const uint8_t Qm = sched_pdsch->Qm;
+    const uint32_t TBS = sched_pdsch->tb_size;
 
     int8_t current_harq_pid = sched_pdsch->dl_harq_pid;
     if (current_harq_pid < 0) {
@@ -947,7 +937,6 @@ void nr_schedule_ue_spec(module_id_t module_id,
 
       LOG_D(MAC, "[%s] Initial HARQ transmission in %d.%d\n", __FUNCTION__, frame, slot);
 
-      harq->tb_size = TBS;
       uint8_t *buf = (uint8_t *) harq->tb;
 
       /* first, write all CEs that might be there */

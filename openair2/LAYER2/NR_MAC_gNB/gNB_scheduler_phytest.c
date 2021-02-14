@@ -254,6 +254,8 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
   }
 }
 
+extern int getNrOfSymbols(NR_BWP_Downlink_t *bwp, int tda);
+extern uint8_t getN_PRB_DMRS(NR_BWP_Downlink_t *bwp, int numDmrsCdmGrpsNoData);
 /* schedules whole bandwidth for first user, all the time */
 void nr_preprocessor_phytest(module_id_t module_id,
                              frame_t frame,
@@ -261,9 +263,10 @@ void nr_preprocessor_phytest(module_id_t module_id,
 {
   if (slot != 1)
     return;
+  const int CC_id = 0;
+  const NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels[CC_id].ServingCellConfigCommon;
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
   const int UE_id = 0;
-  const int CC_id = 0;
   AssertFatal(UE_info->active[UE_id],
               "%s(): expected UE %d to be active\n",
               __func__,
@@ -365,6 +368,22 @@ void nr_preprocessor_phytest(module_id_t module_id,
   }
   sched_pdsch->mcs = 9;
   sched_pdsch->numDmrsCdmGrpsNoData = 1;
+  sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, sched_pdsch->mcsTableIdx);
+  sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, sched_pdsch->mcsTableIdx);
+  const int nrOfSymbols = getNrOfSymbols(sched_ctrl->active_bwp, sched_pdsch->time_domain_allocation);
+  const uint8_t N_PRB_DMRS = getN_PRB_DMRS(sched_ctrl->active_bwp, sched_ctrl->sched_pdsch.numDmrsCdmGrpsNoData);
+  const uint8_t N_DMRS_SLOT = get_num_dmrs_symbols(
+      sched_ctrl->active_bwp->bwp_Dedicated->pdsch_Config->choice.setup, scc->dmrs_TypeA_Position, nrOfSymbols);
+  sched_pdsch->tb_size = nr_compute_tbs(sched_pdsch->Qm,
+                                        sched_pdsch->R,
+                                        sched_pdsch->rbSize,
+                                        nrOfSymbols,
+                                        N_PRB_DMRS * N_DMRS_SLOT,
+                                        0 /* N_PRB_oh, 0 for initialBWP */,
+                                        0 /* tb_scaling */,
+                                        1 /* nrOfLayers */)
+                         >> 3;
+
   /* get the PID of a HARQ process awaiting retransmission, or -1 otherwise */
   sched_pdsch->dl_harq_pid = sched_ctrl->retrans_dl_harq.head;
 
