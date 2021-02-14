@@ -365,13 +365,14 @@ void nr_store_dlsch_buffer(module_id_t module_id,
   }
 }
 
-bool allocate_retransmission(module_id_t module_id,
-                             frame_t frame,
-                             sub_frame_t slot,
-                             uint8_t *rballoc_mask,
-                             int *n_rb_sched,
-                             int UE_id,
-                             int current_harq_pid) {
+bool allocate_dl_retransmission(module_id_t module_id,
+                                frame_t frame,
+                                sub_frame_t slot,
+                                uint8_t *rballoc_mask,
+                                int *n_rb_sched,
+                                int UE_id,
+                                int current_harq_pid)
+{
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
   NR_sched_pdsch_t *retInfo = &sched_ctrl->harq_processes[current_harq_pid].sched_pdsch;
@@ -468,8 +469,8 @@ void pf_dl(module_id_t module_id,
     /* retransmission */
     if (sched_pdsch->dl_harq_pid >= 0) {
       /* Allocate retransmission */
-      bool r =
-          allocate_retransmission(module_id, frame, slot, rballoc_mask, &n_rb_sched, UE_id, sched_pdsch->dl_harq_pid);
+      bool r = allocate_dl_retransmission(
+          module_id, frame, slot, rballoc_mask, &n_rb_sched, UE_id, sched_pdsch->dl_harq_pid);
       if (!r) {
         LOG_D(MAC, "%4d.%2d retransmission can NOT be allocated\n", frame, slot);
         continue;
