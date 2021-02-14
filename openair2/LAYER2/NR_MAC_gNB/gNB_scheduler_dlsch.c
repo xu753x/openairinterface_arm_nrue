@@ -411,7 +411,8 @@ bool allocate_dl_retransmission(module_id_t module_id,
    * allocation after CCE alloc fail would be more complex) */
   const bool alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot);
   if (!alloc) {
-    LOG_W(MAC, "%s(): could not find PUCCH for UE %d/%04x@%d.%d\n",
+    LOG_D(MAC,
+          "%s(): could not find PUCCH for UE %d/%04x@%d.%d\n",
           __func__,
           UE_id,
           UE_info->rnti[UE_id],
