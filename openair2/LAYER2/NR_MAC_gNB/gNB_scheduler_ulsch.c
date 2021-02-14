@@ -540,6 +540,65 @@ int next_list_entry_looped(NR_list_t *list, int UE_id)
   return list->next[UE_id] < 0 ? list->head : list->next[UE_id];
 }
 
+bool allocate_ul_retransmission(module_id_t module_id,
+                                frame_t frame,
+                                sub_frame_t slot,
+                                uint8_t *rballoc_mask,
+                                int *n_rb_sched,
+                                int UE_id,
+                                int harq_pid)
+{
+  NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+  NR_sched_pusch_t *retInfo = &sched_ctrl->ul_harq_processes[harq_pid].sched_pusch;
+  int rbStart =
+      NRRIV2PRBOFFSET(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  const uint16_t bwpSize =
+      NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+
+  /* Check the resource is enough for retransmission */
+  while (rbStart < bwpSize && !rballoc_mask[rbStart])
+    rbStart++;
+  if (rbStart + retInfo->rbSize >= bwpSize) {
+    LOG_D(MAC, "cannot allocate retransmission of UE %d/RNTI %04x: no resources\n", UE_id, UE_info->rnti[UE_id]);
+    return false;
+  }
+
+  /* Find free CCE */
+  bool freeCCE = find_free_CCE(module_id, slot, UE_id);
+  if (!freeCCE) {
+    LOG_D(MAC, "%4d.%2d no free CCE for retransmission UL DCI UE %04x\n", frame, slot, UE_info->rnti[UE_id]);
+    return false;
+  }
+
+  /* frame/slot in sched_pusch has been set previously. In the following, we
+   * overwrite the information in the retransmission information before storing
+   * as the new scheduling instruction */
+  retInfo->frame = sched_ctrl->sched_pusch.frame;
+  retInfo->slot = sched_ctrl->sched_pusch.slot;
+  /* Get previous PSUCH field info */
+  sched_ctrl->sched_pusch = *retInfo;
+  NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
+  LOG_D(MAC,
+        "%4d.%2d Allocate UL retransmission UE %d/RNTI %04x sched %4d.%2d (%d RBs)\n",
+        frame,
+        slot,
+        UE_id,
+        UE_info->rnti[UE_id],
+        sched_pusch->frame,
+        sched_pusch->slot,
+        sched_pusch->rbSize);
+
+  sched_pusch->rbStart = rbStart;
+  /* no need to recompute the TBS, it will be the same */
+
+  /* Mark the corresponding RBs as used */
+  n_rb_sched -= sched_pusch->rbSize;
+  for (int rb = 0; rb < sched_ctrl->sched_pusch.rbSize; rb++)
+    rballoc_mask[rb + sched_ctrl->sched_pusch.rbStart] = 0;
+  return true;
+}
+
 float ul_thr_ue[MAX_MOBILES_PER_GNB];
 int bsr0ue = -1;
 void pf_ul(module_id_t module_id,
@@ -597,47 +656,17 @@ void pf_ul(module_id_t module_id,
     /* Check if retransmission is necessary */
     sched_ctrl->sched_pusch.ul_harq_pid = sched_ctrl->retrans_ul_harq.head;
     if (sched_ctrl->sched_pusch.ul_harq_pid >= 0) {
-      /* RETRANSMISSION: Allocate retransmission*/
-
-      /* Save shced_frame and sched_slot before overwrite by previous PUSCH field */
-      NR_UE_ul_harq_t *cur_harq = &sched_ctrl->ul_harq_processes[sched_ctrl->sched_pusch.ul_harq_pid];
-      cur_harq->sched_pusch.frame = sched_ctrl->sched_pusch.frame;
-      cur_harq->sched_pusch.slot = sched_ctrl->sched_pusch.slot;
-      /* Get previous PSUCH field info */
-      sched_ctrl->sched_pusch = cur_harq->sched_pusch;
-      NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
-      LOG_D(MAC, "%4d.%2d Allocate UL retransmission UE %d/RNTI %04x sched %4d.%2d (%d RBs)\n",
-            frame, slot, UE_id, UE_info->rnti[UE_id],
-            sched_pusch->frame, sched_pusch->slot,
-            sched_pusch->rbSize);
-
-      /* Check the resource is enough for retransmission */
-      while (rbStart < bwpSize && !rballoc_mask[rbStart]) rbStart++;
-      if (rbStart + sched_pusch->rbSize >= bwpSize) {
-        LOG_D(MAC, "cannot allocate retransmission of UE %d/RNTI %04x: no resources\n",
-              UE_id, UE_info->rnti[UE_id]);
-        continue;
-      }
-      sched_pusch->rbStart = rbStart;
-
-      /* no need to recompute the TBS, it will be the same */
-
-      /* Find free CCE */
-      bool freeCCE = find_free_CCE(module_id, slot, UE_id);
-      if (!freeCCE) {
-        LOG_D(MAC, "%4d.%2d no free CCE for retransmission UL DCI UE %04x\n", frame, slot, UE_info->rnti[UE_id]);
+      /* Allocate retransmission*/
+      bool r = allocate_ul_retransmission(
+          module_id, frame, slot, rballoc_mask, &n_rb_sched, UE_id, sched_ctrl->sched_pusch.ul_harq_pid);
+      if (!r) {
+        LOG_D(MAC, "%4d.%2d UL retransmission UE RNTI %04x can NOT be allocated\n", frame, slot, UE_info->rnti[UE_id]);
         continue;
       }
       /* reduce max_num_ue once we are sure UE can be allocated, i.e., has CCE */
       max_num_ue--;
       if (max_num_ue < 0)
         return;
-
-      /* Mark the corresponding RBs as used */
-      n_rb_sched -= sched_pusch->rbSize;
-      for (int rb = 0; rb < sched_ctrl->sched_pusch.rbSize; rb++)
-        rballoc_mask[rb + sched_ctrl->sched_pusch.rbStart] = 0;
-
       continue;
     }
 
