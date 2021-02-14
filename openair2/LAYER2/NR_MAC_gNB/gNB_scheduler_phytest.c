@@ -351,25 +351,26 @@ void nr_preprocessor_phytest(module_id_t module_id,
               "could not find uplink slot for PUCCH (RNTI %04x@%d.%d)!\n",
               rnti, frame, slot);
 
-  sched_ctrl->rbStart = rbStart;
-  sched_ctrl->rbSize = rbSize;
-  sched_ctrl->time_domain_allocation = 2;
+  NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
+  sched_pdsch->rbStart = rbStart;
+  sched_pdsch->rbSize = rbSize;
+  sched_pdsch->time_domain_allocation = 2;
   if (!UE_info->secondaryCellGroup[UE_id]->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->mcs_Table)
-    sched_ctrl->mcsTableIdx = 0;
+    sched_pdsch->mcsTableIdx = 0;
   else {
     if (*UE_info->secondaryCellGroup[UE_id]->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->mcs_Table == 0)
-      sched_ctrl->mcsTableIdx = 1;
+      sched_pdsch->mcsTableIdx = 1;
     else
-      sched_ctrl->mcsTableIdx = 2;
+      sched_pdsch->mcsTableIdx = 2;
   }
-  sched_ctrl->mcs = 9;
-  sched_ctrl->numDmrsCdmGrpsNoData = 1;
+  sched_pdsch->mcs = 9;
+  sched_pdsch->numDmrsCdmGrpsNoData = 1;
   /* get the PID of a HARQ process awaiting retransmission, or -1 otherwise */
-  sched_ctrl->dl_harq_pid = sched_ctrl->retrans_dl_harq.head;
+  sched_pdsch->dl_harq_pid = sched_ctrl->retrans_dl_harq.head;
 
   /* mark the corresponding RBs as used */
-  for (int rb = 0; rb < sched_ctrl->rbSize; rb++)
-    vrb_map[rb + sched_ctrl->rbStart] = 1;
+  for (int rb = 0; rb < sched_pdsch->rbSize; rb++)
+    vrb_map[rb + sched_pdsch->rbStart] = 1;
 }
 
 bool nr_ul_preprocessor_phytest(module_id_t module_id,

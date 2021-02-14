@@ -374,11 +374,9 @@ bool allocate_retransmission(module_id_t module_id,
                              int current_harq_pid) {
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-  NR_UE_ret_info_t *retInfo = &sched_ctrl->retInfo[current_harq_pid];
+  NR_sched_pdsch_t *retInfo = &sched_ctrl->harq_processes[current_harq_pid].sched_pdsch;
   const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
   int rbStart = NRRIV2PRBOFFSET(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-
-  sched_ctrl->time_domain_allocation = retInfo->time_domain_allocation;
 
   /* Check the resource is enough for retransmission */
   /* ensure that there is a free place for RB allocation */
@@ -426,19 +424,14 @@ bool allocate_retransmission(module_id_t module_id,
     return false;
   }
 
-  /* Allocate retransmission */
-  sched_ctrl->rbSize = retInfo->rbSize;
-  sched_ctrl->rbStart = rbStart;
-
-  /* MCS etc: just reuse from previous scheduling opportunity */
-  sched_ctrl->mcsTableIdx = retInfo->mcsTableIdx;
-  sched_ctrl->mcs = retInfo->mcs;
-  sched_ctrl->numDmrsCdmGrpsNoData = retInfo->numDmrsCdmGrpsNoData;
+  /* just reuse from previous scheduling opportunity, set new start RB */
+  sched_ctrl->sched_pdsch = *retInfo;
+  sched_ctrl->sched_pdsch.rbStart = rbStart;
 
   /* retransmissions: directly allocate */
-  *n_rb_sched -= sched_ctrl->rbSize;
-  for (int rb = 0; rb < sched_ctrl->rbSize; rb++)
-    rballoc_mask[rb+sched_ctrl->rbStart] = 0;
+  *n_rb_sched -= sched_ctrl->sched_pdsch.rbSize;
+  for (int rb = 0; rb < sched_ctrl->sched_pdsch.rbSize; rb++)
+    rballoc_mask[rb + sched_ctrl->sched_pdsch.rbStart] = 0;
   return true;
 }
 
@@ -461,10 +454,11 @@ void pf_dl(module_id_t module_id,
   /* Loop UE_info->list to check retransmission */
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+    NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
     sched_ctrl->search_space = get_searchspace(sched_ctrl->active_bwp, NR_SearchSpace__searchSpaceType_PR_ue_Specific);
     sched_ctrl->coreset = get_coreset(sched_ctrl->active_bwp, sched_ctrl->search_space, 1 /* dedicated */);
     /* get the PID of a HARQ process awaiting retrnasmission, or -1 otherwise */
-    sched_ctrl->dl_harq_pid = sched_ctrl->retrans_dl_harq.head;
+    sched_pdsch->dl_harq_pid = sched_ctrl->retrans_dl_harq.head;
 
     /* Calculate Throughput */
     const float a = 0.0005f; // corresponds to 200ms window
@@ -472,15 +466,10 @@ void pf_dl(module_id_t module_id,
     thr_ue[UE_id] = (1 - a) * thr_ue[UE_id] + a * b;
 
     /* retransmission */
-    if (sched_ctrl->dl_harq_pid >= 0) {
+    if (sched_pdsch->dl_harq_pid >= 0) {
       /* Allocate retransmission */
-      bool r = allocate_retransmission(module_id,
-                                       frame,
-                                       slot,
-                                       rballoc_mask,
-                                       &n_rb_sched,
-                                       UE_id,
-                                       sched_ctrl->dl_harq_pid);
+      bool r =
+          allocate_retransmission(module_id, frame, slot, rballoc_mask, &n_rb_sched, UE_id, sched_pdsch->dl_harq_pid);
       if (!r) {
         LOG_D(MAC, "%4d.%2d retransmission can NOT be allocated\n", frame, slot);
         continue;
@@ -494,21 +483,20 @@ void pf_dl(module_id_t module_id,
         continue;
 
       /* Calculate coeff */
-      sched_ctrl->time_domain_allocation = 2;
-      sched_ctrl->mcsTableIdx = 0;
-      sched_ctrl->mcs = 9;
-      sched_ctrl->numDmrsCdmGrpsNoData = 1;
-      uint8_t N_PRB_DMRS =
-              getN_PRB_DMRS(sched_ctrl->active_bwp, sched_ctrl->numDmrsCdmGrpsNoData);
-      int nrOfSymbols = getNrOfSymbols(sched_ctrl->active_bwp,
-                                       sched_ctrl->time_domain_allocation);
-      uint32_t tbs = nr_compute_tbs(nr_get_Qm_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx),
-                                    nr_get_code_rate_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx),
-                                    1,  // rbSize
+      sched_pdsch->time_domain_allocation = 2;
+      sched_pdsch->mcsTableIdx = 0;
+      sched_pdsch->mcs = 9;
+      sched_pdsch->numDmrsCdmGrpsNoData = 1;
+      uint8_t N_PRB_DMRS = getN_PRB_DMRS(sched_ctrl->active_bwp, sched_ctrl->sched_pdsch.numDmrsCdmGrpsNoData);
+      int nrOfSymbols = getNrOfSymbols(sched_ctrl->active_bwp, sched_pdsch->time_domain_allocation);
+      uint32_t tbs = nr_compute_tbs(nr_get_Qm_dl(sched_pdsch->mcs, sched_pdsch->mcsTableIdx),
+                                    nr_get_code_rate_dl(sched_pdsch->mcs, sched_pdsch->mcsTableIdx),
+                                    1, // rbSize
                                     nrOfSymbols,
-                                    N_PRB_DMRS,  // FIXME // This should be multiplied by the
+                                    N_PRB_DMRS, // FIXME // This should be multiplied by the
                                     // number of dmrs symbols
-                                    0 /* N_PRB_oh, 0 for initialBWP */, 0 /* tb_scaling */,
+                                    0 /* N_PRB_oh, 0 for initialBWP */,
+                                    0 /* tb_scaling */,
                                     1 /* nrOfLayers */)
                      >> 3;
       coeff_ue[UE_id] = (float) tbs / thr_ue[UE_id];
@@ -573,22 +561,13 @@ void pf_dl(module_id_t module_id,
       return;
     }
 
-    /* Allocate transmission */
-    // Time-domain allocation
-    sched_ctrl->time_domain_allocation = 2;
-
-    // modulation scheme
-    sched_ctrl->mcsTableIdx = 0;
-    sched_ctrl->mcs = 9;
-    sched_ctrl->numDmrsCdmGrpsNoData = 1;
+    /* MCS, TDA, etc. has been set above */
 
     // Freq-demain allocation
     while (rbStart < bwpSize && !rballoc_mask[rbStart]) rbStart++;
 
-    const uint8_t N_PRB_DMRS =
-        getN_PRB_DMRS(sched_ctrl->active_bwp, sched_ctrl->numDmrsCdmGrpsNoData);
-    const int nrOfSymbols = getNrOfSymbols(sched_ctrl->active_bwp,
-        sched_ctrl->time_domain_allocation);
+    const uint8_t N_PRB_DMRS = getN_PRB_DMRS(sched_ctrl->active_bwp, sched_ctrl->sched_pdsch.numDmrsCdmGrpsNoData);
+    const int nrOfSymbols = getNrOfSymbols(sched_ctrl->active_bwp, sched_ctrl->sched_pdsch.time_domain_allocation);
     const NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels->ServingCellConfigCommon;
     const uint8_t N_DMRS_SLOT = get_num_dmrs_symbols(
         sched_ctrl->active_bwp->bwp_Dedicated->pdsch_Config->choice.setup,
@@ -599,10 +578,11 @@ void pf_dl(module_id_t module_id,
     uint32_t TBS = 0;
     const int oh = 2 + (sched_ctrl->num_total_bytes >= 256)
                  + 2 * (frame == (sched_ctrl->ta_frame + 10) % 1024);
+    NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
     do {
       rbSize++;
-      TBS = nr_compute_tbs(nr_get_Qm_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx),
-                           nr_get_code_rate_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx),
+      TBS = nr_compute_tbs(nr_get_Qm_dl(sched_pdsch->mcs, sched_pdsch->mcsTableIdx),
+                           nr_get_code_rate_dl(sched_pdsch->mcs, sched_pdsch->mcsTableIdx),
                            rbSize,
                            nrOfSymbols,
                            N_PRB_DMRS * N_DMRS_SLOT,
@@ -611,13 +591,13 @@ void pf_dl(module_id_t module_id,
                            1 /* nrOfLayers */)
             >> 3;
     } while (rbStart + rbSize < bwpSize && rballoc_mask[rbStart + rbSize] && TBS < sched_ctrl->num_total_bytes + oh);
-    sched_ctrl->rbSize = rbSize;
-    sched_ctrl->rbStart = rbStart;
+    sched_pdsch->rbSize = rbSize;
+    sched_pdsch->rbStart = rbStart;
 
     /* transmissions: directly allocate */
-    n_rb_sched -= sched_ctrl->rbSize;
-    for (int rb = 0; rb < sched_ctrl->rbSize; rb++)
-      rballoc_mask[rb+sched_ctrl->rbStart] = 0;
+    n_rb_sched -= sched_pdsch->rbSize;
+    for (int rb = 0; rb < sched_pdsch->rbSize; rb++)
+      rballoc_mask[rb + sched_pdsch->rbStart] = 0;
   }
 }
 
@@ -677,6 +657,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
   NR_list_t *UE_list = &UE_info->list;
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+    NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
     UE_info->mac_stats[UE_id].dlsch_current_bytes = 0;
 
     /* update TA and set ta_apply every 10 frames.
@@ -688,7 +669,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
       LOG_D(MAC, "[UE %d][%d.%d] UL timing alignment procedures: setting flag for Timing Advance command\n", UE_id, frame, slot);
     }
 
-    if (sched_ctrl->rbSize <= 0)
+    if (sched_pdsch->rbSize <= 0)
       continue;
 
     const rnti_t rnti = UE_info->rnti[UE_id];
@@ -696,37 +677,35 @@ void nr_schedule_ue_spec(module_id_t module_id,
     /* POST processing */
     struct NR_PDSCH_TimeDomainResourceAllocationList *tdaList =
       sched_ctrl->active_bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
-    AssertFatal(sched_ctrl->time_domain_allocation < tdaList->list.count,
+    AssertFatal(sched_pdsch->time_domain_allocation < tdaList->list.count,
                 "time_domain_allocation %d>=%d\n",
-                sched_ctrl->time_domain_allocation,
+                sched_pdsch->time_domain_allocation,
                 tdaList->list.count);
 
-    const int startSymbolAndLength =
-      tdaList->list.array[sched_ctrl->time_domain_allocation]->startSymbolAndLength;
+    const int startSymbolAndLength = tdaList->list.array[sched_pdsch->time_domain_allocation]->startSymbolAndLength;
     int startSymbolIndex, nrOfSymbols;
     SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
 
-    uint8_t N_PRB_DMRS =
-        getN_PRB_DMRS(sched_ctrl->active_bwp, sched_ctrl->numDmrsCdmGrpsNoData);
+    uint8_t N_PRB_DMRS = getN_PRB_DMRS(sched_ctrl->active_bwp, sched_pdsch->numDmrsCdmGrpsNoData);
     uint8_t N_DMRS_SLOT = get_num_dmrs_symbols(sched_ctrl->active_bwp->bwp_Dedicated->pdsch_Config->choice.setup,
                                                RC.nrmac[module_id]->common_channels->ServingCellConfigCommon->dmrs_TypeA_Position ,
                                                nrOfSymbols);
     const nfapi_nr_dmrs_type_e dmrsConfigType = getDmrsConfigType(sched_ctrl->active_bwp);
     const int nrOfLayers = 1;
-    const uint16_t R = nr_get_code_rate_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx);
-    const uint8_t Qm = nr_get_Qm_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx);
-    const uint32_t TBS =
-        nr_compute_tbs(nr_get_Qm_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx),
-                       nr_get_code_rate_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx),
-                       sched_ctrl->rbSize,
-                       nrOfSymbols,
-                       N_PRB_DMRS * N_DMRS_SLOT,
-                       0 /* N_PRB_oh, 0 for initialBWP */,
-                       0 /* tb_scaling */,
-                       nrOfLayers)
-        >> 3;
+    /* TODO avoid recomputation! */
+    const uint16_t R = nr_get_code_rate_dl(sched_pdsch->mcs, sched_pdsch->mcsTableIdx);
+    const uint8_t Qm = nr_get_Qm_dl(sched_pdsch->mcs, sched_pdsch->mcsTableIdx);
+    const uint32_t TBS = nr_compute_tbs(nr_get_Qm_dl(sched_pdsch->mcs, sched_pdsch->mcsTableIdx),
+                                        nr_get_code_rate_dl(sched_pdsch->mcs, sched_pdsch->mcsTableIdx),
+                                        sched_pdsch->rbSize,
+                                        nrOfSymbols,
+                                        N_PRB_DMRS * N_DMRS_SLOT,
+                                        0 /* N_PRB_oh, 0 for initialBWP */,
+                                        0 /* tb_scaling */,
+                                        nrOfLayers)
+                         >> 3;
 
-    int8_t current_harq_pid = sched_ctrl->dl_harq_pid;
+    int8_t current_harq_pid = sched_pdsch->dl_harq_pid;
     if (current_harq_pid < 0) {
       /* PP has not selected a specific HARQ Process, get a new one */
       current_harq_pid = sched_ctrl->available_dl_harq.head;
@@ -734,7 +713,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
                   "no free HARQ process available for UE %d\n",
                   UE_id);
       remove_front_nr_list(&sched_ctrl->available_dl_harq);
-      sched_ctrl->dl_harq_pid = current_harq_pid;
+      sched_pdsch->dl_harq_pid = current_harq_pid;
     } else {
       /* PP selected a specific HARQ process. Check whether it will be a new
        * transmission or a retransmission, and remove from the corresponding
@@ -758,11 +737,11 @@ void nr_schedule_ue_spec(module_id_t module_id,
           frame,
           slot,
           rnti,
-          sched_ctrl->rbStart,
-          sched_ctrl->rbSize,
+          sched_pdsch->rbStart,
+          sched_pdsch->rbSize,
           startSymbolIndex,
           nrOfSymbols,
-          sched_ctrl->mcs,
+          sched_pdsch->mcs,
           TBS,
           current_harq_pid,
           harq->round,
@@ -818,8 +797,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
     pdsch_pdu->NrOfCodewords = 1;
     pdsch_pdu->targetCodeRate[0] = R;
     pdsch_pdu->qamModOrder[0] = Qm;
-    pdsch_pdu->mcsIndex[0] = sched_ctrl->mcs;
-    pdsch_pdu->mcsTable[0] = sched_ctrl->mcsTableIdx;
+    pdsch_pdu->mcsIndex[0] = sched_pdsch->mcs;
+    pdsch_pdu->mcsTable[0] = sched_pdsch->mcsTableIdx;
     pdsch_pdu->rvIndex[0] = nr_rv_round_map[harq->round];
     pdsch_pdu->TBSize[0] = TBS;
 
@@ -836,13 +815,13 @@ void nr_schedule_ue_spec(module_id_t module_id,
     pdsch_pdu->dmrsConfigType = dmrsConfigType;
     pdsch_pdu->dlDmrsScramblingId = *scc->physCellId;
     pdsch_pdu->SCID = 0;
-    pdsch_pdu->numDmrsCdmGrpsNoData = sched_ctrl->numDmrsCdmGrpsNoData;
+    pdsch_pdu->numDmrsCdmGrpsNoData = sched_pdsch->numDmrsCdmGrpsNoData;
     pdsch_pdu->dmrsPorts = 1;
 
     // Pdsch Allocation in frequency domain
     pdsch_pdu->resourceAlloc = 1;
-    pdsch_pdu->rbStart = sched_ctrl->rbStart;
-    pdsch_pdu->rbSize = sched_ctrl->rbSize;
+    pdsch_pdu->rbStart = sched_pdsch->rbStart;
+    pdsch_pdu->rbSize = sched_pdsch->rbSize;
     pdsch_pdu->VRBtoPRBMapping = 1; // non-interleaved, check if this is ok for initialBWP
 
     // Resource Allocation in time domain
@@ -901,8 +880,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
             pdsch_pdu->rbSize,
             pdsch_pdu->rbStart,
             pdsch_pdu->BWPSize);
-    dci_payload.time_domain_assignment.val = sched_ctrl->time_domain_allocation;
-    dci_payload.mcs = sched_ctrl->mcs;
+    dci_payload.time_domain_assignment.val = sched_pdsch->time_domain_allocation;
+    dci_payload.mcs = sched_pdsch->mcs;
     dci_payload.rv = pdsch_pdu->rvIndex[0];
     dci_payload.harq_pid = current_harq_pid;
     dci_payload.ndi = harq->ndi;
@@ -947,29 +926,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
           pdcch_pdu->StartSymbolIndex,
           pdcch_pdu->DurationSymbols);
 
-    NR_UE_ret_info_t *retInfo = &sched_ctrl->retInfo[current_harq_pid];
     if (harq->round != 0) { /* retransmission */
-      if (sched_ctrl->rbSize != retInfo->rbSize)
-        LOG_W(MAC,
-              "retransmission uses different rbSize (%d vs. orig %d)\n",
-              sched_ctrl->rbSize,
-              retInfo->rbSize);
-      if (sched_ctrl->time_domain_allocation != retInfo->time_domain_allocation)
-        LOG_W(MAC,
-              "retransmission uses different time_domain_allocation (%d vs. orig %d)\n",
-              sched_ctrl->time_domain_allocation,
-              retInfo->time_domain_allocation);
-      if (sched_ctrl->mcs != retInfo->mcs
-          || sched_ctrl->mcsTableIdx != retInfo->mcsTableIdx
-          || sched_ctrl->numDmrsCdmGrpsNoData != retInfo->numDmrsCdmGrpsNoData)
-        LOG_W(MAC,
-              "retransmission uses different table/MCS/numDmrsCdmGrpsNoData (%d/%d/%d vs. orig %d/%d/%d)\n",
-              sched_ctrl->mcsTableIdx,
-              sched_ctrl->mcs,
-              sched_ctrl->numDmrsCdmGrpsNoData,
-              retInfo->mcsTableIdx,
-              retInfo->mcs,
-              retInfo->numDmrsCdmGrpsNoData);
       /* we do not have to do anything, since we do not require to get data
        * from RLC or encode MAC CEs. The TX_req structure is filled below 
        * or copy data to FAPI structures */
@@ -982,7 +939,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
             current_harq_pid,
             harq->round,
             harq->ndi);
-      AssertFatal(harq->tb_size == TBS,
+      AssertFatal(harq->sched_pdsch.tb_size == TBS,
                   "UE %d mismatch between scheduled TBS and buffered TB for HARQ PID %d\n",
                   UE_id,
                   current_harq_pid);
@@ -1098,11 +1055,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
       UE_info->mac_stats[UE_id].dlsch_current_bytes = TBS;
       UE_info->mac_stats[UE_id].lc_bytes_tx[lcid] += dlsch_total_bytes;
 
-      retInfo->rbSize = sched_ctrl->rbSize;
-      retInfo->time_domain_allocation = sched_ctrl->time_domain_allocation;
-      retInfo->mcsTableIdx = sched_ctrl->mcsTableIdx;
-      retInfo->mcs = sched_ctrl->mcs;
-      retInfo->numDmrsCdmGrpsNoData = sched_ctrl->numDmrsCdmGrpsNoData;
+      /* save retransmission information */
+      harq->sched_pdsch = *sched_pdsch;
 
       // ta command is sent, values are reset
       if (sched_ctrl->ta_apply) {
@@ -1131,6 +1085,6 @@ void nr_schedule_ue_spec(module_id_t module_id,
     gNB_mac->TX_req[CC_id].Slot = slot;
 
     /* mark UE as scheduled */
-    sched_ctrl->rbSize = 0;
+    memset(sched_pdsch, 0, sizeof(*sched_pdsch));
   }
 }

@@ -352,6 +352,23 @@ typedef struct NR_sched_pusch {
   int8_t ul_harq_pid;
 } NR_sched_pusch_t;
 
+typedef struct NR_sched_pdsch {
+  /// RB allocation within active BWP
+  uint16_t rbSize;
+  uint16_t rbStart;
+
+  // time-domain allocation for scheduled RBs
+  int time_domain_allocation;
+
+  /// MCS-related infos
+  uint8_t mcsTableIdx;
+  uint8_t mcs;
+  uint8_t numDmrsCdmGrpsNoData;
+
+  /// DL HARQ PID to use for this UE, or -1 for "any new"
+  int8_t dl_harq_pid;
+} NR_sched_pdsch_t;
+
 typedef struct NR_UE_harq {
   bool is_waiting;
   uint8_t ndi;
@@ -362,6 +379,9 @@ typedef struct NR_UE_harq {
   /* Transport block to be sent using this HARQ process */
   uint32_t tb[16384];
   uint32_t tb_size;
+  //
+  /// sched_pdsch keeps information on MCS etc used for the initial transmission
+  NR_sched_pdsch_t sched_pdsch;
 } NR_UE_harq_t;
 
 //! fixme : need to enhace for the multiple TB CQI report
@@ -442,13 +462,6 @@ typedef struct nr_csi_report {
   From spec 38.214 section 5.2.1.2 For periodic and semi-persistent CSI Resource Settings, the number of CSI-RS Resource Sets configured is limited to S=1
  */
 #define MAX_CSI_RESOURCE_SET_IN_CSI_RESOURCE_CONFIG 16
-typedef struct NR_UE_old_sched {
-  uint16_t rbSize;
-  int time_domain_allocation;
-  uint8_t mcsTableIdx;
-  uint8_t mcs;
-  uint8_t numDmrsCdmGrpsNoData;
-} NR_UE_ret_info_t;
 
 typedef enum {
   INACTIVE = 0,
@@ -469,15 +482,18 @@ typedef struct NR_UE_ul_harq {
 /*! \brief scheduling control information set through an API */
 #define MAX_CSI_REPORTS 48
 typedef struct {
-  /// total amount of data awaiting for this UE
-  uint32_t num_total_bytes;
-  /// per-LC status data
-  mac_rlc_status_resp_t rlc_status[MAX_NUM_LCID];
-
   /// the currently active BWP in DL
   NR_BWP_Downlink_t *active_bwp;
   /// the currently active BWP in UL
   NR_BWP_Uplink_t *active_ubwp;
+  /// CCE index and aggregation, should be coherent with cce_list
+  NR_SearchSpace_t *search_space;
+  NR_ControlResourceSet_t *coreset;
+
+  /// CCE index and Aggr. Level are shared for PUSCH/PDSCH allocation decisions
+  /// corresponding to the sched_pusch/sched_pdsch structures below
+  int cce_index;
+  uint8_t aggregation_level;
 
   /// PUCCH scheduling information. Array of three, we assume for the moment:
   /// HARQ in the first field, SR in second, CSI in third (as fixed by RRC
@@ -485,18 +501,10 @@ typedef struct {
   /// nr_acknack_scheduling()!
   NR_sched_pucch_t sched_pucch[3];
 
+  /// PUSCH save: PUSCH "configuration" that is not cleared across TTIs
   NR_sched_pusch_save_t pusch_save;
+  /// Sched PDSCH: scheduling decisions, copied into HARQ and cleared every TTI
   NR_sched_pusch_t sched_pusch;
-
-  /// CCE index and aggregation, should be coherent with cce_list
-  NR_SearchSpace_t *search_space;
-  NR_ControlResourceSet_t *coreset;
-  int cce_index;
-  uint8_t aggregation_level;
-
-  /// RB allocation within active BWP
-  uint16_t rbSize;
-  uint16_t rbStart;
 
   /// uplink bytes that are currently scheduled
   int sched_ul_bytes;
@@ -508,18 +516,12 @@ typedef struct {
   /// PHR info: nominal UE transmit power levels (dBm)
   int pcmax;
 
-  // time-domain allocation for scheduled RBs
-  int time_domain_allocation;
+  NR_sched_pdsch_t sched_pdsch;
 
-  /// MCS-related infos
-  uint8_t mcsTableIdx;
-  uint8_t mcs;
-  uint8_t numDmrsCdmGrpsNoData;
-
-  /// Retransmission-related information
-  NR_UE_ret_info_t retInfo[NR_MAX_NB_HARQ_PROCESSES];
-  /// DL HARQ PID to use for this UE, or -1 for "any new"
-  int8_t dl_harq_pid;
+  /// total amount of data awaiting for this UE
+  uint32_t num_total_bytes;
+  /// per-LC status data
+  mac_rlc_status_resp_t rlc_status[MAX_NUM_LCID];
 
   uint16_t ta_frame;
   int16_t ta_update;
