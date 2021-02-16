@@ -1644,7 +1644,6 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *secon
     sched_ctrl->ta_frame = 0;
     sched_ctrl->ta_update = 31;
     sched_ctrl->ta_apply = false;
-    sched_ctrl->ul_rssi = 0;
     /* set illegal time domain allocation to force recomputation of all fields */
     sched_ctrl->pusch_save.time_domain_allocation = -1;
     const NR_ServingCellConfig_t *servingCellConfig = secondaryCellGroup->spCellConfig->spCellConfigDedicated;

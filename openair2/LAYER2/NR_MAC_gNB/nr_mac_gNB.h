@@ -534,8 +534,10 @@ typedef struct {
   bool ta_apply;
   uint8_t tpc0;
   uint8_t tpc1;
-  uint16_t ul_rssi;
-  uint8_t current_harq_pid;
+  int raw_rssi;
+  int pusch_snrx10;
+  int pucch_snrx10;
+
   struct CSI_Report CSI_report[MAX_CSI_REPORTS];
   /// information about every HARQ process
   NR_UE_harq_t harq_processes[NR_MAX_NB_HARQ_PROCESSES];

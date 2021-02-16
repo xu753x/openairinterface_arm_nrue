@@ -433,11 +433,12 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
           sduP);
 
     // if not missed detection (10dB threshold for now)
-    if (UE_scheduling_control->ul_rssi < (100+rssi)) {
+    if (UE_scheduling_control->raw_rssi < 100 + rssi) {
       UE_scheduling_control->tpc0 = nr_get_tpc(target_snrx10,ul_cqi,30);
       if (timing_advance != 0xffff)
         UE_scheduling_control->ta_update = timing_advance;
-      UE_scheduling_control->ul_rssi = rssi;
+      UE_scheduling_control->raw_rssi = rssi;
+      UE_scheduling_control->pusch_snrx10 = ul_cqi * 5 - 640;
       LOG_D(NR_MAC, "[UE %d] PUSCH TPC %d and TA %d\n",UE_id,UE_scheduling_control->tpc0,UE_scheduling_control->ta_update);
     }
     else{
