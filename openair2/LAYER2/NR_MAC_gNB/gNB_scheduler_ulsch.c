@@ -448,9 +448,6 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
       }
     }
   } else {
-    if (!sduP) // check that CRC passed
-      return;
-
     T(T_GNB_MAC_UL_PDU_WITH_DATA, T_INT(gnb_mod_idP), T_INT(CC_idP),
       T_INT(rntiP), T_INT(frameP), T_INT(slotP), T_INT(-1) /* harq_pid */,
       T_BUFFER(sduP, sdu_lenP));
@@ -460,9 +457,6 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
      * it. */
     for (int i = 0; i < NR_NB_RA_PROC_MAX; ++i) {
       NR_RA_t *ra = &gNB_mac->common_channels[CC_idP].ra[i];
-      if (ra->state != WAIT_Msg3)
-        continue;
-
       // random access pusch with TC-RNTI
       if (ra->rnti != current_rnti) {
         LOG_W(MAC,
@@ -471,6 +465,20 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
               current_rnti);
         continue;
       }
+
+      if (ra->state == WAIT_Msg3 && !sduP) {
+        LOG_E(MAC,
+              "%4d.%2d did not receive Msg 3 for RA RNTI %04x, resetting to State RA_IDLE\n",
+              frameP,
+              slotP,
+              ra->rnti);
+        ra->state = RA_IDLE;
+        continue;
+      }
+
+      if (ra->state != WAIT_Msg3)
+        continue;
+
       const int UE_id = add_new_nr_ue(gnb_mod_idP, ra->rnti, ra->secondaryCellGroup);
       UE_info->UE_beam_index[UE_id] = ra->beam_id;
       LOG_I(MAC,
