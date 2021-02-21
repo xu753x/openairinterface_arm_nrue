@@ -1655,6 +1655,10 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *secon
                 bwpList->list.count);
     const int bwp_id = 1;
     sched_ctrl->active_bwp = bwpList->list.array[bwp_id - 1];
+    const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
+    sched_ctrl->search_space = get_searchspace(sched_ctrl->active_bwp, target_ss);
+    sched_ctrl->coreset = get_coreset(sched_ctrl->active_bwp, sched_ctrl->search_space, 1 /* dedicated */);
+
     const struct NR_UplinkConfig__uplinkBWP_ToAddModList *ubwpList = servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList;
     AssertFatal(ubwpList->list.count == 1,
                 "uplinkBWP_ToAddModList has %d BWP!\n",

@@ -315,14 +315,10 @@ void nr_preprocessor_phytest(module_id_t module_id,
                                                     0);
   sched_ctrl->num_total_bytes += sched_ctrl->rlc_status[lcid].bytes_in_buffer;
 
-  const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
-  sched_ctrl->search_space = get_searchspace(sched_ctrl->active_bwp, target_ss);
   uint8_t nr_of_candidates;
   find_aggregation_candidates(&sched_ctrl->aggregation_level,
                               &nr_of_candidates,
                               sched_ctrl->search_space);
-  sched_ctrl->coreset = get_coreset(
-      sched_ctrl->active_bwp, sched_ctrl->search_space, 1 /* dedicated */);
   const int cid = sched_ctrl->coreset->controlResourceSetId;
   const uint16_t Y = UE_info->Y[UE_id][cid][slot];
   const int m = UE_info->num_pdcch_cand[UE_id][cid];
@@ -457,14 +453,10 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id,
   sched_ctrl->sched_pusch.slot = sched_slot;
   sched_ctrl->sched_pusch.frame = sched_frame;
 
-  const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
-  sched_ctrl->search_space = get_searchspace(sched_ctrl->active_bwp, target_ss);
   uint8_t nr_of_candidates;
   find_aggregation_candidates(&sched_ctrl->aggregation_level,
                               &nr_of_candidates,
                               sched_ctrl->search_space);
-  sched_ctrl->coreset = get_coreset(
-      sched_ctrl->active_bwp, sched_ctrl->search_space, 1 /* dedicated */);
   const int cid = sched_ctrl->coreset->controlResourceSetId;
   const uint16_t Y = UE_info->Y[UE_id][cid][slot];
   const int m = UE_info->num_pdcch_cand[UE_id][cid];

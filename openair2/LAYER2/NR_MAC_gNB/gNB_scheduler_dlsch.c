@@ -457,8 +457,6 @@ void pf_dl(module_id_t module_id,
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
-    sched_ctrl->search_space = get_searchspace(sched_ctrl->active_bwp, NR_SearchSpace__searchSpaceType_PR_ue_Specific);
-    sched_ctrl->coreset = get_coreset(sched_ctrl->active_bwp, sched_ctrl->search_space, 1 /* dedicated */);
     /* get the PID of a HARQ process awaiting retrnasmission, or -1 otherwise */
     sched_pdsch->dl_harq_pid = sched_ctrl->retrans_dl_harq.head;
 

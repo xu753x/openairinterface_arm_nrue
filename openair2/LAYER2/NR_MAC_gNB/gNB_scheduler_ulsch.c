@@ -643,8 +643,6 @@ void pf_ul(module_id_t module_id,
      * every TTI if we can save it, so check whether dci_format, TDA, or
      * num_dmrs_cdm_grps_no_data has changed and only then recompute */
     sched_ctrl->sched_pusch.time_domain_allocation = tda;
-    sched_ctrl->search_space = get_searchspace(sched_ctrl->active_bwp, NR_SearchSpace__searchSpaceType_PR_ue_Specific);
-    sched_ctrl->coreset = get_coreset(sched_ctrl->active_bwp, sched_ctrl->search_space, 1 /* dedicated */);
     const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
     const int dci_format = f ? NR_UL_DCI_FORMAT_0_1 : NR_UL_DCI_FORMAT_0_0;
     const uint8_t num_dmrs_cdm_grps_no_data = 1;
