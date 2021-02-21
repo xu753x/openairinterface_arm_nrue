@@ -815,10 +815,8 @@ void pf_ul(module_id_t module_id,
   }
 }
 
-bool nr_simple_ulsch_preprocessor(module_id_t module_id,
-                                  frame_t frame,
-                                  sub_frame_t slot,
-                                  uint64_t ulsch_in_slot_bitmap) {
+bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t slot, uint64_t ulsch_in_slot_bitmap)
+{
   gNB_MAC_INST *nr_mac = RC.nrmac[module_id];
   NR_COMMON_channels_t *cc = nr_mac->common_channels;
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
@@ -896,7 +894,7 @@ bool nr_simple_ulsch_preprocessor(module_id_t module_id,
 
 nr_pp_impl_ul nr_init_fr1_ulsch_preprocessor(module_id_t module_id, int CC_id)
 {
-  return nr_simple_ulsch_preprocessor;
+  return nr_fr1_ulsch_preprocessor;
 }
 
 void nr_schedule_ulsch(module_id_t module_id,

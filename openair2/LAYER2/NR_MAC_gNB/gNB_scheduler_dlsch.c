@@ -606,9 +606,8 @@ void pf_dl(module_id_t module_id,
   }
 }
 
-void nr_simple_dlsch_preprocessor(module_id_t module_id,
-                                  frame_t frame,
-                                  sub_frame_t slot) {
+void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t slot)
+{
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
 
   if (UE_info->num_UEs == 0)
@@ -647,7 +646,7 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
 
 nr_pp_impl_dl nr_init_fr1_dlsch_preprocessor(module_id_t module_id, int CC_id)
 {
-  return nr_simple_dlsch_preprocessor;
+  return nr_fr1_dlsch_preprocessor;
 }
 
 void nr_schedule_ue_spec(module_id_t module_id,
