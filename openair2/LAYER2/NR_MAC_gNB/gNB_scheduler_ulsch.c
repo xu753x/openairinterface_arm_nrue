@@ -894,6 +894,11 @@ bool nr_simple_ulsch_preprocessor(module_id_t module_id,
   return true;
 }
 
+nr_pp_impl_ul nr_init_fr1_ulsch_preprocessor(module_id_t module_id, int CC_id)
+{
+  return nr_simple_ulsch_preprocessor;
+}
+
 void nr_schedule_ulsch(module_id_t module_id,
                        frame_t frame,
                        sub_frame_t slot,

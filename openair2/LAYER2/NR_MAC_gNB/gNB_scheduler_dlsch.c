@@ -645,6 +645,11 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
         rballoc_mask);
 }
 
+nr_pp_impl_dl nr_init_fr1_dlsch_preprocessor(module_id_t module_id, int CC_id)
+{
+  return nr_simple_dlsch_preprocessor;
+}
+
 void nr_schedule_ue_spec(module_id_t module_id,
                          frame_t frame,
                          sub_frame_t slot) {

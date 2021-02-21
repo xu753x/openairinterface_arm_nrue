@@ -386,7 +386,6 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
     if (RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req) RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req(&phycfg);
 
     find_SSB_and_RO_available(Mod_idP);
-
   }
   
   if (secondaryCellGroup) {
