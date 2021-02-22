@@ -438,6 +438,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
 }
 
 float thr_ue[MAX_MOBILES_PER_GNB];
+uint32_t pf_tbs[3][28]; // pre-computed, approximate TBS values for PF coefficient
 
 void pf_dl(module_id_t module_id,
            frame_t frame,
@@ -483,25 +484,9 @@ void pf_dl(module_id_t module_id,
         continue;
 
       /* Calculate coeff */
-      sched_pdsch->time_domain_allocation = 2;
       sched_pdsch->mcsTableIdx = 0;
       sched_pdsch->mcs = 9;
-      sched_pdsch->numDmrsCdmGrpsNoData = 1;
-      sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, sched_pdsch->mcsTableIdx);
-      sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, sched_pdsch->mcsTableIdx);
-      int nrOfSymbols = getNrOfSymbols(sched_ctrl->active_bwp, sched_pdsch->time_domain_allocation);
-      const uint8_t N_PRB_DMRS = getN_PRB_DMRS(sched_ctrl->active_bwp, sched_ctrl->sched_pdsch.numDmrsCdmGrpsNoData);
-      const uint8_t N_DMRS_SLOT = get_num_dmrs_symbols(
-          sched_ctrl->active_bwp->bwp_Dedicated->pdsch_Config->choice.setup, scc->dmrs_TypeA_Position, nrOfSymbols);
-      uint32_t tbs = nr_compute_tbs(sched_pdsch->Qm,
-                                    sched_pdsch->R,
-                                    1, // rbSize
-                                    nrOfSymbols,
-                                    N_PRB_DMRS * N_DMRS_SLOT,
-                                    0 /* N_PRB_oh, 0 for initialBWP */,
-                                    0 /* tb_scaling */,
-                                    1 /* nrOfLayers */)
-                     >> 3;
+      uint32_t tbs = pf_tbs[sched_pdsch->mcsTableIdx][sched_pdsch->mcs];
       coeff_ue[UE_id] = (float) tbs / thr_ue[UE_id];
       LOG_D(MAC,"b %d, thr_ue[%d] %f, tbs %d, coeff_ue[%d] %f\n",
             b, UE_id, thr_ue[UE_id], tbs, UE_id, coeff_ue[UE_id]);
@@ -564,23 +549,24 @@ void pf_dl(module_id_t module_id,
       return;
     }
 
-    /* MCS, TDA, etc. has been set above */
-
     // Freq-demain allocation
     while (rbStart < bwpSize && !rballoc_mask[rbStart]) rbStart++;
 
-    const uint8_t N_PRB_DMRS = getN_PRB_DMRS(sched_ctrl->active_bwp, sched_ctrl->sched_pdsch.numDmrsCdmGrpsNoData);
+    /* MCS has been set above */
+    NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
+    sched_pdsch->time_domain_allocation = 2;
+    sched_pdsch->numDmrsCdmGrpsNoData = 1;
+    sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, sched_pdsch->mcsTableIdx);
+    sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, sched_pdsch->mcsTableIdx);
     const int nrOfSymbols = getNrOfSymbols(sched_ctrl->active_bwp, sched_ctrl->sched_pdsch.time_domain_allocation);
+    const uint8_t N_PRB_DMRS = getN_PRB_DMRS(sched_ctrl->active_bwp, sched_pdsch->numDmrsCdmGrpsNoData);
     const uint8_t N_DMRS_SLOT = get_num_dmrs_symbols(
-        sched_ctrl->active_bwp->bwp_Dedicated->pdsch_Config->choice.setup,
-        scc->dmrs_TypeA_Position,
-        nrOfSymbols);
+        sched_ctrl->active_bwp->bwp_Dedicated->pdsch_Config->choice.setup, scc->dmrs_TypeA_Position, nrOfSymbols);
 
     int rbSize = 0;
     uint32_t TBS = 0;
     const int oh = 2 + (sched_ctrl->num_total_bytes >= 256)
                  + 2 * (frame == (sched_ctrl->ta_frame + 10) % 1024);
-    NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
     do {
       rbSize++;
       TBS = nr_compute_tbs(sched_pdsch->Qm,
@@ -644,6 +630,29 @@ void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
 
 nr_pp_impl_dl nr_init_fr1_dlsch_preprocessor(module_id_t module_id, int CC_id)
 {
+  /* in the PF algorithm, we have to use the TBsize to compute the coefficient.
+   * This would include the number of DMRS symbols, which in turn depends on
+   * the time domain allocation. In case we are in a mixed slot, we do not want
+   * to recalculate all these values just, and therefore we provide a look-up
+   * table which should approximately give us the TBsize */
+  for (int mcsTableIdx = 0; mcsTableIdx < 3; ++mcsTableIdx) {
+    for (int mcs = 0; mcs < 29; ++mcs) {
+      if (mcs > 27 && mcsTableIdx == 1)
+        continue;
+      const uint8_t Qm = nr_get_Qm_dl(mcs, mcsTableIdx);
+      const uint16_t R = nr_get_code_rate_dl(mcs, mcsTableIdx);
+      pf_tbs[mcsTableIdx][mcs] = nr_compute_tbs(Qm,
+                                                R,
+                                                1, /* rbSize */
+                                                10, /* hypothetical number of slots */
+                                                0, /* N_PRB_DMRS * N_DMRS_SLOT */
+                                                0 /* N_PRB_oh, 0 for initialBWP */,
+                                                0 /* tb_scaling */,
+                                                1 /* nrOfLayers */)
+                                 >> 3;
+    }
+  }
+
   return nr_fr1_dlsch_preprocessor;
 }
 
