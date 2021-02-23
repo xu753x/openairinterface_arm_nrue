@@ -269,12 +269,12 @@ void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
                               uint8_t num_dmrs_cdm_grps_no_data,
                               NR_pdsch_semi_static_t *ps);
 
-void nr_save_pusch_fields(const NR_ServingCellConfigCommon_t *scc,
-                          const NR_BWP_Uplink_t *ubwp,
-                          long dci_format,
-                          int tda,
-                          uint8_t num_dmrs_cdm_grps_no_data,
-                          NR_sched_pusch_save_t *ps);
+void nr_set_pusch_semi_static(const NR_ServingCellConfigCommon_t *scc,
+                              const NR_BWP_Uplink_t *ubwp,
+                              long dci_format,
+                              int tda,
+                              uint8_t num_dmrs_cdm_grps_no_data,
+                              NR_pusch_semi_static_t *ps);
 
 uint8_t nr_get_tpc(int target, uint8_t cqi, int incr);
 

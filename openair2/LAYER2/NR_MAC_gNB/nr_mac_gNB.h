@@ -305,11 +305,11 @@ typedef struct NR_sched_pucch {
   uint8_t resource_indicator;
 } NR_sched_pucch_t;
 
-/* this struct is a helper: as long as the TDA and DCI format remain the same
- * over the same uBWP and search space, there is no need to recalculate all
- * S/L, MCS table, or DMRS-related parameters over and over again. Hence, we
- * store them in this struct for easy reference. */
-typedef struct NR_sched_pusch_save {
+/* PUSCH semi-static configuration: as long as the TDA and DCI format remain
+ * the same over the same uBWP and search space, there is no need to
+ * recalculate all S/L, MCS table, or DMRS-related parameters over and over
+ * again. Hence, we store them in this struct for easy reference. */
+typedef struct NR_pusch_semi_static_t {
   int dci_format;
   int time_domain_allocation;
   uint8_t num_dmrs_cdm_grps_no_data;
@@ -327,7 +327,7 @@ typedef struct NR_sched_pusch_save {
   uint16_t ul_dmrs_symb_pos;
   uint8_t num_dmrs_symb;
   uint8_t N_PRB_DMRS;
-} NR_sched_pusch_save_t;
+} NR_pusch_semi_static_t;
 
 typedef struct NR_sched_pusch {
   int frame;
@@ -336,9 +336,6 @@ typedef struct NR_sched_pusch {
   /// RB allocation within active uBWP
   uint16_t rbSize;
   uint16_t rbStart;
-
-  // time-domain allocation for scheduled RBs
-  int time_domain_allocation;
 
   /// MCS
   uint8_t mcs;
@@ -521,8 +518,8 @@ typedef struct {
   /// nr_acknack_scheduling()!
   NR_sched_pucch_t sched_pucch[3];
 
-  /// PUSCH save: PUSCH "configuration" that is not cleared across TTIs
-  NR_sched_pusch_save_t pusch_save;
+  /// PUSCH semi-static configuration: is not cleared across TTIs
+  NR_pusch_semi_static_t pusch_semi_static;
   /// Sched PDSCH: scheduling decisions, copied into HARQ and cleared every TTI
   NR_sched_pusch_t sched_pusch;
 

@@ -188,7 +188,7 @@ nr_ul_preprocessor_phytest()], multiple users in FR1
       Currently, this is done using pf_ul() which implements a basic
       proportional fair scheduler:
       * for every UE, check for retransmission and allocate as necessary
-      * Calculate DMRS stuff (nr_save_pusch_fields())
+      * Calculate DMRS stuff (nr_set_pusch_semi_static())
       * Calculate the PF coefficient and put eligible UEs into a list
       * Allocate resources to the UE(s) with the highest coefficient
   4)  Mark used resources in vrb_map_UL.

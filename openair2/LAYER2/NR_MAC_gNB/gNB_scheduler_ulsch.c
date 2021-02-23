@@ -642,15 +642,14 @@ void pf_ul(module_id_t module_id,
     /* we want to avoid a lengthy deduction of DMRS and other parameters in
      * every TTI if we can save it, so check whether dci_format, TDA, or
      * num_dmrs_cdm_grps_no_data has changed and only then recompute */
-    sched_ctrl->sched_pusch.time_domain_allocation = tda;
     const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
     const int dci_format = f ? NR_UL_DCI_FORMAT_0_1 : NR_UL_DCI_FORMAT_0_0;
     const uint8_t num_dmrs_cdm_grps_no_data = 1;
-    NR_sched_pusch_save_t *ps = &sched_ctrl->pusch_save;
+    NR_pusch_semi_static_t *ps = &sched_ctrl->pusch_semi_static;
     if (ps->time_domain_allocation != tda
         || ps->dci_format != dci_format
         || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data)
-      nr_save_pusch_fields(scc, sched_ctrl->active_ubwp, dci_format, tda, num_dmrs_cdm_grps_no_data, ps);
+      nr_set_pusch_semi_static(scc, sched_ctrl->active_ubwp, dci_format, tda, num_dmrs_cdm_grps_no_data, ps);
 
     /* Check if retransmission is necessary */
     sched_ctrl->sched_pusch.ul_harq_pid = sched_ctrl->retrans_ul_harq.head;
@@ -776,7 +775,7 @@ void pf_ul(module_id_t module_id,
     int rbStart = NRRIV2PRBOFFSET(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
-
+    NR_pusch_semi_static_t *ps = &sched_ctrl->pusch_semi_static;
 
     while (rbStart < bwpSize && !rballoc_mask[rbStart]) rbStart++;
     sched_pusch->rbStart = rbStart;
@@ -795,8 +794,8 @@ void pf_ul(module_id_t module_id,
       sched_pusch->tb_size = nr_compute_tbs(sched_pusch->Qm,
                                             sched_pusch->R,
                                             sched_pusch->rbSize,
-                                            sched_ctrl->pusch_save.nrOfSymbols,
-                                            sched_ctrl->pusch_save.N_PRB_DMRS * sched_ctrl->pusch_save.num_dmrs_symb,
+                                            ps->nrOfSymbols,
+                                            ps->N_PRB_DMRS * ps->num_dmrs_symb,
                                             0, // nb_rb_oh
                                             0,
                                             1 /* NrOfLayers */)
@@ -961,8 +960,8 @@ void nr_schedule_ulsch(module_id_t module_id,
 
     /* pre-computed PUSCH values that only change if time domain allocation,
      * DCI format, or DMRS parameters change. Updated in the preprocessor
-     * through nr_save_pusch_fields() */
-    NR_sched_pusch_save_t *ps = &sched_ctrl->pusch_save;
+     * through nr_set_pusch_semi_static() */
+    NR_pusch_semi_static_t *ps = &sched_ctrl->pusch_semi_static;
 
     /* Statistics */
     UE_info->mac_stats[UE_id].ulsch_rounds[cur_harq->round]++;
