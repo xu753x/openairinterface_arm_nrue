@@ -250,15 +250,10 @@ void prepare_dci(const NR_CellGroupConfig_t *secondaryCellGroup,
                  int bwp_id);
 
 /* find coreset within the search space */
-NR_ControlResourceSet_t *get_coreset(NR_BWP_Downlink_t *bwp,
-                                     NR_SearchSpace_t *ss,
-                                     int ss_type);
+NR_ControlResourceSet_t *get_coreset(const NR_BWP_Downlink_t *bwp, const NR_SearchSpace_t *ss, int ss_type);
 
 /* find a search space within a BWP */
-NR_SearchSpace_t *get_searchspace(
-    NR_BWP_Downlink_t *bwp,
-    NR_SearchSpace__searchSpaceType_PR target_ss);
-
+NR_SearchSpace_t *get_searchspace(const NR_BWP_Downlink_t *bwp, NR_SearchSpace__searchSpaceType_PR target_ss);
 
 long get_K2(NR_BWP_Uplink_t *ubwp, int time_domain_assignment, int mu);
 

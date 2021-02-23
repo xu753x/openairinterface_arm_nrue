@@ -120,11 +120,10 @@ static inline uint8_t get_max_candidates(uint8_t scs) {
 static inline uint8_t get_max_cces(uint8_t scs) {
   AssertFatal(scs<4, "Invalid PDCCH subcarrier spacing %d\n", scs);
   return (nr_max_number_of_cces_per_slot[scs]);
-} 
+}
 
-NR_ControlResourceSet_t *get_coreset(NR_BWP_Downlink_t *bwp,
-                                     NR_SearchSpace_t *ss,
-                                     int ss_type) {
+NR_ControlResourceSet_t *get_coreset(const NR_BWP_Downlink_t *bwp, const NR_SearchSpace_t *ss, int ss_type)
+{
   NR_ControlResourceSetId_t coreset_id = *ss->controlResourceSetId;
   if (ss_type == 0) { // common search space
     AssertFatal(coreset_id != 0, "coreset0 currently not supported\n");
@@ -146,9 +145,8 @@ NR_ControlResourceSet_t *get_coreset(NR_BWP_Downlink_t *bwp,
   }
 }
 
-NR_SearchSpace_t *get_searchspace(
-    NR_BWP_Downlink_t *bwp,
-    NR_SearchSpace__searchSpaceType_PR target_ss) {
+NR_SearchSpace_t *get_searchspace(const NR_BWP_Downlink_t *bwp, NR_SearchSpace__searchSpaceType_PR target_ss)
+{
   DevAssert(bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList);
   DevAssert(bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.count > 0);
 
