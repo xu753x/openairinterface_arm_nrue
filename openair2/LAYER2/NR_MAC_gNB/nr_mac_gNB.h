@@ -697,6 +697,10 @@ typedef struct gNB_MAC_INST_s {
   /// so we can have it for every slot as a function of the numerology
   int *pucch_index_used[MAX_NUM_BWP];
 
+  /// Lookup for preferred time domain allocation for BWP, in DL, slots
+  /// dynamically allocated
+  int *preferred_dl_tda[MAX_NUM_BWP];
+
   /// DL preprocessor for differentiated scheduling
   nr_pp_impl_dl pre_processor_dl;
   /// UL preprocessor for differentiated scheduling

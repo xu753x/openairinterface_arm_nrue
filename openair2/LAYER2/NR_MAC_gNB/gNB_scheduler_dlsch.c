@@ -56,6 +56,89 @@
 #define WORD 32
 //#define SIZE_OF_POINTER sizeof (void *)
 
+void calculate_preferred_dl_tda(module_id_t module_id, NR_CellGroupConfig_t *secondaryCellGroup, int bwp_id)
+{
+  gNB_MAC_INST *nrmac = RC.nrmac[module_id];
+  if (nrmac->preferred_dl_tda[bwp_id])
+    return;
+
+  /* there is a mixed slot only when in TDD */
+  NR_ServingCellConfigCommon_t *scc = nrmac->common_channels->ServingCellConfigCommon;
+  const NR_TDD_UL_DL_Pattern_t *tdd =
+      scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
+  const int symb_dlMixed = tdd ? (1 << tdd->nrofDownlinkSymbols) - 1 : 0;
+
+  const NR_ServingCellConfig_t *servingCellConfig = secondaryCellGroup->spCellConfig->spCellConfigDedicated;
+  const struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList = servingCellConfig->downlinkBWP_ToAddModList;
+  AssertFatal(bwpList->list.count == 1,
+              "downlinkBWP_ToAddModList has %d BWP but cannot handle more in %s!\n",
+              bwpList->list.count,
+              __func__);
+  const NR_BWP_Downlink_t *bwp = bwpList->list.array[bwp_id - 1];
+
+  const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
+  const NR_SearchSpace_t *search_space = get_searchspace(bwp, target_ss);
+  const NR_ControlResourceSet_t *coreset = get_coreset(bwp, search_space, 1 /* dedicated */);
+  // get coreset symbol "map"
+  const uint16_t symb_coreset = (1 << coreset->duration) - 1;
+
+  /* check that TDA index 0 fits into DL and does not overlap CORESET */
+  const struct NR_PDSCH_TimeDomainResourceAllocationList *tdaList =
+      bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
+  AssertFatal(tdaList->list.count >= 1, "need to have at least one TDA for DL slots\n");
+  const NR_PDSCH_TimeDomainResourceAllocation_t *tdaP_DL = tdaList->list.array[0];
+  AssertFatal(!tdaP_DL->k0 || *tdaP_DL->k0 == 0,
+              "TimeDomainAllocation at index 1: non-null k0 (%ld) is not supported by the scheduler\n",
+              *tdaP_DL->k0);
+  int start, len;
+  SLIV2SL(tdaP_DL->startSymbolAndLength, &start, &len);
+  const uint16_t symb_tda = ((1 << len) - 1) << start;
+  // check whether coreset and TDA overlap: then we cannot use it. Note that
+  // here we assume that the coreset is scheduled every slot (which it
+  // currently is) and starting at symbol 0
+  AssertFatal((symb_coreset & symb_tda) == 0, "TDA index 0 for DL overlaps with CORESET\n");
+
+  /* check that TDA index 1 fits into DL part of mixed slot, if it exists */
+  int tdaMi = -1;
+  if (tdaList->list.count > 1) {
+    const NR_PDSCH_TimeDomainResourceAllocation_t *tdaP_Mi = tdaList->list.array[1];
+    AssertFatal(!tdaP_Mi->k0 || *tdaP_Mi->k0 == 0,
+                "TimeDomainAllocation at index 1: non-null k0 (%ld) is not supported by the scheduler\n",
+                *tdaP_Mi->k0);
+    int start, len;
+    SLIV2SL(tdaP_Mi->startSymbolAndLength, &start, &len);
+    const uint16_t symb_tda = ((1 << start) - 1) << start;
+    // check whether coreset and TDA overlap: then, we cannot use it. Also,
+    // check whether TDA is entirely within mixed slot DL. Note that
+    // here we assume that the coreset is scheduled every slot (which it
+    // currently is)
+    if ((symb_coreset & symb_tda) == 0 && (symb_dlMixed & symb_tda) == symb_tda) {
+      tdaMi = 1;
+    } else {
+      LOG_E(MAC,
+            "TDA index 1 DL overlaps with CORESET or is not entirely in mixed slot (symb_coreset %x symb_dlMixed %x symb_tda %x), won't schedule DL mixed slot\n",
+            symb_coreset,
+            symb_dlMixed,
+            symb_tda);
+    }
+  }
+
+  const uint8_t slots_per_frame[5] = {10, 20, 40, 80, 160};
+  const int n = slots_per_frame[*scc->ssbSubcarrierSpacing];
+  nrmac->preferred_dl_tda[bwp_id] = malloc(n * sizeof(*nrmac->preferred_dl_tda[bwp_id]));
+
+  const int nr_mix_slots = tdd ? tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0 : 0;
+  const int nr_slots_period = tdd ? tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + nr_mix_slots : n;
+  for (int i = 0; i < n; ++i) {
+    nrmac->preferred_dl_tda[bwp_id][i] = -1;
+    if (!tdd || i % nr_slots_period < tdd->nrofDownlinkSlots)
+      nrmac->preferred_dl_tda[bwp_id][i] = 0;
+    else if (tdd && nr_mix_slots && i % nr_slots_period == tdd->nrofDownlinkSlots)
+      nrmac->preferred_dl_tda[bwp_id][i] = tdaMi;
+    LOG_I(MAC, "slot %d preferred_dl_tda %d\n", i, nrmac->preferred_dl_tda[bwp_id][i]);
+  }
+}
+
 // Compute and write all MAC CEs and subheaders, and return number of written
 // bytes
 int nr_write_ce_dlsch_pdu(module_id_t module_idP,
