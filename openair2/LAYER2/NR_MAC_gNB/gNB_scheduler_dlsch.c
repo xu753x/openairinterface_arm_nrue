@@ -427,30 +427,88 @@ bool allocate_dl_retransmission(module_id_t module_id,
                                 int UE_id,
                                 int current_harq_pid)
 {
+  const NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels->ServingCellConfigCommon;
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
   NR_sched_pdsch_t *retInfo = &sched_ctrl->harq_processes[current_harq_pid].sched_pdsch;
   const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
   int rbStart = NRRIV2PRBOFFSET(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  const uint8_t num_dmrs_cdm_grps_no_data = 1;
 
-  /* Check the resource is enough for retransmission */
-  /* ensure that there is a free place for RB allocation */
   int rbSize = 0;
-  while (rbSize < retInfo->rbSize) {
-    rbStart += rbSize; /* last iteration rbSize was not enough, skip it */
-    rbSize = 0;
-    while (rbStart < bwpSize && !rballoc_mask[rbStart]) rbStart++;
-    if (rbStart >= bwpSize) {
-      LOG_D(MAC,
-            "cannot allocate retransmission for UE %d/RNTI %04x: no resources\n",
-            UE_id,
-            UE_info->rnti[UE_id]);
-      return false;
+  const int tda = RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot];
+  if (tda == retInfo->time_domain_allocation) {
+    /* Check that there are enough resources for retransmission */
+    while (rbSize < retInfo->rbSize) {
+      rbStart += rbSize; /* last iteration rbSize was not enough, skip it */
+      rbSize = 0;
+      while (rbStart < bwpSize && !rballoc_mask[rbStart])
+        rbStart++;
+      if (rbStart >= bwpSize) {
+        LOG_D(MAC, "cannot allocate retransmission for UE %d/RNTI %04x: no resources\n", UE_id, UE_info->rnti[UE_id]);
+        return false;
+      }
+      while (rbStart + rbSize < bwpSize && rballoc_mask[rbStart + rbSize] && rbSize < retInfo->rbSize)
+        rbSize++;
     }
-    while (rbStart + rbSize < bwpSize
-           && rballoc_mask[rbStart + rbSize]
-           && rbSize < retInfo->rbSize)
+    /* check whether we need to switch the TDA allocation since the last
+     * (re-)transmission */
+    NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
+    if (ps->time_domain_allocation != tda || ps->numDmrsCdmGrpsNoData != num_dmrs_cdm_grps_no_data)
+      nr_set_pdsch_semi_static(
+          scc, UE_info->secondaryCellGroup[UE_id], sched_ctrl->active_bwp, tda, num_dmrs_cdm_grps_no_data, ps);
+  } else {
+    /* the retransmission will use a different time domain allocation, check
+     * that we have enough resources */
+    while (rbStart < bwpSize && !rballoc_mask[rbStart])
+      rbStart++;
+    while (rbStart + rbSize < bwpSize && rballoc_mask[rbStart + rbSize])
       rbSize++;
+    NR_pdsch_semi_static_t temp_ps;
+    nr_set_pdsch_semi_static(
+        scc, UE_info->secondaryCellGroup[UE_id], sched_ctrl->active_bwp, tda, num_dmrs_cdm_grps_no_data, &temp_ps);
+    /* perform binary search to find whether we can have a TBS sufficiently
+     * large within rbSize RBs */
+    int hi = rbSize;
+    int lo = 1;
+    for (int p = (hi + lo) / 2; lo + 1 < hi; p = (hi + lo) / 2) {
+      const uint32_t TBS = nr_compute_tbs(retInfo->Qm,
+                                          retInfo->R,
+                                          p,
+                                          temp_ps.nrOfSymbols,
+                                          temp_ps.N_PRB_DMRS * temp_ps.N_DMRS_SLOT,
+                                          0 /* N_PRB_oh, 0 for initialBWP */,
+                                          0 /* tb_scaling */,
+                                          1 /* nrOfLayers */)
+                           >> 3;
+      if (retInfo->tb_size == TBS) {
+        hi = p;
+        break;
+      } else if (retInfo->tb_size < TBS) {
+        hi = p;
+      } else {
+        lo = p;
+      }
+    }
+    const uint32_t TBS = nr_compute_tbs(retInfo->Qm,
+                                        retInfo->R,
+                                        hi,
+                                        temp_ps.nrOfSymbols,
+                                        temp_ps.N_PRB_DMRS * temp_ps.N_DMRS_SLOT,
+                                        0 /* N_PRB_oh, 0 for initialBWP */,
+                                        0 /* tb_scaling */,
+                                        1 /* nrOfLayers */)
+                         >> 3;
+    if (TBS != retInfo->tb_size) {
+      LOG_D(MAC, "new TBsize %d of new TDA does not match old TBS %d\n", TBS, retInfo->tb_size);
+      return false; /* the maximum TBsize we might have is smaller than what we need */
+    }
+    /* we can allocate it. Overwrite the time_domain_allocation, the number
+     * of RBs, and the new TB size. The rest is done below */
+    retInfo->tb_size = TBS;
+    retInfo->rbSize = hi;
+    retInfo->time_domain_allocation = tda;
+    sched_ctrl->pdsch_semi_static = temp_ps;
   }
 
   /* Find a free CCE */
@@ -608,7 +666,7 @@ void pf_dl(module_id_t module_id,
 
     /* MCS has been set above */
     const uint8_t num_dmrs_cdm_grps_no_data = 1;
-    const int tda = 2;
+    const int tda = RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot];
     NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
     NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
     if (ps->time_domain_allocation != tda || ps->numDmrsCdmGrpsNoData != num_dmrs_cdm_grps_no_data)
@@ -1103,6 +1161,9 @@ void nr_schedule_ue_spec(module_id_t module_id,
 
       /* save retransmission information */
       harq->sched_pdsch = *sched_pdsch;
+      /* save which time allocation has been used, to be used on
+       * retransmissions */
+      harq->sched_pdsch.time_domain_allocation = ps->time_domain_allocation;
 
       // ta command is sent, values are reset
       if (sched_ctrl->ta_apply) {

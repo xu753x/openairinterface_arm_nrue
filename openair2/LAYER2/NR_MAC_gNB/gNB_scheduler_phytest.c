@@ -358,7 +358,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
   sched_pdsch->rbStart = rbStart;
   sched_pdsch->rbSize = rbSize;
-  const int tda = 2;
+  const int tda = RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot];
   const uint8_t num_dmrs_cdm_grps_no_data = 1;
   if (ps->time_domain_allocation != tda || ps->numDmrsCdmGrpsNoData != num_dmrs_cdm_grps_no_data)
     nr_set_pdsch_semi_static(

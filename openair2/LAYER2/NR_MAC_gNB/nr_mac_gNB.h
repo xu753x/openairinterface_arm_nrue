@@ -383,6 +383,11 @@ typedef struct NR_sched_pdsch {
 
   /// DL HARQ PID to use for this UE, or -1 for "any new"
   int8_t dl_harq_pid;
+
+  /// the Time Domain Allocation used for this transmission. Note that this is
+  /// only important for retransmissions; otherwise, the TDA in
+  /// NR_pdsch_semi_static_t has precedence
+  int time_domain_allocation;
 } NR_sched_pdsch_t;
 
 typedef struct NR_UE_harq {
