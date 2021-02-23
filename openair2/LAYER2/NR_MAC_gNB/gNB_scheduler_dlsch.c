@@ -302,35 +302,6 @@ int nr_write_ce_dlsch_pdu(module_id_t module_idP,
   return offset;
 }
 
-int getNrOfSymbols(NR_BWP_Downlink_t *bwp, int tda) {
-  struct NR_PDSCH_TimeDomainResourceAllocationList *tdaList =
-    bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
-  AssertFatal(tda < tdaList->list.count,
-              "time_domain_allocation %d>=%d\n",
-              tda,
-              tdaList->list.count);
-
-  const int startSymbolAndLength = tdaList->list.array[tda]->startSymbolAndLength;
-  int startSymbolIndex, nrOfSymbols;
-  SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
-  return nrOfSymbols;
-}
-
-nfapi_nr_dmrs_type_e getDmrsConfigType(NR_BWP_Downlink_t *bwp) {
-  return bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1;
-}
-
-uint8_t getN_PRB_DMRS(NR_BWP_Downlink_t *bwp, int numDmrsCdmGrpsNoData) {
-  const nfapi_nr_dmrs_type_e dmrsConfigType = getDmrsConfigType(bwp);
-  if (dmrsConfigType == NFAPI_NR_DMRS_TYPE1) {
-    // if no data in dmrs cdm group is 1 only even REs have no data
-    // if no data in dmrs cdm group is 2 both odd and even REs have no data
-    return numDmrsCdmGrpsNoData * 6;
-  } else {
-    return numDmrsCdmGrpsNoData * 4;
-  }
-}
-
 void nr_store_dlsch_buffer(module_id_t module_id,
                            frame_t frame,
                            sub_frame_t slot) {
@@ -458,6 +429,7 @@ void pf_dl(module_id_t module_id,
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
+    NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
     /* get the PID of a HARQ process awaiting retrnasmission, or -1 otherwise */
     sched_pdsch->dl_harq_pid = sched_ctrl->retrans_dl_harq.head;
 
@@ -484,9 +456,8 @@ void pf_dl(module_id_t module_id,
         continue;
 
       /* Calculate coeff */
-      sched_pdsch->mcsTableIdx = 0;
       sched_pdsch->mcs = 9;
-      uint32_t tbs = pf_tbs[sched_pdsch->mcsTableIdx][sched_pdsch->mcs];
+      uint32_t tbs = pf_tbs[ps->mcsTableIdx][sched_pdsch->mcs];
       coeff_ue[UE_id] = (float) tbs / thr_ue[UE_id];
       LOG_D(MAC,"b %d, thr_ue[%d] %f, tbs %d, coeff_ue[%d] %f\n",
             b, UE_id, thr_ue[UE_id], tbs, UE_id, coeff_ue[UE_id]);
@@ -553,15 +524,15 @@ void pf_dl(module_id_t module_id,
     while (rbStart < bwpSize && !rballoc_mask[rbStart]) rbStart++;
 
     /* MCS has been set above */
+    const uint8_t num_dmrs_cdm_grps_no_data = 1;
+    const int tda = 2;
     NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
-    sched_pdsch->time_domain_allocation = 2;
-    sched_pdsch->numDmrsCdmGrpsNoData = 1;
-    sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, sched_pdsch->mcsTableIdx);
-    sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, sched_pdsch->mcsTableIdx);
-    const int nrOfSymbols = getNrOfSymbols(sched_ctrl->active_bwp, sched_ctrl->sched_pdsch.time_domain_allocation);
-    const uint8_t N_PRB_DMRS = getN_PRB_DMRS(sched_ctrl->active_bwp, sched_pdsch->numDmrsCdmGrpsNoData);
-    const uint8_t N_DMRS_SLOT = get_num_dmrs_symbols(
-        sched_ctrl->active_bwp->bwp_Dedicated->pdsch_Config->choice.setup, scc->dmrs_TypeA_Position, nrOfSymbols);
+    NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
+    if (ps->time_domain_allocation != tda || ps->numDmrsCdmGrpsNoData != num_dmrs_cdm_grps_no_data)
+      nr_set_pdsch_semi_static(
+          scc, UE_info->secondaryCellGroup[UE_id], sched_ctrl->active_bwp, tda, num_dmrs_cdm_grps_no_data, ps);
+    sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
+    sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, ps->mcsTableIdx);
 
     int rbSize = 0;
     uint32_t TBS = 0;
@@ -572,8 +543,8 @@ void pf_dl(module_id_t module_id,
       TBS = nr_compute_tbs(sched_pdsch->Qm,
                            sched_pdsch->R,
                            rbSize,
-                           nrOfSymbols,
-                           N_PRB_DMRS * N_DMRS_SLOT,
+                           ps->nrOfSymbols,
+                           ps->N_PRB_DMRS * ps->N_DMRS_SLOT,
                            0 /* N_PRB_oh, 0 for initialBWP */,
                            0 /* tb_scaling */,
                            1 /* nrOfLayers */)
@@ -691,22 +662,15 @@ void nr_schedule_ue_spec(module_id_t module_id,
     const rnti_t rnti = UE_info->rnti[UE_id];
 
     /* POST processing */
-    struct NR_PDSCH_TimeDomainResourceAllocationList *tdaList =
-      sched_ctrl->active_bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
-    AssertFatal(sched_pdsch->time_domain_allocation < tdaList->list.count,
-                "time_domain_allocation %d>=%d\n",
-                sched_pdsch->time_domain_allocation,
-                tdaList->list.count);
-
-    const int startSymbolAndLength = tdaList->list.array[sched_pdsch->time_domain_allocation]->startSymbolAndLength;
-    int startSymbolIndex, nrOfSymbols;
-    SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
-
-    const nfapi_nr_dmrs_type_e dmrsConfigType = getDmrsConfigType(sched_ctrl->active_bwp);
     const int nrOfLayers = 1;
     const uint16_t R = sched_pdsch->R;
     const uint8_t Qm = sched_pdsch->Qm;
     const uint32_t TBS = sched_pdsch->tb_size;
+
+    /* pre-computed PDSCH values that only change if time domain
+     * allocation/DMRS parameters change. Updated in the preprocessor through
+     * nr_set_pdsch_semi_static() */
+    NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
 
     int8_t current_harq_pid = sched_pdsch->dl_harq_pid;
     if (current_harq_pid < 0) {
@@ -742,8 +706,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
           rnti,
           sched_pdsch->rbStart,
           sched_pdsch->rbSize,
-          startSymbolIndex,
-          nrOfSymbols,
+          ps->startSymbolIndex,
+          ps->nrOfSymbols,
           sched_pdsch->mcs,
           TBS,
           current_harq_pid,
@@ -801,7 +765,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     pdsch_pdu->targetCodeRate[0] = R;
     pdsch_pdu->qamModOrder[0] = Qm;
     pdsch_pdu->mcsIndex[0] = sched_pdsch->mcs;
-    pdsch_pdu->mcsTable[0] = sched_pdsch->mcsTableIdx;
+    pdsch_pdu->mcsTable[0] = ps->mcsTableIdx;
     pdsch_pdu->rvIndex[0] = nr_rv_round_map[harq->round];
     pdsch_pdu->TBSize[0] = TBS;
 
@@ -811,14 +775,11 @@ void nr_schedule_ue_spec(module_id_t module_id,
     pdsch_pdu->refPoint = 0; // Point A
 
     // DMRS
-    pdsch_pdu->dlDmrsSymbPos =
-        fill_dmrs_mask(bwp->bwp_Dedicated->pdsch_Config->choice.setup,
-                       scc->dmrs_TypeA_Position,
-                       nrOfSymbols);
-    pdsch_pdu->dmrsConfigType = dmrsConfigType;
+    pdsch_pdu->dlDmrsSymbPos = ps->dl_dmrs_symb_pos;
+    pdsch_pdu->dmrsConfigType = ps->dmrsConfigType;
     pdsch_pdu->dlDmrsScramblingId = *scc->physCellId;
     pdsch_pdu->SCID = 0;
-    pdsch_pdu->numDmrsCdmGrpsNoData = sched_pdsch->numDmrsCdmGrpsNoData;
+    pdsch_pdu->numDmrsCdmGrpsNoData = ps->numDmrsCdmGrpsNoData;
     pdsch_pdu->dmrsPorts = 1;
 
     // Pdsch Allocation in frequency domain
@@ -828,8 +789,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
     pdsch_pdu->VRBtoPRBMapping = 1; // non-interleaved, check if this is ok for initialBWP
 
     // Resource Allocation in time domain
-    pdsch_pdu->StartSymbolIndex = startSymbolIndex;
-    pdsch_pdu->NrOfSymbols = nrOfSymbols;
+    pdsch_pdu->StartSymbolIndex = ps->startSymbolIndex;
+    pdsch_pdu->NrOfSymbols = ps->nrOfSymbols;
 
     /* Check and validate PTRS values */
     struct NR_SetupRelease_PTRS_DownlinkConfig *phaseTrackingRS =
@@ -883,7 +844,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
             pdsch_pdu->rbSize,
             pdsch_pdu->rbStart,
             pdsch_pdu->BWPSize);
-    dci_payload.time_domain_assignment.val = sched_pdsch->time_domain_allocation;
+    dci_payload.time_domain_assignment.val = ps->time_domain_allocation;
     dci_payload.mcs = sched_pdsch->mcs;
     dci_payload.rv = pdsch_pdu->rvIndex[0];
     dci_payload.harq_pid = current_harq_pid;

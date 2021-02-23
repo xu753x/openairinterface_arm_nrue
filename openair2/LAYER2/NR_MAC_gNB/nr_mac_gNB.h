@@ -352,18 +352,32 @@ typedef struct NR_sched_pusch {
   int8_t ul_harq_pid;
 } NR_sched_pusch_t;
 
+/* PDSCH semi-static configuratio: as long as the TDA/DMRS/mcsTable remains the
+ * same, there is no need to recalculate all S/L or DMRS-related parameters
+ * over and over again.  Hence, we store them in this struct for easy
+ * reference. */
+typedef struct NR_pdsch_semi_static {
+  int time_domain_allocation;
+  uint8_t numDmrsCdmGrpsNoData;
+
+  int startSymbolIndex;
+  int nrOfSymbols;
+
+  uint8_t mcsTableIdx;
+
+  uint8_t N_PRB_DMRS;
+  uint8_t N_DMRS_SLOT;
+  uint16_t dl_dmrs_symb_pos;
+  nfapi_nr_dmrs_type_e dmrsConfigType;
+} NR_pdsch_semi_static_t;
+
 typedef struct NR_sched_pdsch {
   /// RB allocation within active BWP
   uint16_t rbSize;
   uint16_t rbStart;
 
-  // time-domain allocation for scheduled RBs
-  int time_domain_allocation;
-
   /// MCS-related infos
-  uint8_t mcsTableIdx;
   uint8_t mcs;
-  uint8_t numDmrsCdmGrpsNoData;
 
   /// TBS-related info
   uint16_t R;
@@ -522,6 +536,9 @@ typedef struct {
   /// PHR info: nominal UE transmit power levels (dBm)
   int pcmax;
 
+  /// PDSCH semi-static configuration: is not cleared across TTIs
+  NR_pdsch_semi_static_t pdsch_semi_static;
+  /// Sched PDSCH: scheduling decisions, copied into HARQ and cleared every TTI
   NR_sched_pdsch_t sched_pdsch;
 
   /// total amount of data awaiting for this UE
@@ -555,7 +572,6 @@ typedef struct {
   NR_list_t feedback_ul_harq;
   /// UL HARQ processes that await retransmission
   NR_list_t retrans_ul_harq;
-  int dummy;
   NR_UE_mac_ce_ctrl_t UE_mac_ce_ctrl;// MAC CE related information
 } NR_UE_sched_ctrl_t;
 

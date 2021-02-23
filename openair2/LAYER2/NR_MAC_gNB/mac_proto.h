@@ -262,6 +262,13 @@ NR_SearchSpace_t *get_searchspace(
 
 long get_K2(NR_BWP_Uplink_t *ubwp, int time_domain_assignment, int mu);
 
+void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
+                              const NR_CellGroupConfig_t *secondaryCellGroup,
+                              const NR_BWP_Downlink_t *bwp,
+                              int tda,
+                              uint8_t num_dmrs_cdm_grps_no_data,
+                              NR_pdsch_semi_static_t *ps);
+
 void nr_save_pusch_fields(const NR_ServingCellConfigCommon_t *scc,
                           const NR_BWP_Uplink_t *ubwp,
                           long dci_format,

@@ -212,6 +212,46 @@ int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
 
 }
 
+void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
+                              const NR_CellGroupConfig_t *secondaryCellGroup,
+                              const NR_BWP_Downlink_t *bwp,
+                              int tda,
+                              uint8_t num_dmrs_cdm_grps_no_data,
+                              NR_pdsch_semi_static_t *ps)
+{
+  ps->time_domain_allocation = tda;
+
+  const struct NR_PDSCH_TimeDomainResourceAllocationList *tdaList =
+      bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
+  AssertFatal(tda < tdaList->list.count, "time_domain_allocation %d>=%d\n", tda, tdaList->list.count);
+  const int startSymbolAndLength = tdaList->list.array[tda]->startSymbolAndLength;
+  SLIV2SL(startSymbolAndLength, &ps->startSymbolIndex, &ps->nrOfSymbols);
+
+  if (!secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup
+           ->mcs_Table)
+    ps->mcsTableIdx = 0;
+  else if (*secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup
+                ->mcs_Table
+           == 0)
+    ps->mcsTableIdx = 1;
+  else
+    ps->mcsTableIdx = 2;
+
+  ps->numDmrsCdmGrpsNoData = num_dmrs_cdm_grps_no_data;
+  ps->dmrsConfigType =
+      bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type
+              == NULL
+          ? 0
+          : 1;
+  // if no data in dmrs cdm group is 1 only even REs have no data
+  // if no data in dmrs cdm group is 2 both odd and even REs have no data
+  ps->N_PRB_DMRS = num_dmrs_cdm_grps_no_data * (ps->dmrsConfigType == NFAPI_NR_DMRS_TYPE1 ? 6 : 4);
+  ps->N_DMRS_SLOT =
+      get_num_dmrs_symbols(bwp->bwp_Dedicated->pdsch_Config->choice.setup, scc->dmrs_TypeA_Position, ps->nrOfSymbols);
+  ps->dl_dmrs_symb_pos =
+      fill_dmrs_mask(bwp->bwp_Dedicated->pdsch_Config->choice.setup, scc->dmrs_TypeA_Position, ps->nrOfSymbols);
+}
+
 void nr_save_pusch_fields(const NR_ServingCellConfigCommon_t *scc,
                           const NR_BWP_Uplink_t *ubwp,
                           long dci_format,
@@ -1645,6 +1685,7 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *secon
     sched_ctrl->ta_update = 31;
     sched_ctrl->ta_apply = false;
     /* set illegal time domain allocation to force recomputation of all fields */
+    sched_ctrl->pdsch_semi_static.time_domain_allocation = -1;
     sched_ctrl->pusch_save.time_domain_allocation = -1;
     const NR_ServingCellConfig_t *servingCellConfig = secondaryCellGroup->spCellConfig->spCellConfigDedicated;
 
