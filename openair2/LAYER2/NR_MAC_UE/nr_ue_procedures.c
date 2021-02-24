@@ -101,11 +101,11 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
                         void *pduP,
                         uint16_t cell_id)
 {
-  LOG_I(MAC,"[L2][MAC] decode mib\n");
+  LOG_D(MAC,"[L2][MAC] decode mib\n");
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
-  nr_mac_rrc_data_ind_ue( module_id, cc_id, gNB_index, NR_BCCH_BCH, (uint8_t *) pduP, 3 );    //  fixed 3 bytes MIB PDU
+  nr_mac_rrc_data_ind_ue( module_id, cc_id, gNB_index, 0, 0, 0, NR_BCCH_BCH, (uint8_t *) pduP, 3 );    //  fixed 3 bytes MIB PDU
     
   AssertFatal(mac->mib != NULL, "nr_ue_decode_mib() mac->mib == NULL\n");
   //if(mac->mib != NULL){
@@ -161,7 +161,7 @@ int8_t nr_ue_decode_sib1(module_id_t module_id,
                          uint8_t *pduP,
                          uint32_t pdu_len) {
   LOG_D(MAC, "Decode sib1\n");
-  nr_mac_rrc_data_ind_ue(module_id, cc_id, gNB_index, NR_BCCH_DL_SCH, (uint8_t *) pduP, pdu_len);
+  nr_mac_rrc_data_ind_ue(module_id, cc_id, gNB_index, 0, 0, 0, NR_BCCH_DL_SCH, (uint8_t *) pduP, pdu_len);
   return 0;
 }
 
@@ -1771,7 +1771,11 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
                     mac_ce_len |= (uint16_t)(((NR_MAC_SUBHEADER_LONG *)pduP)->L2)<<8;
                     mac_subheader_len = 3;
                 }
-
+                else
+                {
+                    mac_sdu_len |= (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pduP)->L;
+                }
+                nr_mac_rrc_data_ind_ue(module_idP, CC_id, gNB_index, frameP, 0, mac->crnti, CCCH, pduP+mac_subheader_len, mac_sdu_len);
                 break;
 
             case DL_SCH_LCID_TCI_STATE_ACT_UE_SPEC_PDSCH:
@@ -1927,9 +1931,7 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
                     LOG_T(MAC, "\n");
                 #endif
 
-                if (IS_SOFTMODEM_NOS1){
-                  if (rx_lcid < NB_RB_MAX && rx_lcid >= DL_SCH_LCID_DTCH) {
-
+                if (rx_lcid < NB_RB_MAX && rx_lcid >= DL_SCH_LCID_DCCH) {
                     mac_rlc_data_ind(module_idP,
                                      mac->crnti,
                                      gNB_index,
@@ -1941,9 +1943,8 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
                                      mac_sdu_len,
                                      1,
                                      NULL);
-                  } else {
+                } else {
                     LOG_E(MAC, "[UE %d] Frame %d : unknown LCID %d (gNB %d)\n", module_idP, frameP, rx_lcid, gNB_index);
-                  }
                 }
 
             break;
@@ -2008,7 +2009,10 @@ uint16_t nr_generate_ulsch_pdu(uint8_t *sdus_payload,
       }
     } else { // UL CCCH SDU
       mac_pdu_ptr->R = 0;
+      ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->F = 0;
       mac_pdu_ptr->LCID = sdu_lcids[i];
+      ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->L = (unsigned char) sdu_lengths[i];
+      last_size = 2;
     }
 
     mac_pdu_ptr += last_size;

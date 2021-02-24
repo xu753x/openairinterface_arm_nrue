@@ -227,24 +227,29 @@ void nr_process_mac_pdu(
         	//  end of MAC PDU, can ignore the rest.
         	break;
 
-        // MAC SDUs
-        case UL_SCH_LCID_SRB1:
-              // todo
-              break;
-        case UL_SCH_LCID_SRB2:
-              // todo
-              break;
-        case UL_SCH_LCID_SRB3:
-              // todo
-              break;
         case UL_SCH_LCID_CCCH_MSG3:
               // todo
               break;
         case UL_SCH_LCID_CCCH:
               // todo
               mac_subheader_len = 2;
+               nr_mac_rrc_data_ind(module_idP,
+                           CC_id,
+                           frameP, 0,
+                           0,
+                           rnti,
+                           CCCH,
+                           pdu_ptr+2,
+                           pdu_len-2,
+                           0,0
+                          );
+              
               break;
 
+        // MAC SDUs
+        case UL_SCH_LCID_SRB1:
+        case UL_SCH_LCID_SRB2:
+        case UL_SCH_LCID_SRB3:
         case UL_SCH_LCID_DTCH:
                 //  check if LCID is valid at current time.
                 if(((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->F){
@@ -258,7 +263,7 @@ void nr_process_mac_pdu(
                   mac_subheader_len = 2;
                 }
 
-                LOG_D(MAC, "[UE %d] Frame %d : ULSCH -> UL-DTCH %d (gNB %d, %d bytes)\n", module_idP, frameP, rx_lcid, module_idP, mac_sdu_len);
+                LOG_I(MAC, "[UE %d] Frame %d : ULSCH -> UL-DCCH %d (gNB %d, %d bytes)\n", module_idP, frameP, rx_lcid, module_idP, mac_sdu_len);
 		int UE_id = find_nr_UE_id(module_idP, rnti);
 		RC.nrmac[module_idP]->UE_info.mac_stats[UE_id].lc_bytes_rx[rx_lcid] += mac_sdu_len;
                 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)

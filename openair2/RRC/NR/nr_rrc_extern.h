@@ -75,6 +75,10 @@ extern pthread_mutex_t ue_pf_po_mutex;
 
 extern uint16_t reestablish_rnti_map[MAX_MOBILES_PER_ENB][2];
 char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigurationReq *configuration);
+int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
+                           const uint8_t      *buffer,
+                           int                buffer_length,
+                           const int          CC_id);
 
 #endif
 

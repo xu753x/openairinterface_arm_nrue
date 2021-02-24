@@ -1768,7 +1768,7 @@ nr_rrc_ue_process_securityModeCommand(
     GNB_RRC_DCCH_DATA_IND (message_p).size    = (enc_rval.encoded + 7) / 8;
     itti_send_msg_to_task (TASK_RRC_GNB_SIM, ctxt_pP->instance, message_p);
 #else
-    rrc_data_req (
+    rrc_data_req_ue (
       ctxt_pP,
       DCCH,
       nr_rrc_mui++,
@@ -1815,6 +1815,17 @@ void rrc_ue_generate_RRCSetupRequest( const protocol_ctxt_t *const ctxt_pP, cons
     LOG_T(NR_RRC,"\n");
     /*UE_rrc_inst[ue_mod_idP].Srb0[Idx].Tx_buffer.Payload[i] = taus()&0xff;
     UE_rrc_inst[ue_mod_idP].Srb0[Idx].Tx_buffer.payload_size =i; */
+
+    log_dump(RRC,NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.Payload,NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size,
+    LOG_DUMP_CHAR,"RRCSetupRequest :\n");
+    rrc_data_req_ue (
+      ctxt_pP,
+      DCCH,
+      nr_rrc_mui++,
+      SDU_CONFIRM_NO,
+      NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size,
+      (uint8_t *)NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.Payload,
+      PDCP_TRANSMISSION_MODE_CONTROL);
 
 #ifdef ITTI_SIM
     MessageDef *message_p;
@@ -2565,7 +2576,7 @@ void *rrc_nrue_task( void *args_p ) {
                                    NR_RRC_MAC_BCCH_DATA_IND (msg_p).rsrp);
 
       case NR_RRC_MAC_CCCH_DATA_IND:
-        LOG_D(NR_RRC, "[UE %d] RNTI %x Received %s: frameP %d, gNB %d\n",
+        LOG_I(NR_RRC, "[UE %d] RNTI %x Received %s: frameP %d, gNB %d\n",
               ue_mod_id,
               NR_RRC_MAC_CCCH_DATA_IND (msg_p).rnti,
               ITTI_MSG_NAME (msg_p),
@@ -2585,7 +2596,7 @@ void *rrc_nrue_task( void *args_p ) {
       /* PDCP messages */
       case NR_RRC_DCCH_DATA_IND:
         PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, NR_RRC_DCCH_DATA_IND (msg_p).module_id, GNB_FLAG_NO, NR_RRC_DCCH_DATA_IND (msg_p).rnti, NR_RRC_DCCH_DATA_IND (msg_p).frame, 0,NR_RRC_DCCH_DATA_IND (msg_p).gNB_index);
-        LOG_D(NR_RRC, "[UE %d] Received %s: frameP %d, DCCH %d, gNB %d\n",
+        LOG_I(NR_RRC, "[UE %d] Received %s: frameP %d, DCCH %d, gNB %d\n",
               NR_RRC_DCCH_DATA_IND (msg_p).module_id,
               ITTI_MSG_NAME (msg_p),
               NR_RRC_DCCH_DATA_IND (msg_p).frame,

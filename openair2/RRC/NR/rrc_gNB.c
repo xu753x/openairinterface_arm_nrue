@@ -410,6 +410,17 @@ rrc_gNB_generate_RRCSetup(
   ue_context_pP->ue_context.ue_release_timer_thres = 1000;
   /* init timers */
   //   ue_context_pP->ue_context.ue_rrc_inactivity_timer = 0;
+
+  log_dump(NR_RRC, ue_p->Srb0.Tx_buffer.Payload, 16, LOG_DUMP_CHAR,"RRCSetup size: ");
+  // nr_rrc_data_req(ctxt_pP,
+  //           DCCH,
+  //           rrc_gNB_mui++,
+  //           SDU_CONFIRM_NO,
+  //           ue_p->Srb0.Tx_buffer.payload_size,
+  //           ue_p->Srb0.Tx_buffer.Payload,
+  //           PDCP_TRANSMISSION_MODE_CONTROL);
+  
+
 #ifdef ITTI_SIM
   MessageDef *message_p;
   uint8_t *message_buffer;
@@ -1363,7 +1374,7 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
                             100,
                             0,
                             0);
-
+                            
     if (dec_rval.consumed == 0) {
         /* TODO */
         LOG_E(NR_RRC, PROTOCOL_NR_RRC_CTXT_UE_FMT" FATAL Error in receiving CCCH\n",
@@ -1790,7 +1801,7 @@ rrc_gNB_decode_dcch(
                   sdu_sizeP,
                   0,
                   0);
-  // xer_fprint(stdout, &asn_DEF_NR_UL_DCCH_Message, (void *)&ul_dcch_msg);
+  xer_fprint(stdout, &asn_DEF_NR_UL_DCCH_Message, (void *)ul_dcch_msg);
 
   {
     for (i = 0; i < sdu_sizeP; i++) {
@@ -2337,7 +2348,7 @@ void *rrc_gnb_task(void *args_p) {
                                       NR_RRC_DCCH_DATA_IND(msg_p).rnti,
                                       msg_p->ittiMsgHeader.lte_time.frame,
                                       msg_p->ittiMsgHeader.lte_time.slot);
-        LOG_D(NR_RRC, PROTOCOL_NR_RRC_CTXT_UE_FMT" Received on DCCH %d %s\n",
+        LOG_I(NR_RRC, PROTOCOL_NR_RRC_CTXT_UE_FMT" Received on DCCH %d %s\n",
                 PROTOCOL_NR_RRC_CTXT_UE_ARGS(&ctxt),
                 NR_RRC_DCCH_DATA_IND(msg_p).dcch_index,
                 msg_name_p);
