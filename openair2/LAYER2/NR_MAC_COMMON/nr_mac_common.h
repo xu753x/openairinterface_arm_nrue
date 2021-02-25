@@ -142,6 +142,11 @@ bool set_dl_ptrs_values(NR_PTRS_DownlinkConfig_t *ptrs_config,
                         uint8_t NrOfSymbols);
 void get_band(uint64_t downlink_frequency, uint16_t *current_band, int32_t *current_offset, lte_frame_type_t *current_type);
 
+bool set_ul_ptrs_values(NR_PTRS_UplinkConfig_t *ul_ptrs_config,
+                        uint16_t rbSize,uint8_t mcsIndex, uint8_t mcsTable,
+                        uint8_t *K_ptrs, uint8_t *L_ptrs,
+                        uint8_t *reOffset, uint8_t *maxNumPorts, uint8_t *ulPower,
+                        uint8_t NrOfSymbols);
 uint8_t get_num_dmrs_symbols(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols);
 
 /* \brief Set the transform precoding according to 6.1.3 of 3GPP TS 38.214 version 16.3.0 Release 16
