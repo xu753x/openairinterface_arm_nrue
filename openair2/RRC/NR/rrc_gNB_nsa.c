@@ -239,6 +239,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
                           NR_SecurityConfig__keyToUse_secondary);
   }
   fill_default_reconfig(carrier->servingcellconfigcommon,
+                        ue_context_p->ue_context.spCellConfig->spCellConfigDedicated,
                         reconfig_ies,
                         ue_context_p->ue_context.secondaryCellGroup,
                         carrier->pdsch_AntennaPorts,
