@@ -1019,6 +1019,7 @@ typedef struct {
 
   time_stats_t ofdm_mod_stats;
   time_stats_t ulsch_encoding_stats;
+  time_stats_t ulsch_ldpc_encoding_stats;
   time_stats_t ulsch_modulation_stats;
   time_stats_t ulsch_segmentation_stats;
   time_stats_t ulsch_rate_matching_stats;
