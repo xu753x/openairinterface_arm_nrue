@@ -467,46 +467,24 @@ bool allocate_dl_retransmission(module_id_t module_id,
     NR_pdsch_semi_static_t temp_ps;
     nr_set_pdsch_semi_static(
         scc, UE_info->secondaryCellGroup[UE_id], sched_ctrl->active_bwp, tda, num_dmrs_cdm_grps_no_data, &temp_ps);
-    /* perform binary search to find whether we can have a TBS sufficiently
-     * large within rbSize RBs */
-    int hi = rbSize;
-    int lo = 1;
-    for (int p = (hi + lo) / 2; lo + 1 < hi; p = (hi + lo) / 2) {
-      const uint32_t TBS = nr_compute_tbs(retInfo->Qm,
-                                          retInfo->R,
-                                          p,
-                                          temp_ps.nrOfSymbols,
-                                          temp_ps.N_PRB_DMRS * temp_ps.N_DMRS_SLOT,
-                                          0 /* N_PRB_oh, 0 for initialBWP */,
-                                          0 /* tb_scaling */,
-                                          1 /* nrOfLayers */)
-                           >> 3;
-      if (retInfo->tb_size == TBS) {
-        hi = p;
-        break;
-      } else if (retInfo->tb_size < TBS) {
-        hi = p;
-      } else {
-        lo = p;
-      }
-    }
-    const uint32_t TBS = nr_compute_tbs(retInfo->Qm,
-                                        retInfo->R,
-                                        hi,
-                                        temp_ps.nrOfSymbols,
-                                        temp_ps.N_PRB_DMRS * temp_ps.N_DMRS_SLOT,
-                                        0 /* N_PRB_oh, 0 for initialBWP */,
-                                        0 /* tb_scaling */,
-                                        1 /* nrOfLayers */)
-                         >> 3;
-    if (TBS != retInfo->tb_size) {
-      LOG_D(MAC, "new TBsize %d of new TDA does not match old TBS %d\n", TBS, retInfo->tb_size);
+    uint32_t new_tbs;
+    uint16_t new_rbSize;
+    bool success = nr_find_nb_rb(retInfo->Qm,
+                                 retInfo->R,
+                                 temp_ps.nrOfSymbols,
+                                 temp_ps.N_PRB_DMRS * temp_ps.N_DMRS_SLOT,
+                                 retInfo->tb_size,
+                                 rbSize,
+                                 &new_tbs,
+                                 &new_rbSize);
+    if (!success || new_tbs != retInfo->tb_size) {
+      LOG_D(MAC, "%s(): new TBsize %d of new TDA does not match old TBS %d\n", __func__, new_tbs, retInfo->tb_size);
       return false; /* the maximum TBsize we might have is smaller than what we need */
     }
     /* we can allocate it. Overwrite the time_domain_allocation, the number
      * of RBs, and the new TB size. The rest is done below */
-    retInfo->tb_size = TBS;
-    retInfo->rbSize = hi;
+    retInfo->tb_size = new_tbs;
+    retInfo->rbSize = new_rbSize;
     retInfo->time_domain_allocation = tda;
     sched_ctrl->pdsch_semi_static = temp_ps;
   }
@@ -663,6 +641,9 @@ void pf_dl(module_id_t module_id,
 
     // Freq-demain allocation
     while (rbStart < bwpSize && !rballoc_mask[rbStart]) rbStart++;
+    uint16_t max_rbSize = 1;
+    while (rbStart + max_rbSize < bwpSize && rballoc_mask[rbStart + max_rbSize])
+      max_rbSize++;
 
     /* MCS has been set above */
     const uint8_t num_dmrs_cdm_grps_no_data = 1;
@@ -675,22 +656,18 @@ void pf_dl(module_id_t module_id,
     sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
     sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, ps->mcsTableIdx);
 
-    int rbSize = 0;
     uint32_t TBS = 0;
+    uint16_t rbSize;
     const int oh = 2 + (sched_ctrl->num_total_bytes >= 256)
                  + 2 * (frame == (sched_ctrl->ta_frame + 10) % 1024);
-    do {
-      rbSize++;
-      TBS = nr_compute_tbs(sched_pdsch->Qm,
-                           sched_pdsch->R,
-                           rbSize,
-                           ps->nrOfSymbols,
-                           ps->N_PRB_DMRS * ps->N_DMRS_SLOT,
-                           0 /* N_PRB_oh, 0 for initialBWP */,
-                           0 /* tb_scaling */,
-                           1 /* nrOfLayers */)
-            >> 3;
-    } while (rbStart + rbSize < bwpSize && rballoc_mask[rbStart + rbSize] && TBS < sched_ctrl->num_total_bytes + oh);
+    nr_find_nb_rb(sched_pdsch->Qm,
+                  sched_pdsch->R,
+                  ps->nrOfSymbols,
+                  ps->N_PRB_DMRS * ps->N_DMRS_SLOT,
+                  sched_ctrl->num_total_bytes + oh,
+                  max_rbSize,
+                  &TBS,
+                  &rbSize);
     sched_pdsch->rbSize = rbSize;
     sched_pdsch->rbStart = rbStart;
     sched_pdsch->tb_size = TBS;

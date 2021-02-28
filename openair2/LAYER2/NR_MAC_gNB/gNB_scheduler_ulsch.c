@@ -779,29 +779,24 @@ void pf_ul(module_id_t module_id,
 
     while (rbStart < bwpSize && !rballoc_mask[rbStart]) rbStart++;
     sched_pusch->rbStart = rbStart;
-    if (rbStart + min_rb >= bwpSize) {
-      LOG_D(MAC, "cannot allocate UL data for UE %d/RNTI %04x: no resources\n",
-            UE_id, UE_info->rnti[UE_id]);
-      continue;
-    }
+    uint16_t max_rbSize = 1;
+    while (rbStart + max_rbSize < bwpSize && rballoc_mask[rbStart + max_rbSize])
+      max_rbSize++;
 
-    /* Calculate the current scheduling bytes */
+    /* Calculate the current scheduling bytes and the necessary RBs */
     const int B = cmax(sched_ctrl->estimated_ul_buffer - sched_ctrl->sched_ul_bytes, 0);
-    uint16_t rbSize = min_rb - 1;
-    do {
-      rbSize++;
-      sched_pusch->rbSize = rbSize;
-      sched_pusch->tb_size = nr_compute_tbs(sched_pusch->Qm,
-                                            sched_pusch->R,
-                                            sched_pusch->rbSize,
-                                            ps->nrOfSymbols,
-                                            ps->N_PRB_DMRS * ps->num_dmrs_symb,
-                                            0, // nb_rb_oh
-                                            0,
-                                            1 /* NrOfLayers */)
-                             >> 3;
-    } while (rbStart + rbSize < bwpSize && rballoc_mask[rbStart+rbSize] &&
-             sched_pusch->tb_size < B);
+    uint16_t rbSize = 0;
+    uint32_t TBS = 0;
+    nr_find_nb_rb(sched_pusch->Qm,
+                  sched_pusch->R,
+                  ps->nrOfSymbols,
+                  ps->N_PRB_DMRS * ps->num_dmrs_symb,
+                  B,
+                  max_rbSize,
+                  &TBS,
+                  &rbSize);
+    sched_pusch->rbSize = rbSize;
+    sched_pusch->tb_size = TBS;
     LOG_D(MAC,"rbSize %d, TBS %d, est buf %d, sched_ul %d, B %d\n",
           rbSize, sched_pusch->tb_size, sched_ctrl->estimated_ul_buffer, sched_ctrl->sched_ul_bytes, B);
 

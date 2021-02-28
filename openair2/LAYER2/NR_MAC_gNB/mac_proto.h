@@ -392,4 +392,14 @@ void find_SSB_and_RO_available(module_id_t module_idP);
 void calculate_preferred_dl_tda(module_id_t module_id, NR_CellGroupConfig_t *secondaryCellGroup, int bwp_id);
 
 bool find_free_CCE(module_id_t module_id, sub_frame_t slot, int UE_id);
+
+bool nr_find_nb_rb(uint16_t Qm,
+                   uint16_t R,
+                   uint16_t nb_symb_sch,
+                   uint16_t nb_dmrs_prb,
+                   uint32_t bytes,
+                   uint16_t nb_rb_max,
+                   uint32_t *tbs,
+                   uint16_t *nb_rb);
+
 #endif /*__LAYER2_NR_MAC_PROTO_H__*/
