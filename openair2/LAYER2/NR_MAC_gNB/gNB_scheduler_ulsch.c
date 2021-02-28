@@ -61,6 +61,124 @@ const uint32_t NR_LONG_BSR_TABLE[256] ={
 35910462, 38241455, 40723756, 43367187, 46182206, 49179951, 52372284, 55771835, 59392055, 63247269, 67352729, 71724679, 76380419, 81338368, 162676736, 4294967295
 };
 
+void calculate_preferred_ul_tda(module_id_t module_id, NR_CellGroupConfig_t *secondaryCellGroup, int bwp_id)
+{
+  gNB_MAC_INST *nrmac = RC.nrmac[module_id];
+  if (nrmac->preferred_ul_tda[bwp_id])
+    return;
+
+  /* there is a mixed slot only when in TDD */
+  const NR_ServingCellConfigCommon_t *scc = nrmac->common_channels->ServingCellConfigCommon;
+  const int mu = scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing;
+  const NR_TDD_UL_DL_Pattern_t *tdd =
+      scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
+  /* Uplink symbols are at the end of the slot */
+  const int symb_ulMixed = tdd ? ((1 << tdd->nrofUplinkSymbols) - 1) << (14 - tdd->nrofUplinkSymbols) : 0;
+
+  const NR_ServingCellConfig_t *servingCellConfig = secondaryCellGroup->spCellConfig->spCellConfigDedicated;
+  const struct NR_UplinkConfig__uplinkBWP_ToAddModList *ubwpList = servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList;
+  AssertFatal(ubwpList->list.count == 1,
+              "downlinkBWP_ToAddModList has %d BWP but cannot handle more in %s!\n",
+              ubwpList->list.count,
+              __func__);
+  const NR_BWP_Uplink_t *ubwp = ubwpList->list.array[bwp_id - 1];
+
+  const struct NR_PUCCH_Config__resourceToAddModList *resList = ubwp->bwp_Dedicated->pucch_Config->choice.setup->resourceToAddModList;
+  // for the moment, just block any symbol that might hold a PUCCH, regardless
+  // of the RB. This is a big simplification, as most RBs will NOT have a PUCCH
+  // in the respective symbols, but it simplifies scheduling
+  uint16_t symb_pucch = 0;
+  for (int i = 0; i < resList->list.count; ++i) {
+    const NR_PUCCH_Resource_t *resource = resList->list.array[i];
+    int nrofSymbols = 0;
+    int startingSymbolIndex = 0;
+    switch (resource->format.present) {
+      case NR_PUCCH_Resource__format_PR_format0:
+        nrofSymbols = resource->format.choice.format0->nrofSymbols;
+        startingSymbolIndex = resource->format.choice.format0->startingSymbolIndex;
+        break;
+      case NR_PUCCH_Resource__format_PR_format1:
+        nrofSymbols = resource->format.choice.format1->nrofSymbols;
+        startingSymbolIndex = resource->format.choice.format1->startingSymbolIndex;
+        break;
+      case NR_PUCCH_Resource__format_PR_format2:
+        nrofSymbols = resource->format.choice.format2->nrofSymbols;
+        startingSymbolIndex = resource->format.choice.format2->startingSymbolIndex;
+        break;
+      case NR_PUCCH_Resource__format_PR_format3:
+        nrofSymbols = resource->format.choice.format3->nrofSymbols;
+        startingSymbolIndex = resource->format.choice.format3->startingSymbolIndex;
+        break;
+      case NR_PUCCH_Resource__format_PR_format4:
+        nrofSymbols = resource->format.choice.format4->nrofSymbols;
+        startingSymbolIndex = resource->format.choice.format4->startingSymbolIndex;
+        break;
+      default:
+        AssertFatal(0, "found NR_PUCCH format index %d\n", resource->format.present);
+        break;
+    }
+    symb_pucch |= ((1 << nrofSymbols) - 1) << startingSymbolIndex;
+  }
+
+  /* check that TDA index 1 fits into UL slot and does not overlap with PUCCH */
+  const struct NR_PUSCH_TimeDomainResourceAllocationList *tdaList = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
+  AssertFatal(tdaList->list.count >= 3, "need to have at least three TDAs for UL slots\n");
+  const NR_PUSCH_TimeDomainResourceAllocation_t *tdaP_UL = tdaList->list.array[0];
+  const int k2 = get_K2(ubwp, /* tda = */ 0, mu);
+  int start, len;
+  SLIV2SL(tdaP_UL->startSymbolAndLength, &start, &len);
+  const uint16_t symb_tda = ((1 << len) - 1) << start;
+  // check whether PUCCH and TDA overlap: then, we cannot use it. Note that
+  // here we assume that the PUCCH is scheduled in every slot, and on all RBs
+  // (which is mostly not true, this is a simplification)
+  AssertFatal((symb_pucch & symb_tda) == 0, "TDA index 0 for UL overlaps with PUCCH\n");
+
+  // get largest time domain allocation (TDA) for UL slot and UL in mixed slot
+  int tdaMi = -1;
+  const NR_PUSCH_TimeDomainResourceAllocation_t *tdaP_Mi = tdaList->list.array[1];
+  AssertFatal(k2 == get_K2(ubwp, /* tda = */ 1, mu),
+              "scheduler cannot handle different k2 for UL slot (%d) and UL Mixed slot (%ld)\n",
+              k2,
+              get_K2(ubwp, /* tda = */ 1, mu));
+  SLIV2SL(tdaP_Mi->startSymbolAndLength, &start, &len);
+  const uint16_t symb_tda_mi = ((1 << len) - 1) << start;
+  // check whether PUCCH and TDA overlap: then, we cannot use it. Also, check
+  // whether TDA is entirely within mixed slot, UL. Note that here we assume
+  // that the PUCCH is scheduled in every slot, and on all RBs (which is
+  // mostly not true, this is a simplification)
+  if ((symb_pucch & symb_tda_mi) == 0 && (symb_ulMixed & symb_tda_mi) == symb_tda_mi) {
+    tdaMi = 1;
+  } else {
+    LOG_E(MAC,
+          "TDA index 1 UL overlaps with PUCCH or is not entirely in mixed slot (symb_pucch %x symb_ulMixed %x symb_tda_mi %x), won't schedule UL mixed slot\n",
+          symb_pucch,
+          symb_ulMixed,
+          symb_tda_mi);
+  }
+
+  const uint8_t slots_per_frame[5] = {10, 20, 40, 80, 160};
+  const int n = slots_per_frame[*scc->ssbSubcarrierSpacing];
+  nrmac->preferred_ul_tda[bwp_id] = malloc(n * sizeof(*nrmac->preferred_ul_tda[bwp_id]));
+
+  const int nr_mix_slots = tdd ? tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0 : 0;
+  const int nr_slots_period = tdd ? tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + nr_mix_slots : n;
+  for (int slot = 0; slot < n; ++slot) {
+    const int sched_slot = (slot + k2) % n;
+    nrmac->preferred_ul_tda[bwp_id][slot] = -1;
+    if (!tdd || sched_slot % nr_slots_period >= tdd->nrofDownlinkSlots + nr_mix_slots)
+      nrmac->preferred_ul_tda[bwp_id][slot] = 0;
+    else if (tdd && nr_mix_slots && sched_slot % nr_slots_period == tdd->nrofDownlinkSlots)
+      nrmac->preferred_ul_tda[bwp_id][slot] = tdaMi;
+    LOG_I(MAC, "DL slot %d UL slot %d preferred_ul_tda %d\n", slot, sched_slot, nrmac->preferred_ul_tda[bwp_id][slot]);
+  }
+
+  if (k2 < tdd->nrofUplinkSlots)
+    LOG_W(MAC,
+          "k2 %d < tdd->nrofUplinkSlots %ld: not all UL slots can be scheduled\n",
+          k2,
+          tdd->nrofUplinkSlots);
+}
+
 void nr_process_mac_pdu(module_id_t module_idP,
                         int UE_id,
                         uint8_t CC_id,
@@ -521,7 +639,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
   }
 }
 
-long get_K2(NR_BWP_Uplink_t *ubwp, int time_domain_assignment, int mu) {
+long get_K2(const NR_BWP_Uplink_t *ubwp, int time_domain_assignment, int mu) {
   DevAssert(ubwp);
   const NR_PUSCH_TimeDomainResourceAllocation_t *tda_list = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[time_domain_assignment];
   if (tda_list->k2)

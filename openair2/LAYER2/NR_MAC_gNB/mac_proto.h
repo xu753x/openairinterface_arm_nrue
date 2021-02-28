@@ -255,7 +255,7 @@ NR_ControlResourceSet_t *get_coreset(const NR_BWP_Downlink_t *bwp, const NR_Sear
 /* find a search space within a BWP */
 NR_SearchSpace_t *get_searchspace(const NR_BWP_Downlink_t *bwp, NR_SearchSpace__searchSpaceType_PR target_ss);
 
-long get_K2(NR_BWP_Uplink_t *ubwp, int time_domain_assignment, int mu);
+long get_K2(const NR_BWP_Uplink_t *ubwp, int time_domain_assignment, int mu);
 
 void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
                               const NR_CellGroupConfig_t *secondaryCellGroup,
@@ -390,6 +390,7 @@ int16_t ssb_index_from_prach(module_id_t module_idP,
 void find_SSB_and_RO_available(module_id_t module_idP);
 
 void calculate_preferred_dl_tda(module_id_t module_id, NR_CellGroupConfig_t *secondaryCellGroup, int bwp_id);
+void calculate_preferred_ul_tda(module_id_t module_id, NR_CellGroupConfig_t *secondaryCellGroup, int bwp_id);
 
 bool find_free_CCE(module_id_t module_id, sub_frame_t slot, int UE_id);
 

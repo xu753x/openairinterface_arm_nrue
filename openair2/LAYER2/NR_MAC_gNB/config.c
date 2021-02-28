@@ -394,6 +394,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
 
     const int bwp_id = 1;
     calculate_preferred_dl_tda(Mod_idP, secondaryCellGroup, bwp_id);
+    calculate_preferred_ul_tda(Mod_idP, secondaryCellGroup, bwp_id);
 
     NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
     if (add_ue == 1 && get_softmodem_params()->phy_test) {

@@ -705,6 +705,10 @@ typedef struct gNB_MAC_INST_s {
   /// Lookup for preferred time domain allocation for BWP, in DL, slots
   /// dynamically allocated
   int *preferred_dl_tda[MAX_NUM_BWP];
+  /// Lookup for preferred time domain allocation for UL BWP, dynamically
+  /// allocated. The index refers to the DL slot, and the indicated TDA's k2
+  /// points to the right UL slot
+  int *preferred_ul_tda[MAX_NUM_BWP];
 
   /// DL preprocessor for differentiated scheduling
   nr_pp_impl_dl pre_processor_dl;
