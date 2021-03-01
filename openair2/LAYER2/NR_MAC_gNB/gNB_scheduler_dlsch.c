@@ -841,7 +841,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     UE_info->mac_stats[UE_id].dlsch_rounds[harq->round]++;
 
     LOG_D(MAC,
-          "%4d.%2d RNTI %04x start %d RBs %d startSymbol %d nb_symbsol %d MCS %d TBS %d HARQ PID %d round %d NDI %d\n",
+          "%4d.%2d RNTI %04x start %3d RBs %3d startSymbol %2d nb_symbol %2d MCS %2d TBS %4d HARQ PID %2d round %d NDI %d\n",
           frame,
           slot,
           rnti,
