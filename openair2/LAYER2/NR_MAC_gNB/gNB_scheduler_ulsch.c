@@ -718,7 +718,20 @@ bool allocate_ul_retransmission(module_id_t module_id,
   return true;
 }
 
+void update_ul_ue_R_Qm(NR_sched_pusch_t *sched_pusch, const NR_pusch_semi_static_t *ps)
+{
+  const int mcs = sched_pusch->mcs;
+  sched_pusch->R = nr_get_code_rate_ul(mcs, ps->mcs_table);
+  sched_pusch->Qm = nr_get_Qm_ul(mcs, ps->mcs_table);
+  if (ps->pusch_Config->tp_pi2BPSK
+      && ((ps->mcs_table == 3 && mcs < 2) || (ps->mcs_table == 4 && mcs < 6))) {
+    sched_pusch->R >>= 1;
+    sched_pusch->Qm <<= 1;
+  }
+}
+
 float ul_thr_ue[MAX_MOBILES_PER_GNB];
+uint32_t ul_pf_tbs[3][28]; // pre-computed, approximate TBS values for PF coefficient
 int bsr0ue = -1;
 void pf_ul(module_id_t module_id,
            frame_t frame,
@@ -730,6 +743,7 @@ void pf_ul(module_id_t module_id,
 
   const int CC_id = 0;
   const int tda = 1;
+  const uint8_t num_dmrs_cdm_grps_no_data = 1;
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels[CC_id].ServingCellConfigCommon;
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
   const int min_rb = 5;
@@ -750,31 +764,20 @@ void pf_ul(module_id_t module_id,
     int rbStart =
         NRRIV2PRBOFFSET(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+    NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
+    NR_pusch_semi_static_t *ps = &sched_ctrl->pusch_semi_static;
 
     /* Calculate throughput */
     const float a = 0.0005f; // corresponds to 200ms window
     const uint32_t b = UE_info->mac_stats[UE_id].ulsch_current_bytes;
     ul_thr_ue[UE_id] = (1 - a) * ul_thr_ue[UE_id] + a * b;
 
-    /* Save PUSCH field */
-    /* we want to avoid a lengthy deduction of DMRS and other parameters in
-     * every TTI if we can save it, so check whether dci_format, TDA, or
-     * num_dmrs_cdm_grps_no_data has changed and only then recompute */
-    const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
-    const int dci_format = f ? NR_UL_DCI_FORMAT_0_1 : NR_UL_DCI_FORMAT_0_0;
-    const uint8_t num_dmrs_cdm_grps_no_data = 1;
-    NR_pusch_semi_static_t *ps = &sched_ctrl->pusch_semi_static;
-    if (ps->time_domain_allocation != tda
-        || ps->dci_format != dci_format
-        || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data)
-      nr_set_pusch_semi_static(scc, sched_ctrl->active_ubwp, dci_format, tda, num_dmrs_cdm_grps_no_data, ps);
-
     /* Check if retransmission is necessary */
-    sched_ctrl->sched_pusch.ul_harq_pid = sched_ctrl->retrans_ul_harq.head;
-    if (sched_ctrl->sched_pusch.ul_harq_pid >= 0) {
+    sched_pusch->ul_harq_pid = sched_ctrl->retrans_ul_harq.head;
+    if (sched_pusch->ul_harq_pid >= 0) {
       /* Allocate retransmission*/
       bool r = allocate_ul_retransmission(
-          module_id, frame, slot, rballoc_mask, &n_rb_sched, UE_id, sched_ctrl->sched_pusch.ul_harq_pid);
+          module_id, frame, slot, rballoc_mask, &n_rb_sched, UE_id, sched_pusch->ul_harq_pid);
       if (!r) {
         LOG_D(MAC, "%4d.%2d UL retransmission UE RNTI %04x can NOT be allocated\n", frame, slot, UE_info->rnti[UE_id]);
         continue;
@@ -784,18 +787,6 @@ void pf_ul(module_id_t module_id,
       if (max_num_ue < 0)
         return;
       continue;
-    }
-
-    /* Calculate TBS from MCS */
-    NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
-    const int mcs = 9;
-    sched_pusch->mcs = mcs;
-    sched_pusch->R = nr_get_code_rate_ul(mcs, ps->mcs_table);
-    sched_pusch->Qm = nr_get_Qm_ul(mcs, ps->mcs_table);
-    if (ps->pusch_Config->tp_pi2BPSK
-        && ((ps->mcs_table == 3 && mcs < 2) || (ps->mcs_table == 4 && mcs < 6))) {
-      sched_pusch->R >>= 1;
-      sched_pusch->Qm <<= 1;
     }
 
     /* Check BSR and schedule UE if it is zero to avoid starvation, since we do
@@ -820,6 +811,20 @@ void pf_ul(module_id_t module_id,
               UE_id, UE_info->rnti[UE_id]);
         continue;
       }
+
+      /* Save PUSCH field */
+      /* we want to avoid a lengthy deduction of DMRS and other parameters in
+       * every TTI if we can save it, so check whether dci_format, TDA, or
+       * num_dmrs_cdm_grps_no_data has changed and only then recompute */
+      const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
+      const int dci_format = f ? NR_UL_DCI_FORMAT_0_1 : NR_UL_DCI_FORMAT_0_0;
+      if (ps->time_domain_allocation != tda
+          || ps->dci_format != dci_format
+          || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data)
+        nr_set_pusch_semi_static(scc, sched_ctrl->active_ubwp, dci_format, tda, num_dmrs_cdm_grps_no_data, ps);
+      NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
+      sched_pusch->mcs = 9;
+      update_ul_ue_R_Qm(sched_pusch, ps);
       sched_pusch->rbStart = rbStart;
       sched_pusch->rbSize = min_rb;
       sched_pusch->tb_size = nr_compute_tbs(sched_pusch->Qm,
@@ -844,15 +849,8 @@ void pf_ul(module_id_t module_id,
     add_tail_nr_list(&UE_sched, UE_id);
 
     /* Calculate coefficient*/
-    const uint32_t tbs = nr_compute_tbs(sched_pusch->Qm,
-                                        sched_pusch->R,
-                                        1, // rbSize
-                                        ps->nrOfSymbols,
-                                        ps->N_PRB_DMRS * ps->num_dmrs_symb,
-                                        0, // nb_rb_oh
-                                        0,
-                                        1 /* NrOfLayers */)
-                          >> 3;
+    sched_pusch->mcs = 9;
+    const uint32_t tbs = ul_pf_tbs[ps->mcs_table][sched_pusch->mcs];
     coeff_ue[UE_id] = (float) tbs / ul_thr_ue[UE_id];
     LOG_D(MAC,"b %d, ul_thr_ue[%d] %f, tbs %d, coeff_ue[%d] %f\n",
           b, UE_id, ul_thr_ue[UE_id], tbs, UE_id, coeff_ue[UE_id]);
@@ -900,6 +898,18 @@ void pf_ul(module_id_t module_id,
     uint16_t max_rbSize = 1;
     while (rbStart + max_rbSize < bwpSize && rballoc_mask[rbStart + max_rbSize])
       max_rbSize++;
+
+    /* Save PUSCH field */
+    /* we want to avoid a lengthy deduction of DMRS and other parameters in
+     * every TTI if we can save it, so check whether dci_format, TDA, or
+     * num_dmrs_cdm_grps_no_data has changed and only then recompute */
+    const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
+    const int dci_format = f ? NR_UL_DCI_FORMAT_0_1 : NR_UL_DCI_FORMAT_0_0;
+    if (ps->time_domain_allocation != tda
+        || ps->dci_format != dci_format
+        || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data)
+      nr_set_pusch_semi_static(scc, sched_ctrl->active_ubwp, dci_format, tda, num_dmrs_cdm_grps_no_data, ps);
+    update_ul_ue_R_Qm(sched_pusch, ps);
 
     /* Calculate the current scheduling bytes and the necessary RBs */
     const int B = cmax(sched_ctrl->estimated_ul_buffer - sched_ctrl->sched_ul_bytes, 0);
@@ -1004,6 +1014,31 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
 
 nr_pp_impl_ul nr_init_fr1_ulsch_preprocessor(module_id_t module_id, int CC_id)
 {
+  /* in the PF algorithm, we have to use the TBsize to compute the coefficient.
+   * This would include the number of DMRS symbols, which in turn depends on
+   * the time domain allocation. In case we are in a mixed slot, we do not want
+   * to recalculate all these values, and therefore we provide a look-up table
+   * which should approximately(!) give us the TBsize. In particular, the
+   * number of symbols, the number of DMRS symbols, and the exact Qm and R, are
+   * not correct*/
+  for (int mcsTableIdx = 0; mcsTableIdx < 3; ++mcsTableIdx) {
+    for (int mcs = 0; mcs < 29; ++mcs) {
+      if (mcs > 27 && mcsTableIdx == 1)
+        continue;
+      const uint8_t Qm = nr_get_Qm_dl(mcs, mcsTableIdx);
+      const uint16_t R = nr_get_code_rate_dl(mcs, mcsTableIdx);
+      /* note: we do not update R/Qm based on low MCS or pi2BPSK */
+      ul_pf_tbs[mcsTableIdx][mcs] = nr_compute_tbs(Qm,
+                                                   R,
+                                                   1, /* rbSize */
+                                                   10, /* hypothetical number of slots */
+                                                   0, /* N_PRB_DMRS * N_DMRS_SLOT */
+                                                   0 /* N_PRB_oh, 0 for initialBWP */,
+                                                   0 /* tb_scaling */,
+                                                   1 /* nrOfLayers */)
+                                    >> 3;
+    }
+  }
   return nr_fr1_ulsch_preprocessor;
 }
 
