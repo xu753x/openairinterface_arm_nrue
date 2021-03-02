@@ -1182,7 +1182,7 @@ void nr_schedule_ulsch(module_id_t module_id,
     UE_info->mac_stats[UE_id].ulsch_current_bytes = sched_pusch->tb_size;
 
     LOG_D(MAC,
-          "%4d.%2d RNTI %04x UL sched %4d.%2d start %d RBS %d MCS %d TBS %d HARQ PID %d round %d NDI %d\n",
+          "%4d.%2d RNTI %04x UL sched %4d.%2d start %2d RBS %3d startSymbol %2d nb_symbol %2d MCS %2d TBS %4d HARQ PID %2d round %d NDI %d est %6d sched %6d est BSR %6d\n",
           frame,
           slot,
           rnti,
@@ -1190,11 +1190,17 @@ void nr_schedule_ulsch(module_id_t module_id,
           sched_pusch->slot,
           sched_pusch->rbStart,
           sched_pusch->rbSize,
+          ps->startSymbolIndex,
+          ps->nrOfSymbols,
           sched_pusch->mcs,
           sched_pusch->tb_size,
           harq_id,
           cur_harq->round,
-          cur_harq->ndi);
+          cur_harq->ndi,
+          sched_ctrl->estimated_ul_buffer,
+          sched_ctrl->sched_ul_bytes,
+          sched_ctrl->estimated_ul_buffer - sched_ctrl->sched_ul_bytes);
+
 
     /* PUSCH in a later slot, but corresponding DCI now! */
     nfapi_nr_ul_tti_request_t *future_ul_tti_req = &RC.nrmac[module_id]->UL_tti_req_ahead[0][sched_pusch->slot];
