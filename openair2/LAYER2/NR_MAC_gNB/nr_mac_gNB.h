@@ -347,6 +347,11 @@ typedef struct NR_sched_pusch {
 
   /// UL HARQ PID to use for this UE, or -1 for "any new"
   int8_t ul_harq_pid;
+
+  /// the Time Domain Allocation used for this transmission. Note that this is
+  /// only important for retransmissions; otherwise, the TDA in
+  /// NR_pusch_semi_static_t has precedence
+  int time_domain_allocation;
 } NR_sched_pusch_t;
 
 /* PDSCH semi-static configuratio: as long as the TDA/DMRS/mcsTable remains the

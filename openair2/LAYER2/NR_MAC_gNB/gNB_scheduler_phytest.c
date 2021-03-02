@@ -410,7 +410,9 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id,
 
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
-  const int tda = 1;
+  const int tda = RC.nrmac[module_id]->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot];
+  if (tda < 0)
+    return false;
   const struct NR_PUSCH_TimeDomainResourceAllocationList *tdaList =
     sched_ctrl->active_ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
   AssertFatal(tda < tdaList->list.count,

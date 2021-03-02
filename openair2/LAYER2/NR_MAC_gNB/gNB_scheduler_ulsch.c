@@ -667,6 +667,8 @@ bool allocate_ul_retransmission(module_id_t module_id,
                                 int UE_id,
                                 int harq_pid)
 {
+  const int CC_id = 0;
+  const NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels[CC_id].ServingCellConfigCommon;
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
   NR_sched_pusch_t *retInfo = &sched_ctrl->ul_harq_processes[harq_pid].sched_pusch;
@@ -675,12 +677,59 @@ bool allocate_ul_retransmission(module_id_t module_id,
   const uint16_t bwpSize =
       NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
 
-  /* Check the resource is enough for retransmission */
-  while (rbStart < bwpSize && !rballoc_mask[rbStart])
-    rbStart++;
-  if (rbStart + retInfo->rbSize >= bwpSize) {
-    LOG_D(MAC, "cannot allocate retransmission of UE %d/RNTI %04x: no resources\n", UE_id, UE_info->rnti[UE_id]);
-    return false;
+  const uint8_t num_dmrs_cdm_grps_no_data = 1;
+  const int tda = RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_ubwp->bwp_Id][slot];
+  if (tda == retInfo->time_domain_allocation) {
+    /* Check the resource is enough for retransmission */
+    while (rbStart < bwpSize && !rballoc_mask[rbStart])
+      rbStart++;
+    if (rbStart + retInfo->rbSize >= bwpSize) {
+      LOG_D(MAC, "cannot allocate retransmission of UE %d/RNTI %04x: no resources\n", UE_id, UE_info->rnti[UE_id]);
+      return false;
+    }
+    /* check whether we need to switch the TDA allocation since tha last
+     * (re-)transmission */
+    NR_pusch_semi_static_t *ps = &sched_ctrl->pusch_semi_static;
+    const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
+    const int dci_format = f ? NR_UL_DCI_FORMAT_0_1 : NR_UL_DCI_FORMAT_0_0;
+    if (ps->time_domain_allocation != tda
+        || ps->dci_format != dci_format
+        || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data)
+      nr_set_pusch_semi_static(scc, sched_ctrl->active_ubwp, dci_format, tda, num_dmrs_cdm_grps_no_data, ps);
+    LOG_D(MAC, "%s(): retransmission keeping TDA %d and TBS %d\n", __func__, tda, retInfo->tb_size);
+  } else {
+    /* the retransmission will use a different time domain allocation, check
+     * that we have enough resources */
+    while (rbStart < bwpSize && !rballoc_mask[rbStart])
+      rbStart++;
+    int rbSize = 0;
+    while (rbStart + rbSize < bwpSize && rballoc_mask[rbStart + rbSize])
+      rbSize++;
+    NR_pusch_semi_static_t temp_ps;
+    const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
+    const int dci_format = f ? NR_UL_DCI_FORMAT_0_1 : NR_UL_DCI_FORMAT_0_0;
+    nr_set_pusch_semi_static(scc, sched_ctrl->active_ubwp, dci_format, tda, num_dmrs_cdm_grps_no_data, &temp_ps);
+    uint32_t new_tbs;
+    uint16_t new_rbSize;
+    bool success = nr_find_nb_rb(retInfo->Qm,
+                                 retInfo->R,
+                                 temp_ps.nrOfSymbols,
+                                 temp_ps.N_PRB_DMRS * temp_ps.num_dmrs_symb,
+                                 retInfo->tb_size,
+                                 rbSize,
+                                 &new_tbs,
+                                 &new_rbSize);
+    if (!success || new_tbs != retInfo->tb_size) {
+      LOG_D(MAC, "%s(): new TBsize %d of new TDA does not match old TBS %d\n", __func__, new_tbs, retInfo->tb_size);
+      return false; /* the maximum TBsize we might have is smaller than what we need */
+    }
+    LOG_D(MAC, "%s(): retransmission with TDA %d->%d and TBS %d -> %d\n", __func__, retInfo->time_domain_allocation, tda, retInfo->tb_size, new_tbs);
+    /* we can allocate it. Overwrite the time_domain_allocation, the number
+     * of RBs, and the new TB size. The rest is done below */
+    retInfo->tb_size = new_tbs;
+    retInfo->rbSize = new_rbSize;
+    retInfo->time_domain_allocation = tda;
+    sched_ctrl->pusch_semi_static = temp_ps;
   }
 
   /* Find free CCE */
@@ -742,10 +791,10 @@ void pf_ul(module_id_t module_id,
            uint8_t *rballoc_mask) {
 
   const int CC_id = 0;
-  const int tda = 1;
   const uint8_t num_dmrs_cdm_grps_no_data = 1;
-  NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels[CC_id].ServingCellConfigCommon;
-  NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
+  gNB_MAC_INST *nrmac = RC.nrmac[module_id];
+  NR_ServingCellConfigCommon_t *scc = nrmac->common_channels[CC_id].ServingCellConfigCommon;
+  NR_UE_info_t *UE_info = &nrmac->UE_info;
   const int min_rb = 5;
   float coeff_ue[MAX_MOBILES_PER_GNB];
   // UEs that could be scheduled
@@ -818,6 +867,7 @@ void pf_ul(module_id_t module_id,
        * num_dmrs_cdm_grps_no_data has changed and only then recompute */
       const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
       const int dci_format = f ? NR_UL_DCI_FORMAT_0_1 : NR_UL_DCI_FORMAT_0_0;
+      const int tda = nrmac->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot];
       if (ps->time_domain_allocation != tda
           || ps->dci_format != dci_format
           || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data)
@@ -905,6 +955,7 @@ void pf_ul(module_id_t module_id,
      * num_dmrs_cdm_grps_no_data has changed and only then recompute */
     const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
     const int dci_format = f ? NR_UL_DCI_FORMAT_0_1 : NR_UL_DCI_FORMAT_0_0;
+    const int tda = nrmac->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot];
     if (ps->time_domain_allocation != tda
         || ps->dci_format != dci_format
         || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data)
@@ -948,17 +999,15 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
 
   const int CC_id = 0;
 
-  /* NOT support different K2 in here, Get the K2 for first UE */
+  /* Get the K2 for first UE to compute offset. The other UEs are guaranteed to
+   * have the same K2 (we don't support multiple/different K2s via different
+   * TDAs yet). If the TDA is negative, it means that there is no UL slot to
+   * schedule now (slot + k2 is not UL slot) */
   int UE_id = UE_info->list.head;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-  const int tda = 1;
-  const struct NR_PUSCH_TimeDomainResourceAllocationList *tdaList =
-    sched_ctrl->active_ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
-  AssertFatal(tda < tdaList->list.count,
-              "time domain assignment %d >= %d\n",
-              tda,
-              tdaList->list.count);
-
+  const int tda = nr_mac->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot];
+  if (tda < 0)
+    return false;
   int K2 = get_K2(sched_ctrl->active_ubwp, tda, mu);
   const int sched_frame = frame + (slot + K2 >= nr_slots_per_frame[mu]);
   const int sched_slot = (slot + K2) % nr_slots_per_frame[mu];
@@ -967,12 +1016,8 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
 
   sched_ctrl->sched_pusch.slot = sched_slot;
   sched_ctrl->sched_pusch.frame = sched_frame;
-
-  /* Confirm all the UE have same K2 as the first UE */
   for (UE_id = UE_info->list.next[UE_id]; UE_id >= 0; UE_id = UE_info->list.next[UE_id]) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-    AssertFatal(K2 == get_K2(sched_ctrl->active_ubwp, tda, mu),
-                "Different K2, %d(UE%d) != %ld(UE%d)\n", K2, 0, get_K2(sched_ctrl->active_ubwp, tda, mu), UE_id);
     sched_ctrl->sched_pusch.slot = sched_slot;
     sched_ctrl->sched_pusch.frame = sched_frame;
   }
@@ -1118,6 +1163,9 @@ void nr_schedule_ulsch(module_id_t module_id,
       /* Save information on MCS, TBS etc for the current initial transmission
        * so we have access to it when retransmitting */
       cur_harq->sched_pusch = *sched_pusch;
+      /* save which time allocation has been used, to be used on
+       * retransmissions */
+      cur_harq->sched_pusch.time_domain_allocation = ps->time_domain_allocation;
       sched_ctrl->sched_ul_bytes += sched_pusch->tb_size;
     } else {
       LOG_D(MAC,
