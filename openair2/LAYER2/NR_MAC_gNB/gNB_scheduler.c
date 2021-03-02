@@ -342,10 +342,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     nr_rrc_trigger(&ctxt, 0 /*CC_id*/, frame, slot >> *scc->ssbSubcarrierSpacing);
   }
 
-#define BIT(x) (1 << (x))
-  const uint64_t dlsch_in_slot_bitmap = BIT( 1) | BIT( 2) | BIT( 3) | BIT( 4) | BIT( 5) | BIT( 6)
-                                      | BIT(11) | BIT(12) | BIT(13) | BIT(14) | BIT(15) | BIT(16);
-
   memset(RC.nrmac[module_idP]->cce_list[bwp_id][0],0,MAX_NUM_CCE*sizeof(int)); // coreset0
   memset(RC.nrmac[module_idP]->cce_list[bwp_id][1],0,MAX_NUM_CCE*sizeof(int)); // coresetid 1
   NR_UE_info_t *UE_info = &RC.nrmac[module_idP]->UE_info;
@@ -409,9 +405,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   nr_schedule_ulsch(module_idP, frame, slot);
 
   // This schedules the DCI for Downlink and PDSCH
-  if (is_xlsch_in_slot(dlsch_in_slot_bitmap, slot))
-    nr_schedule_ue_spec(module_idP, frame, slot);
-
+  nr_schedule_ue_spec(module_idP, frame, slot);
 
   nr_schedule_pucch(module_idP, frame, slot);
 
