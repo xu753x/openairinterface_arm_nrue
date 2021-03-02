@@ -89,10 +89,7 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t subfram
 /* \brief main UL scheduler function. Calls a preprocessor to decide on
  * resource allocation, then "post-processes" resource allocation (nFAPI
  * messages, statistics, HARQ handling, ... */
-void nr_schedule_ulsch(module_id_t module_id,
-                       frame_t frame,
-                       sub_frame_t slot,
-                       uint64_t ulsch_in_slot_bitmap);
+void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot);
 
 /* \brief default FR1 UL preprocessor init routine, returns preprocessor to call */
 nr_pp_impl_ul nr_init_fr1_ulsch_preprocessor(module_id_t module_id, int CC_id);
@@ -148,10 +145,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
                              sub_frame_t slot);
 /* \brief UL preprocessor for phytest: schedules UE_id 0 with fixed MCS on a
  * fixed set of resources */
-bool nr_ul_preprocessor_phytest(module_id_t module_id,
-                                frame_t frame,
-                                sub_frame_t slot,
-                                uint64_t ulsch_in_slot_bitmap);
+bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_t slot);
 
 void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
                                    frame_t       frameP,

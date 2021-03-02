@@ -986,7 +986,7 @@ void pf_ul(module_id_t module_id,
   }
 }
 
-bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t slot, uint64_t ulsch_in_slot_bitmap)
+bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t slot)
 {
   gNB_MAC_INST *nr_mac = RC.nrmac[module_id];
   NR_COMMON_channels_t *cc = nr_mac->common_channels;
@@ -1011,7 +1011,7 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   int K2 = get_K2(sched_ctrl->active_ubwp, tda, mu);
   const int sched_frame = frame + (slot + K2 >= nr_slots_per_frame[mu]);
   const int sched_slot = (slot + K2) % nr_slots_per_frame[mu];
-  if (!is_xlsch_in_slot(ulsch_in_slot_bitmap, sched_slot))
+  if (!is_xlsch_in_slot(nr_mac->ulsch_slot_bitmap[slot / 64], sched_slot))
     return false;
 
   sched_ctrl->sched_pusch.slot = sched_slot;
@@ -1087,18 +1087,16 @@ nr_pp_impl_ul nr_init_fr1_ulsch_preprocessor(module_id_t module_id, int CC_id)
   return nr_fr1_ulsch_preprocessor;
 }
 
-void nr_schedule_ulsch(module_id_t module_id,
-                       frame_t frame,
-                       sub_frame_t slot,
-                       uint64_t ulsch_in_slot_bitmap) {
+void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
+{
+  gNB_MAC_INST *nr_mac = RC.nrmac[module_id];
   /* Uplink data ONLY can be scheduled when the current slot is downlink slot,
    * because we have to schedule the DCI0 first before schedule uplink data */
-  if (is_xlsch_in_slot(ulsch_in_slot_bitmap, slot)) {
+  if (!is_xlsch_in_slot(nr_mac->dlsch_slot_bitmap[slot / 64], slot)) {
     LOG_D(MAC, "Current slot %d is NOT DL slot, cannot schedule DCI0 for UL data\n", slot);
     return;
   }
-  bool do_sched = RC.nrmac[module_id]->pre_processor_ul(
-      module_id, frame, slot, ulsch_in_slot_bitmap);
+  bool do_sched = RC.nrmac[module_id]->pre_processor_ul(module_id, frame, slot);
   if (!do_sched)
     return;
 
