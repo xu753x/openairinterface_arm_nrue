@@ -420,7 +420,8 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
 bool nr_acknack_scheduling(int mod_id,
                            int UE_id,
                            frame_t frame,
-                           sub_frame_t slot)
+                           sub_frame_t slot,
+                           int isUEspec)
 {
   const NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon;
   const int n_slots_frame = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
@@ -494,7 +495,15 @@ bool nr_acknack_scheduling(int mod_id,
     return false;
 
   // this is hardcoded for now as ue specific
-  NR_SearchSpace__searchSpaceType_PR ss_type = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
+  NR_SearchSpace__searchSpaceType_PR ss_type;
+  if( isUEspec == 1)
+  {
+      ss_type = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
+  }
+  else
+  {
+      ss_type = NR_SearchSpace__searchSpaceType_PR_common;
+  }
   uint8_t pdsch_to_harq_feedback[8];
   get_pdsch_to_harq_feedback(mod_id, UE_id, ss_type, pdsch_to_harq_feedback);
 
@@ -520,7 +529,7 @@ bool nr_acknack_scheduling(int mod_id,
       memset(pucch, 0, sizeof(*pucch));
       pucch->frame = s == n_slots_frame - 1 ? (f + 1) % 1024 : f;
       pucch->ul_slot = (s + 1) % n_slots_frame;
-      return nr_acknack_scheduling(mod_id, UE_id, frame, slot);
+      return nr_acknack_scheduling(mod_id, UE_id, frame, slot, isUEspec);
     }
 
     pucch->timing_indicator = i;

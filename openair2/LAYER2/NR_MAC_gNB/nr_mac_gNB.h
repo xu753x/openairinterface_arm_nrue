@@ -501,6 +501,7 @@ typedef struct {
   int num_UEs;
 
   bool active[MAX_MOBILES_PER_GNB];
+  bool connected[MAX_MOBILES_PER_GNB]; // reuse active or not for ue status?
   rnti_t rnti[MAX_MOBILES_PER_GNB];
   NR_CellGroupConfig_t *secondaryCellGroup[MAX_MOBILES_PER_GNB];
   /// CCE indexing
@@ -596,6 +597,7 @@ typedef struct gNB_MAC_INST_s {
 
   /// DL preprocessor for differentiated scheduling
   nr_pp_impl_dl pre_processor_dl;
+  nr_pp_impl_dl pre_processor_dl_msg4;
   /// UL preprocessor for differentiated scheduling
   nr_pp_impl_ul pre_processor_ul;
 

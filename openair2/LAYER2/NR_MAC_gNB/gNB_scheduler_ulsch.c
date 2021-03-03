@@ -33,6 +33,8 @@
 #include "executables/softmodem-common.h"
 #include "common/utils/nr/nr_common.h"
 
+//#define MSG4_TEST_BY_DO_RA
+
 //38.321 Table 6.1.3.1-1
 const uint32_t NR_SHORT_BSR_TABLE[32] = {
     0,    10,    14,    20,    28,     38,     53,     74,
@@ -471,7 +473,12 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
               current_rnti);
         continue;
       }
-      const int UE_id = add_new_nr_ue(gnb_mod_idP, ra->rnti, ra->secondaryCellGroup);
+#ifdef MSG4_TEST_BY_DO_RA      
+      bool isConnected = false; // (get_softmodem_params()->sa ? false:true); // use sa when the branch is unblock -- SA_WAITING
+#else
+      bool isConnected = get_softmodem_params()->sa ? false:true; 
+#endif 
+      const int UE_id = add_new_nr_ue(gnb_mod_idP, ra->rnti, ra->secondaryCellGroup, isConnected);
       UE_info->UE_beam_index[UE_id] = ra->beam_id;
       LOG_I(MAC,
             "[gNB %d][RAPROC] PUSCH with TC_RNTI %x received correctly, "
@@ -483,13 +490,22 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
       // re-initialize ta update variables afrer RA procedure completion
       UE_info->UE_sched_ctrl[UE_id].ta_frame = frameP;
 
-      free(ra->preambles.preamble_list);
-      ra->state = RA_IDLE;
-      LOG_I(MAC,
-            "reset RA state information for RA-RNTI %04x/index %d\n",
-            ra->rnti,
-            i);
-
+      if (isConnected) // NSA mode
+      {
+        free(ra->preambles.preamble_list);
+        ra->state = RA_IDLE;
+        LOG_I(MAC,
+              "reset RA state information for RA-RNTI %04x/index %d\n",
+              ra->rnti,
+              i);
+      }
+      else  // SA mode
+      {
+        ra->state = Msg4;
+        ra->Msg4_frame = ( frameP +2 ) % 1024;
+        ra->Msg4_slot = 1;
+        LOG_I(MAC, "set RA state to Msg4 for RA-RNTI %04x, msg4 frame %d %d\n", ra->rnti, ra->Msg4_frame, ra->Msg4_slot);
+      }
       return;
     }
   }

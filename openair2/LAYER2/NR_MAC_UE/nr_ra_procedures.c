@@ -47,6 +47,10 @@
 #include "NR_MAC_COMMON/nr_mac.h"
 #include "LAYER2/NR_MAC_UE/mac_proto.h"
 
+#include "PHY/phy_extern_nr_ue.h"
+
+//#define MSG4_TEST_BY_DO_RA
+
 void nr_get_RA_window(NR_UE_MAC_INST_t *mac);
 
 // Random Access procedure initialization as per 5.1.1 and initialization of variables specific
@@ -607,9 +611,19 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
       if (ra->RA_window_cnt >= 0 && ra->RA_RAPID_found == 1) {
         // Reset RA_active flag: it disables Msg3 retransmission (8.3 of TS 38.213)
-
-        nr_ra_succeeded(mod_id, frame, nr_slot_tx);
-
+#ifdef MSG4_TEST_BY_DO_RA
+        if (1) //(get_softmodem_params()->sa)  // use sa when the branch is unblock -- SA_WAITING
+#else
+        if (get_softmodem_params()->sa)
+#endif
+        {
+          ra->ra_state = WAIT_CONTENTION_RESOLUTION;
+          ra->RA_window_cnt = -1;  
+        }
+        else
+        {
+          nr_ra_succeeded(mod_id, frame, nr_slot_tx);
+        }
       } else if (ra->RA_window_cnt == 0 && !ra->RA_RAPID_found) {
 
         LOG_I(MAC, "[UE %d][%d:%d] RAR reception failed \n", mod_id, frame, nr_slot_tx);
@@ -737,6 +751,12 @@ void nr_ra_succeeded(module_id_t mod_id, frame_t frame, int slot){
 
     ra->RA_window_cnt = -1;
 
+#ifdef MSG4_TEST_BY_DO_RA  
+    // we can delete the code when msg4 is triggered by SA RA      
+    ra->RA_contention_resolution_cnt = -1;
+    ra->RA_contention_resolution_timer_active = 0;   
+#endif    
+
   } else {
 
     LOG_I(MAC, "[UE %d][%d.%d][RAPROC] RA procedure succeeded. CB-RA: Contention Resolution is successful.\n", mod_id, frame, slot);
@@ -748,11 +768,13 @@ void nr_ra_succeeded(module_id_t mod_id, frame_t frame, int slot){
     LOG_D(MAC, "In %s: [UE %d][%d.%d] CB-RA: cleared contention resolution timer...\n", __FUNCTION__, mod_id, frame, slot);
 
   }
-
+  
   LOG_D(MAC, "In %s: [UE %d] clearing RA_active flag...\n", __FUNCTION__, mod_id);
+  ra->t_crnti = 0;
   ra->RA_active = 0;
   ra->generate_nr_prach = 2;
   ra->ra_state = RA_SUCCEEDED;
+  PHY_vars_UE_g[mod_id][0]->UE_mode[0] = PUSCH;
 
 }
 

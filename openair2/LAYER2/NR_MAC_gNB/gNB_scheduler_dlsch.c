@@ -341,9 +341,12 @@ void nr_store_dlsch_buffer(module_id_t module_id,
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
     sched_ctrl->num_total_bytes = 0;
-    const int lcid = DL_SCH_LCID_DTCH;
-    const uint16_t rnti = UE_info->rnti[UE_id];
-    sched_ctrl->rlc_status[lcid] = mac_rlc_status_ind(module_id,
+        const uint16_t rnti = UE_info->rnti[UE_id];
+    if (UE_info->connected[UE_id] == 1) // only check connected UE 
+    {
+      const int lcid = DL_SCH_LCID_DTCH;
+
+      sched_ctrl->rlc_status[lcid] = mac_rlc_status_ind(module_id,
                                                       rnti,
                                                       module_id,
                                                       frame,
@@ -353,8 +356,8 @@ void nr_store_dlsch_buffer(module_id_t module_id,
                                                       lcid,
                                                       0,
                                                       0);
-    sched_ctrl->num_total_bytes += sched_ctrl->rlc_status[lcid].bytes_in_buffer;
-    LOG_D(MAC,
+      sched_ctrl->num_total_bytes += sched_ctrl->rlc_status[lcid].bytes_in_buffer;
+      LOG_D(MAC,
           "[%s][%d.%d], DTCH%d->DLSCH, RLC status %d bytes TA %d\n",
           __func__,
           frame,
@@ -362,6 +365,7 @@ void nr_store_dlsch_buffer(module_id_t module_id,
           lcid,
           sched_ctrl->rlc_status[lcid].bytes_in_buffer,
           sched_ctrl->ta_apply);
+    }
   }
 }
 
@@ -450,7 +454,7 @@ void pf_dl(module_id_t module_id,
       }
       /* Find PUCCH occasion: if it fails, undo CCE allocation (undoing PUCCH
        * allocation after CCE alloc fail would be more complex) */
-      const bool alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot);
+      const bool alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot, 1);
       if (!alloc) {
         LOG_W(MAC,
               "%s(): could not find PUCCH for UE %d/%04x@%d.%d\n",
@@ -543,7 +547,7 @@ void pf_dl(module_id_t module_id,
 
     /* Find PUCCH occasion: if it fails, undo CCE allocation (undoing PUCCH
     * allocation after CCE alloc fail would be more complex) */
-    const bool alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot);
+    const bool alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot, 1);
     if (!alloc) {
       LOG_W(MAC,
             "%s(): could not find PUCCH for UE %d/%04x@%d.%d\n",

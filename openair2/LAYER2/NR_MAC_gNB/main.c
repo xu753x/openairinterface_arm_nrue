@@ -85,8 +85,9 @@ void mac_top_init_gNB(void)
         RC.nrmac[i]->pre_processor_dl = nr_preprocessor_phytest;
         RC.nrmac[i]->pre_processor_ul = nr_ul_preprocessor_phytest;
       } else {
-        RC.nrmac[i]->pre_processor_dl = nr_simple_dlsch_preprocessor;
-        RC.nrmac[i]->pre_processor_ul = nr_simple_ulsch_preprocessor;
+        RC.nrmac[i]->pre_processor_dl      = nr_simple_dlsch_preprocessor;
+        RC.nrmac[i]->pre_processor_dl_msg4 = nr_simple_dlsch_preprocessor_msg4;
+        RC.nrmac[i]->pre_processor_ul      = nr_simple_ulsch_preprocessor;
       }
 
     }//END for (i = 0; i < RC.nb_nr_macrlc_inst; i++)
@@ -116,6 +117,7 @@ void mac_top_init_gNB(void)
     create_nr_list(&UE_info->list, MAX_MOBILES_PER_GNB);
     for (list_el = 0; list_el < MAX_MOBILES_PER_GNB; list_el++) {
       UE_info->active[list_el] = false;
+      UE_info->connected[list_el] = false;
     }
   }
 

@@ -81,7 +81,10 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t subfra
 void nr_simple_dlsch_preprocessor(module_id_t module_id,
                                   frame_t frame,
                                   sub_frame_t slot);
-
+/* \brief default preprocessor */
+void nr_simple_dlsch_preprocessor_msg4(module_id_t module_id,
+                                  frame_t frame,
+                                  sub_frame_t slot);
 void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, uint8_t slots_per_frame);
 
 /// uplink scheduler
@@ -192,7 +195,8 @@ void nr_csi_meas_reporting(int Mod_idP,
 bool nr_acknack_scheduling(int Mod_idP,
                            int UE_id,
                            frame_t frameP,
-                           sub_frame_t slotP);
+                           sub_frame_t slotP,
+                           int isUEspec);
 
 void get_pdsch_to_harq_feedback(int Mod_idP,
                                 int UE_id,
@@ -307,7 +311,7 @@ int find_nr_UE_id(module_id_t mod_idP, rnti_t rntiP);
 
 int find_nr_RA_id(module_id_t mod_idP, int CC_idP, rnti_t rntiP);
 
-int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *secondaryCellGroup);
+int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *secondaryCellGroup, bool isConnected);
 
 void mac_remove_nr_ue(module_id_t mod_id, rnti_t rnti);
 
@@ -352,6 +356,27 @@ void nr_generate_Msg2(module_id_t module_idP,
                       frame_t frameP,
                       sub_frame_t slotP);
 
+void nr_generate_Msg4(module_id_t module_id,
+                      int     CC_id, 
+                      frame_t frame,
+                      sub_frame_t slot);
+void nr_check_Msg4_Ack(module_id_t module_id,
+                       int CC_id,
+                       frame_t frame,
+                       sub_frame_t slot);
+bool allocate_retransmission(module_id_t module_id,
+                             uint8_t *rballoc_mask,
+                             int *n_rb_sched,
+                             int UE_id,
+                             int current_harq_pid);                 
+uint8_t getN_PRB_DMRS(NR_BWP_Downlink_t *bwp, int numDmrsCdmGrpsNoData);
+nfapi_nr_dmrs_type_e getDmrsConfigType(NR_BWP_Downlink_t *bwp);
+int nr_write_ce_dlsch_pdu(module_id_t module_idP,
+                          const NR_UE_sched_ctrl_t *ue_sched_ctl,
+                          unsigned char *mac_pdu,
+                          unsigned char drx_cmd,
+                          unsigned char *ue_cont_res_id);
+int getNrOfSymbols(NR_BWP_Downlink_t *bwp, int tda);
 void nr_process_mac_pdu(
     module_id_t module_idP,
     rnti_t rnti,

@@ -875,7 +875,13 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
       else { // This is to adjust the llr offset in the case of skipping over a dmrs symbol (i.e. in case of no PDSCH REs in DMRS)
         if (pdsch == RA_PDSCH) ue->pdsch_vars[proc->thread_id][eNB_id]->llr_offset[m]=ue->pdsch_vars[proc->thread_id][eNB_id]->llr_offset[m-1];
         else if (pdsch == PDSCH || pdsch == SI_PDSCH) {
-          if (nr_rx_pdsch(ue,
+          if (dlsch0->harq_processes[harq_pid]->n_dmrs_cdm_groups == 2) 
+          {  
+            ue->pdsch_vars[proc->thread_id][eNB_id]->llr_offset[m]=ue->pdsch_vars[proc->thread_id][eNB_id]->llr_offset[m-1];
+          }
+          else
+          {
+            if (nr_rx_pdsch(ue,
                     proc,
                     pdsch,
                     eNB_id,
@@ -888,6 +894,7 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
                     i_mod,
                     dlsch0->current_harq_pid) < 0)
                       return -1;
+          }
         }
         else AssertFatal(1==0,"Not RA_PDSCH, SI_PDSCH or PDSCH\n");
       }
@@ -2155,7 +2162,7 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
 
   } else {
 
-    LOG_D(PHY, "In %s:[%d.%d] getting PRACH resources\n", __FUNCTION__, frame_tx, nr_slot_tx);
+    LOG_D(PHY, "In %s:[%d.%d] getting PRACH resources, UE mode is %d\n", __FUNCTION__, frame_tx, nr_slot_tx, ue->UE_mode[gNB_id]);
     nr_prach = nr_ue_get_rach(prach_resources, &ue->prach_vars[0]->prach_pdu, mod_id, ue->CC_id, frame_tx, gNB_id, nr_slot_tx);
 
   }
