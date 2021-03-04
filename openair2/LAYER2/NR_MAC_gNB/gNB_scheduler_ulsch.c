@@ -183,6 +183,7 @@ void nr_process_mac_pdu(module_id_t module_idP,
                         int UE_id,
                         uint8_t CC_id,
                         frame_t frameP,
+                        sub_frame_t slot,
                         uint8_t *pduP,
                         uint16_t mac_pdu_len)
 {
@@ -257,12 +258,15 @@ void nr_process_mac_pdu(module_id_t module_idP,
                NR_BSR_SHORT *bsr_s = (NR_BSR_SHORT *) ce_ptr;
                sched_ctrl->estimated_ul_buffer = 0;
                sched_ctrl->estimated_ul_buffer = NR_SHORT_BSR_TABLE[bsr_s->Buffer_size];
-               LOG_D(MAC, "SHORT BSR, LCG ID %d, BS Index %d, BS value < %d, est buf %d\n",
+               LOG_D(MAC,
+                     "SHORT BSR at %4d.%2d, LCG ID %d, BS Index %d, BS value < %d, est buf %d\n",
+                     frameP,
+                     slot,
                      bsr_s->LcgID,
                      bsr_s->Buffer_size,
                      NR_SHORT_BSR_TABLE[bsr_s->Buffer_size],
                      sched_ctrl->estimated_ul_buffer);
-        	break;
+               break;
 
         case UL_SCH_LCID_L_BSR:
         case UL_SCH_LCID_L_TRUNCATED_BSR:
@@ -282,16 +286,18 @@ void nr_process_mac_pdu(module_id_t module_idP,
                n_Lcg = bsr_l->LcgID7 + bsr_l->LcgID6 + bsr_l->LcgID5 + bsr_l->LcgID4 +
                        bsr_l->LcgID3 + bsr_l->LcgID2 + bsr_l->LcgID1 + bsr_l->LcgID0;
 
-               LOG_D(MAC, "LONG BSR, LCG ID(7-0) %d/%d/%d/%d/%d/%d/%d/%d\n",
-                     bsr_l->LcgID7, bsr_l->LcgID6, bsr_l->LcgID5, bsr_l->LcgID4,
-                     bsr_l->LcgID3, bsr_l->LcgID2, bsr_l->LcgID1, bsr_l->LcgID0);
-
                for (int n = 0; n < n_Lcg; n++){
-                 LOG_D(MAC, "LONG BSR, %d/%d (n/n_Lcg), BS Index %d, BS value < %d",
-                       n, n_Lcg, pdu_ptr[mac_subheader_len + 1 + n],
-                       NR_LONG_BSR_TABLE[pdu_ptr[mac_subheader_len + 1 + n]]);
                  sched_ctrl->estimated_ul_buffer +=
                        NR_LONG_BSR_TABLE[pdu_ptr[mac_subheader_len + 1 + n]];
+                 LOG_D(MAC,
+                       "LONG BSR at %4d.%2d, %d/%d (n/n_Lcg), BS Index %d, BS value < %d, total %d\n",
+                       frameP,
+                       slot,
+                       n,
+                       n_Lcg,
+                       pdu_ptr[mac_subheader_len + 1 + n],
+                       NR_LONG_BSR_TABLE[pdu_ptr[mac_subheader_len + 1 + n]],
+                       sched_ctrl->estimated_ul_buffer);
                }
 
         	break;
@@ -583,7 +589,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
       if (UE_scheduling_control->sched_ul_bytes < 0)
         UE_scheduling_control->sched_ul_bytes = 0;
 
-      nr_process_mac_pdu(gnb_mod_idP, UE_id, CC_idP, frameP, sduP, sdu_lenP);
+      nr_process_mac_pdu(gnb_mod_idP, UE_id, CC_idP, frameP, slotP, sduP, sdu_lenP);
     }
   } else {
     if (!sduP) // check that CRC passed
