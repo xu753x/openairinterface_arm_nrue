@@ -393,7 +393,10 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
     const int nr_dlmix_slots = tdd->nrofDownlinkSlots + (tdd->nrofDownlinkSymbols != 0);
     const int nr_ulstart_slot = tdd->nrofDownlinkSlots + (tdd->nrofUplinkSymbols == 0);
     for (int slot = 0; slot < n; ++slot) {
-      RC.nrmac[Mod_idP]->dlsch_slot_bitmap[slot / 64] |= ((slot % nr_slots_period) < nr_dlmix_slots) << (slot % 64);
+      /* FIXME: it seems there is a problem with slot 0/10/slots right after UL:
+       * we just get retransmissions. Thus, do not schedule such slots in DL */
+      if (slot % nr_slots_period != 0)
+        RC.nrmac[Mod_idP]->dlsch_slot_bitmap[slot / 64] |= ((slot % nr_slots_period) < nr_dlmix_slots) << (slot % 64);
       RC.nrmac[Mod_idP]->ulsch_slot_bitmap[slot / 64] |= ((slot % nr_slots_period) >= nr_ulstart_slot) << (slot % 64);
       LOG_D(MAC,
             "slot %d DL %d UL %d\n",
