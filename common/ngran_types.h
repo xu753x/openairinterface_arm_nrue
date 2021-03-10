@@ -42,7 +42,8 @@ typedef enum {
   ngran_gNB_CU    = 5,
   ngran_eNB_DU    = 6,
   ngran_gNB_DU    = 7,
-  ngran_eNB_MBMS_STA  = 8
+  ngran_eNB_MBMS_STA  = 8,
+  ngran_UE        = 9
 } ngran_node_t;
 
 #define NODE_IS_MONOLITHIC(nOdE_TyPe) ((nOdE_TyPe) == ngran_eNB    || (nOdE_TyPe) == ngran_ng_eNB    || (nOdE_TyPe) == ngran_gNB)

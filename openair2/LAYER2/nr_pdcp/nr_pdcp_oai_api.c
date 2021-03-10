@@ -610,7 +610,7 @@ rb_found:
   memblock = get_free_mem_block(size, __FUNCTION__);
   memcpy(memblock->data, buf, size);
 
-  if (NODE_IS_CU(RC.nrrrc[0]->node_type)) {
+  if (NODE_IS_CU(node_type)) {
     LOG_D(PDCP, "call proto_agent_send_rlc_data_req()\n");
     nr_pdcp_params.send_rlc_data_req_func(&ctxt, 0, MBMS_FLAG_NO, rb_id, sdu_id, 0, size, memblock, NULL, NULL);
     // proto_agent_send_rlc_data_req(&ctxt, 0, MBMS_FLAG_NO, rb_id, sdu_id, 0, size, memblock);
@@ -704,7 +704,7 @@ rb_found:
 printf("!!!!!!! deliver_pdu_srb (srb %d) calling rlc_data_req size %d: ", srb_id, size);
 //for (i = 0; i < size; i++) printf(" %2.2x", (unsigned char)memblock->data[i]);
 printf("\n");
-  if (NODE_IS_CU(RC.nrrrc[0]->node_type)) {
+  if (NODE_IS_CU(node_type)) {
 
     NR_DL_DCCH_Message_t* dl_dcch_msg=NULL;
     asn_dec_rval_t dec_rval;
@@ -810,7 +810,7 @@ boolean_t pdcp_data_ind(
     T(T_ENB_PDCP_UL, T_INT(ctxt_pP->module_id), T_INT(rnti),
       T_INT(rb_id), T_INT(sdu_buffer_size));
 
-  if (NODE_IS_DU(RC.nrrrc[0]->node_type) && (srb_flagP == 0)) {
+  if (NODE_IS_DU(node_type) && (srb_flagP == 0)) {
     LOG_D(RLC, "call proto_agent_send_pdcp_data_ind() \n");
     nr_pdcp_params.pdcp_data_ind_func(ctxt_pP, srb_flagP, 0, rb_id, sdu_buffer_size, sdu_buffer, NULL, NULL);
     return 1;

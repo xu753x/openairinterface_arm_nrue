@@ -44,6 +44,7 @@
 #include "openair2/LAYER2/PROTO_AGENT/proto_agent.h"
 
 extern RAN_CONTEXT_t RC;
+extern ngran_node_t node_type;
 
 #include <stdint.h>
 
@@ -477,7 +478,7 @@ rb_found:
       T_INT(0 /*ctxt_pP->module_id*/),
       T_INT(ue->rnti), T_INT(rb_id), T_INT(size));
 
-    const ngran_node_t type = RC.nrrrc[0 /*ctxt_pP->module_id*/]->node_type;
+    const ngran_node_t type = node_type;
     AssertFatal(type != ngran_eNB_CU && type != ngran_ng_eNB_CU && type != ngran_gNB_CU,
                 "Can't be CU, bad node type %d\n", type);
 

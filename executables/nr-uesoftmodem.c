@@ -98,7 +98,7 @@ pthread_cond_t sync_cond;
 pthread_mutex_t sync_mutex;
 int sync_var=-1; //!< protected by mutex \ref sync_mutex.
 int config_sync_var=-1;
-
+extern ngran_node_t node_type;
 
 
 RAN_CONTEXT_t RC;
@@ -514,10 +514,6 @@ int main( int argc, char **argv ) {
 #endif
   LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
 
-  RC.nrrrc = (gNB_RRC_INST **)malloc(1*sizeof(gNB_RRC_INST *));
-  RC.nrrrc[0] = (gNB_RRC_INST*)malloc(sizeof(gNB_RRC_INST));
-  RC.nrrrc[0]->node_type = ngran_gNB;
-
   init_NR_UE(1,rrc_config_path);
   if(IS_SOFTMODEM_NOS1)
 	  init_pdcp();
@@ -583,9 +579,7 @@ int main( int argc, char **argv ) {
   protocol_ctxt_t ctxt_pP = {0};
   ctxt_pP.enb_flag = ENB_FLAG_NO;
   ctxt_pP.rnti = 0x1234;
-  RC.nrrrc = (gNB_RRC_INST **)malloc(1*sizeof(gNB_RRC_INST *));
-  RC.nrrrc[0] = (gNB_RRC_INST*)malloc(sizeof(gNB_RRC_INST));
-  RC.nrrrc[0]->node_type = ngran_gNB;
+  node_type = ngran_UE;
   rrc_ue_generate_RRCSetupRequest(&ctxt_pP, 0);
   if (create_tasks_nrue(1) < 0) {
     printf("cannot create ITTI tasks\n");
