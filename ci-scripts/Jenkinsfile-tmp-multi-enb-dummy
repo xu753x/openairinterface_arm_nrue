@@ -57,7 +57,7 @@ pipeline {
             steps {
                 // update the build name and description
                 buildName "${params.eNB_MR}"
-                buildDescription "Bracn : ${params.eNB_Branch} ; CommitID : ${params.eNB_CommitID}"
+                buildDescription "Branch : ${params.eNB_Branch}"
             }
         }
         stage ("Verify Parameters") {
