@@ -14,6 +14,9 @@ extern "C" {
 #define gtpv1u_delete_s1u_tunnel ocp_gtpv1u_delete_s1u_tunnel
 #define gtpv1u_create_x2u_tunnel ocp_gtpv1u_create_x2u_tunnel
 #define gtpv1u_eNB_task          ocp_gtpv1uTask
+#define gtpv1u_create_ngu_tunnel ocp_gtpv1u_create_ngu_tunnel
+#define gtpv1u_update_ngu_tunnel ocp_gtpv1u_update_ngu_tunnel
+#define gtpv1u_delete_ngu_tunnel ocp_gtpv1u_delete_ngu_tunnel
 #define gtpv1u_gNB_task          ocp_gtpv1uTask
 #define TASK_VARIABLE            OCP_GTPV1_U
 #else
@@ -58,6 +61,16 @@ int ocp_gtpv1u_create_x2u_tunnel(
   const gtpv1u_enb_create_x2u_tunnel_req_t   *const create_tunnel_req_pP,
   gtpv1u_enb_create_x2u_tunnel_resp_t *const create_tunnel_resp_pP);
 
+int ocp_gtpv1u_create_ngu_tunnel(const instance_t instance,
+                                 const gtpv1u_gnb_create_tunnel_req_t  *create_tunnel_req,
+                                 gtpv1u_gnb_create_tunnel_resp_t *create_tunnel_resp);
+
+int ocp_gtpv1u_update_ngu_tunnel(const instance_t                              instance,
+                                 const gtpv1u_gnb_create_tunnel_req_t *const  create_tunnel_req,
+                                 const rnti_t                                  prior_rnti);
+
+int ocp_gtpv1u_delete_ngu_tunnel( const instance_t instance,
+                                  const gtpv1u_gnb_delete_tunnel_req_t *const req_pP);
 
 // New API
 teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int bearer_id, teid_t teid,

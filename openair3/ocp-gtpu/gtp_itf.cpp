@@ -707,6 +707,76 @@ void gtpv1uReceiver(int h) {
   }
 }
 
+int ocp_gtpv1u_create_ngu_tunnel(const instance_t instance,
+                                 const gtpv1u_gnb_create_tunnel_req_t  *create_tunnel_req,
+                                 gtpv1u_gnb_create_tunnel_resp_t *create_tunnel_resp) {
+  LOG_D(GTPU, "Start create tunnels for RNTI %x, num_tunnels %d, upf_NGu_teid %d\n",
+        create_tunnel_req->rnti,
+        create_tunnel_req->num_tunnels,
+        create_tunnel_req->upf_NGu_teid[0]);
+
+  for (int i = 0; i < create_tunnel_req->num_tunnels; i++) {
+    teid_t teid=newGtpuCreateTunnel(compatInst(instance), create_tunnel_req->rnti,
+                                    create_tunnel_req->pdusession_id[i],
+                                    create_tunnel_req->upf_NGu_teid[i],
+                                    create_tunnel_req->upf_addr[i], 2152,
+                                    pdcp_data_req);
+
+    LOG_D(GTPU, "create tunnels for RNTI %x, tunnel %d, gnb_NGu_teid 0x%x %u(dec)\n",
+        create_tunnel_req->rnti, i, teid, teid);
+
+    create_tunnel_resp->status=0;
+    create_tunnel_resp->rnti=create_tunnel_req->rnti;
+    create_tunnel_resp->num_tunnels=create_tunnel_req->num_tunnels;
+    create_tunnel_resp->gnb_NGu_teid[i]=teid;
+    create_tunnel_resp->pdusession_id[i] = create_tunnel_req->pdusession_id[i];
+    memcpy(create_tunnel_resp->gnb_addr.buffer,globGtp.instances[compatInst(instance)].foundAddr,
+           globGtp.instances[compatInst(instance)].foundAddrLen);
+    create_tunnel_resp->gnb_addr.length= globGtp.instances[compatInst(instance)].foundAddrLen;
+  }
+
+  return !GTPNOK;
+}
+
+int ocp_gtpv1u_update_ngu_tunnel(
+  const instance_t                              instance,
+  const gtpv1u_gnb_create_tunnel_req_t *const  create_tunnel_req,
+  const rnti_t                                  prior_rnti
+) {
+  LOG_D(GTPU, "Start update tunnels for old RNTI %x, new RNTI %x, num_tunnels %d, upf_NGu_teid %d, pdusession_id %d\n",
+        prior_rnti,
+        create_tunnel_req->rnti,
+        create_tunnel_req->num_tunnels,
+        create_tunnel_req->upf_NGu_teid[0],
+        create_tunnel_req->pdusession_id[0]);
+  pthread_mutex_lock(&globGtp.gtp_lock);
+  auto inst=&globGtp.instances[compatInst(instance)];
+
+  if ( inst->ue2te_mapping.find(create_tunnel_req->rnti) == inst->ue2te_mapping.end() ) {
+    LOG_E(GTPU,"Update not already existing tunnel (new rnti %x, old rnti %x)\n", create_tunnel_req->rnti, prior_rnti);
+  }
+
+  auto it=inst->ue2te_mapping.find(prior_rnti);
+
+  if ( it != inst->ue2te_mapping.end() ) {
+    LOG_W(GTPU,"Update a not existing tunnel, start create the new one (new rnti %x, old rnti %x)\n", create_tunnel_req->rnti, prior_rnti);
+    pthread_mutex_unlock(&globGtp.gtp_lock);
+    gtpv1u_gnb_create_tunnel_resp_t tmp;
+    (void)ocp_gtpv1u_create_ngu_tunnel(instance, create_tunnel_req, &tmp);
+    return 0;
+  }
+
+  inst->ue2te_mapping[create_tunnel_req->rnti]=it->second;
+  inst->ue2te_mapping.erase(it);
+  pthread_mutex_unlock(&globGtp.gtp_lock);
+  return 0;
+}
+
+int ocp_gtpv1u_delete_ngu_tunnel( const instance_t instance,
+                                  const gtpv1u_gnb_delete_tunnel_req_t *const req_pP) {
+  return  newGtpuDeleteTunnel(instance, req_pP->rnti);
+}
+
 #include <openair2/ENB_APP/enb_paramdef.h>
 
 void *ocp_gtpv1uTask(void *args)  {
@@ -755,6 +825,17 @@ void *ocp_gtpv1uTask(void *args)  {
           strcpy(addr.originHost, GTPV1U_ENB_S1_REQ(message_p).addrStr);
           strcpy(addr.originService, GTPV1U_ENB_S1_REQ(message_p).portStr);
           AssertFatal((legacyInstanceMapping=ocp_gtpv1Init(addr))!=0,"Instance 0 reserved for legacy\n");
+          break;
+
+        case GTPV1U_GNB_NG_REQ:
+          strcpy(addr.originHost, GTPV1U_GNB_NG_REQ(message_p).addrStr);
+          strcpy(addr.originService, GTPV1U_GNB_NG_REQ(message_p).portStr);
+          AssertFatal((legacyInstanceMapping=ocp_gtpv1Init(addr))!=0,"Instance 0 reserved for legacy\n");
+          break;
+
+        case GTPV1U_GNB_DELETE_TUNNEL_REQ:
+          ocp_gtpv1u_delete_ngu_tunnel(compatInst(ITTI_MSG_DESTINATION_INSTANCE(message_p)),
+                                       &GTPV1U_GNB_DELETE_TUNNEL_REQ(message_p));
           break;
 
         default:
