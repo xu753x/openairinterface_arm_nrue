@@ -1,0 +1,697 @@
+ASN_MODULE_SRCS=	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Criticality.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Presence.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_PrivateIE-ID.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ProcedureCode.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ProtocolExtensionID.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ProtocolIE-ID.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_TriggeringMessage.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_F1AP-PDU.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_InitiatingMessage.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SuccessfulOutcome.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_UnsuccessfulOutcome.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Reset.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ResetType.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ResetAll.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_UE-associatedLogicalF1-ConnectionListRes.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ResetAcknowledge.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_UE-associatedLogicalF1-ConnectionListResAck.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ErrorIndication.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_F1SetupRequest.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNB-DU-Served-Cells-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_F1SetupResponse.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Cells-to-be-Activated-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_F1SetupFailure.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNBDUConfigurationUpdate.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Served-Cells-To-Add-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Served-Cells-To-Modify-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Served-Cells-To-Delete-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Active-Cells-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNBDUConfigurationUpdateAcknowledge.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNBDUConfigurationUpdateFailure.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNBCUConfigurationUpdate.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Cells-to-be-Deactivated-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNB-CU-TNL-Association-To-Add-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNB-CU-TNL-Association-To-Remove-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNB-CU-TNL-Association-To-Update-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Cells-to-be-Barred-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Protected-EUTRA-Resources-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNBCUConfigurationUpdateAcknowledge.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Cells-Failed-to-be-Activated-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNB-CU-TNL-Association-Setup-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNB-CU-TNL-Association-Failed-To-Setup-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNBCUConfigurationUpdateFailure.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNBDUResourceCoordinationRequest.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNBDUResourceCoordinationResponse.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_UEContextSetupRequest.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Candidate-SpCell-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SCell-ToBeSetup-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SRBs-ToBeSetup-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-ToBeSetup-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_UEContextSetupResponse.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-Setup-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SRBs-FailedToBeSetup-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-FailedToBeSetup-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SCell-FailedtoSetup-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_UEContextSetupFailure.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Potential-SpCell-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_UEContextReleaseRequest.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_UEContextReleaseCommand.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_UEContextReleaseComplete.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_UEContextModificationRequest.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SCell-ToBeSetupMod-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SCell-ToBeRemoved-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SRBs-ToBeSetupMod-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-ToBeSetupMod-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-ToBeModified-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SRBs-ToBeReleased-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-ToBeReleased-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_UEContextModificationResponse.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-SetupMod-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-Modified-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-FailedToBeModified-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SRBs-FailedToBeSetupMod-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-FailedToBeSetupMod-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SCell-FailedtoSetupMod-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_UEContextModificationFailure.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_UEContextModificationRequired.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-Required-ToBeModified-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-Required-ToBeReleased-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SRBs-Required-ToBeReleased-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_UEContextModificationConfirm.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-ModifiedConf-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_WriteReplaceWarningRequest.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Cells-To-Be-Broadcast-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_WriteReplaceWarningResponse.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Cells-Broadcast-Completed-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_PWSCancelRequest.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Broadcast-To-Be-Cancelled-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_PWSCancelResponse.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Cells-Broadcast-Cancelled-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_UEInactivityNotification.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRB-Activity-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_InitialULRRCMessageTransfer.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DLRRCMessageTransfer.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ULRRCMessageTransfer.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_PrivateMessage.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SystemInformationDeliveryCommand.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Paging.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_PagingCell-list.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Notify.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRB-Notify-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_PWSRestartIndication.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_NR-CGI-List-For-Restart-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_PWSFailureIndication.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_PWS-Failed-NR-CGI-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Active-Cells-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_AllocationAndRetentionPriority.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_AveragingWindow.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_BitRate.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_BroadcastPLMNs-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_BroadcastPLMNs-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Cancel-all-Warning-Messages-Indicator.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Candidate-SpCell-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Cause.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_CauseMisc.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_CauseProtocol.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_CauseRadioNetwork.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_CauseTransport.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_CellGroupConfig.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Cells-Failed-to-be-Activated-List-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Cells-To-Be-Broadcast-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Cells-Broadcast-Completed-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Broadcast-To-Be-Cancelled-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Cells-Broadcast-Cancelled-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Cells-to-be-Activated-List-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Cells-to-be-Deactivated-List-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Cells-to-be-Barred-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_CellBarred.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_CellULConfigured.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_CNUEPagingIdentity.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ConcurrentWarningMessageIndicator.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_CP-TransportLayerAddress.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_CriticalityDiagnostics.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_CriticalityDiagnostics-IE-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_CriticalityDiagnostics-IE-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_C-RNTI.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_CUtoDURRCInformation.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DLUPTNLInformation-ToBeSetup-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DLUPTNLInformation-ToBeSetup-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRB-Activity-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRB-Activity.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBID.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-FailedToBeModified-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-FailedToBeSetup-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-FailedToBeSetupMod-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRB-Information.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-Modified-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-ModifiedConf-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRB-Notify-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-Required-ToBeModified-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-Required-ToBeReleased-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-Setup-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-SetupMod-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-ToBeModified-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-ToBeReleased-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-ToBeSetup-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-ToBeSetupMod-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRXCycle.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DUtoCURRCContainer.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DUtoCURRCInformation.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DuplicationActivation.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DuplicationIndication.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Dynamic5QIDescriptor.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Endpoint-IP-address-and-port.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_EUTRANQoS.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ExecuteDuplication.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_EUTRA-Mode-Info.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_EUTRA-NR-CellResourceCoordinationReq-Container.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_EUTRA-NR-CellResourceCoordinationReqAck-Container.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_EUTRA-FDD-Info.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_EUTRA-TDD-Info.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_FDD-Info.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Flows-Mapped-To-DRB-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Flows-Mapped-To-DRB-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_FreqBandNrItem.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_FullConfiguration.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GBR-QosInformation.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GBR-QoSFlowInformation.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNB-CUSystemInformation.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNB-CU-TNL-Association-Setup-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNB-CU-TNL-Association-Failed-To-Setup-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNB-CU-TNL-Association-To-Add-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNB-CU-TNL-Association-To-Remove-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNB-CU-TNL-Association-To-Update-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNB-CU-UE-F1AP-ID.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNB-DU-UE-F1AP-ID.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNB-DU-ID.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNB-CU-Name.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNB-DU-Name.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNB-DU-Served-Cells-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNB-DU-System-Information.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GTP-TEID.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GTPTunnel.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_HandoverPreparationInformation.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_InactivityMonitoringRequest.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_InactivityMonitoringResponse.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_LCID.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ListofEUTRACellsinGNBDUCoordination.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_LongDRXCycleLength.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_MaskedIMEISV.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_MaxDataBurstVolume.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_MaxPacketLossRate.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_MIB-message.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_MeasConfig.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_MeasGapConfig.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_NGRANAllocationAndRetentionPriority.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_NR-CGI-List-For-Restart-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_NonDynamic5QIDescriptor.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Notification-Cause.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_NotificationControl.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_NRFreqInfo.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_NRCGI.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_NR-Mode-Info.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_NRCellIdentity.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_NRNRB.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_NRPCI.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_NRSCS.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_NumberOfBroadcasts.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_NumberofBroadcastRequest.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_OffsetToPointA.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_PacketDelayBudget.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_PacketErrorRate.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_PagingCell-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_PagingDRX.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_PagingIdentity.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_PagingPriority.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_PLMN-Identity.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Pre-emptionCapability.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Pre-emptionVulnerability.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_PriorityLevel.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ProtectedEUTRAResourceIndication.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Potential-SpCell-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_PWS-Failed-NR-CGI-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_PWSSystemInformation.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_QCI.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_QoS-Characteristics.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_QoSFlowIndicator.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_QoSFlowLevelQoSParameters.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_QoSInformation.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_RANAC.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_RANUEPagingIdentity.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_RAT-FrequencyPriorityInformation.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_RAT-FrequencySelectionPriority.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_RequestType.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ResourceCoordinationTransferContainer.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_RepetitionPeriod.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_RLCMode.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_RRCContainer.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_RRCRconfigurationCompleteIndicator.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SCell-FailedtoSetup-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SCell-FailedtoSetupMod-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SCell-ToBeRemoved-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SCell-ToBeSetup-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SCell-ToBeSetupMod-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SCellIndex.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_CG-ConfigInfo.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ServCellIndex.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Served-Cell-Information.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Served-Cells-To-Add-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Served-Cells-To-Delete-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Served-Cells-To-Modify-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Served-EUTRA-Cells-Information.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ShortDRXCycleLength.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ShortDRXCycleTimer.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SIB1-message.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SIBtype.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SIBtype-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SIBtype-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SliceSupportList.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SliceSupportItem.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SNSSAI.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SpectrumSharingGroupID.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SRBID.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SRBs-FailedToBeSetup-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SRBs-FailedToBeSetupMod-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SRBs-Required-ToBeReleased-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SRBs-ToBeReleased-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SRBs-ToBeSetup-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SRBs-ToBeSetupMod-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SUL-Information.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SubscriberProfileIDforRFP.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SupportedSULFreqBandItem.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_FiveGS-TAC.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Configured-EPS-TAC.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_TDD-Info.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_TimeToWait.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_TNLAssociationUsage.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_TransportLayerAddress.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_TransactionID.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Transmission-Bandwidth.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_TransmissionStopIndicator.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_TypeOfError.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_UE-associatedLogicalF1-ConnectionItem.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_UE-CapabilityRAT-ContainerList.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_UEIdentityIndexValue.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ULConfiguration.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ULUEConfiguration.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ULUPTNLInformation-ToBeSetup-List.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ULUPTNLInformation-ToBeSetup-Item.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_UPTransportLayerInformation.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ProtocolIE-Container.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ProtocolIE-SingleContainer.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ProtocolIE-Field.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ProtocolIE-ContainerPair.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ProtocolIE-FieldPair.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ProtocolExtensionContainer.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ProtocolExtensionField.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_PrivateIE-Container.c	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_PrivateIE-Field.c
+
+ASN_MODULE_HDRS=	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Criticality.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Presence.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_PrivateIE-ID.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ProcedureCode.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ProtocolExtensionID.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ProtocolIE-ID.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_TriggeringMessage.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_F1AP-PDU.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_InitiatingMessage.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SuccessfulOutcome.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_UnsuccessfulOutcome.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Reset.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ResetType.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ResetAll.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_UE-associatedLogicalF1-ConnectionListRes.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ResetAcknowledge.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_UE-associatedLogicalF1-ConnectionListResAck.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ErrorIndication.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_F1SetupRequest.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNB-DU-Served-Cells-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_F1SetupResponse.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Cells-to-be-Activated-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_F1SetupFailure.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNBDUConfigurationUpdate.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Served-Cells-To-Add-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Served-Cells-To-Modify-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Served-Cells-To-Delete-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Active-Cells-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNBDUConfigurationUpdateAcknowledge.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNBDUConfigurationUpdateFailure.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNBCUConfigurationUpdate.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Cells-to-be-Deactivated-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNB-CU-TNL-Association-To-Add-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNB-CU-TNL-Association-To-Remove-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNB-CU-TNL-Association-To-Update-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Cells-to-be-Barred-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Protected-EUTRA-Resources-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNBCUConfigurationUpdateAcknowledge.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Cells-Failed-to-be-Activated-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNB-CU-TNL-Association-Setup-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNB-CU-TNL-Association-Failed-To-Setup-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNBCUConfigurationUpdateFailure.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNBDUResourceCoordinationRequest.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNBDUResourceCoordinationResponse.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_UEContextSetupRequest.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Candidate-SpCell-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SCell-ToBeSetup-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SRBs-ToBeSetup-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-ToBeSetup-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_UEContextSetupResponse.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-Setup-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SRBs-FailedToBeSetup-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-FailedToBeSetup-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SCell-FailedtoSetup-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_UEContextSetupFailure.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Potential-SpCell-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_UEContextReleaseRequest.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_UEContextReleaseCommand.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_UEContextReleaseComplete.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_UEContextModificationRequest.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SCell-ToBeSetupMod-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SCell-ToBeRemoved-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SRBs-ToBeSetupMod-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-ToBeSetupMod-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-ToBeModified-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SRBs-ToBeReleased-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-ToBeReleased-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_UEContextModificationResponse.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-SetupMod-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-Modified-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-FailedToBeModified-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SRBs-FailedToBeSetupMod-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-FailedToBeSetupMod-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SCell-FailedtoSetupMod-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_UEContextModificationFailure.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_UEContextModificationRequired.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-Required-ToBeModified-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-Required-ToBeReleased-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SRBs-Required-ToBeReleased-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_UEContextModificationConfirm.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-ModifiedConf-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_WriteReplaceWarningRequest.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Cells-To-Be-Broadcast-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_WriteReplaceWarningResponse.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Cells-Broadcast-Completed-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_PWSCancelRequest.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Broadcast-To-Be-Cancelled-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_PWSCancelResponse.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Cells-Broadcast-Cancelled-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_UEInactivityNotification.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRB-Activity-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_InitialULRRCMessageTransfer.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DLRRCMessageTransfer.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ULRRCMessageTransfer.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_PrivateMessage.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SystemInformationDeliveryCommand.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Paging.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_PagingCell-list.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Notify.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRB-Notify-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_PWSRestartIndication.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_NR-CGI-List-For-Restart-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_PWSFailureIndication.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_PWS-Failed-NR-CGI-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Active-Cells-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_AllocationAndRetentionPriority.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_AveragingWindow.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_BitRate.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_BroadcastPLMNs-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_BroadcastPLMNs-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Cancel-all-Warning-Messages-Indicator.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Candidate-SpCell-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Cause.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_CauseMisc.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_CauseProtocol.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_CauseRadioNetwork.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_CauseTransport.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_CellGroupConfig.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Cells-Failed-to-be-Activated-List-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Cells-To-Be-Broadcast-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Cells-Broadcast-Completed-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Broadcast-To-Be-Cancelled-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Cells-Broadcast-Cancelled-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Cells-to-be-Activated-List-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Cells-to-be-Deactivated-List-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Cells-to-be-Barred-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_CellBarred.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_CellULConfigured.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_CNUEPagingIdentity.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ConcurrentWarningMessageIndicator.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_CP-TransportLayerAddress.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_CriticalityDiagnostics.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_CriticalityDiagnostics-IE-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_CriticalityDiagnostics-IE-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_C-RNTI.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_CUtoDURRCInformation.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DLUPTNLInformation-ToBeSetup-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DLUPTNLInformation-ToBeSetup-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRB-Activity-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRB-Activity.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBID.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-FailedToBeModified-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-FailedToBeSetup-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-FailedToBeSetupMod-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRB-Information.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-Modified-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-ModifiedConf-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRB-Notify-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-Required-ToBeModified-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-Required-ToBeReleased-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-Setup-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-SetupMod-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-ToBeModified-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-ToBeReleased-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-ToBeSetup-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRBs-ToBeSetupMod-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DRXCycle.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DUtoCURRCContainer.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DUtoCURRCInformation.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DuplicationActivation.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_DuplicationIndication.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Dynamic5QIDescriptor.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Endpoint-IP-address-and-port.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_EUTRANQoS.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ExecuteDuplication.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_EUTRA-Mode-Info.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_EUTRA-NR-CellResourceCoordinationReq-Container.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_EUTRA-NR-CellResourceCoordinationReqAck-Container.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_EUTRA-FDD-Info.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_EUTRA-TDD-Info.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_FDD-Info.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Flows-Mapped-To-DRB-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Flows-Mapped-To-DRB-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_FreqBandNrItem.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_FullConfiguration.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GBR-QosInformation.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GBR-QoSFlowInformation.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNB-CUSystemInformation.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNB-CU-TNL-Association-Setup-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNB-CU-TNL-Association-Failed-To-Setup-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNB-CU-TNL-Association-To-Add-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNB-CU-TNL-Association-To-Remove-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNB-CU-TNL-Association-To-Update-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNB-CU-UE-F1AP-ID.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNB-DU-UE-F1AP-ID.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNB-DU-ID.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNB-CU-Name.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNB-DU-Name.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNB-DU-Served-Cells-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GNB-DU-System-Information.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GTP-TEID.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_GTPTunnel.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_HandoverPreparationInformation.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_InactivityMonitoringRequest.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_InactivityMonitoringResponse.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_LCID.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ListofEUTRACellsinGNBDUCoordination.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_LongDRXCycleLength.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_MaskedIMEISV.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_MaxDataBurstVolume.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_MaxPacketLossRate.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_MIB-message.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_MeasConfig.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_MeasGapConfig.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_NGRANAllocationAndRetentionPriority.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_NR-CGI-List-For-Restart-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_NonDynamic5QIDescriptor.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Notification-Cause.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_NotificationControl.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_NRFreqInfo.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_NRCGI.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_NR-Mode-Info.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_NRCellIdentity.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_NRNRB.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_NRPCI.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_NRSCS.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_NumberOfBroadcasts.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_NumberofBroadcastRequest.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_OffsetToPointA.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_PacketDelayBudget.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_PacketErrorRate.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_PagingCell-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_PagingDRX.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_PagingIdentity.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_PagingPriority.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_PLMN-Identity.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Pre-emptionCapability.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Pre-emptionVulnerability.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_PriorityLevel.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ProtectedEUTRAResourceIndication.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Potential-SpCell-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_PWS-Failed-NR-CGI-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_PWSSystemInformation.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_QCI.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_QoS-Characteristics.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_QoSFlowIndicator.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_QoSFlowLevelQoSParameters.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_QoSInformation.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_RANAC.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_RANUEPagingIdentity.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_RAT-FrequencyPriorityInformation.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_RAT-FrequencySelectionPriority.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_RequestType.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ResourceCoordinationTransferContainer.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_RepetitionPeriod.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_RLCMode.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_RRCContainer.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_RRCRconfigurationCompleteIndicator.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SCell-FailedtoSetup-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SCell-FailedtoSetupMod-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SCell-ToBeRemoved-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SCell-ToBeSetup-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SCell-ToBeSetupMod-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SCellIndex.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_CG-ConfigInfo.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ServCellIndex.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Served-Cell-Information.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Served-Cells-To-Add-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Served-Cells-To-Delete-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Served-Cells-To-Modify-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Served-EUTRA-Cells-Information.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ShortDRXCycleLength.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ShortDRXCycleTimer.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SIB1-message.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SIBtype.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SIBtype-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SIBtype-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SliceSupportList.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SliceSupportItem.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SNSSAI.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SpectrumSharingGroupID.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SRBID.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SRBs-FailedToBeSetup-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SRBs-FailedToBeSetupMod-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SRBs-Required-ToBeReleased-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SRBs-ToBeReleased-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SRBs-ToBeSetup-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SRBs-ToBeSetupMod-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SUL-Information.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SubscriberProfileIDforRFP.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_SupportedSULFreqBandItem.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_FiveGS-TAC.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Configured-EPS-TAC.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_TDD-Info.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_TimeToWait.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_TNLAssociationUsage.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_TransportLayerAddress.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_TransactionID.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_Transmission-Bandwidth.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_TransmissionStopIndicator.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_TypeOfError.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_UE-associatedLogicalF1-ConnectionItem.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_UE-CapabilityRAT-ContainerList.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_UEIdentityIndexValue.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ULConfiguration.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ULUEConfiguration.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ULUPTNLInformation-ToBeSetup-List.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ULUPTNLInformation-ToBeSetup-Item.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_UPTransportLayerInformation.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ProtocolIE-Container.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ProtocolIE-SingleContainer.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ProtocolIE-Field.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ProtocolIE-ContainerPair.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ProtocolIE-FieldPair.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ProtocolExtensionContainer.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_ProtocolExtensionField.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_PrivateIE-Container.h	\
+	R15.2.1/f1ap-15.2.1.gen/F1AP_PrivateIE-Field.h
+
+ASN_MODULE_HDRS+=R15.2.1/f1ap-15.2.1.gen/ANY.h
+ASN_MODULE_SRCS+=R15.2.1/f1ap-15.2.1.gen/ANY.c
+ASN_MODULE_HDRS+=R15.2.1/f1ap-15.2.1.gen/OCTET_STRING.h
+ASN_MODULE_HDRS+=R15.2.1/f1ap-15.2.1.gen/OPEN_TYPE.h
+ASN_MODULE_SRCS+=R15.2.1/f1ap-15.2.1.gen/OPEN_TYPE.c
+ASN_MODULE_HDRS+=R15.2.1/f1ap-15.2.1.gen/constr_CHOICE.h
+ASN_MODULE_HDRS+=R15.2.1/f1ap-15.2.1.gen/INTEGER.h
+ASN_MODULE_SRCS+=R15.2.1/f1ap-15.2.1.gen/INTEGER.c
+ASN_MODULE_HDRS+=R15.2.1/f1ap-15.2.1.gen/NativeEnumerated.h
+ASN_MODULE_SRCS+=R15.2.1/f1ap-15.2.1.gen/NativeEnumerated.c
+ASN_MODULE_HDRS+=R15.2.1/f1ap-15.2.1.gen/NativeInteger.h
+ASN_MODULE_SRCS+=R15.2.1/f1ap-15.2.1.gen/NativeInteger.c
+ASN_MODULE_HDRS+=R15.2.1/f1ap-15.2.1.gen/OBJECT_IDENTIFIER.h
+ASN_MODULE_SRCS+=R15.2.1/f1ap-15.2.1.gen/OBJECT_IDENTIFIER.c
+ASN_MODULE_HDRS+=R15.2.1/f1ap-15.2.1.gen/PrintableString.h
+ASN_MODULE_SRCS+=R15.2.1/f1ap-15.2.1.gen/PrintableString.c
+ASN_MODULE_HDRS+=R15.2.1/f1ap-15.2.1.gen/asn_SEQUENCE_OF.h
+ASN_MODULE_SRCS+=R15.2.1/f1ap-15.2.1.gen/asn_SEQUENCE_OF.c
+ASN_MODULE_HDRS+=R15.2.1/f1ap-15.2.1.gen/asn_SET_OF.h
+ASN_MODULE_SRCS+=R15.2.1/f1ap-15.2.1.gen/asn_SET_OF.c
+ASN_MODULE_SRCS+=R15.2.1/f1ap-15.2.1.gen/constr_CHOICE.c
+ASN_MODULE_HDRS+=R15.2.1/f1ap-15.2.1.gen/constr_SEQUENCE.h
+ASN_MODULE_SRCS+=R15.2.1/f1ap-15.2.1.gen/constr_SEQUENCE.c
+ASN_MODULE_HDRS+=R15.2.1/f1ap-15.2.1.gen/constr_SEQUENCE_OF.h
+ASN_MODULE_SRCS+=R15.2.1/f1ap-15.2.1.gen/constr_SEQUENCE_OF.c
+ASN_MODULE_HDRS+=R15.2.1/f1ap-15.2.1.gen/constr_SET_OF.h
+ASN_MODULE_SRCS+=R15.2.1/f1ap-15.2.1.gen/constr_SET_OF.c
+ASN_MODULE_HDRS+=R15.2.1/f1ap-15.2.1.gen/asn_application.h
+ASN_MODULE_SRCS+=R15.2.1/f1ap-15.2.1.gen/asn_application.c
+ASN_MODULE_HDRS+=R15.2.1/f1ap-15.2.1.gen/asn_ioc.h
+ASN_MODULE_HDRS+=R15.2.1/f1ap-15.2.1.gen/asn_system.h
+ASN_MODULE_HDRS+=R15.2.1/f1ap-15.2.1.gen/asn_codecs.h
+ASN_MODULE_HDRS+=R15.2.1/f1ap-15.2.1.gen/asn_internal.h
+ASN_MODULE_SRCS+=R15.2.1/f1ap-15.2.1.gen/asn_internal.c
+ASN_MODULE_HDRS+=R15.2.1/f1ap-15.2.1.gen/asn_random_fill.h
+ASN_MODULE_SRCS+=R15.2.1/f1ap-15.2.1.gen/asn_random_fill.c
+ASN_MODULE_HDRS+=R15.2.1/f1ap-15.2.1.gen/asn_bit_data.h
+ASN_MODULE_SRCS+=R15.2.1/f1ap-15.2.1.gen/asn_bit_data.c
+ASN_MODULE_SRCS+=R15.2.1/f1ap-15.2.1.gen/OCTET_STRING.c
+ASN_MODULE_HDRS+=R15.2.1/f1ap-15.2.1.gen/BIT_STRING.h
+ASN_MODULE_SRCS+=R15.2.1/f1ap-15.2.1.gen/BIT_STRING.c
+ASN_MODULE_SRCS+=R15.2.1/f1ap-15.2.1.gen/asn_codecs_prim.c
+ASN_MODULE_HDRS+=R15.2.1/f1ap-15.2.1.gen/asn_codecs_prim.h
+ASN_MODULE_HDRS+=R15.2.1/f1ap-15.2.1.gen/ber_tlv_length.h
+ASN_MODULE_SRCS+=R15.2.1/f1ap-15.2.1.gen/ber_tlv_length.c
+ASN_MODULE_HDRS+=R15.2.1/f1ap-15.2.1.gen/ber_tlv_tag.h
+ASN_MODULE_SRCS+=R15.2.1/f1ap-15.2.1.gen/ber_tlv_tag.c
+ASN_MODULE_HDRS+=R15.2.1/f1ap-15.2.1.gen/ber_decoder.h
+ASN_MODULE_SRCS+=R15.2.1/f1ap-15.2.1.gen/ber_decoder.c
+ASN_MODULE_HDRS+=R15.2.1/f1ap-15.2.1.gen/der_encoder.h
+ASN_MODULE_SRCS+=R15.2.1/f1ap-15.2.1.gen/der_encoder.c
+ASN_MODULE_HDRS+=R15.2.1/f1ap-15.2.1.gen/constr_TYPE.h
+ASN_MODULE_SRCS+=R15.2.1/f1ap-15.2.1.gen/constr_TYPE.c
+ASN_MODULE_HDRS+=R15.2.1/f1ap-15.2.1.gen/constraints.h
+ASN_MODULE_SRCS+=R15.2.1/f1ap-15.2.1.gen/constraints.c
+ASN_MODULE_HDRS+=R15.2.1/f1ap-15.2.1.gen/xer_support.h
+ASN_MODULE_SRCS+=R15.2.1/f1ap-15.2.1.gen/xer_support.c
+ASN_MODULE_HDRS+=R15.2.1/f1ap-15.2.1.gen/xer_decoder.h
+ASN_MODULE_SRCS+=R15.2.1/f1ap-15.2.1.gen/xer_decoder.c
+ASN_MODULE_HDRS+=R15.2.1/f1ap-15.2.1.gen/xer_encoder.h
+ASN_MODULE_SRCS+=R15.2.1/f1ap-15.2.1.gen/xer_encoder.c
+ASN_MODULE_HDRS+=R15.2.1/f1ap-15.2.1.gen/per_support.h
+ASN_MODULE_SRCS+=R15.2.1/f1ap-15.2.1.gen/per_support.c
+ASN_MODULE_HDRS+=R15.2.1/f1ap-15.2.1.gen/per_decoder.h
+ASN_MODULE_SRCS+=R15.2.1/f1ap-15.2.1.gen/per_decoder.c
+ASN_MODULE_HDRS+=R15.2.1/f1ap-15.2.1.gen/per_encoder.h
+ASN_MODULE_SRCS+=R15.2.1/f1ap-15.2.1.gen/per_encoder.c
+ASN_MODULE_HDRS+=R15.2.1/f1ap-15.2.1.gen/per_opentype.h
+ASN_MODULE_SRCS+=R15.2.1/f1ap-15.2.1.gen/per_opentype.c
+
+ASN_MODULE_CFLAGS=-DASN_DISABLE_OER_SUPPORT 
+
+lib_LTLIBRARIES+=libasncodec.la
+libasncodec_la_SOURCES=$(ASN_MODULE_SRCS) $(ASN_MODULE_HDRS)
+libasncodec_la_CPPFLAGS=-I$(top_srcdir)/R15.2.1/f1ap-15.2.1.gen/
+libasncodec_la_CFLAGS=$(ASN_MODULE_CFLAGS)
+libasncodec_la_LDFLAGS=-lm

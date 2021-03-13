@@ -1,0 +1,2 @@
+To generate F1AP ASN1 descriptions:
+ASN1C_PREFIX=F1AP_ asn1c -gen-PER -no-gen-OER -fcompound-names -no-gen-example -findirect-choice -fno-include-deps -D R15.2.1/f1ap-15.2.1.gen/ R15.2.1/F1AP-CommonDataTypes.asn R15.2.1/F1AP-Constants.asn R15.2.1/F1AP-PDU-Descriptions.asn R15.2.1/F1AP-PDU-Contents.asn R15.2.1/F1AP-IEs.asn R15.2.1/F1AP-Containers.asn
