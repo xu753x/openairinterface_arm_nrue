@@ -47,7 +47,6 @@
 #include "RRC/LTE/rrc_eNB_GTPV1U.h"
 #include "RRC/NR/rrc_gNB_GTPV1U.h"
 
-#include "S1AP_NAS-PDU.h"
 #include "executables/softmodem-common.h"
 #include "UTIL/OSA/osa_defs.h"
 #include "ngap_gNB_defs.h"

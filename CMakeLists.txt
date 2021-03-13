@@ -27,6 +27,7 @@ project (OpenAirInterface VERSION 1.2.2 LANGUAGES C CXX)
 
 include("cmake_targets/macros.cmake")
 add_subdirectory(openair2)
+add_subdirectory(openair3)
 
 # System packages that are required
 # We use either the cmake buildin, in ubuntu are in: /usr/share/cmake*/Modules/
@@ -379,41 +380,13 @@ target_link_libraries(NR_RRC_LIB PUBLIC ASN1_NR_RRC_LIB)
 include_directories("openair2/RRC/NR/MESSAGES/asn1c/ASN1_files/nr-rrc-16.1.0.gen/")
 
 # S1AP
-# Same limitation as described in RRC: unknown generated file list
-# so we generate it at cmake time
 ##############
 set (S1AP_RELEASE R15)
-
-set(S1AP_DIR ${OPENAIR3_DIR}/S1AP)
 make_version(S1AP_VERSION 15 6 0)
-set(S1AP_ASN_FILES "s1ap-15.6.0.asn1")
-
 add_definitions(-DS1AP_VERSION=${S1AP_VERSION})
-set(S1AP_ASN_DIR ${S1AP_DIR}/MESSAGES/ASN1/${S1AP_RELEASE})
-set(S1AP_C_DIR ${asn1_generated_dir}/S1AP_${S1AP_RELEASE})
-
-# Warning: if you modify ASN.1 source file to generate new C files, cmake should be re-run instead of make
-execute_process(COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "${S1AP_C_DIR}" "${S1AP_ASN_DIR}/${S1AP_ASN_FILES}" "S1AP_" -fno-include-deps
-                RESULT_VARIABLE ret)
-if (NOT ${ret} STREQUAL 0)
-  message(FATAL_ERROR "${ret}: error")
-endif (NOT ${ret} STREQUAL 0)
-file(GLOB S1AP_source ${S1AP_C_DIR}/*.c)
-
-add_custom_target (
-  s1ap_flag ALL
-  ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "${S1AP_C_DIR}" "${S1AP_ASN_DIR}/${S1AP_ASN_FILES}" "S1AP_" -fno-include-deps
-  DEPENDS  "${S1AP_ASN_DIR}/${S1AP_ASN_FILES}" 
-)
-
-add_library(S1AP_LIB
-  ${S1AP_source}
-  ${S1AP_DIR}/s1ap_common.c
-  )
-add_dependencies(S1AP_LIB s1ap_flag)
-
-include_directories ("${S1AP_C_DIR}")
-include_directories ("${S1AP_DIR}")
+set(S1AP_DIR ${OPENAIR3_DIR}/S1AP)
+add_library(S1AP_LIB ${S1AP_DIR}/s1ap_common.c)
+target_link_libraries(S1AP_LIB PUBLIC ASN1_S1AP_LIB)
 
 add_library(S1AP_ENB
   ${S1AP_DIR}/s1ap_eNB.c
@@ -429,7 +402,7 @@ add_library(S1AP_ENB
   ${S1AP_DIR}/s1ap_eNB_trace.c
   ${S1AP_DIR}/s1ap_eNB_ue_context.c
   )
-add_dependencies(S1AP_ENB s1ap_flag)
+target_link_libraries(S1AP_ENB PRIVATE S1AP_LIB)
 
 
 # NGAP
@@ -2035,7 +2008,8 @@ add_library(L2
   ${ENB_APP_SRC}
   ${MCE_APP_SRC}
   )
-add_dependencies(L2 s1ap_flag x2_flag m2_flag m3_flag)
+add_dependencies(L2 x2_flag m2_flag m3_flag)
+target_link_libraries(L2 PRIVATE ASN1_S1AP_LIB)
 
 add_library(MAC_NR
   ${MAC_NR_SRC}
@@ -2054,6 +2028,7 @@ add_library(L2_NR
   ${MAC_NR_SRC}
   ${GNB_APP_SRC}
   )
+target_link_libraries(L2_NR PRIVATE ASN1_S1AP_LIB)
 
 add_library(L2_LTE_NR
   ${L2_RRC_SRC}
@@ -2061,8 +2036,9 @@ add_library(L2_LTE_NR
   ${ENB_APP_SRC}
   ${MCE_APP_SRC}
 )
+target_link_libraries(L2_LTE_NR PRIVATE ASN1_S1AP_LIB)
   
-add_dependencies(L2_NR s1ap_flag x2_flag)
+add_dependencies(L2_NR x2_flag)
 
 add_library(L2_UE
   ${L2_SRC_UE}
@@ -2078,7 +2054,7 @@ if (NOT ${NOS1})
 target_compile_definitions(L2_UE PUBLIC -DPDCP_USE_NETLINK)
 endif()
 
-add_dependencies(L2_UE s1ap_flag x2_flag)
+add_dependencies(L2_UE x2_flag)
 
 add_library( NR_L2_UE ${NR_L2_SRC_UE} ${MAC_NR_SRC_UE} )
 
@@ -2134,7 +2110,7 @@ set (MME_APP_SRC
   ${OPENAIR3_DIR}/MME_APP/mme_config.c
 )
 add_library(MME_APP ${MME_APP_SRC})
-add_dependencies(MME_APP s1ap_flag x2_flag m2_flag m3_flag)
+add_dependencies(MME_APP x2_flag m2_flag m3_flag)
 
 set(SCTP_SRC
   ${OPENAIR3_DIR}/SCTP/sctp_common.c
@@ -2770,7 +2746,7 @@ add_executable(lte-softmodem
   ${CONFIG_SOURCES}
   ${SHLIB_LOADER_SOURCES}
   )
-add_dependencies(lte-softmodem s1ap_flag x2_flag oai_iqplayer)
+add_dependencies(lte-softmodem x2_flag oai_iqplayer)
 
 target_link_libraries (lte-softmodem
   -Wl,--start-group
@@ -2811,7 +2787,7 @@ add_executable(ocp-enb
   ${CONFIG_SOURCES}
   ${SHLIB_LOADER_SOURCES}
   )
-add_dependencies(ocp-enb s1ap_flag x2_flag oai_iqplayer coding params_libconfig rfsimulator)
+add_dependencies(ocp-enb x2_flag oai_iqplayer coding params_libconfig rfsimulator)
 
 target_link_libraries (ocp-enb
   -Wl,--start-group
@@ -2877,7 +2853,7 @@ add_executable(lte-uesoftmodem
   ${SHLIB_LOADER_SOURCES}
   )
 
-add_dependencies(lte-uesoftmodem s1ap_flag x2_flag)
+add_dependencies(lte-uesoftmodem x2_flag)
 
 if (NOT ${NOS1})
 	target_compile_definitions(lte-uesoftmodem PRIVATE -DPDCP_USE_NETLINK)

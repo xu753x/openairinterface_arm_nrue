@@ -14,4 +14,6 @@ To do so:
 Aligned PER support is now included when parsing and generating asn1 code.
 
 To generate S1AP ASN1 descriptions:
-Files are automatically generated when changes are made on ASN1 files via Make build system.
+ASN1C_PREFIX=S1AP_ asn1c -pdu=all -fcompound-names -gen-PER -no-gen-OER -no-gen-example -fno-include-deps -D R15/s1ap-15.6.0.gen R15/s1ap-15.6.0.asn1
+sed -i 's/18446744073709551615))/18446744073709551615U))/g' R15/s1ap-15.6.0.gen/S1AP_E-RABUsageReportItem.c
+sed -i 's/18446744073709551615 }/18446744073709551615U }/g' R15/s1ap-15.6.0.gen/S1AP_E-RABUsageReportItem.c
