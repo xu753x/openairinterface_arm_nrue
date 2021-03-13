@@ -430,55 +430,14 @@ target_link_libraries(NGAP_GNB PUBLIC ASN1_NGAP_LIB)
 target_include_directories(NGAP_GNB PUBLIC "${NGAP_DIR}")
 
 #M2AP
-# Same limitation as described in RRC/S1AP: unknown generated file list
-# so we generate it at cmake time
 ##############
-add_list1_option(M2AP_RELEASE R14 "M2AP ASN.1 grammar version" R14)
+set(M2AP_RELEASE R14)
 
 set(M2AP_DIR ${OPENAIR2_DIR}/M2AP)
-if (${M2AP_RELEASE} STREQUAL "R8")
-  make_version(M2AP_VERSION 8 9 0)
-  set(M2AP_ASN_FILES m2ap-8.9.0.asn1)
-elseif (${M2AP_RELEASE} STREQUAL "R11")
-  make_version(M2AP_VERSION 11 9 0)
-  set(M2AP_ASN_FILES m2ap-11.9.0.asn1)
-elseif (${M2AP_RELEASE} STREQUAL "R12")
-  make_version(M2AP_VERSION 12 9 0)
-  set(M2AP_ASN_FILES m2ap-12.9.0.asn1)
-elseif (${M2AP_RELEASE} STREQUAL "R14")
-  make_version(M2AP_VERSION 14 0 0)
-  set(M2AP_ASN_FILES m2ap-14.0.0.asn1)
-elseif (${M2AP_RELEASE} STREQUAL "R15")
-  make_version(M2AP_VERSION 15 1 0)
-  set(M2AP_ASN_FILES m2ap-15.1.0.asn1)
-endif(${M2AP_RELEASE} STREQUAL "R8")
 add_definitions(-DM2AP_VERSION=${M2AP_VERSION})
-set(M2AP_ASN_DIR ${M2AP_DIR}/MESSAGES/ASN1/${M2AP_RELEASE})
-set(M2AP_C_DIR ${asn1_generated_dir}/M2AP_${M2AP_RELEASE})
 
-# Warning: if you modify ASN.1 source file to generate new C files, cmake should be re-run instead of make
-execute_process(COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "${M2AP_C_DIR}" "${M2AP_ASN_DIR}/${M2AP_ASN_FILES}"  "M2AP_" -fno-include-deps -DEMIT_ASN_DEBUG=1
-                RESULT_VARIABLE ret)
-if (NOT ${ret} STREQUAL 0)
-  message(FATAL_ERROR "${ret}: error")
-endif (NOT ${ret} STREQUAL 0)
-
-file(GLOB M2AP_source ${M2AP_C_DIR}/*.c)
-
-add_custom_target (
-  m2_flag ALL
-  COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "${M2AP_C_DIR}" "${M2AP_ASN_DIR}/${M2AP_ASN_FILES}"  "M2AP_" -fno-include-deps
-  DEPENDS ${M2AP_ASN_DIR}/${M2AP_ASN_FILES}
-  )
-
-add_library(M2AP_LIB
-  ${M2AP_source}
-  ${M2AP_DIR}/m2ap_common.c
-  )
-add_dependencies(M2AP_LIB m2_flag)
-
-include_directories ("${M2AP_C_DIR}")
-include_directories ("${M2AP_DIR}")
+add_library(M2AP_LIB ${M2AP_DIR}/m2ap_common.c)
+target_link_libraries(M2AP_LIB PUBLIC ASN1_M2AP_LIB)
 
 add_library(M2AP_ENB
   ${M2AP_DIR}/m2ap_eNB.c
@@ -497,7 +456,8 @@ add_library(M2AP_ENB
   ${M2AP_DIR}/m2ap_MCE_interface_management.c
   ${M2AP_DIR}/m2ap_eNB_interface_management.c
  )
-add_dependencies(M2AP_ENB m2_flag)
+target_link_libraries(M2AP_ENB PUBLIC ASN1_M2AP_LIB)
+target_include_directories(M2AP_ENB PUBLIC "${M2AP_DIR}")
 
 #M3AP
 # Same limitation as described in RRC/S1AP: unknown generated file list
@@ -566,6 +526,7 @@ add_library(M3AP_ENB
   ${M3AP_DIR}/m3ap_timers.c
   )
 add_dependencies(M3AP_ENB m3_flag)
+target_link_libraries(M3AP_ENB PRIVATE M2AP_ENB)
 
 #X2AP
 ##############
@@ -1939,7 +1900,7 @@ add_library(L2
   ${ENB_APP_SRC}
   ${MCE_APP_SRC}
   )
-add_dependencies(L2 m2_flag m3_flag)
+add_dependencies(L2 m3_flag)
 target_link_libraries(L2 PRIVATE ASN1_S1AP_LIB ASN1_F1AP_LIB)
 
 add_library(MAC_NR
@@ -1960,6 +1921,7 @@ add_library(L2_NR
   ${GNB_APP_SRC}
   )
 target_link_libraries(L2_NR PRIVATE ASN1_S1AP_LIB ASN1_NGAP_LIB NGAP_GNB)
+target_include_directories(L2_NR PRIVATE M2AP_ENB)
 
 add_library(L2_LTE_NR
   ${L2_RRC_SRC}
@@ -2037,7 +1999,7 @@ set (MME_APP_SRC
   ${OPENAIR3_DIR}/MME_APP/mme_config.c
 )
 add_library(MME_APP ${MME_APP_SRC})
-add_dependencies(MME_APP m2_flag m3_flag)
+add_dependencies(MME_APP m3_flag)
 
 set(SCTP_SRC
   ${OPENAIR3_DIR}/SCTP/sctp_common.c

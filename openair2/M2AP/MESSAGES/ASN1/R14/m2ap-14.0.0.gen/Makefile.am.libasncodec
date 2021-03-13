@@ -1,0 +1,347 @@
+ASN_MODULE_SRCS=	\
+	R14/m2ap-14.0.0.gen/M2AP_M2AP-PDU.c	\
+	R14/m2ap-14.0.0.gen/M2AP_InitiatingMessage.c	\
+	R14/m2ap-14.0.0.gen/M2AP_SuccessfulOutcome.c	\
+	R14/m2ap-14.0.0.gen/M2AP_UnsuccessfulOutcome.c	\
+	R14/m2ap-14.0.0.gen/M2AP_SessionStartRequest.c	\
+	R14/m2ap-14.0.0.gen/M2AP_SessionStartResponse.c	\
+	R14/m2ap-14.0.0.gen/M2AP_SessionStartFailure.c	\
+	R14/m2ap-14.0.0.gen/M2AP_SessionStopRequest.c	\
+	R14/m2ap-14.0.0.gen/M2AP_SessionStopResponse.c	\
+	R14/m2ap-14.0.0.gen/M2AP_SessionUpdateRequest.c	\
+	R14/m2ap-14.0.0.gen/M2AP_SessionUpdateResponse.c	\
+	R14/m2ap-14.0.0.gen/M2AP_SessionUpdateFailure.c	\
+	R14/m2ap-14.0.0.gen/M2AP_MbmsSchedulingInformation.c	\
+	R14/m2ap-14.0.0.gen/M2AP_MBSFN-Area-Configuration-List.c	\
+	R14/m2ap-14.0.0.gen/M2AP_PMCH-Configuration-List.c	\
+	R14/m2ap-14.0.0.gen/M2AP_PMCH-Configuration-Item.c	\
+	R14/m2ap-14.0.0.gen/M2AP_MBSFN-Subframe-ConfigurationList.c	\
+	R14/m2ap-14.0.0.gen/M2AP_MBMS-Suspension-Notification-List.c	\
+	R14/m2ap-14.0.0.gen/M2AP_MBMS-Suspension-Notification-Item.c	\
+	R14/m2ap-14.0.0.gen/M2AP_MbmsSchedulingInformationResponse.c	\
+	R14/m2ap-14.0.0.gen/M2AP_M2SetupRequest.c	\
+	R14/m2ap-14.0.0.gen/M2AP_ENB-MBMS-Configuration-data-List.c	\
+	R14/m2ap-14.0.0.gen/M2AP_M2SetupResponse.c	\
+	R14/m2ap-14.0.0.gen/M2AP_MCCHrelatedBCCH-ConfigPerMBSFNArea.c	\
+	R14/m2ap-14.0.0.gen/M2AP_M2SetupFailure.c	\
+	R14/m2ap-14.0.0.gen/M2AP_ENBConfigurationUpdate.c	\
+	R14/m2ap-14.0.0.gen/M2AP_ENB-MBMS-Configuration-data-List-ConfigUpdate.c	\
+	R14/m2ap-14.0.0.gen/M2AP_ENBConfigurationUpdateAcknowledge.c	\
+	R14/m2ap-14.0.0.gen/M2AP_ENBConfigurationUpdateFailure.c	\
+	R14/m2ap-14.0.0.gen/M2AP_MCEConfigurationUpdate.c	\
+	R14/m2ap-14.0.0.gen/M2AP_MCEConfigurationUpdateAcknowledge.c	\
+	R14/m2ap-14.0.0.gen/M2AP_MCEConfigurationUpdateFailure.c	\
+	R14/m2ap-14.0.0.gen/M2AP_ErrorIndication.c	\
+	R14/m2ap-14.0.0.gen/M2AP_Reset.c	\
+	R14/m2ap-14.0.0.gen/M2AP_ResetType.c	\
+	R14/m2ap-14.0.0.gen/M2AP_ResetAll.c	\
+	R14/m2ap-14.0.0.gen/M2AP_MBMS-Service-associatedLogicalM2-ConnectionListRes.c	\
+	R14/m2ap-14.0.0.gen/M2AP_ResetAcknowledge.c	\
+	R14/m2ap-14.0.0.gen/M2AP_MBMS-Service-associatedLogicalM2-ConnectionListResAck.c	\
+	R14/m2ap-14.0.0.gen/M2AP_PrivateMessage.c	\
+	R14/m2ap-14.0.0.gen/M2AP_MbmsServiceCountingRequest.c	\
+	R14/m2ap-14.0.0.gen/M2AP_MBMS-Counting-Request-Session.c	\
+	R14/m2ap-14.0.0.gen/M2AP_MBMS-Counting-Request-SessionIE.c	\
+	R14/m2ap-14.0.0.gen/M2AP_MbmsServiceCountingResponse.c	\
+	R14/m2ap-14.0.0.gen/M2AP_MbmsServiceCountingFailure.c	\
+	R14/m2ap-14.0.0.gen/M2AP_MbmsServiceCountingResultsReport.c	\
+	R14/m2ap-14.0.0.gen/M2AP_MBMS-Counting-Result-List.c	\
+	R14/m2ap-14.0.0.gen/M2AP_MBMS-Counting-Result.c	\
+	R14/m2ap-14.0.0.gen/M2AP_CountingResult.c	\
+	R14/m2ap-14.0.0.gen/M2AP_MbmsOverloadNotification.c	\
+	R14/m2ap-14.0.0.gen/M2AP_Overload-Status-Per-PMCH-List.c	\
+	R14/m2ap-14.0.0.gen/M2AP_PMCH-Overload-Status.c	\
+	R14/m2ap-14.0.0.gen/M2AP_Active-MBMS-Session-List.c	\
+	R14/m2ap-14.0.0.gen/M2AP_AllocatedSubframesEnd.c	\
+	R14/m2ap-14.0.0.gen/M2AP_AllocationAndRetentionPriority.c	\
+	R14/m2ap-14.0.0.gen/M2AP_BitRate.c	\
+	R14/m2ap-14.0.0.gen/M2AP_Cause.c	\
+	R14/m2ap-14.0.0.gen/M2AP_CauseMisc.c	\
+	R14/m2ap-14.0.0.gen/M2AP_CauseNAS.c	\
+	R14/m2ap-14.0.0.gen/M2AP_CauseProtocol.c	\
+	R14/m2ap-14.0.0.gen/M2AP_CauseRadioNetwork.c	\
+	R14/m2ap-14.0.0.gen/M2AP_CauseTransport.c	\
+	R14/m2ap-14.0.0.gen/M2AP_Cell-Information.c	\
+	R14/m2ap-14.0.0.gen/M2AP_Cell-Information-List.c	\
+	R14/m2ap-14.0.0.gen/M2AP_CriticalityDiagnostics.c	\
+	R14/m2ap-14.0.0.gen/M2AP_CriticalityDiagnostics-IE-List.c	\
+	R14/m2ap-14.0.0.gen/M2AP_ECGI.c	\
+	R14/m2ap-14.0.0.gen/M2AP_ENB-ID.c	\
+	R14/m2ap-14.0.0.gen/M2AP_ENB-MBMS-Configuration-data-Item.c	\
+	R14/m2ap-14.0.0.gen/M2AP_ENB-MBMS-Configuration-data-ConfigUpdate-Item.c	\
+	R14/m2ap-14.0.0.gen/M2AP_ENB-MBMS-M2AP-ID.c	\
+	R14/m2ap-14.0.0.gen/M2AP_ENBname.c	\
+	R14/m2ap-14.0.0.gen/M2AP_EUTRANCellIdentifier.c	\
+	R14/m2ap-14.0.0.gen/M2AP_GBR-QosInformation.c	\
+	R14/m2ap-14.0.0.gen/M2AP_GlobalENB-ID.c	\
+	R14/m2ap-14.0.0.gen/M2AP_GlobalMCE-ID.c	\
+	R14/m2ap-14.0.0.gen/M2AP_GTP-TEID.c	\
+	R14/m2ap-14.0.0.gen/M2AP_IPAddress.c	\
+	R14/m2ap-14.0.0.gen/M2AP_LCID.c	\
+	R14/m2ap-14.0.0.gen/M2AP_MBMS-Cell-List.c	\
+	R14/m2ap-14.0.0.gen/M2AP_MBMS-E-RAB-QoS-Parameters.c	\
+	R14/m2ap-14.0.0.gen/M2AP_MBMS-Service-associatedLogicalM2-ConnectionItem.c	\
+	R14/m2ap-14.0.0.gen/M2AP_MBMS-Service-Area.c	\
+	R14/m2ap-14.0.0.gen/M2AP_MBMS-Service-Area-ID-List.c	\
+	R14/m2ap-14.0.0.gen/M2AP_MBMS-Session-ID.c	\
+	R14/m2ap-14.0.0.gen/M2AP_MBMSsessionListPerPMCH-Item.c	\
+	R14/m2ap-14.0.0.gen/M2AP_MBMSsessionsToBeSuspendedListPerPMCH-Item.c	\
+	R14/m2ap-14.0.0.gen/M2AP_MBSFN-Area-ID.c	\
+	R14/m2ap-14.0.0.gen/M2AP_MBSFN-SynchronisationArea-ID.c	\
+	R14/m2ap-14.0.0.gen/M2AP_MBSFN-Subframe-Configuration.c	\
+	R14/m2ap-14.0.0.gen/M2AP_MCCH-Update-Time.c	\
+	R14/m2ap-14.0.0.gen/M2AP_MCCHrelatedBCCH-ConfigPerMBSFNArea-Item.c	\
+	R14/m2ap-14.0.0.gen/M2AP_MCE-ID.c	\
+	R14/m2ap-14.0.0.gen/M2AP_MCE-MBMS-M2AP-ID.c	\
+	R14/m2ap-14.0.0.gen/M2AP_MCEname.c	\
+	R14/m2ap-14.0.0.gen/M2AP_MCH-Scheduling-Period.c	\
+	R14/m2ap-14.0.0.gen/M2AP_MCH-Scheduling-PeriodExtended.c	\
+	R14/m2ap-14.0.0.gen/M2AP_MCH-Scheduling-PeriodExtended2.c	\
+	R14/m2ap-14.0.0.gen/M2AP_Modulation-Coding-Scheme2.c	\
+	R14/m2ap-14.0.0.gen/M2AP_Modification-PeriodExtended.c	\
+	R14/m2ap-14.0.0.gen/M2AP_PLMN-Identity.c	\
+	R14/m2ap-14.0.0.gen/M2AP_PMCH-Configuration.c	\
+	R14/m2ap-14.0.0.gen/M2AP_Common-Subframe-Allocation-Period.c	\
+	R14/m2ap-14.0.0.gen/M2AP_Pre-emptionCapability.c	\
+	R14/m2ap-14.0.0.gen/M2AP_Pre-emptionVulnerability.c	\
+	R14/m2ap-14.0.0.gen/M2AP_PriorityLevel.c	\
+	R14/m2ap-14.0.0.gen/M2AP_QCI.c	\
+	R14/m2ap-14.0.0.gen/M2AP_Repetition-PeriodExtended.c	\
+	R14/m2ap-14.0.0.gen/M2AP_SC-PTM-Information.c	\
+	R14/m2ap-14.0.0.gen/M2AP_SFN.c	\
+	R14/m2ap-14.0.0.gen/M2AP_Subcarrier-SpacingMBMS.c	\
+	R14/m2ap-14.0.0.gen/M2AP_SubframeAllocationExtended.c	\
+	R14/m2ap-14.0.0.gen/M2AP_TimeToWait.c	\
+	R14/m2ap-14.0.0.gen/M2AP_TMGI.c	\
+	R14/m2ap-14.0.0.gen/M2AP_TNL-Information.c	\
+	R14/m2ap-14.0.0.gen/M2AP_TypeOfError.c	\
+	R14/m2ap-14.0.0.gen/M2AP_Criticality.c	\
+	R14/m2ap-14.0.0.gen/M2AP_Presence.c	\
+	R14/m2ap-14.0.0.gen/M2AP_PrivateIE-ID.c	\
+	R14/m2ap-14.0.0.gen/M2AP_ProcedureCode.c	\
+	R14/m2ap-14.0.0.gen/M2AP_ProtocolIE-ID.c	\
+	R14/m2ap-14.0.0.gen/M2AP_TriggeringMessage.c	\
+	R14/m2ap-14.0.0.gen/M2AP_ProtocolIE-Container.c	\
+	R14/m2ap-14.0.0.gen/M2AP_ProtocolIE-Single-Container.c	\
+	R14/m2ap-14.0.0.gen/M2AP_ProtocolIE-Field.c	\
+	R14/m2ap-14.0.0.gen/M2AP_ProtocolIE-ContainerPair.c	\
+	R14/m2ap-14.0.0.gen/M2AP_ProtocolIE-FieldPair.c	\
+	R14/m2ap-14.0.0.gen/M2AP_ProtocolIE-ContainerList.c	\
+	R14/m2ap-14.0.0.gen/M2AP_ProtocolIE-ContainerPairList.c	\
+	R14/m2ap-14.0.0.gen/M2AP_ProtocolExtensionContainer.c	\
+	R14/m2ap-14.0.0.gen/M2AP_ProtocolExtensionField.c	\
+	R14/m2ap-14.0.0.gen/M2AP_PrivateIE-Container.c	\
+	R14/m2ap-14.0.0.gen/M2AP_PrivateIE-Field.c
+
+ASN_MODULE_HDRS=	\
+	R14/m2ap-14.0.0.gen/M2AP_M2AP-PDU.h	\
+	R14/m2ap-14.0.0.gen/M2AP_InitiatingMessage.h	\
+	R14/m2ap-14.0.0.gen/M2AP_SuccessfulOutcome.h	\
+	R14/m2ap-14.0.0.gen/M2AP_UnsuccessfulOutcome.h	\
+	R14/m2ap-14.0.0.gen/M2AP_SessionStartRequest.h	\
+	R14/m2ap-14.0.0.gen/M2AP_SessionStartResponse.h	\
+	R14/m2ap-14.0.0.gen/M2AP_SessionStartFailure.h	\
+	R14/m2ap-14.0.0.gen/M2AP_SessionStopRequest.h	\
+	R14/m2ap-14.0.0.gen/M2AP_SessionStopResponse.h	\
+	R14/m2ap-14.0.0.gen/M2AP_SessionUpdateRequest.h	\
+	R14/m2ap-14.0.0.gen/M2AP_SessionUpdateResponse.h	\
+	R14/m2ap-14.0.0.gen/M2AP_SessionUpdateFailure.h	\
+	R14/m2ap-14.0.0.gen/M2AP_MbmsSchedulingInformation.h	\
+	R14/m2ap-14.0.0.gen/M2AP_MBSFN-Area-Configuration-List.h	\
+	R14/m2ap-14.0.0.gen/M2AP_PMCH-Configuration-List.h	\
+	R14/m2ap-14.0.0.gen/M2AP_PMCH-Configuration-Item.h	\
+	R14/m2ap-14.0.0.gen/M2AP_MBSFN-Subframe-ConfigurationList.h	\
+	R14/m2ap-14.0.0.gen/M2AP_MBMS-Suspension-Notification-List.h	\
+	R14/m2ap-14.0.0.gen/M2AP_MBMS-Suspension-Notification-Item.h	\
+	R14/m2ap-14.0.0.gen/M2AP_MbmsSchedulingInformationResponse.h	\
+	R14/m2ap-14.0.0.gen/M2AP_M2SetupRequest.h	\
+	R14/m2ap-14.0.0.gen/M2AP_ENB-MBMS-Configuration-data-List.h	\
+	R14/m2ap-14.0.0.gen/M2AP_M2SetupResponse.h	\
+	R14/m2ap-14.0.0.gen/M2AP_MCCHrelatedBCCH-ConfigPerMBSFNArea.h	\
+	R14/m2ap-14.0.0.gen/M2AP_M2SetupFailure.h	\
+	R14/m2ap-14.0.0.gen/M2AP_ENBConfigurationUpdate.h	\
+	R14/m2ap-14.0.0.gen/M2AP_ENB-MBMS-Configuration-data-List-ConfigUpdate.h	\
+	R14/m2ap-14.0.0.gen/M2AP_ENBConfigurationUpdateAcknowledge.h	\
+	R14/m2ap-14.0.0.gen/M2AP_ENBConfigurationUpdateFailure.h	\
+	R14/m2ap-14.0.0.gen/M2AP_MCEConfigurationUpdate.h	\
+	R14/m2ap-14.0.0.gen/M2AP_MCEConfigurationUpdateAcknowledge.h	\
+	R14/m2ap-14.0.0.gen/M2AP_MCEConfigurationUpdateFailure.h	\
+	R14/m2ap-14.0.0.gen/M2AP_ErrorIndication.h	\
+	R14/m2ap-14.0.0.gen/M2AP_Reset.h	\
+	R14/m2ap-14.0.0.gen/M2AP_ResetType.h	\
+	R14/m2ap-14.0.0.gen/M2AP_ResetAll.h	\
+	R14/m2ap-14.0.0.gen/M2AP_MBMS-Service-associatedLogicalM2-ConnectionListRes.h	\
+	R14/m2ap-14.0.0.gen/M2AP_ResetAcknowledge.h	\
+	R14/m2ap-14.0.0.gen/M2AP_MBMS-Service-associatedLogicalM2-ConnectionListResAck.h	\
+	R14/m2ap-14.0.0.gen/M2AP_PrivateMessage.h	\
+	R14/m2ap-14.0.0.gen/M2AP_MbmsServiceCountingRequest.h	\
+	R14/m2ap-14.0.0.gen/M2AP_MBMS-Counting-Request-Session.h	\
+	R14/m2ap-14.0.0.gen/M2AP_MBMS-Counting-Request-SessionIE.h	\
+	R14/m2ap-14.0.0.gen/M2AP_MbmsServiceCountingResponse.h	\
+	R14/m2ap-14.0.0.gen/M2AP_MbmsServiceCountingFailure.h	\
+	R14/m2ap-14.0.0.gen/M2AP_MbmsServiceCountingResultsReport.h	\
+	R14/m2ap-14.0.0.gen/M2AP_MBMS-Counting-Result-List.h	\
+	R14/m2ap-14.0.0.gen/M2AP_MBMS-Counting-Result.h	\
+	R14/m2ap-14.0.0.gen/M2AP_CountingResult.h	\
+	R14/m2ap-14.0.0.gen/M2AP_MbmsOverloadNotification.h	\
+	R14/m2ap-14.0.0.gen/M2AP_Overload-Status-Per-PMCH-List.h	\
+	R14/m2ap-14.0.0.gen/M2AP_PMCH-Overload-Status.h	\
+	R14/m2ap-14.0.0.gen/M2AP_Active-MBMS-Session-List.h	\
+	R14/m2ap-14.0.0.gen/M2AP_AllocatedSubframesEnd.h	\
+	R14/m2ap-14.0.0.gen/M2AP_AllocationAndRetentionPriority.h	\
+	R14/m2ap-14.0.0.gen/M2AP_BitRate.h	\
+	R14/m2ap-14.0.0.gen/M2AP_Cause.h	\
+	R14/m2ap-14.0.0.gen/M2AP_CauseMisc.h	\
+	R14/m2ap-14.0.0.gen/M2AP_CauseNAS.h	\
+	R14/m2ap-14.0.0.gen/M2AP_CauseProtocol.h	\
+	R14/m2ap-14.0.0.gen/M2AP_CauseRadioNetwork.h	\
+	R14/m2ap-14.0.0.gen/M2AP_CauseTransport.h	\
+	R14/m2ap-14.0.0.gen/M2AP_Cell-Information.h	\
+	R14/m2ap-14.0.0.gen/M2AP_Cell-Information-List.h	\
+	R14/m2ap-14.0.0.gen/M2AP_CriticalityDiagnostics.h	\
+	R14/m2ap-14.0.0.gen/M2AP_CriticalityDiagnostics-IE-List.h	\
+	R14/m2ap-14.0.0.gen/M2AP_ECGI.h	\
+	R14/m2ap-14.0.0.gen/M2AP_ENB-ID.h	\
+	R14/m2ap-14.0.0.gen/M2AP_ENB-MBMS-Configuration-data-Item.h	\
+	R14/m2ap-14.0.0.gen/M2AP_ENB-MBMS-Configuration-data-ConfigUpdate-Item.h	\
+	R14/m2ap-14.0.0.gen/M2AP_ENB-MBMS-M2AP-ID.h	\
+	R14/m2ap-14.0.0.gen/M2AP_ENBname.h	\
+	R14/m2ap-14.0.0.gen/M2AP_EUTRANCellIdentifier.h	\
+	R14/m2ap-14.0.0.gen/M2AP_GBR-QosInformation.h	\
+	R14/m2ap-14.0.0.gen/M2AP_GlobalENB-ID.h	\
+	R14/m2ap-14.0.0.gen/M2AP_GlobalMCE-ID.h	\
+	R14/m2ap-14.0.0.gen/M2AP_GTP-TEID.h	\
+	R14/m2ap-14.0.0.gen/M2AP_IPAddress.h	\
+	R14/m2ap-14.0.0.gen/M2AP_LCID.h	\
+	R14/m2ap-14.0.0.gen/M2AP_MBMS-Cell-List.h	\
+	R14/m2ap-14.0.0.gen/M2AP_MBMS-E-RAB-QoS-Parameters.h	\
+	R14/m2ap-14.0.0.gen/M2AP_MBMS-Service-associatedLogicalM2-ConnectionItem.h	\
+	R14/m2ap-14.0.0.gen/M2AP_MBMS-Service-Area.h	\
+	R14/m2ap-14.0.0.gen/M2AP_MBMS-Service-Area-ID-List.h	\
+	R14/m2ap-14.0.0.gen/M2AP_MBMS-Session-ID.h	\
+	R14/m2ap-14.0.0.gen/M2AP_MBMSsessionListPerPMCH-Item.h	\
+	R14/m2ap-14.0.0.gen/M2AP_MBMSsessionsToBeSuspendedListPerPMCH-Item.h	\
+	R14/m2ap-14.0.0.gen/M2AP_MBSFN-Area-ID.h	\
+	R14/m2ap-14.0.0.gen/M2AP_MBSFN-SynchronisationArea-ID.h	\
+	R14/m2ap-14.0.0.gen/M2AP_MBSFN-Subframe-Configuration.h	\
+	R14/m2ap-14.0.0.gen/M2AP_MCCH-Update-Time.h	\
+	R14/m2ap-14.0.0.gen/M2AP_MCCHrelatedBCCH-ConfigPerMBSFNArea-Item.h	\
+	R14/m2ap-14.0.0.gen/M2AP_MCE-ID.h	\
+	R14/m2ap-14.0.0.gen/M2AP_MCE-MBMS-M2AP-ID.h	\
+	R14/m2ap-14.0.0.gen/M2AP_MCEname.h	\
+	R14/m2ap-14.0.0.gen/M2AP_MCH-Scheduling-Period.h	\
+	R14/m2ap-14.0.0.gen/M2AP_MCH-Scheduling-PeriodExtended.h	\
+	R14/m2ap-14.0.0.gen/M2AP_MCH-Scheduling-PeriodExtended2.h	\
+	R14/m2ap-14.0.0.gen/M2AP_Modulation-Coding-Scheme2.h	\
+	R14/m2ap-14.0.0.gen/M2AP_Modification-PeriodExtended.h	\
+	R14/m2ap-14.0.0.gen/M2AP_PLMN-Identity.h	\
+	R14/m2ap-14.0.0.gen/M2AP_PMCH-Configuration.h	\
+	R14/m2ap-14.0.0.gen/M2AP_Common-Subframe-Allocation-Period.h	\
+	R14/m2ap-14.0.0.gen/M2AP_Pre-emptionCapability.h	\
+	R14/m2ap-14.0.0.gen/M2AP_Pre-emptionVulnerability.h	\
+	R14/m2ap-14.0.0.gen/M2AP_PriorityLevel.h	\
+	R14/m2ap-14.0.0.gen/M2AP_QCI.h	\
+	R14/m2ap-14.0.0.gen/M2AP_Repetition-PeriodExtended.h	\
+	R14/m2ap-14.0.0.gen/M2AP_SC-PTM-Information.h	\
+	R14/m2ap-14.0.0.gen/M2AP_SFN.h	\
+	R14/m2ap-14.0.0.gen/M2AP_Subcarrier-SpacingMBMS.h	\
+	R14/m2ap-14.0.0.gen/M2AP_SubframeAllocationExtended.h	\
+	R14/m2ap-14.0.0.gen/M2AP_TimeToWait.h	\
+	R14/m2ap-14.0.0.gen/M2AP_TMGI.h	\
+	R14/m2ap-14.0.0.gen/M2AP_TNL-Information.h	\
+	R14/m2ap-14.0.0.gen/M2AP_TypeOfError.h	\
+	R14/m2ap-14.0.0.gen/M2AP_Criticality.h	\
+	R14/m2ap-14.0.0.gen/M2AP_Presence.h	\
+	R14/m2ap-14.0.0.gen/M2AP_PrivateIE-ID.h	\
+	R14/m2ap-14.0.0.gen/M2AP_ProcedureCode.h	\
+	R14/m2ap-14.0.0.gen/M2AP_ProtocolIE-ID.h	\
+	R14/m2ap-14.0.0.gen/M2AP_TriggeringMessage.h	\
+	R14/m2ap-14.0.0.gen/M2AP_ProtocolIE-Container.h	\
+	R14/m2ap-14.0.0.gen/M2AP_ProtocolIE-Single-Container.h	\
+	R14/m2ap-14.0.0.gen/M2AP_ProtocolIE-Field.h	\
+	R14/m2ap-14.0.0.gen/M2AP_ProtocolIE-ContainerPair.h	\
+	R14/m2ap-14.0.0.gen/M2AP_ProtocolIE-FieldPair.h	\
+	R14/m2ap-14.0.0.gen/M2AP_ProtocolIE-ContainerList.h	\
+	R14/m2ap-14.0.0.gen/M2AP_ProtocolIE-ContainerPairList.h	\
+	R14/m2ap-14.0.0.gen/M2AP_ProtocolExtensionContainer.h	\
+	R14/m2ap-14.0.0.gen/M2AP_ProtocolExtensionField.h	\
+	R14/m2ap-14.0.0.gen/M2AP_PrivateIE-Container.h	\
+	R14/m2ap-14.0.0.gen/M2AP_PrivateIE-Field.h
+
+ASN_MODULE_HDRS+=R14/m2ap-14.0.0.gen/ANY.h
+ASN_MODULE_SRCS+=R14/m2ap-14.0.0.gen/ANY.c
+ASN_MODULE_HDRS+=R14/m2ap-14.0.0.gen/OCTET_STRING.h
+ASN_MODULE_HDRS+=R14/m2ap-14.0.0.gen/OPEN_TYPE.h
+ASN_MODULE_SRCS+=R14/m2ap-14.0.0.gen/OPEN_TYPE.c
+ASN_MODULE_HDRS+=R14/m2ap-14.0.0.gen/constr_CHOICE.h
+ASN_MODULE_HDRS+=R14/m2ap-14.0.0.gen/INTEGER.h
+ASN_MODULE_SRCS+=R14/m2ap-14.0.0.gen/INTEGER.c
+ASN_MODULE_HDRS+=R14/m2ap-14.0.0.gen/NativeEnumerated.h
+ASN_MODULE_SRCS+=R14/m2ap-14.0.0.gen/NativeEnumerated.c
+ASN_MODULE_HDRS+=R14/m2ap-14.0.0.gen/NativeInteger.h
+ASN_MODULE_SRCS+=R14/m2ap-14.0.0.gen/NativeInteger.c
+ASN_MODULE_HDRS+=R14/m2ap-14.0.0.gen/OBJECT_IDENTIFIER.h
+ASN_MODULE_SRCS+=R14/m2ap-14.0.0.gen/OBJECT_IDENTIFIER.c
+ASN_MODULE_HDRS+=R14/m2ap-14.0.0.gen/PrintableString.h
+ASN_MODULE_SRCS+=R14/m2ap-14.0.0.gen/PrintableString.c
+ASN_MODULE_HDRS+=R14/m2ap-14.0.0.gen/asn_SEQUENCE_OF.h
+ASN_MODULE_SRCS+=R14/m2ap-14.0.0.gen/asn_SEQUENCE_OF.c
+ASN_MODULE_HDRS+=R14/m2ap-14.0.0.gen/asn_SET_OF.h
+ASN_MODULE_SRCS+=R14/m2ap-14.0.0.gen/asn_SET_OF.c
+ASN_MODULE_SRCS+=R14/m2ap-14.0.0.gen/constr_CHOICE.c
+ASN_MODULE_HDRS+=R14/m2ap-14.0.0.gen/constr_SEQUENCE.h
+ASN_MODULE_SRCS+=R14/m2ap-14.0.0.gen/constr_SEQUENCE.c
+ASN_MODULE_HDRS+=R14/m2ap-14.0.0.gen/constr_SEQUENCE_OF.h
+ASN_MODULE_SRCS+=R14/m2ap-14.0.0.gen/constr_SEQUENCE_OF.c
+ASN_MODULE_HDRS+=R14/m2ap-14.0.0.gen/constr_SET_OF.h
+ASN_MODULE_SRCS+=R14/m2ap-14.0.0.gen/constr_SET_OF.c
+ASN_MODULE_HDRS+=R14/m2ap-14.0.0.gen/asn_application.h
+ASN_MODULE_SRCS+=R14/m2ap-14.0.0.gen/asn_application.c
+ASN_MODULE_HDRS+=R14/m2ap-14.0.0.gen/asn_ioc.h
+ASN_MODULE_HDRS+=R14/m2ap-14.0.0.gen/asn_system.h
+ASN_MODULE_HDRS+=R14/m2ap-14.0.0.gen/asn_codecs.h
+ASN_MODULE_HDRS+=R14/m2ap-14.0.0.gen/asn_internal.h
+ASN_MODULE_SRCS+=R14/m2ap-14.0.0.gen/asn_internal.c
+ASN_MODULE_HDRS+=R14/m2ap-14.0.0.gen/asn_random_fill.h
+ASN_MODULE_SRCS+=R14/m2ap-14.0.0.gen/asn_random_fill.c
+ASN_MODULE_HDRS+=R14/m2ap-14.0.0.gen/asn_bit_data.h
+ASN_MODULE_SRCS+=R14/m2ap-14.0.0.gen/asn_bit_data.c
+ASN_MODULE_SRCS+=R14/m2ap-14.0.0.gen/OCTET_STRING.c
+ASN_MODULE_HDRS+=R14/m2ap-14.0.0.gen/BIT_STRING.h
+ASN_MODULE_SRCS+=R14/m2ap-14.0.0.gen/BIT_STRING.c
+ASN_MODULE_SRCS+=R14/m2ap-14.0.0.gen/asn_codecs_prim.c
+ASN_MODULE_HDRS+=R14/m2ap-14.0.0.gen/asn_codecs_prim.h
+ASN_MODULE_HDRS+=R14/m2ap-14.0.0.gen/ber_tlv_length.h
+ASN_MODULE_SRCS+=R14/m2ap-14.0.0.gen/ber_tlv_length.c
+ASN_MODULE_HDRS+=R14/m2ap-14.0.0.gen/ber_tlv_tag.h
+ASN_MODULE_SRCS+=R14/m2ap-14.0.0.gen/ber_tlv_tag.c
+ASN_MODULE_HDRS+=R14/m2ap-14.0.0.gen/ber_decoder.h
+ASN_MODULE_SRCS+=R14/m2ap-14.0.0.gen/ber_decoder.c
+ASN_MODULE_HDRS+=R14/m2ap-14.0.0.gen/der_encoder.h
+ASN_MODULE_SRCS+=R14/m2ap-14.0.0.gen/der_encoder.c
+ASN_MODULE_HDRS+=R14/m2ap-14.0.0.gen/constr_TYPE.h
+ASN_MODULE_SRCS+=R14/m2ap-14.0.0.gen/constr_TYPE.c
+ASN_MODULE_HDRS+=R14/m2ap-14.0.0.gen/constraints.h
+ASN_MODULE_SRCS+=R14/m2ap-14.0.0.gen/constraints.c
+ASN_MODULE_HDRS+=R14/m2ap-14.0.0.gen/xer_support.h
+ASN_MODULE_SRCS+=R14/m2ap-14.0.0.gen/xer_support.c
+ASN_MODULE_HDRS+=R14/m2ap-14.0.0.gen/xer_decoder.h
+ASN_MODULE_SRCS+=R14/m2ap-14.0.0.gen/xer_decoder.c
+ASN_MODULE_HDRS+=R14/m2ap-14.0.0.gen/xer_encoder.h
+ASN_MODULE_SRCS+=R14/m2ap-14.0.0.gen/xer_encoder.c
+ASN_MODULE_HDRS+=R14/m2ap-14.0.0.gen/per_support.h
+ASN_MODULE_SRCS+=R14/m2ap-14.0.0.gen/per_support.c
+ASN_MODULE_HDRS+=R14/m2ap-14.0.0.gen/per_decoder.h
+ASN_MODULE_SRCS+=R14/m2ap-14.0.0.gen/per_decoder.c
+ASN_MODULE_HDRS+=R14/m2ap-14.0.0.gen/per_encoder.h
+ASN_MODULE_SRCS+=R14/m2ap-14.0.0.gen/per_encoder.c
+ASN_MODULE_HDRS+=R14/m2ap-14.0.0.gen/per_opentype.h
+ASN_MODULE_SRCS+=R14/m2ap-14.0.0.gen/per_opentype.c
+
+ASN_MODULE_CFLAGS=-DASN_DISABLE_OER_SUPPORT 
+
+lib_LTLIBRARIES+=libasncodec.la
+libasncodec_la_SOURCES=$(ASN_MODULE_SRCS) $(ASN_MODULE_HDRS)
+libasncodec_la_CPPFLAGS=-I$(top_srcdir)/R14/m2ap-14.0.0.gen/
+libasncodec_la_CFLAGS=$(ASN_MODULE_CFLAGS)
+libasncodec_la_LDFLAGS=-lm
