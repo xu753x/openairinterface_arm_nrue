@@ -26,6 +26,7 @@ cmake_minimum_required (VERSION 3.5)
 project (OpenAirInterface VERSION 1.2.2 LANGUAGES C CXX)
 
 include("cmake_targets/macros.cmake")
+add_subdirectory(common)
 add_subdirectory(openair2)
 add_subdirectory(openair3)
 
