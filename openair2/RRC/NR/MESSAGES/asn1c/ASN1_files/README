@@ -1,0 +1,3 @@
+Create the ASN.1 C files:
+
+ASN1C_PREFIX=NR_ asn1c -pdu=all -fcompound-names -gen-PER -no-gen-OER -no-gen-example -findirect-choice -D nr-rrc-16.1.0.gen nr-rrc-16.1.0.asn1

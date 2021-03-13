@@ -383,6 +383,9 @@ include_directories ("${RRC_FULL_DIR}")
 
 #NR RRC
 #######
+set (NR_RRC_ASN1_VERSION "NR_Rel16" )
+make_version(NR_RRC_VERSION 16 1 0)
+add_definitions(-DNR_RRC_VERSION=${NR_RRC_VERSION})
 add_library(NR_RRC_LIB ${OPENAIR2_DIR}/RRC/NR/MESSAGES/asn1_msg.c)
 target_link_libraries(NR_RRC_LIB PUBLIC ASN1_NR_RRC_LIB)
 # RRC is used everywhere, and recursively included literally everywhere.
@@ -390,7 +393,7 @@ target_link_libraries(NR_RRC_LIB PUBLIC ASN1_NR_RRC_LIB)
 # To clean this up, every module would need to be separated into subdirectories
 # (via add_subdirectory()) and use
 # target_link_libraries(xyz PRIVATE ASN1_NR_RRC_LIB)
-include_directories("${CMAKE_CURRENT_BINARY_DIR}/openair2/RRC/NR/MESSAGES/asn1c/CMakeFiles/RRC_NR_Rel16/")
+include_directories("openair2/RRC/NR/MESSAGES/asn1c/ASN1_files/nr-rrc-16.1.0.gen/")
 
 # S1AP
 # Same limitation as described in RRC: unknown generated file list
