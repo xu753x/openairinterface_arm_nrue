@@ -597,41 +597,15 @@ add_library(M3AP_ENB
 add_dependencies(M3AP_ENB m3_flag)
 
 #X2AP
-# Same limitation as described in RRC/S1AP: unknown generated file list
-# so we generate it at cmake time
 ##############
 set (X2AP_RELEASE R15)
 
 set(X2AP_DIR ${OPENAIR2_DIR}/X2AP)
 make_version(X2AP_VERSION 15 6 0)
-set(X2AP_ASN_FILES x2ap-15.6.0.asn1)
 
 add_definitions(-DX2AP_VERSION=${X2AP_VERSION})
-set(X2AP_ASN_DIR ${X2AP_DIR}/MESSAGES/ASN1/${X2AP_RELEASE})
-set(X2AP_C_DIR ${asn1_generated_dir}/X2AP_${X2AP_RELEASE})
-# Warning: if you modify ASN.1 source file to generate new C files, cmake should be re-run instead of make
-execute_process(COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "${X2AP_C_DIR}" "${X2AP_ASN_DIR}/${X2AP_ASN_FILES}"  "X2AP_" -fno-include-deps
-                RESULT_VARIABLE ret)
-if (NOT ${ret} STREQUAL 0)
-  message(FATAL_ERROR "${ret}: error")
-endif (NOT ${ret} STREQUAL 0)
-
-file(GLOB X2AP_source ${X2AP_C_DIR}/*.c)
-
-add_custom_target (
-  x2_flag ALL
-  COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "${X2AP_C_DIR}" "${X2AP_ASN_DIR}/${X2AP_ASN_FILES}"  "X2AP_" -fno-include-deps
-  DEPENDS ${X2AP_ASN_DIR}/${X2AP_ASN_FILES}
-  )
-
-add_library(X2AP_LIB
-  ${X2AP_source}
-  ${X2AP_DIR}/x2ap_common.c
-  )
-add_dependencies(X2AP_LIB x2_flag)
-
-include_directories ("${X2AP_C_DIR}")
-include_directories ("${X2AP_DIR}")
+add_library(X2AP_LIB ${X2AP_DIR}/x2ap_common.c)
+target_link_libraries(X2AP_LIB PUBLIC ASN1_X2AP_LIB)
 
 add_library(X2AP_ENB
   ${X2AP_DIR}/x2ap_eNB.c
@@ -644,7 +618,7 @@ add_library(X2AP_ENB
   ${X2AP_DIR}/x2ap_ids.c
   ${X2AP_DIR}/x2ap_timers.c
  )
-add_dependencies(X2AP_ENB X2AP_LIB x2_flag)
+target_link_libraries(X2AP_ENB PRIVATE X2AP_LIB)
 
 
 # F1AP
@@ -2008,7 +1982,7 @@ add_library(L2
   ${ENB_APP_SRC}
   ${MCE_APP_SRC}
   )
-add_dependencies(L2 x2_flag m2_flag m3_flag)
+add_dependencies(L2 m2_flag m3_flag)
 target_link_libraries(L2 PRIVATE ASN1_S1AP_LIB)
 
 add_library(MAC_NR
@@ -2038,8 +2012,6 @@ add_library(L2_LTE_NR
 )
 target_link_libraries(L2_LTE_NR PRIVATE ASN1_S1AP_LIB)
   
-add_dependencies(L2_NR x2_flag)
-
 add_library(L2_UE
   ${L2_SRC_UE}
   ${MAC_SRC_UE}
@@ -2053,8 +2025,6 @@ add_library(L2_UE_LTE_NR
 if (NOT ${NOS1})
 target_compile_definitions(L2_UE PUBLIC -DPDCP_USE_NETLINK)
 endif()
-
-add_dependencies(L2_UE x2_flag)
 
 add_library( NR_L2_UE ${NR_L2_SRC_UE} ${MAC_NR_SRC_UE} )
 
@@ -2110,7 +2080,7 @@ set (MME_APP_SRC
   ${OPENAIR3_DIR}/MME_APP/mme_config.c
 )
 add_library(MME_APP ${MME_APP_SRC})
-add_dependencies(MME_APP x2_flag m2_flag m3_flag)
+add_dependencies(MME_APP m2_flag m3_flag)
 
 set(SCTP_SRC
   ${OPENAIR3_DIR}/SCTP/sctp_common.c
@@ -2746,7 +2716,7 @@ add_executable(lte-softmodem
   ${CONFIG_SOURCES}
   ${SHLIB_LOADER_SOURCES}
   )
-add_dependencies(lte-softmodem x2_flag oai_iqplayer)
+add_dependencies(lte-softmodem oai_iqplayer)
 
 target_link_libraries (lte-softmodem
   -Wl,--start-group
@@ -2787,7 +2757,7 @@ add_executable(ocp-enb
   ${CONFIG_SOURCES}
   ${SHLIB_LOADER_SOURCES}
   )
-add_dependencies(ocp-enb x2_flag oai_iqplayer coding params_libconfig rfsimulator)
+add_dependencies(ocp-enb oai_iqplayer coding params_libconfig rfsimulator)
 
 target_link_libraries (ocp-enb
   -Wl,--start-group
@@ -2852,8 +2822,6 @@ add_executable(lte-uesoftmodem
   ${CONFIG_SOURCES}
   ${SHLIB_LOADER_SOURCES}
   )
-
-add_dependencies(lte-uesoftmodem x2_flag)
 
 if (NOT ${NOS1})
 	target_compile_definitions(lte-uesoftmodem PRIVATE -DPDCP_USE_NETLINK)
