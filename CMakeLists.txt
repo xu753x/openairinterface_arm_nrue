@@ -19,7 +19,7 @@
 # *      contact@openairinterface.org
 # */
 
-# Author: laurent THOMAS, Lionel GAUTHIER
+# Author: laurent THOMAS, Lionel GAUTHIER, Robert SCHMIDT
 
 # Ubuntu 16.04 has 3.5
 cmake_minimum_required (VERSION 3.5)
