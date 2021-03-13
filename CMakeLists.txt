@@ -460,55 +460,14 @@ target_link_libraries(M2AP_ENB PUBLIC ASN1_M2AP_LIB)
 target_include_directories(M2AP_ENB PUBLIC "${M2AP_DIR}")
 
 #M3AP
-# Same limitation as described in RRC/S1AP: unknown generated file list
-# so we generate it at cmake time
 ##############
 add_list1_option(M3AP_RELEASE R14 "M3AP ASN.1 grammar version" R14)
 
 set(M3AP_DIR ${OPENAIR3_DIR}/M3AP)
-if (${M3AP_RELEASE} STREQUAL "R8")
-  make_version(M3AP_VERSION 8 9 0)
-  set(M3AP_ASN_FILES m3ap-8.9.0.asn1)
-elseif (${M3AP_RELEASE} STREQUAL "R11")
-  make_version(M3AP_VERSION 11 9 0)
-  set(M3AP_ASN_FILES m3ap-11.9.0.asn1)
-elseif (${M3AP_RELEASE} STREQUAL "R12")
-  make_version(M3AP_VERSION 12 9 0)
-  set(M3AP_ASN_FILES m3ap-12.9.0.asn1)
-elseif (${M3AP_RELEASE} STREQUAL "R14")
-  make_version(M3AP_VERSION 14 0 0)
-  set(M3AP_ASN_FILES m3ap-14.0.0.asn1)
-elseif (${M3AP_RELEASE} STREQUAL "R15")
-  make_version(M3AP_VERSION 15 1 0)
-  set(M3AP_ASN_FILES m3ap-15.1.0.asn1)
-endif(${M3AP_RELEASE} STREQUAL "R8")
 add_definitions(-DM3AP_VERSION=${M3AP_VERSION})
-set(M3AP_ASN_DIR ${M3AP_DIR}/MESSAGES/ASN1/${M3AP_RELEASE})
-set(M3AP_C_DIR ${asn1_generated_dir}/M3AP_${M3AP_RELEASE})
 
-# Warning: if you modify ASN.1 source file to generate new C files, cmake should be re-run instead of make
-execute_process(COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "${M3AP_C_DIR}" "${M3AP_ASN_DIR}/${M3AP_ASN_FILES}"  "M3AP_" -fno-include-deps
-                RESULT_VARIABLE ret)
-if (NOT ${ret} STREQUAL 0)
-  message(FATAL_ERROR "${ret}: error")
-endif (NOT ${ret} STREQUAL 0)
-
-file(GLOB M3AP_source ${M3AP_C_DIR}/*.c)
-
-add_custom_target (
-  m3_flag ALL
-  COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "${M3AP_C_DIR}" "${M3AP_ASN_DIR}/${M3AP_ASN_FILES}"  "M3AP_" -fno-include-deps
-  DEPENDS ${M3AP_ASN_DIR}/${M3AP_ASN_FILES}
-  )
-
-add_library(M3AP_LIB
-  ${M3AP_source}
-  ${M3AP_DIR}/m3ap_common.c
-  )
-add_dependencies(M3AP_LIB m3_flag)
-
-include_directories ("${M3AP_C_DIR}")
-include_directories ("${M3AP_DIR}")
+add_library(M3AP_LIB ${M3AP_DIR}/m3ap_common.c)
+target_link_libraries(M3AP_LIB PUBLIC ASN1_M3AP_LIB)
 
 add_library(M3AP_ENB
   ${M3AP_DIR}/m3ap_decoder.c
@@ -525,8 +484,7 @@ add_library(M3AP_ENB
   ${M3AP_DIR}/m3ap_ids.c
   ${M3AP_DIR}/m3ap_timers.c
   )
-add_dependencies(M3AP_ENB m3_flag)
-target_link_libraries(M3AP_ENB PRIVATE M2AP_ENB)
+target_link_libraries(M3AP_ENB PUBLIC M3AP_LIB PRIVATE M2AP_ENB)
 
 #X2AP
 ##############
@@ -1900,7 +1858,6 @@ add_library(L2
   ${ENB_APP_SRC}
   ${MCE_APP_SRC}
   )
-add_dependencies(L2 m3_flag)
 target_link_libraries(L2 PRIVATE ASN1_S1AP_LIB ASN1_F1AP_LIB)
 
 add_library(MAC_NR
@@ -1999,7 +1956,6 @@ set (MME_APP_SRC
   ${OPENAIR3_DIR}/MME_APP/mme_config.c
 )
 add_library(MME_APP ${MME_APP_SRC})
-add_dependencies(MME_APP m3_flag)
 
 set(SCTP_SRC
   ${OPENAIR3_DIR}/SCTP/sctp_common.c

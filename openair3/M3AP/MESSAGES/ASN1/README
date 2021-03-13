@@ -1,0 +1,2 @@
+To generate M3AP ASN1 descriptions:
+ASN1C_PREFIX=M3AP_ asn1c -pdu=all -fcompound-names -gen-PER -no-gen-OER -no-gen-example -fno-include-deps -D R14/m3ap-14.0.0.gen/ R14/m3ap-14.0.0.asn1

@@ -1,0 +1,249 @@
+ASN_MODULE_SRCS=	\
+	R14/m3ap-14.0.0.gen/M3AP_M3AP-PDU.c	\
+	R14/m3ap-14.0.0.gen/M3AP_InitiatingMessage.c	\
+	R14/m3ap-14.0.0.gen/M3AP_SuccessfulOutcome.c	\
+	R14/m3ap-14.0.0.gen/M3AP_UnsuccessfulOutcome.c	\
+	R14/m3ap-14.0.0.gen/M3AP_MBMSSessionStartRequest.c	\
+	R14/m3ap-14.0.0.gen/M3AP_MBMSSessionStartResponse.c	\
+	R14/m3ap-14.0.0.gen/M3AP_MBMSSessionStartFailure.c	\
+	R14/m3ap-14.0.0.gen/M3AP_MBMSSessionStopRequest.c	\
+	R14/m3ap-14.0.0.gen/M3AP_MBMSSessionStopResponse.c	\
+	R14/m3ap-14.0.0.gen/M3AP_MBMSSessionUpdateRequest.c	\
+	R14/m3ap-14.0.0.gen/M3AP_MBMSSessionUpdateResponse.c	\
+	R14/m3ap-14.0.0.gen/M3AP_MBMSSessionUpdateFailure.c	\
+	R14/m3ap-14.0.0.gen/M3AP_ErrorIndication.c	\
+	R14/m3ap-14.0.0.gen/M3AP_Reset.c	\
+	R14/m3ap-14.0.0.gen/M3AP_ResetType.c	\
+	R14/m3ap-14.0.0.gen/M3AP_ResetAll.c	\
+	R14/m3ap-14.0.0.gen/M3AP_MBMS-Service-associatedLogicalM3-ConnectionListRes.c	\
+	R14/m3ap-14.0.0.gen/M3AP_ResetAcknowledge.c	\
+	R14/m3ap-14.0.0.gen/M3AP_MBMS-Service-associatedLogicalM3-ConnectionListResAck.c	\
+	R14/m3ap-14.0.0.gen/M3AP_PrivateMessage.c	\
+	R14/m3ap-14.0.0.gen/M3AP_M3SetupRequest.c	\
+	R14/m3ap-14.0.0.gen/M3AP_MBMSServiceAreaListItem.c	\
+	R14/m3ap-14.0.0.gen/M3AP_M3SetupResponse.c	\
+	R14/m3ap-14.0.0.gen/M3AP_M3SetupFailure.c	\
+	R14/m3ap-14.0.0.gen/M3AP_MCEConfigurationUpdate.c	\
+	R14/m3ap-14.0.0.gen/M3AP_MCEConfigurationUpdateAcknowledge.c	\
+	R14/m3ap-14.0.0.gen/M3AP_MCEConfigurationUpdateFailure.c	\
+	R14/m3ap-14.0.0.gen/M3AP_Absolute-Time-ofMBMS-Data.c	\
+	R14/m3ap-14.0.0.gen/M3AP_AllocationAndRetentionPriority.c	\
+	R14/m3ap-14.0.0.gen/M3AP_BitRate.c	\
+	R14/m3ap-14.0.0.gen/M3AP_Cause.c	\
+	R14/m3ap-14.0.0.gen/M3AP_CauseMisc.c	\
+	R14/m3ap-14.0.0.gen/M3AP_CauseNAS.c	\
+	R14/m3ap-14.0.0.gen/M3AP_CauseProtocol.c	\
+	R14/m3ap-14.0.0.gen/M3AP_CauseRadioNetwork.c	\
+	R14/m3ap-14.0.0.gen/M3AP_CauseTransport.c	\
+	R14/m3ap-14.0.0.gen/M3AP_CriticalityDiagnostics.c	\
+	R14/m3ap-14.0.0.gen/M3AP_CriticalityDiagnostics-IE-List.c	\
+	R14/m3ap-14.0.0.gen/M3AP_ECGI.c	\
+	R14/m3ap-14.0.0.gen/M3AP_EUTRANCellIdentifier.c	\
+	R14/m3ap-14.0.0.gen/M3AP_ExtendedMCE-ID.c	\
+	R14/m3ap-14.0.0.gen/M3AP_Global-MCE-ID.c	\
+	R14/m3ap-14.0.0.gen/M3AP_GBR-QosInformation.c	\
+	R14/m3ap-14.0.0.gen/M3AP_GTP-TEID.c	\
+	R14/m3ap-14.0.0.gen/M3AP_IPAddress.c	\
+	R14/m3ap-14.0.0.gen/M3AP_MBMS-Cell-List.c	\
+	R14/m3ap-14.0.0.gen/M3AP_MBMS-E-RAB-QoS-Parameters.c	\
+	R14/m3ap-14.0.0.gen/M3AP_MBMS-Service-associatedLogicalM3-ConnectionItem.c	\
+	R14/m3ap-14.0.0.gen/M3AP_MBMSServiceArea1.c	\
+	R14/m3ap-14.0.0.gen/M3AP_MBMS-Service-Area.c	\
+	R14/m3ap-14.0.0.gen/M3AP_MBMS-Session-Duration.c	\
+	R14/m3ap-14.0.0.gen/M3AP_MBMS-Session-ID.c	\
+	R14/m3ap-14.0.0.gen/M3AP_MCE-MBMS-M3AP-ID.c	\
+	R14/m3ap-14.0.0.gen/M3AP_MCE-ID.c	\
+	R14/m3ap-14.0.0.gen/M3AP_MCEname.c	\
+	R14/m3ap-14.0.0.gen/M3AP_MinimumTimeToMBMSDataTransfer.c	\
+	R14/m3ap-14.0.0.gen/M3AP_MME-MBMS-M3AP-ID.c	\
+	R14/m3ap-14.0.0.gen/M3AP_Pre-emptionCapability.c	\
+	R14/m3ap-14.0.0.gen/M3AP_Pre-emptionVulnerability.c	\
+	R14/m3ap-14.0.0.gen/M3AP_PriorityLevel.c	\
+	R14/m3ap-14.0.0.gen/M3AP_PLMN-Identity.c	\
+	R14/m3ap-14.0.0.gen/M3AP_QCI.c	\
+	R14/m3ap-14.0.0.gen/M3AP_Reestablishment.c	\
+	R14/m3ap-14.0.0.gen/M3AP_TimeToWait.c	\
+	R14/m3ap-14.0.0.gen/M3AP_TMGI.c	\
+	R14/m3ap-14.0.0.gen/M3AP_TNL-Information.c	\
+	R14/m3ap-14.0.0.gen/M3AP_TypeOfError.c	\
+	R14/m3ap-14.0.0.gen/M3AP_Criticality.c	\
+	R14/m3ap-14.0.0.gen/M3AP_Presence.c	\
+	R14/m3ap-14.0.0.gen/M3AP_PrivateIE-ID.c	\
+	R14/m3ap-14.0.0.gen/M3AP_ProcedureCode.c	\
+	R14/m3ap-14.0.0.gen/M3AP_ProtocolIE-ID.c	\
+	R14/m3ap-14.0.0.gen/M3AP_TriggeringMessage.c	\
+	R14/m3ap-14.0.0.gen/M3AP_ProtocolIE-Container.c	\
+	R14/m3ap-14.0.0.gen/M3AP_ProtocolIE-Single-Container.c	\
+	R14/m3ap-14.0.0.gen/M3AP_ProtocolIE-Field.c	\
+	R14/m3ap-14.0.0.gen/M3AP_ProtocolIE-ContainerPair.c	\
+	R14/m3ap-14.0.0.gen/M3AP_ProtocolIE-FieldPair.c	\
+	R14/m3ap-14.0.0.gen/M3AP_ProtocolIE-ContainerList.c	\
+	R14/m3ap-14.0.0.gen/M3AP_ProtocolIE-ContainerPairList.c	\
+	R14/m3ap-14.0.0.gen/M3AP_ProtocolExtensionContainer.c	\
+	R14/m3ap-14.0.0.gen/M3AP_ProtocolExtensionField.c	\
+	R14/m3ap-14.0.0.gen/M3AP_PrivateIE-Container.c	\
+	R14/m3ap-14.0.0.gen/M3AP_PrivateIE-Field.c
+
+ASN_MODULE_HDRS=	\
+	R14/m3ap-14.0.0.gen/M3AP_M3AP-PDU.h	\
+	R14/m3ap-14.0.0.gen/M3AP_InitiatingMessage.h	\
+	R14/m3ap-14.0.0.gen/M3AP_SuccessfulOutcome.h	\
+	R14/m3ap-14.0.0.gen/M3AP_UnsuccessfulOutcome.h	\
+	R14/m3ap-14.0.0.gen/M3AP_MBMSSessionStartRequest.h	\
+	R14/m3ap-14.0.0.gen/M3AP_MBMSSessionStartResponse.h	\
+	R14/m3ap-14.0.0.gen/M3AP_MBMSSessionStartFailure.h	\
+	R14/m3ap-14.0.0.gen/M3AP_MBMSSessionStopRequest.h	\
+	R14/m3ap-14.0.0.gen/M3AP_MBMSSessionStopResponse.h	\
+	R14/m3ap-14.0.0.gen/M3AP_MBMSSessionUpdateRequest.h	\
+	R14/m3ap-14.0.0.gen/M3AP_MBMSSessionUpdateResponse.h	\
+	R14/m3ap-14.0.0.gen/M3AP_MBMSSessionUpdateFailure.h	\
+	R14/m3ap-14.0.0.gen/M3AP_ErrorIndication.h	\
+	R14/m3ap-14.0.0.gen/M3AP_Reset.h	\
+	R14/m3ap-14.0.0.gen/M3AP_ResetType.h	\
+	R14/m3ap-14.0.0.gen/M3AP_ResetAll.h	\
+	R14/m3ap-14.0.0.gen/M3AP_MBMS-Service-associatedLogicalM3-ConnectionListRes.h	\
+	R14/m3ap-14.0.0.gen/M3AP_ResetAcknowledge.h	\
+	R14/m3ap-14.0.0.gen/M3AP_MBMS-Service-associatedLogicalM3-ConnectionListResAck.h	\
+	R14/m3ap-14.0.0.gen/M3AP_PrivateMessage.h	\
+	R14/m3ap-14.0.0.gen/M3AP_M3SetupRequest.h	\
+	R14/m3ap-14.0.0.gen/M3AP_MBMSServiceAreaListItem.h	\
+	R14/m3ap-14.0.0.gen/M3AP_M3SetupResponse.h	\
+	R14/m3ap-14.0.0.gen/M3AP_M3SetupFailure.h	\
+	R14/m3ap-14.0.0.gen/M3AP_MCEConfigurationUpdate.h	\
+	R14/m3ap-14.0.0.gen/M3AP_MCEConfigurationUpdateAcknowledge.h	\
+	R14/m3ap-14.0.0.gen/M3AP_MCEConfigurationUpdateFailure.h	\
+	R14/m3ap-14.0.0.gen/M3AP_Absolute-Time-ofMBMS-Data.h	\
+	R14/m3ap-14.0.0.gen/M3AP_AllocationAndRetentionPriority.h	\
+	R14/m3ap-14.0.0.gen/M3AP_BitRate.h	\
+	R14/m3ap-14.0.0.gen/M3AP_Cause.h	\
+	R14/m3ap-14.0.0.gen/M3AP_CauseMisc.h	\
+	R14/m3ap-14.0.0.gen/M3AP_CauseNAS.h	\
+	R14/m3ap-14.0.0.gen/M3AP_CauseProtocol.h	\
+	R14/m3ap-14.0.0.gen/M3AP_CauseRadioNetwork.h	\
+	R14/m3ap-14.0.0.gen/M3AP_CauseTransport.h	\
+	R14/m3ap-14.0.0.gen/M3AP_CriticalityDiagnostics.h	\
+	R14/m3ap-14.0.0.gen/M3AP_CriticalityDiagnostics-IE-List.h	\
+	R14/m3ap-14.0.0.gen/M3AP_ECGI.h	\
+	R14/m3ap-14.0.0.gen/M3AP_EUTRANCellIdentifier.h	\
+	R14/m3ap-14.0.0.gen/M3AP_ExtendedMCE-ID.h	\
+	R14/m3ap-14.0.0.gen/M3AP_Global-MCE-ID.h	\
+	R14/m3ap-14.0.0.gen/M3AP_GBR-QosInformation.h	\
+	R14/m3ap-14.0.0.gen/M3AP_GTP-TEID.h	\
+	R14/m3ap-14.0.0.gen/M3AP_IPAddress.h	\
+	R14/m3ap-14.0.0.gen/M3AP_MBMS-Cell-List.h	\
+	R14/m3ap-14.0.0.gen/M3AP_MBMS-E-RAB-QoS-Parameters.h	\
+	R14/m3ap-14.0.0.gen/M3AP_MBMS-Service-associatedLogicalM3-ConnectionItem.h	\
+	R14/m3ap-14.0.0.gen/M3AP_MBMSServiceArea1.h	\
+	R14/m3ap-14.0.0.gen/M3AP_MBMS-Service-Area.h	\
+	R14/m3ap-14.0.0.gen/M3AP_MBMS-Session-Duration.h	\
+	R14/m3ap-14.0.0.gen/M3AP_MBMS-Session-ID.h	\
+	R14/m3ap-14.0.0.gen/M3AP_MCE-MBMS-M3AP-ID.h	\
+	R14/m3ap-14.0.0.gen/M3AP_MCE-ID.h	\
+	R14/m3ap-14.0.0.gen/M3AP_MCEname.h	\
+	R14/m3ap-14.0.0.gen/M3AP_MinimumTimeToMBMSDataTransfer.h	\
+	R14/m3ap-14.0.0.gen/M3AP_MME-MBMS-M3AP-ID.h	\
+	R14/m3ap-14.0.0.gen/M3AP_Pre-emptionCapability.h	\
+	R14/m3ap-14.0.0.gen/M3AP_Pre-emptionVulnerability.h	\
+	R14/m3ap-14.0.0.gen/M3AP_PriorityLevel.h	\
+	R14/m3ap-14.0.0.gen/M3AP_PLMN-Identity.h	\
+	R14/m3ap-14.0.0.gen/M3AP_QCI.h	\
+	R14/m3ap-14.0.0.gen/M3AP_Reestablishment.h	\
+	R14/m3ap-14.0.0.gen/M3AP_TimeToWait.h	\
+	R14/m3ap-14.0.0.gen/M3AP_TMGI.h	\
+	R14/m3ap-14.0.0.gen/M3AP_TNL-Information.h	\
+	R14/m3ap-14.0.0.gen/M3AP_TypeOfError.h	\
+	R14/m3ap-14.0.0.gen/M3AP_Criticality.h	\
+	R14/m3ap-14.0.0.gen/M3AP_Presence.h	\
+	R14/m3ap-14.0.0.gen/M3AP_PrivateIE-ID.h	\
+	R14/m3ap-14.0.0.gen/M3AP_ProcedureCode.h	\
+	R14/m3ap-14.0.0.gen/M3AP_ProtocolIE-ID.h	\
+	R14/m3ap-14.0.0.gen/M3AP_TriggeringMessage.h	\
+	R14/m3ap-14.0.0.gen/M3AP_ProtocolIE-Container.h	\
+	R14/m3ap-14.0.0.gen/M3AP_ProtocolIE-Single-Container.h	\
+	R14/m3ap-14.0.0.gen/M3AP_ProtocolIE-Field.h	\
+	R14/m3ap-14.0.0.gen/M3AP_ProtocolIE-ContainerPair.h	\
+	R14/m3ap-14.0.0.gen/M3AP_ProtocolIE-FieldPair.h	\
+	R14/m3ap-14.0.0.gen/M3AP_ProtocolIE-ContainerList.h	\
+	R14/m3ap-14.0.0.gen/M3AP_ProtocolIE-ContainerPairList.h	\
+	R14/m3ap-14.0.0.gen/M3AP_ProtocolExtensionContainer.h	\
+	R14/m3ap-14.0.0.gen/M3AP_ProtocolExtensionField.h	\
+	R14/m3ap-14.0.0.gen/M3AP_PrivateIE-Container.h	\
+	R14/m3ap-14.0.0.gen/M3AP_PrivateIE-Field.h
+
+ASN_MODULE_HDRS+=R14/m3ap-14.0.0.gen/ANY.h
+ASN_MODULE_SRCS+=R14/m3ap-14.0.0.gen/ANY.c
+ASN_MODULE_HDRS+=R14/m3ap-14.0.0.gen/OCTET_STRING.h
+ASN_MODULE_HDRS+=R14/m3ap-14.0.0.gen/OPEN_TYPE.h
+ASN_MODULE_SRCS+=R14/m3ap-14.0.0.gen/OPEN_TYPE.c
+ASN_MODULE_HDRS+=R14/m3ap-14.0.0.gen/constr_CHOICE.h
+ASN_MODULE_HDRS+=R14/m3ap-14.0.0.gen/INTEGER.h
+ASN_MODULE_SRCS+=R14/m3ap-14.0.0.gen/INTEGER.c
+ASN_MODULE_HDRS+=R14/m3ap-14.0.0.gen/NativeEnumerated.h
+ASN_MODULE_SRCS+=R14/m3ap-14.0.0.gen/NativeEnumerated.c
+ASN_MODULE_HDRS+=R14/m3ap-14.0.0.gen/NativeInteger.h
+ASN_MODULE_SRCS+=R14/m3ap-14.0.0.gen/NativeInteger.c
+ASN_MODULE_HDRS+=R14/m3ap-14.0.0.gen/OBJECT_IDENTIFIER.h
+ASN_MODULE_SRCS+=R14/m3ap-14.0.0.gen/OBJECT_IDENTIFIER.c
+ASN_MODULE_HDRS+=R14/m3ap-14.0.0.gen/PrintableString.h
+ASN_MODULE_SRCS+=R14/m3ap-14.0.0.gen/PrintableString.c
+ASN_MODULE_HDRS+=R14/m3ap-14.0.0.gen/asn_SEQUENCE_OF.h
+ASN_MODULE_SRCS+=R14/m3ap-14.0.0.gen/asn_SEQUENCE_OF.c
+ASN_MODULE_HDRS+=R14/m3ap-14.0.0.gen/asn_SET_OF.h
+ASN_MODULE_SRCS+=R14/m3ap-14.0.0.gen/asn_SET_OF.c
+ASN_MODULE_SRCS+=R14/m3ap-14.0.0.gen/constr_CHOICE.c
+ASN_MODULE_HDRS+=R14/m3ap-14.0.0.gen/constr_SEQUENCE.h
+ASN_MODULE_SRCS+=R14/m3ap-14.0.0.gen/constr_SEQUENCE.c
+ASN_MODULE_HDRS+=R14/m3ap-14.0.0.gen/constr_SEQUENCE_OF.h
+ASN_MODULE_SRCS+=R14/m3ap-14.0.0.gen/constr_SEQUENCE_OF.c
+ASN_MODULE_HDRS+=R14/m3ap-14.0.0.gen/constr_SET_OF.h
+ASN_MODULE_SRCS+=R14/m3ap-14.0.0.gen/constr_SET_OF.c
+ASN_MODULE_HDRS+=R14/m3ap-14.0.0.gen/asn_application.h
+ASN_MODULE_SRCS+=R14/m3ap-14.0.0.gen/asn_application.c
+ASN_MODULE_HDRS+=R14/m3ap-14.0.0.gen/asn_ioc.h
+ASN_MODULE_HDRS+=R14/m3ap-14.0.0.gen/asn_system.h
+ASN_MODULE_HDRS+=R14/m3ap-14.0.0.gen/asn_codecs.h
+ASN_MODULE_HDRS+=R14/m3ap-14.0.0.gen/asn_internal.h
+ASN_MODULE_SRCS+=R14/m3ap-14.0.0.gen/asn_internal.c
+ASN_MODULE_HDRS+=R14/m3ap-14.0.0.gen/asn_random_fill.h
+ASN_MODULE_SRCS+=R14/m3ap-14.0.0.gen/asn_random_fill.c
+ASN_MODULE_HDRS+=R14/m3ap-14.0.0.gen/asn_bit_data.h
+ASN_MODULE_SRCS+=R14/m3ap-14.0.0.gen/asn_bit_data.c
+ASN_MODULE_SRCS+=R14/m3ap-14.0.0.gen/OCTET_STRING.c
+ASN_MODULE_HDRS+=R14/m3ap-14.0.0.gen/BIT_STRING.h
+ASN_MODULE_SRCS+=R14/m3ap-14.0.0.gen/BIT_STRING.c
+ASN_MODULE_SRCS+=R14/m3ap-14.0.0.gen/asn_codecs_prim.c
+ASN_MODULE_HDRS+=R14/m3ap-14.0.0.gen/asn_codecs_prim.h
+ASN_MODULE_HDRS+=R14/m3ap-14.0.0.gen/ber_tlv_length.h
+ASN_MODULE_SRCS+=R14/m3ap-14.0.0.gen/ber_tlv_length.c
+ASN_MODULE_HDRS+=R14/m3ap-14.0.0.gen/ber_tlv_tag.h
+ASN_MODULE_SRCS+=R14/m3ap-14.0.0.gen/ber_tlv_tag.c
+ASN_MODULE_HDRS+=R14/m3ap-14.0.0.gen/ber_decoder.h
+ASN_MODULE_SRCS+=R14/m3ap-14.0.0.gen/ber_decoder.c
+ASN_MODULE_HDRS+=R14/m3ap-14.0.0.gen/der_encoder.h
+ASN_MODULE_SRCS+=R14/m3ap-14.0.0.gen/der_encoder.c
+ASN_MODULE_HDRS+=R14/m3ap-14.0.0.gen/constr_TYPE.h
+ASN_MODULE_SRCS+=R14/m3ap-14.0.0.gen/constr_TYPE.c
+ASN_MODULE_HDRS+=R14/m3ap-14.0.0.gen/constraints.h
+ASN_MODULE_SRCS+=R14/m3ap-14.0.0.gen/constraints.c
+ASN_MODULE_HDRS+=R14/m3ap-14.0.0.gen/xer_support.h
+ASN_MODULE_SRCS+=R14/m3ap-14.0.0.gen/xer_support.c
+ASN_MODULE_HDRS+=R14/m3ap-14.0.0.gen/xer_decoder.h
+ASN_MODULE_SRCS+=R14/m3ap-14.0.0.gen/xer_decoder.c
+ASN_MODULE_HDRS+=R14/m3ap-14.0.0.gen/xer_encoder.h
+ASN_MODULE_SRCS+=R14/m3ap-14.0.0.gen/xer_encoder.c
+ASN_MODULE_HDRS+=R14/m3ap-14.0.0.gen/per_support.h
+ASN_MODULE_SRCS+=R14/m3ap-14.0.0.gen/per_support.c
+ASN_MODULE_HDRS+=R14/m3ap-14.0.0.gen/per_decoder.h
+ASN_MODULE_SRCS+=R14/m3ap-14.0.0.gen/per_decoder.c
+ASN_MODULE_HDRS+=R14/m3ap-14.0.0.gen/per_encoder.h
+ASN_MODULE_SRCS+=R14/m3ap-14.0.0.gen/per_encoder.c
+ASN_MODULE_HDRS+=R14/m3ap-14.0.0.gen/per_opentype.h
+ASN_MODULE_SRCS+=R14/m3ap-14.0.0.gen/per_opentype.c
+
+ASN_MODULE_CFLAGS=-DASN_DISABLE_OER_SUPPORT 
+
+lib_LTLIBRARIES+=libasncodec.la
+libasncodec_la_SOURCES=$(ASN_MODULE_SRCS) $(ASN_MODULE_HDRS)
+libasncodec_la_CPPFLAGS=-I$(top_srcdir)/R14/m3ap-14.0.0.gen/
+libasncodec_la_CFLAGS=$(ASN_MODULE_CFLAGS)
+libasncodec_la_LDFLAGS=-lm
