@@ -61,6 +61,7 @@ CMAKE_BUILD_TYPE=""
 CMAKE_CMD="$CMAKE"
 BUILD_ECLIPSE=0
 NR="False"
+SIMUS_PHY=0
 OPTIONAL_LIBRARIES="telnetsrv enbscope uescope nrscope msc"
 trap handle_ctrl_c INT
 
