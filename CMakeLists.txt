@@ -565,7 +565,7 @@ set (CONFIG_LIBCONFIG_SOURCES
     )
 add_library(CONFIG_LIB ${CONFIG_SOURCES})
 add_library(params_libconfig MODULE ${CONFIG_LIBCONFIG_SOURCES} )
-target_link_libraries(params_libconfig config)
+target_link_libraries(params_libconfig PUBLIC config)
 # shared library loader
 set (SHLIB_LOADER_SOURCES
     ${OPENAIR_DIR}/common/utils/load_module_shlib.c

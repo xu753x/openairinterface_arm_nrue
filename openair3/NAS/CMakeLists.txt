@@ -27,10 +27,10 @@ target_include_directories(CONF2UEDATA_LIB PRIVATE
 )
 
 add_executable(conf2uedata TOOLS/conf2uedata.c)
-target_link_libraries(conf2uedata PRIVATE CONF2UEDATA_LIB ${CONFIG_LIBRARIES})
+target_link_libraries(conf2uedata PRIVATE CONF2UEDATA_LIB config)
 
 add_executable(usim TOOLS/usim.c)
-target_link_libraries(usim PRIVATE CONF2UEDATA_LIB ${CONFIG_LIBRARIES})
+target_link_libraries(usim PRIVATE CONF2UEDATA_LIB config)
 
 add_executable(nvram TOOLS/nvram)
-target_link_libraries(nvram PRIVATE CONF2UEDATA_LIB ${CONFIG_LIBRARIES})
+target_link_libraries(nvram PRIVATE CONF2UEDATA_LIB config)
