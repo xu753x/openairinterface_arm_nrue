@@ -24,3 +24,12 @@ max-code-length=200
 break-after-logical
 # Force use of the linux end of line
 lineend=linux
+# Exclude generated code
+--exclude=openair2/RRC/NR/MESSAGES/asn1c/ASN1_files/nr-rrc-16.1.0.gen/
+--exclude=openair2/RRC/LTE/MESSAGES/asn1c/ASN1_files/lte-rrc-15.6.0.gen/
+--exclude=openair3/S1AP/MESSAGES/ASN1/R15/s1ap-15.6.0.gen/
+--exclude=openair2/X2AP/MESSAGES/ASN1/R15/x2ap-15.6.0.gen/
+--exclude=openair2/F1AP/MESSAGES/ASN1/R15.2.1/f1ap-15.2.1.gen/
+--exclude=openair3/NGAP/MESSAGES/ASN1/R15/ngap-15.8.0.gen/
+--exclude=openair2/M2AP/MESSAGES/ASN1/R14/m2ap-14.0.0.gen/
+--exclude=openair3/M3AP/MESSAGES/ASN1/R14/m3ap-14.0.0.gen/
