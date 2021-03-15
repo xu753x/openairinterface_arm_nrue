@@ -513,7 +513,6 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
   //NR_FrequencyInfoDL_t *frequencyInfoDL = scc->downlinkConfigCommon->frequencyInfoDL;
   NR_RACH_ConfigDedicated_t *rach_ConfigDedicated = ra->rach_ConfigDedicated;
 
-  int prach_genarate = 0;
   // int32_t frame_diff = 0;
 
   uint8_t sdu_lcids[NB_RB_MAX] = {0};
@@ -575,12 +574,10 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
         init_RA(mod_id, prach_resources, setup, rach_ConfigGeneric, rach_ConfigDedicated);
         prach_resources->Msg3 = payload;
         nr_get_RA_window(mac);
-
         // Fill in preamble and PRACH resources
         if (ra->generate_nr_prach == 1)
         {
           nr_get_prach_resources(mod_id, CC_id, gNB_id, prach_resources, prach_pdu, rach_ConfigDedicated);
-          prach_genarate = 1;
         }
         offset = nr_generate_ulsch_pdu((uint8_t *) mac_sdus,              // sdus buffer
                                        (uint8_t *) payload,               // UL MAC pdu pointer
@@ -629,11 +626,8 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
         // Fill in preamble and PRACH resources
 
         ra->RA_window_cnt--;
-        if (ra->generate_nr_prach == 1)
-        {
-          nr_get_prach_resources(mod_id, CC_id, gNB_id, prach_resources, prach_pdu, rach_ConfigDedicated);
-          prach_genarate = 1;
-        }
+        nr_get_prach_resources(mod_id, CC_id, gNB_id, prach_resources, prach_pdu, rach_ConfigDedicated);
+
       } else if (ra->RA_backoff_cnt > 0) {
 
         LOG_D(MAC, "[UE %d][%d.%d]: RAR not received yet (RA backoff count %d) \n", mod_id, frame, nr_slot_tx, ra->RA_backoff_cnt);
@@ -642,7 +636,6 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
         if ((ra->RA_backoff_cnt > 0 && ra->generate_nr_prach == 1) || ra->RA_backoff_cnt == 0){
           nr_get_prach_resources(mod_id, CC_id, gNB_id, prach_resources, prach_pdu, rach_ConfigDedicated);
-          prach_genarate = 1;
         }
 
       }
@@ -652,9 +645,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
   if (ra->RA_contention_resolution_timer_active){
     nr_ue_contention_resolution(mod_id, CC_id, frame, nr_slot_tx, prach_resources);
   }
-
-  // return ra->generate_nr_prach;
-  return prach_genarate;
+  return ra->generate_nr_prach;
 }
 
 void nr_get_RA_window(NR_UE_MAC_INST_t *mac){
