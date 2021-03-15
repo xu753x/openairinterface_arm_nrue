@@ -394,6 +394,7 @@ teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int bearer_id, teid
   tmp->teid_incoming = s1u_teid;
   tmp->outgoing_port=port;
   tmp->teid_outgoing= teid;
+
   pthread_mutex_unlock(&globGtp.gtp_lock);
   return s1u_teid;
 }
@@ -753,12 +754,18 @@ int ocp_gtpv1u_update_ngu_tunnel(
   auto inst=&globGtp.instances[compatInst(instance)];
 
   if ( inst->ue2te_mapping.find(create_tunnel_req->rnti) == inst->ue2te_mapping.end() ) {
-    LOG_E(GTPU,"Update not already existing tunnel (new rnti %x, old rnti %x)\n", create_tunnel_req->rnti, prior_rnti);
+    LOG_E(GTPU,"no tunnel found (new rnti %x, old rnti %x,)\n", create_tunnel_req->rnti, prior_rnti);
   }
 
   auto it=inst->ue2te_mapping.find(prior_rnti);
 
   if ( it != inst->ue2te_mapping.end() ) {
+    auto tmp=&it->second.bearers[create_tunnel_req->pdusession_id[0]];
+    LOG_I(GTPU,"Update a existing tunnel, rnti %x, teid 0x%x, pdusession_id %d\n",
+          prior_rnti,
+          tmp->teid_incoming,
+          create_tunnel_req->pdusession_id[0]);
+  } else {
     LOG_W(GTPU,"Update a not existing tunnel, start create the new one (new rnti %x, old rnti %x)\n", create_tunnel_req->rnti, prior_rnti);
     pthread_mutex_unlock(&globGtp.gtp_lock);
     gtpv1u_gnb_create_tunnel_resp_t tmp;
