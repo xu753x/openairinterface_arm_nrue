@@ -78,7 +78,10 @@ pipeline {
                         testStageName = 'Template Test Stage'
                     }
 
-                    if (params.smartphonesResource == null) {
+                    if (params.smartphonesResource1 == null) {
+                        allParametersPresent = false
+                    }
+                    if (params.smartphonesResource2 == null) {
                         allParametersPresent = false
                     }
                     // 1st eNB parameters
