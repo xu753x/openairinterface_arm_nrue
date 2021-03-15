@@ -79,6 +79,7 @@
 
 #include "RRC/NR/MESSAGES/asn1_msg.h"
 #include "openair2/LAYER2/nr_pdcp/nr_pdcp.h"
+#include "executables/softmodem-common.h"
 
 extern uint16_t sf_ahead;
 int macrlc_has_f1 = 0;
@@ -1794,6 +1795,10 @@ void nr_read_config_and_init(void) {
     memset((void *)RC.nrrrc[gnb_id],0,sizeof(gNB_RRC_INST));
     msg_p = itti_alloc_new_message (TASK_GNB_APP, 0, NRRRC_CONFIGURATION_REQ);
     RCconfig_NRRRC(msg_p,gnb_id, RC.nrrrc[gnb_id]);
+  }
+
+  if((IS_SOFTMODEM_NOS1 && !get_softmodem_params()->do_ra) || NODE_IS_DU(RC.nrrrc[0]->node_type)){
+      nr_DRB_preconfiguration(0x1234);
   }
 
   if (NODE_IS_CU(RC.nrrrc[0]->node_type)) {
