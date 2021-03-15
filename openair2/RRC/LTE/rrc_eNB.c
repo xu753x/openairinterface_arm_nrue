@@ -1559,11 +1559,14 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
   uint16_t                            size;
   LTE_MeasObjectToAddModList_t       *MeasObj_list                     = NULL;
   LTE_MeasObjectToAddMod_t           *MeasObj                          = NULL;
+  LTE_MeasObjectToAddMod_t           *MeasObj2                         = NULL;
   LTE_ReportConfigToAddModList_t     *ReportConfig_list                = NULL;
   LTE_ReportConfigToAddMod_t         *ReportConfig_per, *ReportConfig_A1,
                                      *ReportConfig_A2, *ReportConfig_A3, *ReportConfig_A4, *ReportConfig_A5;
+  LTE_ReportConfigToAddMod_t         *ReportConfig_NR                  = NULL;
   LTE_MeasIdToAddModList_t           *MeasId_list                      = NULL;
   LTE_MeasIdToAddMod_t               *MeasId0, *MeasId1, *MeasId2, *MeasId3, *MeasId4, *MeasId5;
+  LTE_MeasIdToAddMod_t               *MeasId6;
   LTE_RSRP_Range_t                   *rsrp                             = NULL;
   struct LTE_MeasConfig__speedStatePars  *Sparams                          = NULL;
   LTE_QuantityConfig_t                   *quantityConfig                   = NULL;
@@ -1765,6 +1768,19 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
   MeasId5->measObjectId = 1;
   MeasId5->reportConfigId = 6;
   ASN_SEQUENCE_ADD(&MeasId_list->list, MeasId5);
+
+
+  if (ue_context_pP->ue_context.does_nr) {
+    MeasId6 = calloc(1, sizeof(LTE_MeasIdToAddMod_t));
+
+    if (MeasId6 == NULL) exit(1);
+
+    MeasId6->measId = 7;
+    MeasId6->measObjectId = 2;
+    MeasId6->reportConfigId = 7;
+    ASN_SEQUENCE_ADD(&MeasId_list->list, MeasId6);
+  }
+
   //  LTE_RRCConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->measIdToAddModList = MeasId_list;
   // Add one EUTRA Measurement Object
   MeasObj_list = CALLOC(1, sizeof(*MeasObj_list));
@@ -1774,8 +1790,10 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
   memset((void *)MeasObj, 0, sizeof(*MeasObj));
   MeasObj->measObjectId = 1;
   MeasObj->measObject.present = LTE_MeasObjectToAddMod__measObject_PR_measObjectEUTRA;
-  MeasObj->measObject.choice.measObjectEUTRA.carrierFreq = 3350; //band 7, 2.68GHz
-  //MeasObj->measObject.choice.measObjectEUTRA.carrierFreq = 36090; //band 33, 1.909GHz
+  MeasObj->measObject.choice.measObjectEUTRA.carrierFreq =
+    to_earfcn_DL(RC.rrc[ctxt_pP->module_id]->configuration.eutra_band[0],
+                 RC.rrc[ctxt_pP->module_id]->configuration.downlink_frequency[0],
+                 RC.rrc[ctxt_pP->module_id]->configuration.N_RB_DL[0]);
   MeasObj->measObject.choice.measObjectEUTRA.allowedMeasBandwidth = LTE_AllowedMeasBandwidth_mbw25;
   MeasObj->measObject.choice.measObjectEUTRA.presenceAntennaPort1 = 1;
   MeasObj->measObject.choice.measObjectEUTRA.neighCellConfig.buf = CALLOC(1, sizeof(uint8_t));
@@ -1783,21 +1801,71 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
   MeasObj->measObject.choice.measObjectEUTRA.neighCellConfig.size = 1;
   MeasObj->measObject.choice.measObjectEUTRA.neighCellConfig.bits_unused = 6;
   MeasObj->measObject.choice.measObjectEUTRA.offsetFreq = NULL;   // Default is 15 or 0dB
-  MeasObj->measObject.choice.measObjectEUTRA.cellsToAddModList =
-    (LTE_CellsToAddModList_t *) CALLOC(1, sizeof(*CellsToAddModList));
-  CellsToAddModList = MeasObj->measObject.choice.measObjectEUTRA.cellsToAddModList;
 
-  // Add adjacent cell lists (6 per eNB)
-  for (i = 0; i < 6; i++) {
+  if (RC.rrc[ctxt_pP->module_id]->num_neigh_cells > 0) {
+    MeasObj->measObject.choice.measObjectEUTRA.cellsToAddModList =
+      (LTE_CellsToAddModList_t *) CALLOC(1, sizeof(*CellsToAddModList));
+    CellsToAddModList = MeasObj->measObject.choice.measObjectEUTRA.cellsToAddModList;
+  }
+
+  if (!ue_context_pP->ue_context.measurement_info) {
+    ue_context_pP->ue_context.measurement_info = CALLOC(1,sizeof(*(ue_context_pP->ue_context.measurement_info)));
+  }
+
+  //TODO: Assign proper values
+  ue_context_pP->ue_context.measurement_info->offsetFreq = 0;
+  ue_context_pP->ue_context.measurement_info->cellIndividualOffset[0] = LTE_Q_OffsetRange_dB0;
+
+  /* TODO: Extend to multiple carriers */
+  // Add adjacent cell lists (max 6 per eNB)
+  for (i = 0; i < RC.rrc[ctxt_pP->module_id]->num_neigh_cells; i++) {
     CellToAdd = (LTE_CellsToAddMod_t *) CALLOC(1, sizeof(*CellToAdd));
     CellToAdd->cellIndex = i + 1;
-    CellToAdd->physCellId = get_adjacent_cell_id(ctxt_pP->module_id, i);
+    CellToAdd->physCellId = RC.rrc[ctxt_pP->module_id]->neigh_cells_id[i][0];//get_adjacent_cell_id(ctxt_pP->module_id, i);
     CellToAdd->cellIndividualOffset = LTE_Q_OffsetRange_dB0;
+    ue_context_pP->ue_context.measurement_info->cellIndividualOffset[i+1] = CellToAdd->cellIndividualOffset;
     ASN_SEQUENCE_ADD(&CellsToAddModList->list, CellToAdd);
   }
 
   ASN_SEQUENCE_ADD(&MeasObj_list->list, MeasObj);
   //  LTE_RRCConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->measObjectToAddModList = MeasObj_list;
+  if (ue_context_pP->ue_context.does_nr) {
+    MeasObj2 = calloc(1, sizeof(LTE_MeasObjectToAddMod_t));
+
+    if (MeasObj2 == NULL) exit(1);
+
+    MeasObj2->measObjectId = 2;
+    MeasObj2->measObject.present = LTE_MeasObjectToAddMod__measObject_PR_measObjectNR_r15;
+    MeasObj2->measObject.choice.measObjectNR_r15.carrierFreq_r15 = RC.rrc[ctxt_pP->module_id]->nr_scg_ssb_freq; //641272; //634000; //(634000 = 3.51GHz) (640000 = 3.6GHz) (641272 = 3619.08MHz = 3600 + 30/1000*106*12/2) (642256 is for 3.6GHz and absoluteFrequencySSB = 642016)
+    MeasObj2->measObject.choice.measObjectNR_r15.rs_ConfigSSB_r15.measTimingConfig_r15.periodicityAndOffset_r15.present = LTE_MTC_SSB_NR_r15__periodicityAndOffset_r15_PR_sf20_r15;
+    MeasObj2->measObject.choice.measObjectNR_r15.rs_ConfigSSB_r15.measTimingConfig_r15.periodicityAndOffset_r15.choice.sf20_r15 = 0;
+    MeasObj2->measObject.choice.measObjectNR_r15.rs_ConfigSSB_r15.measTimingConfig_r15.ssb_Duration_r15 = LTE_MTC_SSB_NR_r15__ssb_Duration_r15_sf4;
+    if (RC.rrc[ctxt_pP->module_id]->nr_scg_ssb_freq > 2016666) //FR2
+      MeasObj2->measObject.choice.measObjectNR_r15.rs_ConfigSSB_r15.subcarrierSpacingSSB_r15 = LTE_RS_ConfigSSB_NR_r15__subcarrierSpacingSSB_r15_kHz120;
+    else
+      MeasObj2->measObject.choice.measObjectNR_r15.rs_ConfigSSB_r15.subcarrierSpacingSSB_r15 = LTE_RS_ConfigSSB_NR_r15__subcarrierSpacingSSB_r15_kHz30;
+    MeasObj2->measObject.choice.measObjectNR_r15.quantityConfigSet_r15 = 1;
+    MeasObj2->measObject.choice.measObjectNR_r15.ext1 = calloc(1, sizeof(struct LTE_MeasObjectNR_r15__ext1));
+
+    if (MeasObj2->measObject.choice.measObjectNR_r15.ext1 == NULL) exit(1);
+
+    MeasObj2->measObject.choice.measObjectNR_r15.ext1->bandNR_r15 = calloc(1, sizeof(struct LTE_MeasObjectNR_r15__ext1__bandNR_r15));
+
+    if (MeasObj2->measObject.choice.measObjectNR_r15.ext1->bandNR_r15 == NULL) exit(1);
+
+    MeasObj2->measObject.choice.measObjectNR_r15.ext1->bandNR_r15->present = LTE_MeasObjectNR_r15__ext1__bandNR_r15_PR_setup;
+    if (RC.rrc[ctxt_pP->module_id]->nr_scg_ssb_freq > 2016666) //FR2
+      MeasObj2->measObject.choice.measObjectNR_r15.ext1->bandNR_r15->choice.setup = 261;
+    else
+      MeasObj2->measObject.choice.measObjectNR_r15.ext1->bandNR_r15->choice.setup = 78;
+
+    ASN_SEQUENCE_ADD(&MeasObj_list->list, MeasObj2);
+  }
+
+  if (!ue_context_pP->ue_context.measurement_info->events) {
+    ue_context_pP->ue_context.measurement_info->events = CALLOC(1,sizeof(*(ue_context_pP->ue_context.measurement_info->events)));
+  }
+
   // Report Configurations for periodical, A1-A5 events
   ReportConfig_list = CALLOC(1, sizeof(*ReportConfig_list));
   ReportConfig_per = CALLOC(1, sizeof(*ReportConfig_per));
@@ -1806,6 +1874,11 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
   ReportConfig_A3 = CALLOC(1, sizeof(*ReportConfig_A3));
   ReportConfig_A4 = CALLOC(1, sizeof(*ReportConfig_A4));
   ReportConfig_A5 = CALLOC(1, sizeof(*ReportConfig_A5));
+
+  if (ue_context_pP->ue_context.does_nr) {
+    ReportConfig_NR = CALLOC(1, sizeof(*ReportConfig_NR));
+  }
+
   ReportConfig_per->reportConfigId = 1;
   ReportConfig_per->reportConfig.present = LTE_ReportConfigToAddMod__reportConfig_PR_reportConfigEUTRA;
   ReportConfig_per->reportConfig.choice.reportConfigEUTRA.triggerType.present =
@@ -1835,136 +1908,167 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
   ReportConfig_A1->reportConfig.choice.reportConfigEUTRA.reportAmount = LTE_ReportConfigEUTRA__reportAmount_infinity;
   ASN_SEQUENCE_ADD(&ReportConfig_list->list, ReportConfig_A1);
 
-  if (RC.rrc[ctxt_pP->module_id]->HO_flag == 1 /*HO_MEASUREMENT */ ) {
-    LOG_I(RRC, "[eNB %d] frame %d: requesting A2, A3, A4, A5, and A6 event reporting\n",
-          ctxt_pP->module_id, ctxt_pP->frame);
-    ReportConfig_A2->reportConfigId = 3;
-    ReportConfig_A2->reportConfig.present = LTE_ReportConfigToAddMod__reportConfig_PR_reportConfigEUTRA;
-    ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.triggerType.present =
-      LTE_ReportConfigEUTRA__triggerType_PR_event;
-    ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.present =
-      LTE_ReportConfigEUTRA__triggerType__event__eventId_PR_eventA2;
-    ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.
-    eventA2.a2_Threshold.present = LTE_ThresholdEUTRA_PR_threshold_RSRP;
-    ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.
-    eventA2.a2_Threshold.choice.threshold_RSRP = 10;
-    ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.triggerQuantity =
-      LTE_ReportConfigEUTRA__triggerQuantity_rsrp;
-    ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.reportQuantity = LTE_ReportConfigEUTRA__reportQuantity_both;
-    ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.maxReportCells = 2;
-    ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.reportInterval = LTE_ReportInterval_ms120;
-    ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.reportAmount = LTE_ReportConfigEUTRA__reportAmount_infinity;
-    ASN_SEQUENCE_ADD(&ReportConfig_list->list, ReportConfig_A2);
-    ReportConfig_A3->reportConfigId = 4;
-    ReportConfig_A3->reportConfig.present = LTE_ReportConfigToAddMod__reportConfig_PR_reportConfigEUTRA;
-    ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.present =
-      LTE_ReportConfigEUTRA__triggerType_PR_event;
-    ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.present =
-      LTE_ReportConfigEUTRA__triggerType__event__eventId_PR_eventA3;
-    ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.eventA3.a3_Offset = 1;   //10;
-    ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.
-    eventA3.reportOnLeave = 1;
-    ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerQuantity =
-      LTE_ReportConfigEUTRA__triggerQuantity_rsrp;
-    ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.reportQuantity = LTE_ReportConfigEUTRA__reportQuantity_both;
-    ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.maxReportCells = 2;
-    ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.reportInterval = LTE_ReportInterval_ms120;
-    ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.reportAmount = LTE_ReportConfigEUTRA__reportAmount_infinity;
-    ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.hysteresis = 0.5; // FIXME ...hysteresis is of type long!
-    ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.timeToTrigger =
-      LTE_TimeToTrigger_ms40;
-    ASN_SEQUENCE_ADD(&ReportConfig_list->list, ReportConfig_A3);
-    ReportConfig_A4->reportConfigId = 5;
-    ReportConfig_A4->reportConfig.present = LTE_ReportConfigToAddMod__reportConfig_PR_reportConfigEUTRA;
-    ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.triggerType.present =
-      LTE_ReportConfigEUTRA__triggerType_PR_event;
-    ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.present =
-      LTE_ReportConfigEUTRA__triggerType__event__eventId_PR_eventA4;
-    ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.
-    eventA4.a4_Threshold.present = LTE_ThresholdEUTRA_PR_threshold_RSRP;
-    ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.
-    eventA4.a4_Threshold.choice.threshold_RSRP = 10;
-    ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.triggerQuantity =
-      LTE_ReportConfigEUTRA__triggerQuantity_rsrp;
-    ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.reportQuantity = LTE_ReportConfigEUTRA__reportQuantity_both;
-    ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.maxReportCells = 2;
-    ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.reportInterval = LTE_ReportInterval_ms120;
-    ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.reportAmount = LTE_ReportConfigEUTRA__reportAmount_infinity;
-    ASN_SEQUENCE_ADD(&ReportConfig_list->list, ReportConfig_A4);
-    ReportConfig_A5->reportConfigId = 6;
-    ReportConfig_A5->reportConfig.present = LTE_ReportConfigToAddMod__reportConfig_PR_reportConfigEUTRA;
-    ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.triggerType.present =
-      LTE_ReportConfigEUTRA__triggerType_PR_event;
-    ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.present =
-      LTE_ReportConfigEUTRA__triggerType__event__eventId_PR_eventA5;
-    ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.
-    eventA5.a5_Threshold1.present = LTE_ThresholdEUTRA_PR_threshold_RSRP;
-    ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.
-    eventA5.a5_Threshold2.present = LTE_ThresholdEUTRA_PR_threshold_RSRP;
-    ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.
-    eventA5.a5_Threshold1.choice.threshold_RSRP = 10;
-    ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.
-    eventA5.a5_Threshold2.choice.threshold_RSRP = 10;
-    ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.triggerQuantity =
-      LTE_ReportConfigEUTRA__triggerQuantity_rsrp;
-    ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.reportQuantity = LTE_ReportConfigEUTRA__reportQuantity_both;
-    ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.maxReportCells = 2;
-    ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.reportInterval = LTE_ReportInterval_ms120;
-    ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.reportAmount = LTE_ReportConfigEUTRA__reportAmount_infinity;
-    ASN_SEQUENCE_ADD(&ReportConfig_list->list, ReportConfig_A5);
-    //  LTE_RRCConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->reportConfigToAddModList = ReportConfig_list;
-#if 0
-    /* TODO: set a proper value.
-     * 20 means: UE does not report if RSRP of serving cell is higher
-     * than -120 dB (see 36.331 5.5.3.1).
-     * This is too low for the X2 handover experiment.
-     */
-    rsrp = CALLOC(1, sizeof(LTE_RSRP_Range_t));
-    *rsrp = 20;
-#endif
-    Sparams = CALLOC(1, sizeof(*Sparams));
-    Sparams->present = LTE_MeasConfig__speedStatePars_PR_setup;
-    Sparams->choice.setup.timeToTrigger_SF.sf_High = LTE_SpeedStateScaleFactors__sf_Medium_oDot75;
-    Sparams->choice.setup.timeToTrigger_SF.sf_Medium = LTE_SpeedStateScaleFactors__sf_High_oDot5;
-    Sparams->choice.setup.mobilityStateParameters.n_CellChangeHigh = 10;
-    Sparams->choice.setup.mobilityStateParameters.n_CellChangeMedium = 5;
-    Sparams->choice.setup.mobilityStateParameters.t_Evaluation = LTE_MobilityStateParameters__t_Evaluation_s60;
-    Sparams->choice.setup.mobilityStateParameters.t_HystNormal = LTE_MobilityStateParameters__t_HystNormal_s120;
-    quantityConfig = CALLOC(1, sizeof(*quantityConfig));
-    memset((void *)quantityConfig, 0, sizeof(*quantityConfig));
-    quantityConfig->quantityConfigEUTRA = CALLOC(1, sizeof(struct LTE_QuantityConfigEUTRA));
-    memset((void *)quantityConfig->quantityConfigEUTRA, 0, sizeof(*quantityConfig->quantityConfigEUTRA));
-    quantityConfig->quantityConfigCDMA2000 = NULL;
-    quantityConfig->quantityConfigGERAN = NULL;
-    quantityConfig->quantityConfigUTRA = NULL;
-    quantityConfig->quantityConfigEUTRA->filterCoefficientRSRP =
-      CALLOC(1, sizeof(*(quantityConfig->quantityConfigEUTRA->filterCoefficientRSRP)));
-    quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ =
-      CALLOC(1, sizeof(*(quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ)));
-    *quantityConfig->quantityConfigEUTRA->filterCoefficientRSRP = LTE_FilterCoefficient_fc4;
-    *quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ = LTE_FilterCoefficient_fc4;
-    LOG_I(RRC,
-          "[eNB %d] Frame %d: potential handover preparation: store the information in an intermediate structure in case of failure\n",
-          ctxt_pP->module_id, ctxt_pP->frame);
-    // store the information in an intermediate structure for Hanodver management
-    //rrc_inst->handover_info.as_config.sourceRadioResourceConfig.srb_ToAddModList = CALLOC(1,sizeof());
-    ue_context_pP->ue_context.handover_info = CALLOC(1, sizeof(*(ue_context_pP->ue_context.handover_info)));
-    //memcpy((void *)rrc_inst->handover_info[ue_mod_idP]->as_config.sourceRadioResourceConfig.srb_ToAddModList,(void *)SRB_list,sizeof(LTE_SRB_ToAddModList_t));
-    ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.srb_ToAddModList = *SRB_configList2;
-    //memcpy((void *)rrc_inst->handover_info[ue_mod_idP]->as_config.sourceRadioResourceConfig.drb_ToAddModList,(void *)DRB_list,sizeof(LTE_DRB_ToAddModList_t));
-    ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.drb_ToAddModList = DRB_configList;
-    ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.drb_ToReleaseList = NULL;
-    ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.mac_MainConfig =
-      CALLOC(1, sizeof(*ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.mac_MainConfig));
-    memcpy((void *)ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.mac_MainConfig,
-           (void *)ue_context_pP->ue_context.mac_MainConfig, sizeof(LTE_MAC_MainConfig_t));
-    ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.physicalConfigDedicated =
-      CALLOC(1, sizeof(LTE_PhysicalConfigDedicated_t));
-    memcpy((void *)ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.physicalConfigDedicated,
-           (void *)ue_context_pP->ue_context.physicalConfigDedicated, sizeof(LTE_PhysicalConfigDedicated_t));
-    ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.sps_Config = NULL;
-    //memcpy((void *)rrc_inst->handover_info[ue_mod_idP]->as_config.sourceRadioResourceConfig.sps_Config,(void *)rrc_inst->sps_Config[ue_mod_idP],sizeof(SPS_Config_t));
+  LOG_I(RRC, "[eNB %d] frame %d: requesting A2, A3, A4, A5, and A6 event reporting\n",
+        ctxt_pP->module_id, ctxt_pP->frame);
+  ReportConfig_A2->reportConfigId = 3;
+  ReportConfig_A2->reportConfig.present = LTE_ReportConfigToAddMod__reportConfig_PR_reportConfigEUTRA;
+  ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.triggerType.present =
+    LTE_ReportConfigEUTRA__triggerType_PR_event;
+  ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.present =
+    LTE_ReportConfigEUTRA__triggerType__event__eventId_PR_eventA2;
+  ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.
+  eventA2.a2_Threshold.present = LTE_ThresholdEUTRA_PR_threshold_RSRP;
+  ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.
+  eventA2.a2_Threshold.choice.threshold_RSRP = 10;
+  ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.triggerQuantity =
+    LTE_ReportConfigEUTRA__triggerQuantity_rsrp;
+  ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.reportQuantity = LTE_ReportConfigEUTRA__reportQuantity_both;
+  ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.maxReportCells = 2;
+  ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.reportInterval = LTE_ReportInterval_ms120;
+  ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.reportAmount = LTE_ReportConfigEUTRA__reportAmount_infinity;
+  ASN_SEQUENCE_ADD(&ReportConfig_list->list, ReportConfig_A2);
+  ReportConfig_A3->reportConfigId = 4;
+  ReportConfig_A3->reportConfig.present = LTE_ReportConfigToAddMod__reportConfig_PR_reportConfigEUTRA;
+  ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.present =
+    LTE_ReportConfigEUTRA__triggerType_PR_event;
+  ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.present =
+    LTE_ReportConfigEUTRA__triggerType__event__eventId_PR_eventA3;
+  ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.eventA3.a3_Offset = 0;   //10;
+  ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.
+  eventA3.reportOnLeave = 1;
+  ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerQuantity =
+    LTE_ReportConfigEUTRA__triggerQuantity_rsrp;
+  ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.reportQuantity = LTE_ReportConfigEUTRA__reportQuantity_both;
+  ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.maxReportCells = 2;
+  ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.reportInterval = LTE_ReportInterval_ms120;
+  ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.reportAmount = LTE_ReportConfigEUTRA__reportAmount_infinity;
+  ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.hysteresis = 0; // FIXME ...hysteresis is of type long!
+  ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.timeToTrigger =
+    LTE_TimeToTrigger_ms40;
+  ASN_SEQUENCE_ADD(&ReportConfig_list->list, ReportConfig_A3);
+  ReportConfig_A4->reportConfigId = 5;
+  ReportConfig_A4->reportConfig.present = LTE_ReportConfigToAddMod__reportConfig_PR_reportConfigEUTRA;
+  ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.triggerType.present =
+    LTE_ReportConfigEUTRA__triggerType_PR_event;
+  ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.present =
+    LTE_ReportConfigEUTRA__triggerType__event__eventId_PR_eventA4;
+  ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.
+  eventA4.a4_Threshold.present = LTE_ThresholdEUTRA_PR_threshold_RSRP;
+  ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.
+  eventA4.a4_Threshold.choice.threshold_RSRP = 10;
+  ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.triggerQuantity =
+    LTE_ReportConfigEUTRA__triggerQuantity_rsrp;
+  ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.reportQuantity = LTE_ReportConfigEUTRA__reportQuantity_both;
+  ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.maxReportCells = 2;
+  ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.reportInterval = LTE_ReportInterval_ms120;
+  ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.reportAmount = LTE_ReportConfigEUTRA__reportAmount_infinity;
+  ASN_SEQUENCE_ADD(&ReportConfig_list->list, ReportConfig_A4);
+  ReportConfig_A5->reportConfigId = 6;
+  ReportConfig_A5->reportConfig.present = LTE_ReportConfigToAddMod__reportConfig_PR_reportConfigEUTRA;
+  ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.triggerType.present =
+    LTE_ReportConfigEUTRA__triggerType_PR_event;
+  ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.present =
+    LTE_ReportConfigEUTRA__triggerType__event__eventId_PR_eventA5;
+  ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.
+  eventA5.a5_Threshold1.present = LTE_ThresholdEUTRA_PR_threshold_RSRP;
+  ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.
+  eventA5.a5_Threshold2.present = LTE_ThresholdEUTRA_PR_threshold_RSRP;
+  ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.
+  eventA5.a5_Threshold1.choice.threshold_RSRP = 10;
+  ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.
+  eventA5.a5_Threshold2.choice.threshold_RSRP = 10;
+  ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.triggerQuantity =
+    LTE_ReportConfigEUTRA__triggerQuantity_rsrp;
+  ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.reportQuantity = LTE_ReportConfigEUTRA__reportQuantity_both;
+  ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.maxReportCells = 2;
+  ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.reportInterval = LTE_ReportInterval_ms120;
+  ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.reportAmount = LTE_ReportConfigEUTRA__reportAmount_infinity;
+  ASN_SEQUENCE_ADD(&ReportConfig_list->list, ReportConfig_A5);
+
+  if (ue_context_pP->ue_context.does_nr) {
+    ReportConfig_NR->reportConfigId = 7;
+    ReportConfig_NR->reportConfig.present = LTE_ReportConfigToAddMod__reportConfig_PR_reportConfigInterRAT;
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.triggerType.present = LTE_ReportConfigInterRAT__triggerType_PR_event;
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.eventId.present = LTE_ReportConfigInterRAT__triggerType__event__eventId_PR_eventB1_NR_r15;
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.eventId.choice.eventB1_NR_r15.b1_ThresholdNR_r15.present = LTE_ThresholdNR_r15_PR_nr_RSRP_r15;
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.eventId.choice.eventB1_NR_r15.b1_ThresholdNR_r15.choice.nr_RSRP_r15 = 0;
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.eventId.choice.eventB1_NR_r15.reportOnLeave_r15 = FALSE;
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.hysteresis = 2;
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.timeToTrigger = LTE_TimeToTrigger_ms80;
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.maxReportCells = 4;
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.reportInterval = LTE_ReportInterval_ms120;
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.reportAmount = LTE_ReportConfigInterRAT__reportAmount_infinity;
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.ext7 = calloc(1, sizeof(struct LTE_ReportConfigInterRAT__ext7));
+
+    if (ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.ext7 == NULL) exit(1);
+
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.ext7->reportQuantityCellNR_r15 = calloc(1, sizeof(struct LTE_ReportQuantityNR_r15));
+
+    if (ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.ext7->reportQuantityCellNR_r15 == NULL) exit(1);
+
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.ext7->reportQuantityCellNR_r15->ss_rsrp = TRUE;
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.ext7->reportQuantityCellNR_r15->ss_rsrq = TRUE;
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.ext7->reportQuantityCellNR_r15->ss_sinr = TRUE;
+    ASN_SEQUENCE_ADD(&ReportConfig_list->list, ReportConfig_NR);
   }
+  //  LTE_RRCConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->reportConfigToAddModList = ReportConfig_list;
+
+  /* A3 event update */
+  if (!ue_context_pP->ue_context.measurement_info->events->a3_event) {
+    ue_context_pP->ue_context.measurement_info->events->a3_event = CALLOC(1,sizeof(*(ue_context_pP->ue_context.measurement_info->events->a3_event)));
+  }
+
+  ue_context_pP->ue_context.measurement_info->events->a3_event->a3_offset = ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.eventA3.a3_Offset;
+  ue_context_pP->ue_context.measurement_info->events->a3_event->reportOnLeave = ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.eventA3.reportOnLeave;
+  ue_context_pP->ue_context.measurement_info->events->a3_event->hysteresis = ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.hysteresis;
+  ue_context_pP->ue_context.measurement_info->events->a3_event->timeToTrigger = ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.timeToTrigger;
+  ue_context_pP->ue_context.measurement_info->events->a3_event->maxReportCells = ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.maxReportCells;
+
+  Sparams = CALLOC(1, sizeof(*Sparams));
+  Sparams->present = LTE_MeasConfig__speedStatePars_PR_setup;
+  Sparams->choice.setup.timeToTrigger_SF.sf_High = LTE_SpeedStateScaleFactors__sf_Medium_oDot75;
+  Sparams->choice.setup.timeToTrigger_SF.sf_Medium = LTE_SpeedStateScaleFactors__sf_High_oDot5;
+  Sparams->choice.setup.mobilityStateParameters.n_CellChangeHigh = 10;
+  Sparams->choice.setup.mobilityStateParameters.n_CellChangeMedium = 5;
+  Sparams->choice.setup.mobilityStateParameters.t_Evaluation = LTE_MobilityStateParameters__t_Evaluation_s60;
+  Sparams->choice.setup.mobilityStateParameters.t_HystNormal = LTE_MobilityStateParameters__t_HystNormal_s120;
+  quantityConfig = CALLOC(1, sizeof(*quantityConfig));
+  memset((void *)quantityConfig, 0, sizeof(*quantityConfig));
+  quantityConfig->quantityConfigEUTRA = CALLOC(1, sizeof(struct LTE_QuantityConfigEUTRA));
+  memset((void *)quantityConfig->quantityConfigEUTRA, 0, sizeof(*quantityConfig->quantityConfigEUTRA));
+  quantityConfig->quantityConfigCDMA2000 = NULL;
+  quantityConfig->quantityConfigGERAN = NULL;
+  quantityConfig->quantityConfigUTRA = NULL;
+  quantityConfig->quantityConfigEUTRA->filterCoefficientRSRP =
+    CALLOC(1, sizeof(*(quantityConfig->quantityConfigEUTRA->filterCoefficientRSRP)));
+  quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ =
+    CALLOC(1, sizeof(*(quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ)));
+  *quantityConfig->quantityConfigEUTRA->filterCoefficientRSRP = LTE_FilterCoefficient_fc4;
+  *quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ = LTE_FilterCoefficient_fc4;
+  ue_context_pP->ue_context.measurement_info->filterCoefficientRSRP = *quantityConfig->quantityConfigEUTRA->filterCoefficientRSRP;
+  ue_context_pP->ue_context.measurement_info->filterCoefficientRSRQ = *quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ;
+
+  LOG_I(RRC,
+        "[eNB %d] Frame %d: potential handover preparation: store the information in an intermediate structure in case of failure\n",
+        ctxt_pP->module_id, ctxt_pP->frame);
+  // store the information in an intermediate structure for Hanodver management
+  //rrc_inst->handover_info.as_config.sourceRadioResourceConfig.srb_ToAddModList = CALLOC(1,sizeof());
+  ue_context_pP->ue_context.handover_info = CALLOC(1, sizeof(*(ue_context_pP->ue_context.handover_info)));
+  //memcpy((void *)rrc_inst->handover_info[ue_mod_idP]->as_config.sourceRadioResourceConfig.srb_ToAddModList,(void *)SRB_list,sizeof(LTE_SRB_ToAddModList_t));
+  ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.srb_ToAddModList = *SRB_configList2;
+  //memcpy((void *)rrc_inst->handover_info[ue_mod_idP]->as_config.sourceRadioResourceConfig.drb_ToAddModList,(void *)DRB_list,sizeof(LTE_DRB_ToAddModList_t));
+  ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.drb_ToAddModList = DRB_configList;
+  ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.drb_ToReleaseList = NULL;
+  ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.mac_MainConfig =
+    CALLOC(1, sizeof(*ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.mac_MainConfig));
+  memcpy((void *)ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.mac_MainConfig,
+         (void *)ue_context_pP->ue_context.mac_MainConfig, sizeof(LTE_MAC_MainConfig_t));
+  ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.physicalConfigDedicated =
+    CALLOC(1, sizeof(LTE_PhysicalConfigDedicated_t));
+  memcpy((void *)ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.physicalConfigDedicated,
+         (void *)ue_context_pP->ue_context.physicalConfigDedicated, sizeof(LTE_PhysicalConfigDedicated_t));
+  ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.sps_Config = NULL;
+  //memcpy((void *)rrc_inst->handover_info[ue_mod_idP]->as_config.sourceRadioResourceConfig.sps_Config,(void *)rrc_inst->sps_Config[ue_mod_idP],sizeof(SPS_Config_t));
 
   /* Initialize NAS list */
   dedicatedInfoNASList = CALLOC(1, sizeof(struct LTE_RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList));
@@ -2018,7 +2122,7 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
                                          measurements_enabled ? (LTE_MeasObjectToAddModList_t *)MeasObj_list : NULL, // MeasObj_list,
                                          measurements_enabled ? (LTE_ReportConfigToAddModList_t *)ReportConfig_list : NULL, // ReportConfig_list,
                                          measurements_enabled ? (LTE_QuantityConfig_t *)quantityConfig : NULL, //quantityConfig,
-                                         (LTE_MeasIdToAddModList_t *)NULL,
+                                         measurements_enabled ? (LTE_MeasIdToAddModList_t *)MeasId_list : NULL,
                                          //#endif
                                          (LTE_MAC_MainConfig_t *)ue_context_pP->ue_context.mac_MainConfig,
                                          (LTE_MeasGapConfig_t *)NULL,

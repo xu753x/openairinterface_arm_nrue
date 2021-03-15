@@ -220,7 +220,7 @@ mac_rrc_data_req(
     }
     if(flag == 0){
       eNB_RRC_UE_t *ue_p = &ue_context_p->ue_context;
-      LOG_T(RRC,"[eNB %d] Frame %d CCCH request (Srb_id %d, rnti %x)\n",Mod_idP,frameP, Srb_id,rnti);
+      LOG_T(RRC,"[eNB %d] Frame %d CCCH request (Srb_id %ld, rnti %x)\n",Mod_idP,frameP, Srb_id,rnti);
 
       Srb_info=&ue_p->Srb0;
     }
