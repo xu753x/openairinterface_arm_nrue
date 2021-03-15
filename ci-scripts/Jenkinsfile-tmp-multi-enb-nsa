@@ -52,7 +52,7 @@ pipeline {
     options {
         disableConcurrentBuilds()
         ansiColor('xterm')
-        lock(extra: [[resource: ciSmartPhoneResource2]], resource: ciSmartPhoneResource1))
+        lock(extra: [[resource: ciSmartPhoneResource2]], resource: ciSmartPhoneResource1)
     }
     stages {
         stage("Build Init") {
