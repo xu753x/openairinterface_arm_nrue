@@ -43,7 +43,7 @@ pipeline {
                         COMMIT_ID=COMMIT_ID.trim()
                         echo "Testing NSA on : ${MR} ${SRC_BRANCH} ${COMMIT_ID}"
                         //calling sub job
-                        build job: "RAN-CI-NSA-B210", parameters: [
+                        build job: "RAN-CI-NSA-B210", propagate : false, parameters: [
                             string(name: 'eNB_MR', value: String.valueOf(MR)),                          
                             string(name: 'eNB_Branch', value: String.valueOf(SRC_BRANCH)),
                             string(name: 'eNB_CommitID', value: String.valueOf(COMMIT_ID))
