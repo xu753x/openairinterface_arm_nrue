@@ -54,7 +54,6 @@ pipeline {
         lock (ciSmartPhoneResource)
     }
     stages {
-    stages {
         stage("Build Init") {
             steps {
                 // update the build name and description
