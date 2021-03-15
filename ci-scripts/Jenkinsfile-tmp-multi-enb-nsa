@@ -34,7 +34,8 @@ def buildStageStatus = true
 def testStageName = params.pipelineTestStageName
 
 // Name of the phone resource
-def ciSmartPhoneResource = params.smartphonesResource
+def ciSmartPhoneResource1 = params.smartphonesResource1
+def ciSmartPhoneResource2 = params.smartphonesResource2
 
 // Global Parameters. Normally they should be populated when the master job
 // triggers the slave job with parameters
@@ -51,7 +52,8 @@ pipeline {
     options {
         disableConcurrentBuilds()
         ansiColor('xterm')
-        lock (ciSmartPhoneResource)
+        lock (ciSmartPhoneResource1)
+        lock (ciSmartPhoneResource2)
     }
     stages {
         stage("Build Init") {
