@@ -284,7 +284,6 @@ void set_options(int CC_id, PHY_VARS_NR_UE *UE){
   tx_gain[0][CC_id]   = tx_gain[0][0];
 
   // Set UE variables
-
   UE->rx_total_gain_dB     = (int)rx_gain[CC_id][0] + rx_gain_off;
   UE->tx_total_gain_dB     = (int)tx_gain[CC_id][0];
   UE->tx_power_max_dBm     = tx_max_power[CC_id];
@@ -487,7 +486,7 @@ int main( int argc, char **argv ) {
   set_taus_seed (0);
 
   cpuf=get_cpu_freq_GHz();
-  itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
+  itti_init(TASK_MAX, tasks_info);
 
   init_opt() ;
   load_nrLDPClib();
@@ -558,11 +557,14 @@ int main( int argc, char **argv ) {
 
   
   init_NR_UE_threads(1);
-  config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
   printf("UE threads created by %ld\n", gettid());
   
   // wait for end of program
   printf("TYPE <CTRL-C> TO TERMINATE\n");
+  // Sleep a while before checking all parameters have been used
+  // Some are used directly in external threads, asynchronously
+  sleep(20);
+  config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
 
   while(true)
     sleep(3600);

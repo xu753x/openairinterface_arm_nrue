@@ -85,12 +85,13 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "x2ap_eNB.h"
 #include "ngap_gNB.h"
 #include "gnb_paramdef.h"
+#include "nfapi/oai_integration/vendor_ext.h"
 
 pthread_cond_t nfapi_sync_cond;
 pthread_mutex_t nfapi_sync_mutex;
 int nfapi_sync_var=-1; //!< protected by mutex \ref nfapi_sync_mutex
 
-uint8_t nfapi_mode = 0; // Default to monolithic mode
+extern uint8_t nfapi_mode; // Default to monolithic mode
 
 pthread_cond_t sync_cond;
 pthread_mutex_t sync_mutex;
@@ -603,7 +604,7 @@ void wait_gNBs(void) {
 void terminate_task(task_id_t task_id, module_id_t mod_id) {
   LOG_I(GNB_APP, "sending TERMINATE_MESSAGE to task %s (%d)\n", itti_get_task_name(task_id), task_id);
   MessageDef *msg;
-  msg = itti_alloc_new_message (ENB_APP, TERMINATE_MESSAGE);
+  msg = itti_alloc_new_message (ENB_APP, 0, TERMINATE_MESSAGE);
   itti_send_msg_to_task (task_id, ENB_MODULE_ID_TO_INSTANCE(mod_id), msg);
 }
 
@@ -678,7 +679,7 @@ int restart_L1L2(module_id_t gnb_id) {
 
   /* pass a reconfiguration request which will configure everything down to
    * RC.eNB[i][j]->frame_parms, too */
-  msg_p = itti_alloc_new_message(TASK_ENB_APP, RRC_CONFIGURATION_REQ);
+  msg_p = itti_alloc_new_message(TASK_ENB_APP, 0, RRC_CONFIGURATION_REQ);
   RRC_CONFIGURATION_REQ(msg_p) = RC.rrc[gnb_id]->configuration;
   itti_send_msg_to_task(TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(gnb_id), msg_p);
   /* TODO XForms might need to be restarted, but it is currently (09/02/18)
@@ -782,9 +783,9 @@ int main( int argc, char **argv )
   }
 
   cpuf=get_cpu_freq_GHz();
-  itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
+  itti_init(TASK_MAX, tasks_info);
   // initialize mscgen log after ITTI
-  MSC_INIT(MSC_E_UTRAN, THREAD_MAX+TASK_MAX);
+  MSC_INIT(MSC_E_UTRAN, ADDED_QUEUES_MAX+TASK_MAX);
 
 
   init_opt();
@@ -811,7 +812,7 @@ if(!IS_SOFTMODEM_NOS1)
     AssertFatal(create_gNB_tasks(1) == 0,"cannot create ITTI tasks\n");
   } else {
     printf("No ITTI, Initializing L1\n");
-    RCconfig_L1();
+    RCconfig_NR_L1();
   }
 
   /* Start the agent. If it is turned off in the configuration, it won't start */
@@ -832,7 +833,7 @@ if(!IS_SOFTMODEM_NOS1)
 
   usleep(1000);
 
-  if (nfapi_mode) {
+  if (NFAPI_MODE) {
     printf("NFAPI*** - mutex and cond created - will block shortly for completion of PNF connection\n");
     pthread_cond_init(&sync_cond,NULL);
     pthread_mutex_init(&sync_mutex, NULL);
@@ -840,7 +841,7 @@ if(!IS_SOFTMODEM_NOS1)
 
   const char *nfapi_mode_str = "<UNKNOWN>";
 
-  switch(nfapi_mode) {
+  switch(NFAPI_MODE) {
     case 0:
       nfapi_mode_str = "MONOLITHIC";
       break;
@@ -860,7 +861,7 @@ if(!IS_SOFTMODEM_NOS1)
 
   printf("NFAPI MODE:%s\n", nfapi_mode_str);
 
-  if (nfapi_mode==2) // VNF
+  if (NFAPI_MODE==NFAPI_MODE_VNF)
     wait_nfapi_init("main?");
 
   printf("START MAIN THREADS\n");
@@ -889,7 +890,7 @@ if(!IS_SOFTMODEM_NOS1)
 
   config_sync_var=0;
 
-  if (nfapi_mode==1) { // PNF
+  if (NFAPI_MODE==NFAPI_MODE_PNF) {
     wait_nfapi_init("main?");
   }
 
@@ -909,7 +910,7 @@ if(!IS_SOFTMODEM_NOS1)
     load_softscope("nr",&p);
   }
 
-  if (nfapi_mode != 1 && nfapi_mode != 2) {
+  if (NFAPI_MODE != NFAPI_MODE_PNF && NFAPI_MODE != NFAPI_MODE_VNF) {
     printf("Not NFAPI mode - call init_eNB_afterRU()\n");
     init_eNB_afterRU();
   } else {
