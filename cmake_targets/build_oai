@@ -271,12 +271,15 @@ function main() {
             # Use OAI_USRP as the key word USRP is used inside UHD driver           
             case "$2" in
                 "EXMIMO")
+                    HW="EXMIMO"
                     CMAKE_CMD+=" -DRF_BOARD=\"EXMIMO\""
                     ;;
                 "USRP" | "BLADERF" | "LMSSDR" | "IRIS" | "ADRV9371_ZC706" | "SIMU")
+                    HW="OAI_"$2
                     CMAKE_CMD+=" -DRF_BOARD=\"OAI_$2\""
                     ;;
                 "None")
+                    HW="None"
                     CMAKE_CMD+=" -DRF_BOARD=\"None\""
                     ;;
                 *)
