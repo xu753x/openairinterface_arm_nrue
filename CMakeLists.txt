@@ -2953,8 +2953,12 @@ add_executable(nr_dlschsim
   )
 target_link_libraries(nr_dlschsim 
   -Wl,--start-group UTIL SIMU_COMMON SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group
-  m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl
+  m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl small-utils
   )
+# for some reason, we need to have this here again when building only
+# nr_dlschsim. Note that this has been expressed above already, although it is
+# better to list it explicitly for each executable if needed
+add_dependencies(nr_dlschsim generate_T)
 
 add_executable(nr_pbchsim  
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/pbchsim.c 
