@@ -387,7 +387,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
 
 uint32_t target_ul_mcs = 9;
 uint32_t target_ul_bw = 50;
-uint64_t ulsch_slot_bitmap = (1<<8);
+uint64_t ulsch_slot_bitmap = (1 << 8) | (1 << 18);
 bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_t slot)
 {
   gNB_MAC_INST *nr_mac = RC.nrmac[module_id];
@@ -423,7 +423,7 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
   /* check if slot is UL, and that slot is 8 (assuming K2=6 because of UE
    * limitations).  Note that if K2 or the TDD configuration is changed, below
    * conditions might exclude each other and never be true */
-  if (!is_xlsch_in_slot(nr_mac->ulsch_slot_bitmap[slot / 64], sched_slot) || (sched_slot != 8 && sched_slot != 18))
+  if (!is_xlsch_in_slot(ulsch_slot_bitmap, sched_slot))
     return false;
 
   uint16_t rbStart = 0;
