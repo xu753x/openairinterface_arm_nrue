@@ -1808,14 +1808,6 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
     CellsToAddModList = MeasObj->measObject.choice.measObjectEUTRA.cellsToAddModList;
   }
 
-  if (!ue_context_pP->ue_context.measurement_info) {
-    ue_context_pP->ue_context.measurement_info = CALLOC(1,sizeof(*(ue_context_pP->ue_context.measurement_info)));
-  }
-
-  //TODO: Assign proper values
-  ue_context_pP->ue_context.measurement_info->offsetFreq = 0;
-  ue_context_pP->ue_context.measurement_info->cellIndividualOffset[0] = LTE_Q_OffsetRange_dB0;
-
   /* TODO: Extend to multiple carriers */
   // Add adjacent cell lists (max 6 per eNB)
   for (i = 0; i < RC.rrc[ctxt_pP->module_id]->num_neigh_cells; i++) {
@@ -1860,10 +1852,6 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
       MeasObj2->measObject.choice.measObjectNR_r15.ext1->bandNR_r15->choice.setup = 78;
 
     ASN_SEQUENCE_ADD(&MeasObj_list->list, MeasObj2);
-  }
-
-  if (!ue_context_pP->ue_context.measurement_info->events) {
-    ue_context_pP->ue_context.measurement_info->events = CALLOC(1,sizeof(*(ue_context_pP->ue_context.measurement_info->events)));
   }
 
   // Report Configurations for periodical, A1-A5 events
@@ -2013,17 +2001,6 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
   }
   //  LTE_RRCConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->reportConfigToAddModList = ReportConfig_list;
 
-  /* A3 event update */
-  if (!ue_context_pP->ue_context.measurement_info->events->a3_event) {
-    ue_context_pP->ue_context.measurement_info->events->a3_event = CALLOC(1,sizeof(*(ue_context_pP->ue_context.measurement_info->events->a3_event)));
-  }
-
-  ue_context_pP->ue_context.measurement_info->events->a3_event->a3_offset = ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.eventA3.a3_Offset;
-  ue_context_pP->ue_context.measurement_info->events->a3_event->reportOnLeave = ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.eventA3.reportOnLeave;
-  ue_context_pP->ue_context.measurement_info->events->a3_event->hysteresis = ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.hysteresis;
-  ue_context_pP->ue_context.measurement_info->events->a3_event->timeToTrigger = ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.timeToTrigger;
-  ue_context_pP->ue_context.measurement_info->events->a3_event->maxReportCells = ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.maxReportCells;
-
   Sparams = CALLOC(1, sizeof(*Sparams));
   Sparams->present = LTE_MeasConfig__speedStatePars_PR_setup;
   Sparams->choice.setup.timeToTrigger_SF.sf_High = LTE_SpeedStateScaleFactors__sf_Medium_oDot75;
@@ -2045,30 +2022,6 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
     CALLOC(1, sizeof(*(quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ)));
   *quantityConfig->quantityConfigEUTRA->filterCoefficientRSRP = LTE_FilterCoefficient_fc4;
   *quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ = LTE_FilterCoefficient_fc4;
-  ue_context_pP->ue_context.measurement_info->filterCoefficientRSRP = *quantityConfig->quantityConfigEUTRA->filterCoefficientRSRP;
-  ue_context_pP->ue_context.measurement_info->filterCoefficientRSRQ = *quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ;
-
-  LOG_I(RRC,
-        "[eNB %d] Frame %d: potential handover preparation: store the information in an intermediate structure in case of failure\n",
-        ctxt_pP->module_id, ctxt_pP->frame);
-  // store the information in an intermediate structure for Hanodver management
-  //rrc_inst->handover_info.as_config.sourceRadioResourceConfig.srb_ToAddModList = CALLOC(1,sizeof());
-  ue_context_pP->ue_context.handover_info = CALLOC(1, sizeof(*(ue_context_pP->ue_context.handover_info)));
-  //memcpy((void *)rrc_inst->handover_info[ue_mod_idP]->as_config.sourceRadioResourceConfig.srb_ToAddModList,(void *)SRB_list,sizeof(LTE_SRB_ToAddModList_t));
-  ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.srb_ToAddModList = *SRB_configList2;
-  //memcpy((void *)rrc_inst->handover_info[ue_mod_idP]->as_config.sourceRadioResourceConfig.drb_ToAddModList,(void *)DRB_list,sizeof(LTE_DRB_ToAddModList_t));
-  ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.drb_ToAddModList = DRB_configList;
-  ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.drb_ToReleaseList = NULL;
-  ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.mac_MainConfig =
-    CALLOC(1, sizeof(*ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.mac_MainConfig));
-  memcpy((void *)ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.mac_MainConfig,
-         (void *)ue_context_pP->ue_context.mac_MainConfig, sizeof(LTE_MAC_MainConfig_t));
-  ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.physicalConfigDedicated =
-    CALLOC(1, sizeof(LTE_PhysicalConfigDedicated_t));
-  memcpy((void *)ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.physicalConfigDedicated,
-         (void *)ue_context_pP->ue_context.physicalConfigDedicated, sizeof(LTE_PhysicalConfigDedicated_t));
-  ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.sps_Config = NULL;
-  //memcpy((void *)rrc_inst->handover_info[ue_mod_idP]->as_config.sourceRadioResourceConfig.sps_Config,(void *)rrc_inst->sps_Config[ue_mod_idP],sizeof(SPS_Config_t));
 
   /* Initialize NAS list */
   dedicatedInfoNASList = CALLOC(1, sizeof(struct LTE_RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList));
