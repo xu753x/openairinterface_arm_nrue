@@ -61,9 +61,10 @@ const uint32_t NR_LONG_BSR_TABLE[256] ={
 35910462, 38241455, 40723756, 43367187, 46182206, 49179951, 52372284, 55771835, 59392055, 63247269, 67352729, 71724679, 76380419, 81338368, 162676736, 4294967295
 };
 
-void calculate_preferred_ul_tda(module_id_t module_id, NR_CellGroupConfig_t *secondaryCellGroup, int bwp_id)
+void calculate_preferred_ul_tda(module_id_t module_id, const NR_BWP_Uplink_t *ubwp)
 {
   gNB_MAC_INST *nrmac = RC.nrmac[module_id];
+  const int bwp_id = ubwp->bwp_Id;
   if (nrmac->preferred_ul_tda[bwp_id])
     return;
 
@@ -74,14 +75,6 @@ void calculate_preferred_ul_tda(module_id_t module_id, NR_CellGroupConfig_t *sec
       scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
   /* Uplink symbols are at the end of the slot */
   const int symb_ulMixed = tdd ? ((1 << tdd->nrofUplinkSymbols) - 1) << (14 - tdd->nrofUplinkSymbols) : 0;
-
-  const NR_ServingCellConfig_t *servingCellConfig = secondaryCellGroup->spCellConfig->spCellConfigDedicated;
-  const struct NR_UplinkConfig__uplinkBWP_ToAddModList *ubwpList = servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList;
-  AssertFatal(ubwpList->list.count == 1,
-              "downlinkBWP_ToAddModList has %d BWP but cannot handle more in %s!\n",
-              ubwpList->list.count,
-              __func__);
-  const NR_BWP_Uplink_t *ubwp = ubwpList->list.array[bwp_id - 1];
 
   const struct NR_PUCCH_Config__resourceToAddModList *resList = ubwp->bwp_Dedicated->pucch_Config->choice.setup->resourceToAddModList;
   // for the moment, just block any symbol that might hold a PUCCH, regardless

@@ -383,8 +383,8 @@ int16_t ssb_index_from_prach(module_id_t module_idP,
 
 void find_SSB_and_RO_available(module_id_t module_idP);
 
-void calculate_preferred_dl_tda(module_id_t module_id, NR_CellGroupConfig_t *secondaryCellGroup, int bwp_id);
-void calculate_preferred_ul_tda(module_id_t module_id, NR_CellGroupConfig_t *secondaryCellGroup, int bwp_id);
+void calculate_preferred_dl_tda(module_id_t module_id, const NR_BWP_Downlink_t *bwp);
+void calculate_preferred_ul_tda(module_id_t module_id, const NR_BWP_Uplink_t *ubwp);
 
 bool find_free_CCE(module_id_t module_id, sub_frame_t slot, int UE_id);
 

@@ -418,9 +418,21 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
 
     RC.nrmac[Mod_idP]->secondaryCellGroupCommon = secondaryCellGroup;
 
-    const int bwp_id = 1;
-    calculate_preferred_dl_tda(Mod_idP, secondaryCellGroup, bwp_id);
-    calculate_preferred_ul_tda(Mod_idP, secondaryCellGroup, bwp_id);
+    const NR_ServingCellConfig_t *servingCellConfig = secondaryCellGroup->spCellConfig->spCellConfigDedicated;
+    const struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList = servingCellConfig->downlinkBWP_ToAddModList;
+    AssertFatal(bwpList->list.count > 0, "downlinkBWP_ToAddModList has no BWPs!\n");
+    for (int i = 0; i < bwpList->list.count; ++i) {
+      const NR_BWP_Downlink_t *bwp = bwpList->list.array[i];
+      calculate_preferred_dl_tda(Mod_idP, bwp);
+    }
+
+    const struct NR_UplinkConfig__uplinkBWP_ToAddModList *ubwpList =
+        servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList;
+    AssertFatal(ubwpList->list.count > 0, "downlinkBWP_ToAddModList no BWPs!\n");
+    for (int i = 0; i < ubwpList->list.count; ++i) {
+      const NR_BWP_Uplink_t *ubwp = ubwpList->list.array[i];
+      calculate_preferred_ul_tda(Mod_idP, ubwp);
+    }
 
     NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
     if (add_ue == 1 && get_softmodem_params()->phy_test) {

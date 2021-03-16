@@ -56,9 +56,10 @@
 #define WORD 32
 //#define SIZE_OF_POINTER sizeof (void *)
 
-void calculate_preferred_dl_tda(module_id_t module_id, NR_CellGroupConfig_t *secondaryCellGroup, int bwp_id)
+void calculate_preferred_dl_tda(module_id_t module_id, const NR_BWP_Downlink_t *bwp)
 {
   gNB_MAC_INST *nrmac = RC.nrmac[module_id];
+  const int bwp_id = bwp->bwp_Id;
   if (nrmac->preferred_dl_tda[bwp_id])
     return;
 
@@ -67,14 +68,6 @@ void calculate_preferred_dl_tda(module_id_t module_id, NR_CellGroupConfig_t *sec
   const NR_TDD_UL_DL_Pattern_t *tdd =
       scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
   const int symb_dlMixed = tdd ? (1 << tdd->nrofDownlinkSymbols) - 1 : 0;
-
-  const NR_ServingCellConfig_t *servingCellConfig = secondaryCellGroup->spCellConfig->spCellConfigDedicated;
-  const struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList = servingCellConfig->downlinkBWP_ToAddModList;
-  AssertFatal(bwpList->list.count == 1,
-              "downlinkBWP_ToAddModList has %d BWP but cannot handle more in %s!\n",
-              bwpList->list.count,
-              __func__);
-  const NR_BWP_Downlink_t *bwp = bwpList->list.array[bwp_id - 1];
 
   const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
   const NR_SearchSpace_t *search_space = get_searchspace(bwp, target_ss);
