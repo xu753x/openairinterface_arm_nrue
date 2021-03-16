@@ -1700,6 +1700,24 @@ int get_nrofHARQ_ProcessesForPDSCH(e_NR_PDSCH_ServingCellConfig__nrofHARQ_Proces
   }
 }
 
+int get_dl_bwp_id(const NR_ServingCellConfig_t *servingCellConfig)
+{
+  if (servingCellConfig->firstActiveDownlinkBWP_Id)
+    return *servingCellConfig->firstActiveDownlinkBWP_Id;
+  else if (servingCellConfig->defaultDownlinkBWP_Id)
+    return *servingCellConfig->defaultDownlinkBWP_Id;
+  else
+    return 1;
+}
+
+int get_ul_bwp_id(const NR_ServingCellConfig_t *servingCellConfig)
+{
+  if (servingCellConfig->uplinkConfig && servingCellConfig->uplinkConfig->firstActiveUplinkBWP_Id)
+    return *servingCellConfig->uplinkConfig->firstActiveUplinkBWP_Id;
+  else
+    return 1;
+}
+
 //------------------------------------------------------------------------------
 int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *secondaryCellGroup)
 {
@@ -1735,20 +1753,25 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *secon
 
     /* Set default BWPs */
     const struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList = servingCellConfig->downlinkBWP_ToAddModList;
-    AssertFatal(bwpList->list.count == 1,
-                "downlinkBWP_ToAddModList has %d BWP!\n",
+    const int bwp_id = get_dl_bwp_id(servingCellConfig);
+    AssertFatal(bwp_id > 0 && bwp_id <= bwpList->list.count,
+                "%s(): illegal bwp_id %d (max %d)!\n",
+                __func__,
+                bwp_id,
                 bwpList->list.count);
-    const int bwp_id = 1;
     sched_ctrl->active_bwp = bwpList->list.array[bwp_id - 1];
     const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
     sched_ctrl->search_space = get_searchspace(sched_ctrl->active_bwp, target_ss);
     sched_ctrl->coreset = get_coreset(sched_ctrl->active_bwp, sched_ctrl->search_space, 1 /* dedicated */);
 
     const struct NR_UplinkConfig__uplinkBWP_ToAddModList *ubwpList = servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList;
-    AssertFatal(ubwpList->list.count == 1,
-                "uplinkBWP_ToAddModList has %d BWP!\n",
+    const int ubwp_id = get_ul_bwp_id(servingCellConfig);
+    AssertFatal(ubwp_id > 0 && ubwp_id <= ubwpList->list.count,
+                "%s(): illegal ubwp_id %d (max %d)!\n",
+                __func__,
+                ubwp_id,
                 ubwpList->list.count);
-    sched_ctrl->active_ubwp = ubwpList->list.array[bwp_id - 1];
+    sched_ctrl->active_ubwp = ubwpList->list.array[ubwp_id - 1];
 
     /* get Number of HARQ processes for this UE */
     AssertFatal(servingCellConfig->pdsch_ServingCellConfig->present == NR_SetupRelease_PDSCH_ServingCellConfig_PR_setup,
