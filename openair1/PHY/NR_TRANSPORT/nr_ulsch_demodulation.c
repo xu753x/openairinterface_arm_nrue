@@ -1152,7 +1152,8 @@ void nr_ulsch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
 }
 
 int nr_rx_pusch(PHY_VARS_gNB *gNB,
-                uint8_t ulsch_id,
+                NR_gNB_ULSCH_t* ulsch,
+                int ulsch_id,
                 uint32_t frame,
                 uint8_t nr_tti_rx,
                 unsigned char symbol,
@@ -1164,7 +1165,7 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
   int avgs;
   int avg[4];
   NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
-  nfapi_nr_pusch_pdu_t *rel15_ul = &gNB->ulsch[ulsch_id][0]->harq_processes[harq_pid]->ulsch_pdu;
+  nfapi_nr_pusch_pdu_t *rel15_ul = &ulsch->harq_processes[harq_pid]->ulsch_pdu;
 
   dmrs_symbol_flag = 0;
 
@@ -1244,7 +1245,7 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
 
     nr_ulsch_scale_channel(gNB->pusch_vars[ulsch_id]->ul_ch_estimates_ext,
                            frame_parms,
-                           gNB->ulsch[ulsch_id],
+                           &ulsch,
                            symbol,
                            dmrs_symbol_flag,
                            rel15_ul->rb_size,

@@ -185,22 +185,10 @@ void rx_func(void *param) {
   int pucch_removed = 0;
   for (int i = 0; i < rnti_to_remove_count; i++) {
     LOG_W(PHY, "to remove rnti %d\n", rnti_to_remove[i]);
-    void clean_gNB_ulsch(NR_gNB_ULSCH_t *ulsch);
-    void clean_gNB_dlsch(NR_gNB_DLSCH_t *dlsch);
+
     int j;
-    for (j = 0; j < NUMBER_OF_NR_ULSCH_MAX; j++)
-      if (gNB->ulsch[j][0]->rnti == rnti_to_remove[i]) {
-        gNB->ulsch[j][0]->rnti = 0;
-        gNB->ulsch[j][0]->harq_mask = 0;
-        //clean_gNB_ulsch(gNB->ulsch[j][0]);
-        int h;
-        for (h = 0; h < NR_MAX_ULSCH_HARQ_PROCESSES; h++) {
-          gNB->ulsch[j][0]->harq_processes[h]->status = SCH_IDLE;
-          gNB->ulsch[j][0]->harq_processes[h]->round  = 0;
-          gNB->ulsch[j][0]->harq_processes[h]->handled = 0;
-        }
-        up_removed++;
-      }
+    up_removed+=free_nr_ulsch(rnti_to_remove[i], gNB);
+    
     for (j = 0; j < NUMBER_OF_NR_DLSCH_MAX; j++)
       if (gNB->dlsch[j][0]->rnti == rnti_to_remove[i]) {
         gNB->dlsch[j][0]->rnti = 0;

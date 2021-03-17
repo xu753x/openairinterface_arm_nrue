@@ -49,9 +49,10 @@ NR_gNB_ULSCH_t *new_gNB_ulsch(uint8_t max_ldpc_iterations,uint16_t N_RB_UL, uint
   @param harq_pid, harq process id
   @param is_crnti
 */
-
+void init_nr_ulsch(PHY_VARS_gNB *, int size, int N_RB_UL);
 uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
-                           uint8_t UE_id,
+                           NR_gNB_ULSCH_t* ulsch,
+                           int,
                            short *ulsch_llr,
                            NR_DL_FRAME_PARMS *frame_parms,
                            nfapi_nr_pusch_pdu_t *pusch_pdu,
@@ -85,10 +86,11 @@ void nr_ulsch_unscrambling_optim(int16_t* llr,
 void nr_ulsch_procedures(PHY_VARS_gNB *gNB,
                          int frame_rx,
                          int slot_rx,
-                         int UE_id,
+                         NR_gNB_ULSCH_t*pusch_pdu,
+                         int,
                          uint8_t harq_pid);
-int16_t find_nr_ulsch(uint16_t rnti, PHY_VARS_gNB *gNB,find_type_t type);
-
+NR_gNB_ULSCH_t  * find_nr_ulsch(uint16_t rnti, PHY_VARS_gNB *gNB,find_type_t type);
+int free_nr_ulsh(uint16_t rnti, PHY_VARS_gNB *gNB);
 void dump_pusch_stats(PHY_VARS_gNB *gNB);
 
 void clear_pusch_stats(PHY_VARS_gNB *gNB);

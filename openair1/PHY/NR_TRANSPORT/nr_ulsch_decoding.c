@@ -449,7 +449,8 @@ void nr_processULSegment(void* arg) {
 }
 
 uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
-                           uint8_t UE_id,
+                           NR_gNB_ULSCH_t  *ulsch,
+                           int ULSCH_id,
                            short *ulsch_llr,
                            NR_DL_FRAME_PARMS *frame_parms,
                            nfapi_nr_pusch_pdu_t *pusch_pdu,
@@ -471,7 +472,6 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 #endif
   
 
-  NR_gNB_ULSCH_t                       *ulsch                 = phy_vars_gNB->ulsch[UE_id][0];
   NR_UL_gNB_HARQ_t                     *harq_process          = ulsch->harq_processes[harq_pid];
 
   if (!harq_process) {
@@ -639,7 +639,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     rdata->Tbslbrm = Tbslbrm;
     rdata->offset = offset;
     rdata->ulsch = ulsch;
-    rdata->ulsch_id = UE_id;
+    rdata->ulsch_id = ULSCH_id;
     pushTpool(phy_vars_gNB->threadPool,req);
     phy_vars_gNB->nbDecode++;
     LOG_D(PHY,"Added a block to decode, in pipe: %d\n",phy_vars_gNB->nbDecode);

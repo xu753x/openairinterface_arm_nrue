@@ -138,7 +138,8 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
     @param harq_pid HARQ process ID
 */
 int nr_rx_pusch(PHY_VARS_gNB *gNB,
-                uint8_t UE_id,
+                NR_gNB_ULSCH_t *ulsch,
+                int id,
                 uint32_t frame,
                 uint8_t nr_tti_rx,
                 unsigned char symbol,
