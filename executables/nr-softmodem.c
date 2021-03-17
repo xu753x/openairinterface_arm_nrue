@@ -89,6 +89,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "f1ap_du_task.h"
 
 #include "nfapi/oai_integration/vendor_ext.h"
+#include <openair3/ocp-gtpu/gtp_itf.h>
 
 pthread_cond_t nfapi_sync_cond;
 pthread_mutex_t nfapi_sync_mutex;
@@ -185,7 +186,6 @@ extern void *udp_eNB_task(void *args_p);
 int transmission_mode=1;
 int emulate_rf = 0;
 int numerology = 0;
-int usrp_tx_thread = 0;
 
 
 static char *parallel_config = NULL;

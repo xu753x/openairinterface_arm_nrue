@@ -35,6 +35,7 @@
 #include "pdcp.h"
 #include "nr_pdcp.h"
 #include "LAYER2/nr_rlc/nr_rlc_oai_api.h"
+#include <openair3/ocp-gtpu/gtp_itf.h>
 
 #define TODO do { \
     printf("%s:%d:%s: todo\n", __FILE__, __LINE__, __FUNCTION__); \
@@ -556,7 +557,7 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
       exit(1);
 
     rb_found:
-      gtpu_buffer_p = itti_malloc(TASK_PDCP_ENB, TASK_GTPV1_U,
+      gtpu_buffer_p = itti_malloc(TASK_PDCP_ENB, TASK_VARIABLE,
                                   size + GTPU_HEADER_OVERHEAD_MAX);
       AssertFatal(gtpu_buffer_p != NULL, "OUT OF MEMORY");
       memcpy(&gtpu_buffer_p[GTPU_HEADER_OVERHEAD_MAX], buf, size);
@@ -568,7 +569,7 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
         GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).rnti          = ue->rnti;
         GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).pdusession_id = 10;
         LOG_D(PDCP, "%s() (drb %d) sending message to gtp size %d, rnti %d \n", __func__, rb_id, size, ue->rnti);
-        itti_send_msg_to_task(TASK_GTPV1_U, INSTANCE_DEFAULT, message_p);
+        itti_send_msg_to_task(TASK_VARIABLE, INSTANCE_DEFAULT, message_p);
       } else {
         message_p = itti_alloc_new_message(TASK_PDCP_ENB, 0, GTPV1U_ENB_TUNNEL_DATA_REQ);
         AssertFatal(message_p != NULL, "OUT OF MEMORY");
@@ -580,7 +581,7 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
         LOG_D(PDCP, "%s() (drb %d) sending message to gtp size %d\n", __func__, rb_id, size);
         //for (i = 0; i < size; i++) printf(" %2.2x", (unsigned char)buf[i]);
         //printf("\n");
-        itti_send_msg_to_task(TASK_GTPV1_U, INSTANCE_DEFAULT, message_p);
+        itti_send_msg_to_task(TASK_VARIABLE, INSTANCE_DEFAULT, message_p);
       }
   }
 }
