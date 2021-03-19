@@ -647,7 +647,7 @@ int phy_rach_indication(struct nfapi_vnf_p7_config *config, nfapi_rach_indicatio
   LOG_D(MAC, "%s() NFAPI SFN/SF:%d number_of_preambles:%u\n", __FUNCTION__, NFAPI_SFNSF2DEC(ind->sfn_sf), ind->rach_indication_body.number_of_preambles);
   struct PHY_VARS_eNB_s *eNB = RC.eNB[0][0];
   printf("[VNF] RACH_IND eNB:%p sfn_sf:%d number_of_preambles:%d\n", eNB, NFAPI_SFNSF2DEC(ind->sfn_sf), ind->rach_indication_body.number_of_preambles);
-  pthread_mutex_lock(&eNB->UL_INFO_mutex);
+  AssertFatal(pthread_mutex_lock(&eNB->UL_INFO_mutex)==0, "Mutex lock failed");
   if(NFAPI_MODE == NFAPI_MODE_VNF){
     int8_t index = NFAPI_SFNSF2SF(ind->sfn_sf);
 
@@ -693,7 +693,7 @@ int phy_rach_indication(struct nfapi_vnf_p7_config *config, nfapi_rach_indicatio
     eNB->preamble_list[i] = ind->rach_indication_body.preamble_list[i];
   }
   }
-  pthread_mutex_unlock(&eNB->UL_INFO_mutex);
+  AssertFatal(pthread_mutex_unlock(&eNB->UL_INFO_mutex)==0, "Mutex unlock failed");
   // vnf_p7_info* p7_vnf = (vnf_p7_info*)(config->user_data);
   //mac_rach_ind(p7_vnf->mac, ind);
   return 1;
@@ -702,7 +702,7 @@ int phy_rach_indication(struct nfapi_vnf_p7_config *config, nfapi_rach_indicatio
 int phy_harq_indication(struct nfapi_vnf_p7_config *config, nfapi_harq_indication_t *ind) {
   struct PHY_VARS_eNB_s *eNB = RC.eNB[0][0];
   LOG_D(MAC, "%s() NFAPI SFN/SF:%d number_of_harqs:%u\n", __FUNCTION__, NFAPI_SFNSF2DEC(ind->sfn_sf), ind->harq_indication_body.number_of_harqs);
-  pthread_mutex_lock(&eNB->UL_INFO_mutex);
+  AssertFatal(pthread_mutex_lock(&eNB->UL_INFO_mutex)==0, "Mutex lock failed");
   if(NFAPI_MODE == NFAPI_MODE_VNF){
     int8_t index = NFAPI_SFNSF2SF(ind->sfn_sf);
 
@@ -726,7 +726,7 @@ int phy_harq_indication(struct nfapi_vnf_p7_config *config, nfapi_harq_indicatio
              sizeof(eNB->UL_INFO.harq_ind.harq_indication_body.harq_pdu_list[i]));
     }
   }
-  pthread_mutex_unlock(&eNB->UL_INFO_mutex);
+  AssertFatal(pthread_mutex_unlock(&eNB->UL_INFO_mutex)==0, "Mutex unlock failed");
   // vnf_p7_info* p7_vnf = (vnf_p7_info*)(config->user_data);
   //mac_harq_ind(p7_vnf->mac, ind);
   return 1;
@@ -734,7 +734,7 @@ int phy_harq_indication(struct nfapi_vnf_p7_config *config, nfapi_harq_indicatio
 
 int phy_crc_indication(struct nfapi_vnf_p7_config *config, nfapi_crc_indication_t *ind) {
   struct PHY_VARS_eNB_s *eNB = RC.eNB[0][0];
-  pthread_mutex_lock(&eNB->UL_INFO_mutex);
+  AssertFatal(pthread_mutex_lock(&eNB->UL_INFO_mutex)==0, "Mutex lock failed");
   if(NFAPI_MODE == NFAPI_MODE_VNF){
     int8_t index = NFAPI_SFNSF2SF(ind->sfn_sf);
 
@@ -778,7 +778,7 @@ int phy_crc_indication(struct nfapi_vnf_p7_config *config, nfapi_crc_indication_
           eNB->UL_INFO.crc_ind.crc_indication_body.crc_pdu_list[i].rx_ue_information.rnti);
   }
   }
-  pthread_mutex_unlock(&eNB->UL_INFO_mutex);
+  AssertFatal(pthread_mutex_unlock(&eNB->UL_INFO_mutex)==0, "Mutex unlock failed");
   // vnf_p7_info* p7_vnf = (vnf_p7_info*)(config->user_data);
   //mac_crc_ind(p7_vnf->mac, ind);
   return 1;
@@ -791,7 +791,7 @@ int phy_rx_indication(struct nfapi_vnf_p7_config *config, nfapi_rx_indication_t 
     LOG_D(MAC, "%s() NFAPI SFN/SF:%d number_of_pdus:%u\n", __FUNCTION__, NFAPI_SFNSF2DEC(ind->sfn_sf), ind->rx_indication_body.number_of_pdus);
   }
 
-  pthread_mutex_lock(&eNB->UL_INFO_mutex);
+  AssertFatal(pthread_mutex_lock(&eNB->UL_INFO_mutex)==0, "Mutex lock failed");
   if(NFAPI_MODE == NFAPI_MODE_VNF){
     int8_t index = NFAPI_SFNSF2SF(ind->sfn_sf);
 
@@ -857,7 +857,7 @@ int phy_rx_indication(struct nfapi_vnf_p7_config *config, nfapi_rx_indication_t 
          );
   }
   }
-  pthread_mutex_unlock(&eNB->UL_INFO_mutex);
+  AssertFatal(pthread_mutex_unlock(&eNB->UL_INFO_mutex)==0, "Mutex unlock failed");
   // vnf_p7_info* p7_vnf = (vnf_p7_info*)(config->user_data);
   //mac_rx_ind(p7_vnf->mac, ind);
   return 1;
@@ -871,7 +871,7 @@ int phy_srs_indication(struct nfapi_vnf_p7_config *config, nfapi_srs_indication_
 int phy_sr_indication(struct nfapi_vnf_p7_config *config, nfapi_sr_indication_t *ind) {
   struct PHY_VARS_eNB_s *eNB = RC.eNB[0][0];
   LOG_D(MAC, "%s() NFAPI SFN/SF:%d srs:%d\n", __FUNCTION__, NFAPI_SFNSF2DEC(ind->sfn_sf), ind->sr_indication_body.number_of_srs);
-  pthread_mutex_lock(&eNB->UL_INFO_mutex);
+  AssertFatal(pthread_mutex_lock(&eNB->UL_INFO_mutex)==0, "Mutex lock failed");
   if(NFAPI_MODE == NFAPI_MODE_VNF){
     int8_t index = NFAPI_SFNSF2SF(ind->sfn_sf);
 
@@ -906,7 +906,7 @@ int phy_sr_indication(struct nfapi_vnf_p7_config *config, nfapi_sr_indication_t 
     memcpy(dest_pdu, src_pdu, sizeof(*src_pdu));
   }
   }
-  pthread_mutex_unlock(&eNB->UL_INFO_mutex);
+  AssertFatal(pthread_mutex_unlock(&eNB->UL_INFO_mutex)==0, "Mutex unlock failed");
   // vnf_p7_info* p7_vnf = (vnf_p7_info*)(config->user_data);
   //mac_sr_ind(p7_vnf->mac, ind);
   return 1;
@@ -947,7 +947,7 @@ int phy_cqi_indication(struct nfapi_vnf_p7_config *config, nfapi_cqi_indication_
   //mac_cqi_ind(p7_vnf->mac, ind);
   struct PHY_VARS_eNB_s *eNB = RC.eNB[0][0];
   LOG_D(MAC, "%s() NFAPI SFN/SF:%d number_of_cqis:%u\n", __FUNCTION__, NFAPI_SFNSF2DEC(ind->sfn_sf), ind->cqi_indication_body.number_of_cqis);
-  pthread_mutex_lock(&eNB->UL_INFO_mutex);
+  AssertFatal(pthread_mutex_lock(&eNB->UL_INFO_mutex)==0, "Mutex lock failed");
   if(NFAPI_MODE == NFAPI_MODE_VNF){
     int8_t index = NFAPI_SFNSF2SF(ind->sfn_sf);
 
@@ -989,7 +989,7 @@ int phy_cqi_indication(struct nfapi_vnf_p7_config *config, nfapi_cqi_indication_
            &ind->cqi_indication_body.cqi_raw_pdu_list[i], sizeof(nfapi_cqi_indication_raw_pdu_t));
   }
   }
-  pthread_mutex_unlock(&eNB->UL_INFO_mutex);
+  AssertFatal(pthread_mutex_unlock(&eNB->UL_INFO_mutex)==0, "Mutex unlock failed");
   return 1;
 }
 

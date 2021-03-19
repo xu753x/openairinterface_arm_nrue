@@ -1312,14 +1312,11 @@ void *ue_standalone_pnf_task(void *context)
         LOG_E(MAC, "sem_post() error\n");
         abort();
       }
-        uint16_t sf = ch_info->sfn_sf & 15;
-        if(sf > 10 && sf < 0)
-        {
-          LOG_E(MAC, "sf out of bounds, sfn: %d\n", sf);
-          abort();
-        }
-        sf_rnti_mcs[sf].sinr = ch_info->sinr;
-        LOG_D(MAC, "Received_SINR = %f\n",ch_info->sinr);
+      uint16_t sf = ch_info->sfn_sf & 15;
+      assert(sf < 10);
+
+      sf_rnti_mcs[sf].sinr = ch_info->sinr;
+      LOG_D(MAC, "Received_SINR = %f\n",ch_info->sinr);
     }
     else if (len == sizeof(phy_channel_params_t))
     {
