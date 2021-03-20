@@ -841,6 +841,7 @@ void dl_config_req_UE_MAC_dci(int sfn,
       for (int ue_id = 0; ue_id < num_ue; ue_id++) {
         if (UE_mac_inst[ue_id].UE_mode[0] == NOT_SYNCHED)
           continue;
+
         ue_decode_si(ue_id, 0, sfn, 0,
             tx_req_pdu_list->pdus[pdu_index].segments[0].segment_data,
             tx_req_pdu_list->pdus[pdu_index].segments[0].segment_length);
@@ -849,7 +850,6 @@ void dl_config_req_UE_MAC_dci(int sfn,
       for (int ue_id = 0; ue_id < num_ue; ue_id++) {
         LOG_I(MAC, "%s() Received paging message: sfn/sf:%d.%d\n",
               __func__, sfn, sf);
-
         ue_decode_p(ue_id, 0, sfn, 0,
                     tx_req_pdu_list->pdus[pdu_index].segments[0].segment_data,
                     tx_req_pdu_list->pdus[pdu_index].segments[0].segment_length);
@@ -872,7 +872,6 @@ void dl_config_req_UE_MAC_dci(int sfn,
           LOG_E(MAC,
                 "%s(): Received RAR, PreambleIndex: %d\n",
                 __func__, UE_mac_inst[ue_id].RA_prach_resources.ra_PreambleIndex);
-
           ue_process_rar(ue_id, 0, sfn,
               ra_rnti, //RA-RNTI
               tx_req_pdu_list->pdus[pdu_index].segments[0].segment_data,
@@ -1264,6 +1263,7 @@ void *ue_standalone_pnf_task(void *context)
   struct sockaddr_in server_address;
   socklen_t addr_len = sizeof(server_address);
   char buffer[NFAPI_MAX_PACKED_MESSAGE_SIZE];
+
   int sd = ue_rx_sock_descriptor;
   assert(sd > 0);
 

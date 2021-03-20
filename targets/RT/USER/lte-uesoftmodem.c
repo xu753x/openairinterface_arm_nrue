@@ -908,7 +908,7 @@ void init_bler_table(void)
 
         token = strtok_r(NULL, ";", &temp);
       }
-      nlines++;        
+      nlines++;
     }
     bler_data[i].length = nlines;
     fclose(pFile);
