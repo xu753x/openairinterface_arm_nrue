@@ -22,6 +22,7 @@
 #include "nfapi_nr_interface.h"
 
 #include "debug.h"
+
 #include "netinet/in.h"
 
 #if defined(__cplusplus)
