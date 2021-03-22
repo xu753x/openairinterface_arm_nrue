@@ -1459,6 +1459,272 @@ pdcp_remove_UE(
   return 1;
 }
 
+//-----------------------------------------------------------------------------
+boolean_t rrc_pdcp_reestablishment_asn1_req (
+  const protocol_ctxt_t *const  ctxt_pP,
+  const rnti_t previous_rnti,
+  LTE_SRB_ToAddModList_t  *const srb2add_list_pP,
+  LTE_DRB_ToAddModList_t  *const drb2add_list_pP
+)
+//-----------------------------------------------------------------------------
+{
+  long int        lc_id          = 0;
+  LTE_DRB_Identity_t  srb_id     = 0;
+  long int        mch_id         = 0;
+  rlc_mode_t      rlc_type       = RLC_MODE_NONE;
+  LTE_DRB_Identity_t  drb_id     = 0;
+  uint8_t         drb_sn         = 12;
+  uint8_t         srb_sn         = 5; // fixed sn for SRBs
+  uint8_t         drb_report     = 0;
+  long int        cnt            = 0;
+  uint16_t        header_compression_profile = 0;
+  config_action_t action                     = CONFIG_ACTION_ADD;
+  LTE_SRB_ToAddMod_t *srb_toaddmod_p = NULL;
+  LTE_DRB_ToAddMod_t *drb_toaddmod_p = NULL;
+  pdcp_t         *pdcp_p         = NULL;
+  pdcp_t         *pdcp_p_old     = NULL;
+  hash_key_t      key            = HASHTABLE_NOT_A_KEY_VALUE;
+  hash_key_t      old_key            = HASHTABLE_NOT_A_KEY_VALUE;
+  hashtable_rc_t  h_rc;
+  
+
+  if (srb2add_list_pP != NULL) {
+    for (cnt=0; cnt<srb2add_list_pP->list.count; cnt++) {
+      srb_toaddmod_p = srb2add_list_pP->list.array[cnt];
+      srb_id = srb_toaddmod_p->srb_Identity;
+      rlc_type = RLC_MODE_AM;
+      lc_id = srb_id;
+      old_key = PDCP_COLL_KEY_VALUE(ctxt_pP->module_id, previous_rnti, ctxt_pP->enb_flag, srb_id, SRB_FLAG_YES);
+      h_rc = hashtable_get(pdcp_coll_p, old_key, (void **)&pdcp_p_old);
+      key = PDCP_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, srb_id, SRB_FLAG_YES);
+      h_rc = hashtable_get(pdcp_coll_p, key, (void **)&pdcp_p);
+
+      if (h_rc == HASH_TABLE_OK) {
+        LOG_D(PDCP, PROTOCOL_PDCP_CTXT_FMT" ignore exist SRB %ld key 0x%"PRIx64"\n",
+              PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP, pdcp_p),
+              srb_id,
+              key);
+        continue;
+      }
+      rlc_type = RLC_MODE_AM;
+      lc_id = srb_id;
+      action = CONFIG_ACTION_ADD;
+      pdcp_p = calloc(1, sizeof(pdcp_t));
+      h_rc = hashtable_insert(pdcp_coll_p, key, pdcp_p);
+
+      if (h_rc != HASH_TABLE_OK) {
+        LOG_E(PDCP, PROTOCOL_PDCP_CTXT_FMT" CONFIG_ACTION_ADD key 0x%"PRIx64" FAILED\n",
+              PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP, pdcp_p),
+              key);
+        free(pdcp_p);
+        return TRUE;
+      } else {
+        LOG_D(PDCP, PROTOCOL_PDCP_CTXT_FMT" CONFIG_ACTION_ADD key 0x%"PRIx64"\n",
+              PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP, pdcp_p),
+              key);
+      }
+      pdcp_config_req_asn1 (
+        ctxt_pP,
+        pdcp_p,
+        SRB_FLAG_YES,
+        rlc_type,
+        action,
+        lc_id,
+        mch_id,
+        srb_id,
+        srb_sn,
+        0, // drb_report
+        0, // header compression
+        0xFF,
+        NULL,
+        NULL,
+        NULL);
+      if(pdcp_p_old!=NULL) {
+        // TODO When upper layers request a PDCP re-establishment, the UE shall:
+        //  -    set Next_PDCP_TX_SN, and TX_HFN to 0;
+        //  -    set Next_PDCP_RX_SN, and RX_HFN to 0; 
+        //  -    discard all stored PDCP SDUs and PDCP PDUs;
+        //  -    apply the ciphering and integrity protection algorithms and keys provided by upper layers during the re-establishment procedure. 
+        // Discard all data and sn clear, so create as new bearer
+      }
+    }
+  }
+
+  // reset the action
+  if (drb2add_list_pP != NULL) {
+    for (cnt=0; cnt<drb2add_list_pP->list.count; cnt++) {
+      drb_toaddmod_p = drb2add_list_pP->list.array[cnt];
+      drb_id = drb_toaddmod_p->drb_Identity;// + drb_id_offset;
+
+      if (drb_toaddmod_p->logicalChannelIdentity) {
+        lc_id = *(drb_toaddmod_p->logicalChannelIdentity);
+      } else {
+        LOG_E(PDCP, PROTOCOL_PDCP_CTXT_FMT" logicalChannelIdentity is missing in DRB-ToAddMod information element!\n",
+              PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP, pdcp_p));
+        continue;
+      }
+
+      if (lc_id == 1 || lc_id == 2) {
+        LOG_E(RLC, PROTOCOL_CTXT_FMT" logicalChannelIdentity = %ld is invalid in RRC message when adding DRB!\n", PROTOCOL_CTXT_ARGS(ctxt_pP), lc_id);
+        continue;
+      }
+
+      old_key = PDCP_COLL_KEY_VALUE(ctxt_pP->module_id, previous_rnti, ctxt_pP->enb_flag, drb_id, SRB_FLAG_NO);
+      h_rc = hashtable_get(pdcp_coll_p, old_key, (void **)&pdcp_p_old);
+      
+      DevCheck4(drb_id < LTE_maxDRB, drb_id, LTE_maxDRB, ctxt_pP->module_id, ctxt_pP->rnti);
+      key = PDCP_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, drb_id, SRB_FLAG_NO);
+      h_rc = hashtable_get(pdcp_coll_p, key, (void **)&pdcp_p);
+
+      if (h_rc == HASH_TABLE_OK) {
+        LOG_D(PDCP, PROTOCOL_PDCP_CTXT_FMT" ignore exist DRB %ld key 0x%"PRIx64"\n",
+              PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP, pdcp_p),
+              drb_id,
+              key);
+        continue;
+      }
+      if(pdcp_p_old!=NULL) {
+        // Reestablishment case
+        // Copy old PDCP data and insert as new hash
+        pdcp_p = calloc(1, sizeof(pdcp_t));
+        memcpy(pdcp_p,pdcp_p_old,sizeof(pdcp_t));
+        h_rc = hashtable_insert(pdcp_coll_p, key, pdcp_p);
+        
+        if (h_rc != HASH_TABLE_OK) {
+          LOG_E(PDCP, PROTOCOL_PDCP_CTXT_FMT" CONFIG_ACTION_ADD key 0x%"PRIx64" FAILED\n",
+                PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP, pdcp_p),
+                key);
+          free(pdcp_p);
+          return TRUE;
+        } else {
+          LOG_D(PDCP, PROTOCOL_PDCP_CTXT_FMT" CONFIG_ACTION_ADD key 0x%"PRIx64"\n",
+                PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP, pdcp_p),
+                key);
+        }
+        
+        pdcp_p->is_ue = FALSE;
+        pdcp_add_UE(ctxt_pP);
+        for(int i = 0; i<MAX_MOBILES_PER_ENB; i++) {
+          if(pdcp_eNB_UE_instance_to_rnti[pdcp_eNB_UE_instance_to_rnti_index] == NOT_A_RNTI) {
+            break;
+          }
+        
+          pdcp_eNB_UE_instance_to_rnti_index = (pdcp_eNB_UE_instance_to_rnti_index + 1) % MAX_MOBILES_PER_ENB;
+        }
+        
+        pdcp_eNB_UE_instance_to_rnti[pdcp_eNB_UE_instance_to_rnti_index] = ctxt_pP->rnti;
+        pdcp_eNB_UE_instance_to_rnti_index = (pdcp_eNB_UE_instance_to_rnti_index + 1) % MAX_MOBILES_PER_ENB;
+        LOG_D(PDCP, PROTOCOL_PDCP_CTXT_FMT" reestablishment DRB %ld key 0x%"PRIx64" old rnti %x old key 0x%"PRIx64"\n",
+              PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP, pdcp_p),
+              drb_id,key,previous_rnti,old_key);
+        if (drb_toaddmod_p->pdcp_Config->rlc_AM) {
+          //??
+        }
+        if (drb_toaddmod_p->pdcp_Config->rlc_UM) {
+          //  -    set Next_PDCP_RX_SN, and RX_HFN to 0;
+          //  -    set Next_PDCP_RX_SN, and RX_HFN to 0; 
+          pdcp_p->next_pdcp_tx_sn                  = 0;
+          pdcp_p->next_pdcp_rx_sn                  = 0;
+          pdcp_p->tx_hfn                           = 0;
+          pdcp_p->rx_hfn                           = 0;
+        }
+        continue;
+      }
+      // Add new bearer case
+      action = CONFIG_ACTION_ADD;
+      pdcp_p = calloc(1, sizeof(pdcp_t));
+      h_rc = hashtable_insert(pdcp_coll_p, key, pdcp_p);
+      
+      if (h_rc != HASH_TABLE_OK) {
+        LOG_E(PDCP, PROTOCOL_PDCP_CTXT_FMT" CONFIG_ACTION_ADD ADD key 0x%"PRIx64" FAILED\n",
+              PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP, pdcp_p),
+              key);
+        free(pdcp_p);
+        return TRUE;
+      } else {
+        LOG_D(PDCP, PROTOCOL_PDCP_CTXT_FMT" CONFIG_ACTION_ADD ADD key 0x%"PRIx64"\n",
+              PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP, pdcp_p),
+              key);
+      }
+
+      if (drb_toaddmod_p->pdcp_Config) {
+        if (drb_toaddmod_p->pdcp_Config->discardTimer) {
+          // set the value of the timer
+        }
+
+        if (drb_toaddmod_p->pdcp_Config->rlc_AM) {
+          drb_report = drb_toaddmod_p->pdcp_Config->rlc_AM->statusReportRequired;
+          drb_sn = LTE_PDCP_Config__rlc_UM__pdcp_SN_Size_len12bits; // default SN size
+          rlc_type = RLC_MODE_AM;
+        }
+
+        if (drb_toaddmod_p->pdcp_Config->rlc_UM) {
+          drb_sn = drb_toaddmod_p->pdcp_Config->rlc_UM->pdcp_SN_Size;
+          rlc_type =RLC_MODE_UM;
+        }
+
+        switch (drb_toaddmod_p->pdcp_Config->headerCompression.present) {
+          case LTE_PDCP_Config__headerCompression_PR_NOTHING:
+          case LTE_PDCP_Config__headerCompression_PR_notUsed:
+            header_compression_profile=0x0;
+            break;
+
+          case LTE_PDCP_Config__headerCompression_PR_rohc:
+
+            // parse the struc and get the rohc profile
+            if(drb_toaddmod_p->pdcp_Config->headerCompression.choice.rohc.profiles.profile0x0001) {
+              header_compression_profile=0x0001;
+            } else if(drb_toaddmod_p->pdcp_Config->headerCompression.choice.rohc.profiles.profile0x0002) {
+              header_compression_profile=0x0002;
+            } else if(drb_toaddmod_p->pdcp_Config->headerCompression.choice.rohc.profiles.profile0x0003) {
+              header_compression_profile=0x0003;
+            } else if(drb_toaddmod_p->pdcp_Config->headerCompression.choice.rohc.profiles.profile0x0004) {
+              header_compression_profile=0x0004;
+            } else if(drb_toaddmod_p->pdcp_Config->headerCompression.choice.rohc.profiles.profile0x0006) {
+              header_compression_profile=0x0006;
+            } else if(drb_toaddmod_p->pdcp_Config->headerCompression.choice.rohc.profiles.profile0x0101) {
+              header_compression_profile=0x0101;
+            } else if(drb_toaddmod_p->pdcp_Config->headerCompression.choice.rohc.profiles.profile0x0102) {
+              header_compression_profile=0x0102;
+            } else if(drb_toaddmod_p->pdcp_Config->headerCompression.choice.rohc.profiles.profile0x0103) {
+              header_compression_profile=0x0103;
+            } else if(drb_toaddmod_p->pdcp_Config->headerCompression.choice.rohc.profiles.profile0x0104) {
+              header_compression_profile=0x0104;
+            } else {
+              header_compression_profile=0x0;
+              LOG_W(PDCP,"unknown header compresion profile\n");
+            }
+
+            // set the applicable profile
+            break;
+
+          default:
+            LOG_W(PDCP,PROTOCOL_PDCP_CTXT_FMT"[RB %ld] unknown drb_toaddmod->PDCP_Config->headerCompression->present \n",
+                  PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP,pdcp_p), drb_id);
+            break;
+        }
+
+        pdcp_config_req_asn1 (
+          ctxt_pP,
+          pdcp_p,
+          SRB_FLAG_NO,
+          rlc_type,
+          action,
+          lc_id,
+          mch_id,
+          drb_id,
+          drb_sn,
+          drb_report,
+          header_compression_profile,
+          0xFF,
+          NULL,
+          NULL,
+          NULL);
+      }
+    }
+  }
+  return TRUE;
+}
 
 //-----------------------------------------------------------------------------
 boolean_t

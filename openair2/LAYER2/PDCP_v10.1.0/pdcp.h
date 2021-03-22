@@ -320,6 +320,21 @@ boolean_t rrc_pdcp_config_asn1_req (
   rb_id_t                 *const defaultDRB
 );
 
+/*! \fn bool rrc_pdcp_reestablishment_asn1_req   const protocol_ctxt_t *const  ctxt_pP,  const rnti_t previous_rnti,  LTE_SRB_ToAddModList_t  *const srb2add_list_pP,  LTE_DRB_ToAddModList_t  *const drb2add_list_pP)
+* \brief  Function for RRC to reestablish a Radio Bearer.
+* \param[in]  ctxt_pP           Running context.
+* \param[in]  previous_rnti     privious rnti
+* \param[in]  srb2add_list      SRB configuration list to be created.
+* \param[in]  drb2add_list      DRB configuration list to be created.
+* \return     A status about the processing, OK or error code.
+*/
+boolean_t rrc_pdcp_reestablishment_asn1_req (
+  const protocol_ctxt_t *const  ctxt_pP,
+  const rnti_t previous_rnti,
+  LTE_SRB_ToAddModList_t  *const srb2add_list_pP,
+  LTE_DRB_ToAddModList_t  *const drb2add_list_pP
+);
+
 /*! \fn boolean_t pdcp_config_req_asn1 (const protocol_ctxt_t* const ctxt_pP, srb_flag_t srb_flagP, uint32_t  action, rb_id_t rb_id, uint8_t rb_sn, uint8_t rb_report, uint16_t header_compression_profile, uint8_t security_mode)
 * \brief  Function for RRC to configure a Radio Bearer.
 * \param[in]  ctxt_pP           Running context.

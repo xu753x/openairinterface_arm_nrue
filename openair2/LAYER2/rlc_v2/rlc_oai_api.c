@@ -1032,3 +1032,79 @@ void rlc_tick(int frame, int subframe)
     rlc_current_time_last_subframe = subframe;
   }
 }
+//-----------------------------------------------------------------------------
+rlc_op_status_t rrc_rlc_reestablishment_asn1_req (const protocol_ctxt_t    *const ctxt_pP,
+    const rnti_t                   previous_rnti,
+    const LTE_SRB_ToAddModList_t    *const srb2add_listP,
+    const LTE_DRB_ToAddModList_t    *const drb2add_listP
+                                        ) {
+//-----------------------------------------------------------------------------
+  rlc_ue_t *ue;
+  rlc_ue_t *old_ue;
+  int rnti = ctxt_pP->rnti;
+  int module_id = ctxt_pP->module_id;
+  int      cnt;
+  int srb_id=0;
+  int drb_id=0;
+  
+  if (srb2add_listP != NULL) {
+    for (cnt=0; cnt<srb2add_listP->list.count; cnt++) {
+      rlc_manager_lock(rlc_ue_manager);
+      ue = rlc_manager_get_ue(rlc_ue_manager, rnti);
+      old_ue = rlc_manager_get_ue(rlc_ue_manager, previous_rnti);
+      srb_id=srb2add_listP->list.array[cnt]->srb_Identity;
+      
+      //ignore already exist
+      if (ue->srb[srb_id-1] != NULL) {
+        LOG_D(RLC, "%s:%d:%s: warning SRB %d already exist for ue %d, do nothing\n",
+              __FILE__, __LINE__, __FUNCTION__, srb_id, rnti);
+        continue;
+      }
+
+      rlc_manager_unlock(rlc_ue_manager);
+      // create new
+      add_srb(rnti, module_id, srb2add_listP->list.array[cnt]);
+      
+      // TODO take over some parameter from old rnti. But discard all parameters
+      // TS36 322 5.4 Re-establishment procedure
+      // discard the remaining AMD PDUs and byte segments of AMD PDUs in the receiving side
+      // discard all RLC SDUs and AMD PDUs in the transmitting side
+      // discard all RLC control PDUs.
+      if (old_ue->srb[srb_id-1] != NULL) {
+        LOG_D(RLC, "%s:%d:%s: reestablishment SRB %d from %d to ue %d\n",
+              __FILE__, __LINE__, __FUNCTION__, srb_id, previous_rnti, rnti);
+      }
+    }
+  }
+
+  if (drb2add_listP != NULL) {
+    for (cnt=0; cnt<drb2add_listP->list.count; cnt++) {
+      rlc_manager_lock(rlc_ue_manager);
+      ue = rlc_manager_get_ue(rlc_ue_manager, rnti);
+      old_ue = rlc_manager_get_ue(rlc_ue_manager, previous_rnti);
+      drb_id=drb2add_listP->list.array[cnt]->drb_Identity;
+      
+      //ignore already exist
+      if (ue->drb[drb_id-1] != NULL) {
+        LOG_D(RLC, "%s:%d:%s: warning DRB %d already exist for ue %d, do nothing\n",
+              __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
+        continue;
+      }
+      
+      rlc_manager_unlock(rlc_ue_manager);
+      // create new
+      add_drb(rnti, module_id, drb2add_listP->list.array[cnt]);
+      
+      // TODO take over some parameter from old rnti. But discard all parameters
+      // TS36 322 5.4 Re-establishment procedure
+      // discard the remaining AMD PDUs and byte segments of AMD PDUs in the receiving side
+      // discard all RLC SDUs and AMD PDUs in the transmitting side
+      // discard all RLC control PDUs.
+      if ((old_ue->drb[drb_id-1] != NULL)) {
+        LOG_D(RLC, "%s:%d:%s: reestablishment DRB %d from %d to ue %d\n",
+              __FILE__, __LINE__, __FUNCTION__, drb_id, previous_rnti, rnti);
+      }
+    }
+  }
+  return RLC_OP_STATUS_OK;
+}

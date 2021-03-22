@@ -619,6 +619,23 @@ rlc_op_status_t rlc_stat_req     (
   unsigned int *const stat_timer_poll_retransmit_timed_out,
   unsigned int *const stat_timer_status_prohibit_timed_out);
 
+/*! \fn rlc_op_status_t rrc_rlc_reestablishment_asn1_req (
+    const protocol_ctxt_t           *const ctxt_pP,
+    const rnti_t                    previous_rnti,
+    const LTE_SRB_ToAddModList_t    *const srb2add_listP,
+    const LTE_DRB_ToAddModList_t    *const drb2add_listP)
+* \brief  Function for RRC to reestablish a Radio Bearer.
+* \param[in]  ctxtP            Running context.
+* \param[in]  previous_rnti    Previous RNTI.
+* \param[in]  srb2add_listP    SRB configuration list to be created.
+* \param[in]  drb2add_listP    DRB configuration list to be created.
+* \return     A status about the processing, OK or error code.
+*/
+rlc_op_status_t rrc_rlc_reestablishment_asn1_req (const protocol_ctxt_t    *const ctxt_pP,
+    const rnti_t                    previous_rnti,
+    const LTE_SRB_ToAddModList_t    *const srb2add_listP,
+    const LTE_DRB_ToAddModList_t    *const drb2add_listP);
+
 /*! \fn int rlc_module_init(int enb_flag)
 * \brief    RAZ the memory of the RLC layer, initialize the memory pool manager (mem_block_t structures mainly used in RLC module).
 */

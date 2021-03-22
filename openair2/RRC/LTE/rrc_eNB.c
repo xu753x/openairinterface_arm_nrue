@@ -2173,30 +2173,17 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
   //  pdcp_remove_UE(&ctxt_prior);
   // add UE info to freeList for RU_thread to remove the UE instead of remove it here
     /* Refresh SRBs/DRBs */
-  rrc_pdcp_config_asn1_req(ctxt_pP,
+  rrc_pdcp_reestablishment_asn1_req(ctxt_pP,
+                           reestablish_rnti,
                            *SRB_configList2, // NULL,
-                           DRB_configList,
-                           NULL,
-                           0xff, // already configured during the securitymodecommand
-                           NULL,
-                           NULL,
-                           NULL
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-                           , (LTE_PMCH_InfoList_r9_t *) NULL
-#endif
-                           , NULL);
+                           DRB_configList);
 
   /* Refresh SRBs/DRBs */
   if (!NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
-    rrc_rlc_config_asn1_req(ctxt_pP,
+    rrc_rlc_reestablishment_asn1_req(ctxt_pP,
+                            reestablish_rnti,
                             *SRB_configList2, // NULL,
-                            DRB_configList,
-                            NULL
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-                            , (LTE_PMCH_InfoList_r9_t *) NULL,
-                            0,
-                            0
-#endif
+                            DRB_configList
                            );
   }
   LOG_I(RRC, "[RRCConnectionReestablishment]put UE %x into freeList\n", reestablish_rnti);
@@ -7389,24 +7376,16 @@ rrc_eNB_decode_ccch(
                              MSC_AS_TIME_FMT" CONFIG_REQ UE %x SRB",
                              MSC_AS_TIME_ARGS(ctxt_pP),
                              ue_context_p->ue_context.rnti);
-          rrc_pdcp_config_asn1_req(ctxt_pP,
+          rrc_pdcp_reestablishment_asn1_req(ctxt_pP,
+                                   c_rnti,
                                    ue_context_p->ue_context.SRB_configList,
-                                   (LTE_DRB_ToAddModList_t *) NULL,
-                                   (LTE_DRB_ToReleaseList_t *) NULL,
-                                   0xff,
-                                   NULL,
-                                   NULL,
-                                   NULL
-                                   , (LTE_PMCH_InfoList_r9_t *) NULL
-                                   ,NULL);
+                                   (LTE_DRB_ToAddModList_t *) NULL);
 
           if (!NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
-            rrc_rlc_config_asn1_req(ctxt_pP,
+            rrc_rlc_reestablishment_asn1_req(ctxt_pP,
+                                    c_rnti,
                                     ue_context_p->ue_context.SRB_configList,
-                                    (LTE_DRB_ToAddModList_t *) NULL,
-                                    (LTE_DRB_ToReleaseList_t *) NULL
-                                    , (LTE_PMCH_InfoList_r9_t *) NULL,
-                                    0,0
+                                    (LTE_DRB_ToAddModList_t *) NULL
                                    );
           }
 
