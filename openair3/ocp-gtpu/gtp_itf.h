@@ -18,6 +18,7 @@ extern "C" {
 #define gtpv1u_update_ngu_tunnel ocp_gtpv1u_update_ngu_tunnel
 #define gtpv1u_delete_ngu_tunnel ocp_gtpv1u_delete_ngu_tunnel
 #define gtpv1u_gNB_task          ocp_gtpv1uTask
+#define nr_gtpv1u_gNB_task       ocp_gtpv1uTask
 #define TASK_VARIABLE            OCP_GTPV1_U
 #else
 #define TASK_VARIABLE            TASK_GTPV1_U

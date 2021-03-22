@@ -844,6 +844,19 @@ void *ocp_gtpv1uTask(void *args)  {
           ocp_gtpv1u_delete_ngu_tunnel(compatInst(ITTI_MSG_DESTINATION_INSTANCE(message_p)),
                                        &GTPV1U_GNB_DELETE_TUNNEL_REQ(message_p));
           break;
+        // DATA TO BE SENT TO 5GC
+        case GTPV1U_GNB_TUNNEL_DATA_REQ: {
+            gtpv1u_enb_tunnel_data_req_t reqTmp;
+            reqTmp.buffer = GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).buffer;
+            reqTmp.length = GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).length;
+            reqTmp.offset = GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).offset;
+            reqTmp.rnti = GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).rnti;
+            reqTmp.rab_id = GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).pdusession_id;
+            gtpv1uSend(compatInst(ITTI_MSG_DESTINATION_INSTANCE(message_p)),
+                    &reqTmp, false, false);
+            itti_free(OCP_GTPV1_U, GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).buffer);
+          }
+        break;
 
         default:
           LOG_E(GTPU, "Received unexpected message %s\n", ITTI_MSG_NAME(message_p));
