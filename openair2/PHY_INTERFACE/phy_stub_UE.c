@@ -2072,8 +2072,19 @@ static float get_bler_val(uint8_t mcs, int sinr)
 
 }
 
+static inline bool is_channel_modeling(void)
+{
+  /* TODO: For now we enable channel modeling based on the node_number.
+     Replace with a command line option to enable/disable channel modeling. */
+  return node_number == 0;
+}
+
 static bool should_drop_transport_block(int sf, uint16_t rnti)
 {
+  if (!is_channel_modeling())
+  {
+    return false;
+  }
   /* Get block error rate (bler_val) from table based on every saved
      MCS and SINR to be used as the cutoff rate for dropping packets.
      Generate random uniform vairable to compare against bler_val. */
