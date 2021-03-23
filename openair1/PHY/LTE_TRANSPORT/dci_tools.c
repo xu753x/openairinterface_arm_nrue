@@ -60,7 +60,7 @@ int16_t find_dlsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type) {
 
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
     AssertFatal(eNB->dlsch[i]!=NULL,"eNB->dlsch[%d] is null\n",i);
-    AssertFatal(eNB->dlsch[i]!=NULL,"eNB->dlsch[%d][0] is null\n",i);
+    AssertFatal(eNB->dlsch[i][0]!=NULL,"eNB->dlsch[%d][0] is null\n",i);
     LOG_D(PHY,"searching for rnti %x : UE index %d=> harq_mask %x, rnti %x, first_free_index %d\n", rnti,i,eNB->dlsch[i][0]->harq_mask,eNB->dlsch[i][0]->rnti,first_free_index);
 
     if ((eNB->dlsch[i][0]->harq_mask >0) &&
