@@ -720,6 +720,7 @@ rrc_gNB_process_NGAP_DOWNLINK_NAS(
     protocol_ctxt_t              ctxt;
     memset(&ctxt, 0, sizeof(protocol_ctxt_t));
     MessageDef *message_p;
+    (void)message_p;
 
     ue_initial_id  = NGAP_DOWNLINK_NAS (msg_p).ue_initial_id;
     gNB_ue_ngap_id = NGAP_DOWNLINK_NAS (msg_p).gNB_ue_ngap_id;

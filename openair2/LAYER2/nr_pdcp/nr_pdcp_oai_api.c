@@ -906,12 +906,14 @@ void pdcp_run(const protocol_ctxt_t *const  ctxt_pP)
   }
 }
 
-static void add_srb(int rnti, struct NR_SRB_ToAddMod *s)
+static void add_srb(int is_gnb, int rnti, struct NR_SRB_ToAddMod *s)
 {
   nr_pdcp_entity_t *pdcp_srb;
   nr_pdcp_ue_t *ue;
 
   int srb_id = s->srb_Identity;
+  int t_reordering = decode_t_reordering(*s->pdcp_Config->t_Reordering);
+  int sn_size = 12;
 
   if (srb_id > 3) {
     LOG_E(PDCP, "%s:%d:%s: fatal, bad srb id %d\n",
@@ -925,7 +927,10 @@ static void add_srb(int rnti, struct NR_SRB_ToAddMod *s)
     LOG_W(PDCP, "%s:%d:%s: warning SRB %d already exist for ue %d, do nothing\n",
           __FILE__, __LINE__, __FUNCTION__, srb_id, rnti);
   } else {
-    pdcp_srb = new_nr_pdcp_entity_srb(1, srb_id, deliver_sdu_srb, ue, deliver_pdu_srb, ue);
+    pdcp_srb = new_nr_pdcp_entity(NR_PDCP_SRB, is_gnb, srb_id,
+                                  deliver_sdu_srb, ue, deliver_pdu_srb, ue,
+                                  sn_size, t_reordering, 0,
+                                  0, 0, NULL, NULL);
     nr_pdcp_ue_add_srb_pdcp_entity(ue, srb_id, pdcp_srb);
 
     LOG_I(PDCP, "%s:%d:%s: added srb %d to ue 0x%x\n",
@@ -1045,7 +1050,7 @@ boolean_t nr_rrc_pdcp_config_asn1_req(
 
   if (srb2add_list != NULL) {
     for (i = 0; i < srb2add_list->list.count; i++) {
-      add_srb(rnti, srb2add_list->list.array[i]);
+      add_srb(ctxt_pP->enb_flag, rnti, srb2add_list->list.array[i]);
     }
   }
 

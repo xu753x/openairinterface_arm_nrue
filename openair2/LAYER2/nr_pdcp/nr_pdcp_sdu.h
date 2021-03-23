@@ -24,7 +24,6 @@
 
 #include <stdint.h>
 
-#include "nr_pdcp_entity.h"
 #include "platform_types.h"
 
 typedef struct nr_pdcp_sdu_t {

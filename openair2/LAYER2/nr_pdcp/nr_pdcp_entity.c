@@ -25,7 +25,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "nr_pdcp_entity_drb_am.h"
 #include "nr_pdcp_entity_srb.h"
 #include "nr_pdcp_security_nea2.h"
 #include "nr_pdcp_sdu.h"

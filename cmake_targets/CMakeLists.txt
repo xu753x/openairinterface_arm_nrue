@@ -1971,7 +1971,6 @@ set(NR_PDCP_SRC
   ${OPENAIR2_DIR}/LAYER2/nr_pdcp/nr_pdcp_timer_thread.c
   ${OPENAIR2_DIR}/LAYER2/nr_pdcp/nr_pdcp_security_nea2.c
   ${OPENAIR2_DIR}/LAYER2/nr_pdcp/asn1_utils.c
-  ${OPENAIR2_DIR}/LAYER2/nr_pdcp/nr_pdcp_entity_srb.c
   )
 
 set(L2_SRC

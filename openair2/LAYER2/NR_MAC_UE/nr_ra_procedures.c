@@ -588,7 +588,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
         // Padding: fill remainder with 0
         if (post_padding > 0){
-          for (int j = 0; j < (TBS_bytes - offset); j++)
+          for (int j = 0; j < (TBS_max - offset); j++)
             payload[offset + j] = 0; // mac_pdu[offset + j] = 0;
         }
       } 
