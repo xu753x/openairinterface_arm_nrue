@@ -73,6 +73,7 @@ void schedule_control_sib1(module_id_t module_id,
                            int time_domain_allocation,
                            uint8_t mcsTableIdx,
                            uint8_t mcs,
+                           uint8_t candidate_idx,
                            int num_total_bytes);
 
 void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP);
@@ -113,7 +114,7 @@ void nr_schedule_RA(module_id_t module_idP, frame_t frameP, sub_frame_t slotP);
 void nr_initiate_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP,
                          uint16_t preamble_index, uint8_t freq_index, uint8_t symbol, int16_t timing_offset);
 
-void nr_clear_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP);
+void nr_clear_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP, NR_RA_t *ra);
 
 int nr_allocate_CCEs(int module_idP, int CC_idP, frame_t frameP, sub_frame_t slotP, int test_only);
 
@@ -328,7 +329,7 @@ uint16_t compute_pucch_prb_size(uint8_t format,
                                 uint8_t n_symb,
                                 uint8_t n_re_ctrl);
 
-void compute_csi_bitlen (NR_CellGroupConfig_t *secondaryCellGroup, NR_UE_info_t *UE_info, int UE_id);
+void compute_csi_bitlen(NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_info_t *UE_info, int UE_id, module_id_t Mod_idP);
 
 int get_dlscs(nfapi_nr_config_request_t *cfg);
 
@@ -346,7 +347,17 @@ void config_nr_mib(int Mod_idP,
                    int cellBarred,
                    int intraFreqReselection);
 
+int nr_write_ce_dlsch_pdu(module_id_t module_idP,
+                          const NR_UE_sched_ctrl_t *ue_sched_ctl,
+                          unsigned char *mac_pdu,
+                          unsigned char drx_cmd,
+                          unsigned char *ue_cont_res_id);
+
 void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP, NR_RA_t *ra);
+
+void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP, NR_RA_t *ra);
+
+void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, sub_frame_t slot, NR_RA_t *ra);
 
 void nr_process_mac_pdu(
     module_id_t module_idP,

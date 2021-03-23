@@ -296,6 +296,8 @@ static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration
       parse_CG_ConfigInfo(rrc,CG_ConfigInfo,NULL);
     } else {
       struct rrc_gNB_ue_context_s *ue_context_p = rrc_gNB_allocate_new_UE_context(rrc);
+      ue_context_p->ue_context.spCellConfig = calloc(1, sizeof(struct NR_SpCellConfig));
+      ue_context_p->ue_context.spCellConfig->spCellConfigDedicated = configuration->scd;
       LOG_I(NR_RRC,"Adding new user (%p)\n",ue_context_p);
       if (!NODE_IS_CU(RC.nrrrc[0]->node_type)) {
         rrc_add_nsa_user(rrc,ue_context_p,NULL);
@@ -739,7 +741,7 @@ rrc_gNB_generate_defaultRRCReconfiguration(
   DRB_config->pdcp_Config = calloc(1, sizeof(*DRB_config->pdcp_Config));
   DRB_config->pdcp_Config->drb = calloc(1,sizeof(*DRB_config->pdcp_Config->drb));
   DRB_config->pdcp_Config->drb->discardTimer = calloc(1, sizeof(*DRB_config->pdcp_Config->drb->discardTimer));
-  *DRB_config->pdcp_Config->drb->discardTimer = NR_PDCP_Config__drb__discardTimer_ms30;
+  *DRB_config->pdcp_Config->drb->discardTimer = NR_PDCP_Config__drb__discardTimer_infinity;
   DRB_config->pdcp_Config->drb->pdcp_SN_SizeUL = calloc(1, sizeof(*DRB_config->pdcp_Config->drb->pdcp_SN_SizeUL));
   *DRB_config->pdcp_Config->drb->pdcp_SN_SizeUL = NR_PDCP_Config__drb__pdcp_SN_SizeUL_len18bits;
   DRB_config->pdcp_Config->drb->pdcp_SN_SizeDL = calloc(1, sizeof(*DRB_config->pdcp_Config->drb->pdcp_SN_SizeDL));
@@ -1520,7 +1522,7 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
         break;
 
       case NR_UL_CCCH_MessageType__c1_PR_rrcSetupRequest:
-        LOG_I(NR_RRC, "Received RRCSetupRequest on UL-CCCH-Message (UE rnti %x)\n", ctxt_pP->rnti);
+        LOG_D(NR_RRC, "Received RRCSetupRequest on UL-CCCH-Message (UE rnti %x)\n", ctxt_pP->rnti);
         ue_context_p = rrc_gNB_get_ue_context(gnb_rrc_inst, ctxt_pP->rnti);
         if (ue_context_p != NULL) {
           rrc_gNB_free_mem_UE_context(ctxt_pP, ue_context_p);
@@ -1627,15 +1629,16 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
                                        CC_id);
             break;
           }
-        }
 
-        if (ue_context_p != NULL) {
           ue_context_p->ue_context.establishment_cause = rrcSetupRequest->establishmentCause;
-        }
 
-        rrc_gNB_generate_RRCSetup(ctxt_pP,
-                                  rrc_gNB_get_ue_context(gnb_rrc_inst, ctxt_pP->rnti),
-                                  CC_id);
+          rrc_gNB_generate_RRCSetup(ctxt_pP,
+                                    rrc_gNB_get_ue_context(gnb_rrc_inst, ctxt_pP->rnti),
+                                    CC_id);
+
+          // FIXME: Check the best place to perform this DRB configuration
+          nr_DRB_preconfiguration(ctxt_pP->rnti);
+        }
         break;
 
       case NR_UL_CCCH_MessageType__c1_PR_rrcResumeRequest:

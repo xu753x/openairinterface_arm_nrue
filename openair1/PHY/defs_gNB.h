@@ -655,6 +655,7 @@ typedef struct {
   int            prach_I0;
 } PHY_MEASUREMENTS_gNB;
 
+#define MAX_NUM_NR_PRACH_PREAMBLES 64
 #define MAX_NUM_NR_RX_RACH_PDUS 4
 #define MAX_NUM_NR_RX_PRACH_PREAMBLES 4
 #define MAX_UL_PDUS_PER_SLOT 8
@@ -830,10 +831,13 @@ typedef struct PHY_VARS_gNB_s {
   time_stats_t ulsch_freq_offset_estimation_stats;
   */
   notifiedFIFO_t *respDecode;
+  notifiedFIFO_t *resp_L1;
+  notifiedFIFO_t *resp_L1_tx;
+  notifiedFIFO_t *resp_RU_tx;
   tpool_t *threadPool;
   int nbDecode;
   uint8_t pusch_proc_threads;
-
+  void * scopeData;
 } PHY_VARS_gNB;
 
 typedef struct LDPCDecode_s {
@@ -870,5 +874,14 @@ union ldpcReqUnion {
   struct ldpcReqId s;
   uint64_t p;
 };
+
+typedef struct processingData_L1 {
+  int frame_rx;
+  int frame_tx;
+  int slot_rx;
+  int slot_tx;
+  openair0_timestamp timestamp_tx;
+  PHY_VARS_gNB *gNB;
+} processingData_L1_t;
 
 #endif

@@ -646,6 +646,7 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
   int res_found = 0;
 
   pucch_pdu->bit_len_harq = O_ack;
+  pucch_pdu->bit_len_csi_part1 = O_csi;
 
   uint16_t O_uci = O_csi + O_ack;
 
@@ -697,6 +698,8 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
 
     n_set = pucch_Config->resourceSetToAddModList->list.count; 
     AssertFatal(n_set>0,"PUCCH resourceSetToAddModList is empty\n");
+
+    LOG_D(MAC, "UCI n_set= %d\n", n_set);
 
     N2 = 2;
     // procedure to select pucch resource id from resource sets according to 
@@ -1131,6 +1134,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
       break;
 
     case NR_RNTI_TC:
+      pos = 1;
       // indicating a DL DCI format 1bit
       *dci_pdu |= ((uint64_t)dci_pdu_rel15->format_indicator & 1) << (dci_size - pos++);
       // Freq domain assignment 0-16 bit
@@ -1159,9 +1163,27 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
       // TPC command for scheduled PUCCH – 2 bits
       for (int i = 0; i < 2; i++)
         *dci_pdu |= (((uint64_t)dci_pdu_rel15->tpc >> (1 - i)) & 1) << (dci_size - pos++);
+      // PUCCH resource indicator – 3 bits
+      for (int i = 0; i < 3; i++)
+        *dci_pdu |= (((uint64_t)dci_pdu_rel15->pucch_resource_indicator >> (2 - i)) & 1) << (dci_size - pos++);
       // PDSCH-to-HARQ_feedback timing indicator – 3 bits
       for (int i = 0; i < 3; i++)
         *dci_pdu |= (((uint64_t)dci_pdu_rel15->pdsch_to_harq_feedback_timing_indicator.val >> (2 - i)) & 1) << (dci_size - pos++);
+
+      LOG_D(NR_MAC,"N_RB = %i\n", N_RB);
+      LOG_D(NR_MAC,"dci_size = %i\n", dci_size);
+      LOG_D(NR_MAC,"fsize = %i\n", fsize);
+      LOG_D(NR_MAC,"dci_pdu_rel15->format_indicator = %i\n", dci_pdu_rel15->format_indicator);
+      LOG_D(NR_MAC,"dci_pdu_rel15->frequency_domain_assignment.val = %i\n", dci_pdu_rel15->frequency_domain_assignment.val);
+      LOG_D(NR_MAC,"dci_pdu_rel15->time_domain_assignment.val = %i\n", dci_pdu_rel15->time_domain_assignment.val);
+      LOG_D(NR_MAC,"dci_pdu_rel15->vrb_to_prb_mapping.val = %i\n", dci_pdu_rel15->vrb_to_prb_mapping.val);
+      LOG_D(NR_MAC,"dci_pdu_rel15->mcs = %i\n", dci_pdu_rel15->mcs);
+      LOG_D(NR_MAC,"dci_pdu_rel15->rv = %i\n", dci_pdu_rel15->rv);
+      LOG_D(NR_MAC,"dci_pdu_rel15->harq_pid = %i\n", dci_pdu_rel15->harq_pid);
+      LOG_D(NR_MAC,"dci_pdu_rel15->dai[0].val = %i\n", dci_pdu_rel15->dai[0].val);
+      LOG_D(NR_MAC,"dci_pdu_rel15->tpc = %i\n", dci_pdu_rel15->tpc);
+      LOG_D(NR_MAC,"dci_pdu_rel15->pdsch_to_harq_feedback_timing_indicator.val = %i\n", dci_pdu_rel15->pdsch_to_harq_feedback_timing_indicator.val);
+
       break;
     }
     break;
@@ -1635,7 +1657,7 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *secon
     add_nr_list(&UE_info->list, UE_id);
     memset(&UE_info->mac_stats[UE_id], 0, sizeof(NR_mac_stats_t));
     set_Y(UE_info->Y[UE_id], rntiP);
-    compute_csi_bitlen(secondaryCellGroup, UE_info, UE_id);
+    compute_csi_bitlen (secondaryCellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup, UE_info, UE_id, mod_idP);
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     memset(sched_ctrl, 0, sizeof(*sched_ctrl));
     sched_ctrl->ta_frame = 0;
@@ -1679,7 +1701,7 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *secon
       add_tail_nr_list(&sched_ctrl->available_ul_harq, harq);
     create_nr_list(&sched_ctrl->feedback_ul_harq, 16);
     create_nr_list(&sched_ctrl->retrans_ul_harq, 16);
-    LOG_I(MAC, "gNB %d] Add NR UE_id %d : rnti %x\n",
+    LOG_I(MAC, "[gNB %d] Add NR UE_id %d : rnti %x\n",
           mod_idP,
           UE_id,
           rntiP);

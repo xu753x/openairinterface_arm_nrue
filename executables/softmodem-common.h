@@ -188,7 +188,7 @@ extern "C"
 #define SOFTMODEM_RFSIM_BIT           (1<<10)
 #define SOFTMODEM_BASICSIM_BIT        (1<<11)
 #define SOFTMODEM_SIML1_BIT           (1<<12)
-#define SOFTMODEM_DOFORMS_BIT         (1<<15)
+#define SOFTMODEM_DOSCOPE_BIT         (1<<15)
 #define SOFTMODEM_RECPLAY_BIT         (1<<16)
 #define SOFTMODEM_ENB_BIT             (1<<20)
 #define SOFTMODEM_GNB_BIT             (1<<21)
@@ -204,7 +204,7 @@ extern "C"
 #define IS_SOFTMODEM_RFSIM           ( get_softmodem_optmask() & SOFTMODEM_RFSIM_BIT)
 #define IS_SOFTMODEM_BASICSIM        ( get_softmodem_optmask() & SOFTMODEM_BASICSIM_BIT)
 #define IS_SOFTMODEM_SIML1           ( get_softmodem_optmask() & SOFTMODEM_SIML1_BIT)
-#define IS_SOFTMODEM_DOFORMS         ( get_softmodem_optmask() & SOFTMODEM_DOFORMS_BIT)
+#define IS_SOFTMODEM_DOSCOPE         ( get_softmodem_optmask() & SOFTMODEM_DOSCOPE_BIT)
 #define IS_SOFTMODEM_IQPLAYER        ( get_softmodem_optmask() & SOFTMODEM_RECPLAY_BIT)
 #define IS_SOFTMODEM_ENB_BIT         ( get_softmodem_optmask() & SOFTMODEM_ENB_BIT)
 #define IS_SOFTMODEM_GNB_BIT         ( get_softmodem_optmask() & SOFTMODEM_GNB_BIT)
@@ -244,6 +244,13 @@ extern char *get_softmodem_function(uint64_t *sofmodemfunc_mask_ptr);
 extern void set_softmodem_sighandler(void);
 extern uint64_t downlink_frequency[MAX_NUM_CCs][4];
 extern int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
+extern uint16_t sl_ahead;
+extern uint16_t sf_ahead;
+extern volatile int  oai_exit;
+
+void tx_func(void *param);
+void rx_func(void *param);
+void ru_tx_func(void *param);
 extern uint8_t nfapi_mode;
 #ifdef __cplusplus
 }

@@ -171,9 +171,6 @@ void rx_nr_prach_ru(RU_t *ru,
 
   int16_t *prach[ru->nb_rx];
   int prach_sequence_length = ru->config.prach_config.prach_sequence_length.value;
-
-  int msg1_frequencystart   = ru->config.prach_config.num_prach_fd_occasions_list[numRA].k1.value;
-
   int sample_offset_slot = (prachStartSymbol==0?0:fp->ofdm_symbol_size*prachStartSymbol+fp->nb_prefix_samples0+fp->nb_prefix_samples*(prachStartSymbol-1));
   //to be checked for mu=0;
 
@@ -195,8 +192,7 @@ void rx_nr_prach_ru(RU_t *ru,
   int16_t *prach2;
 
   if (prach_sequence_length == 0) {
-    LOG_D(PHY,"PRACH (ru %d) in %d.%d, format %d, msg1_frequencyStart %d\n",
-	  ru->idx,frame,slot2,prachFormat,msg1_frequencystart);
+    LOG_D(PHY,"PRACH (ru %d) in %d.%d, format %d\n", ru->idx,frame,slot2,prachFormat);
     AssertFatal(prachFormat<4,"Illegal prach format %d for length 839\n",prachFormat);
     switch (prachFormat) {
     case 0:
@@ -218,8 +214,8 @@ void rx_nr_prach_ru(RU_t *ru,
     }
   }
   else {
-    LOG_D(PHY,"PRACH (ru %d) in %d.%d, format %s, msg1_frequencyStart %d,startSymbol %d\n",
-	  ru->idx,frame,slot,prachfmt[prachFormat],msg1_frequencystart,prachStartSymbol);
+    LOG_D(PHY,"PRACH (ru %d) in %d.%d, format %s,startSymbol %d\n",
+          ru->idx,frame,slot,prachfmt[prachFormat],prachStartSymbol);
 
     switch (prachFormat) {
     case 4: //A1
@@ -284,15 +280,15 @@ void rx_nr_prach_ru(RU_t *ru,
     K=1;
     kbar=2;
   }
-  int n_ra_prb            = msg1_frequencystart;
-  int k                   = (12*n_ra_prb) - 6*fp->N_RB_UL;
+
+  int k1 = (int16_t)ru->config.prach_config.num_prach_fd_occasions_list[numRA].k1.value;
 
   int N_ZC = (prach_sequence_length==0)?839:139;
 
-  if (k<0) k+=(fp->ofdm_symbol_size);
-  
-  k*=K;
-  k+=kbar;
+  if (k1<0) k1+=(fp->ofdm_symbol_size);
+
+  k1*=K;
+  k1+=kbar;
 
   int reps=1;
 
@@ -301,204 +297,299 @@ void rx_nr_prach_ru(RU_t *ru,
 
     // do DFT
     if (mu==1) {
-    if (fp->N_RB_UL <= 100)
-      AssertFatal(1==0,"N_RB_UL %d not support for NR PRACH yet\n",fp->N_RB_UL);
-    else if (fp->N_RB_UL < 137) {
-      if (fp->threequarter_fs==0) { 
-	//40 MHz @ 61.44 Ms/s 
-	//50 MHz @ 61.44 Ms/s
-	prach2 = prach[aa] + (Ncp<<2); // Ncp is for 30.72 Ms/s, so multiply by 2 for I/Q, and 2 to bring to 61.44 Ms/s
-	if (prach_sequence_length == 0) {
-	  if (prachFormat == 0 || prachFormat == 1 || prachFormat == 2) {
-            dftlen=49152;
-            dft(DFT_49152,prach2,rxsigF[aa],1);
+      switch(fp->samples_per_subframe) {
+        case 15360:
+          // 10, 15 MHz @ 15.36 Ms/s
+          prach2 = prach[aa] + (1*Ncp); // Ncp is for 30.72 Ms/s, so divide by 2 to bring to 15.36 Ms/s and multiply by 2 for I/Q
+          if (prach_sequence_length == 0) {
+            if (prachFormat == 0 || prachFormat == 1 || prachFormat == 2) {
+              dftlen=12288;
+              dft(DFT_12288,prach2,rxsigF[aa],1);
+            }
+            if (prachFormat == 1 || prachFormat == 2) {
+              dft(DFT_12288,prach2+24576,rxsigF[aa]+24576,1);
+              reps++;
+            }
+            if (prachFormat == 2) {
+              dft(DFT_12288,prach2+(24576*2),rxsigF[aa]+(24576*2),1);
+              dft(DFT_12288,prach2+(24576*3),rxsigF[aa]+(24576*3),1);
+              reps+=2;
+            }
+            if (prachFormat == 3) {
+              dftlen=3072;
+              for (int i=0;i<4;i++) dft(DFT_3072,prach2+(i*3072*2),rxsigF[aa]+(i*3072*2),1);
+              reps=4;
+            }
+          } else { // 839 sequence
+            if (prachStartSymbol == 0) prach2+=16; // 8 samples @ 15.36 Ms/s in first symbol of each half subframe (15/30 kHz only)
+
+            dftlen=512;
+            dft(DFT_512,prach2,rxsigF[aa],1);
+            if (prachFormat != 9/*C0*/) {
+              dft(DFT_512,prach2+1024,rxsigF[aa]+1024,1);
+              reps++;
+            }
+            if (prachFormat == 5/*A2*/ || prachFormat == 6/*A3*/|| prachFormat == 8/*B4*/ || prachFormat == 10/*C2*/) {
+              dft(DFT_512,prach2+1024*2,rxsigF[aa]+1024*2,1);
+              dft(DFT_512,prach2+1024*3,rxsigF[aa]+1024*3,1);
+              reps+=2;
+            }
+            if (prachFormat == 6/*A3*/ || prachFormat == 8/*B4*/) {
+              dft(DFT_512,prach2+1024*4,rxsigF[aa]+1024*4,1);
+              dft(DFT_512,prach2+1024*5,rxsigF[aa]+1024*5,1);
+              reps+=2;
+            }
+            if (prachFormat == 8/*B4*/) {
+              for (int i=6;i<12;i++) dft(DFT_512,prach2+(1024*i),rxsigF[aa]+(1024*i),1);
+              reps+=6;
+            }
           }
-	  if (prachFormat == 1 || prachFormat == 2) {
-            dft(DFT_49152,prach2+98304,rxsigF[aa]+98304,1);
-	    reps++;
-	  }
-	  if (prachFormat == 2) {
-	    dft(DFT_49152,prach2+(98304*2),rxsigF[aa]+(98304*2),1);
-	    dft(DFT_49152,prach2+(98304*3),rxsigF[aa]+(98304*3),1);
-	    reps+=2;
-	  }
-	  if (prachFormat == 3) {
-            dftlen=12288;
-	    for (int i=0;i<4;i++) dft(DFT_12288,prach2+(i*12288*2),rxsigF[aa]+(i*12288*2),1);
-	    reps=4;
-	  }
-	}// 839 sequence
-	else {
-	  if (prachStartSymbol == 0)
-	    prach2+=64; // 32 samples @ 61.44 Ms/s in first symbol of each half subframe (15/30 kHz only) 
+          break;
 
-	  dftlen=2048;
-	  dft(DFT_2048,prach2,rxsigF[aa],1);
-	  if (prachFormat != 9/*C0*/) { 
-	    dft(DFT_2048,prach2+4096,rxsigF[aa]+4096,1);
-	    reps++;
-	  }
-	  if (prachFormat == 5/*A2*/ || prachFormat == 6/*A3*/|| prachFormat == 8/*B4*/ || prachFormat == 10/*C2*/) {     
-	    dft(DFT_2048,prach2+4096*2,rxsigF[aa]+4096*2,1);
-	    dft(DFT_2048,prach2+4096*3,rxsigF[aa]+4096*3,1);
-	    reps+=2;
-	  }
-	  if (prachFormat == 6/*A3*/ || prachFormat == 8/*B4*/) {     
-	    dft(DFT_2048,prach2+4096*4,rxsigF[aa]+4096*4,1);
-	    dft(DFT_2048,prach2+4096*5,rxsigF[aa]+4096*5,1);
-	    reps+=2;
-	  } 
-	  if (prachFormat == 8/*B4*/) {
-	    for (int i=6;i<12;i++) dft(DFT_2048,prach2+(4096*i),rxsigF[aa]+(4096*i),1);
-	    reps+=6;
-	  }
-	}
-      } else { // threequarter sampling
-	//	40 MHz @ 46.08 Ms/s
-	prach2 = prach[aa] + (3*Ncp); // 46.08 is 1.5 * 30.72, times 2 for I/Q
-	if (prach_sequence_length == 0) {
-	  AssertFatal(fp->N_RB_UL <= 107,"cannot do 108..136 PRBs with 3/4 sampling\n");
-	  if (prachFormat == 0 || prachFormat == 1 || prachFormat == 2) {
-            dftlen=36864;
-            dft(DFT_36864,prach2,rxsigF[aa],1);
-	    reps++;
-	  }
-	  if (prachFormat == 1 || prachFormat == 2) {
-	    dft(DFT_36864,prach2+73728,rxsigF[aa]+73728,1);
-	    reps++;
-	  }
-	  if (prachFormat == 2) {
-            dft(DFT_36864,prach2+(73728*2),rxsigF[aa]+(73728*2),1);
-	    dft(DFT_36864,prach2+(73728*3),rxsigF[aa]+(73728*3),1);
-	    reps+=2;
-	  }
-	  if (prachFormat == 3) {
-	    dftlen=9216;
-	    for (int i=0;i<4;i++) dft(DFT_9216,prach2+(i*9216*2),rxsigF[aa]+(i*9216*2),1);
-	    reps=4;
-	  }
-	} else {
-	  if (prachStartSymbol == 0) prach2+=48; // 24 samples @ 46.08 Ms/s in first symbol of each half subframe (15/30 kHz only)
-	  dftlen=1536;
-	  dft(DFT_1536,prach2,rxsigF[aa],1);
-	  if (prachFormat != 9/*C0*/) {
-	    dft(DFT_1536,prach2+3072,rxsigF[aa]+3072,1);
-	    reps++;
-	  }
-	  
-	  if (prachFormat == 5/*A2*/ || prachFormat == 6/*A3*/|| prachFormat == 8/*B4*/ || prachFormat == 10/*C2*/) {     
-	    dft(DFT_1536,prach2+3072*2,rxsigF[aa]+3072*2,1);
-	    dft(DFT_1536,prach2+3072*3,rxsigF[aa]+3072*3,1);
-	    reps+=2;
-	  } 
-	  if (prachFormat == 6/*A3*/ || prachFormat == 8/*B4*/) {     
-	    dft(DFT_1536,prach2+3072*4,rxsigF[aa]+3072*4,1);
-	    dft(DFT_1536,prach2+3072*5,rxsigF[aa]+3072*5,1);
-	    reps+=2;
-	  } 
-	  if (prachFormat == 8/*B4*/) {
-	    for (int i=6;i<12;i++) dft(DFT_1536,prach2+(3072*i),rxsigF[aa]+(3072*i),1);
-	    reps+=6;
-	  }
-	} // short format
-      } // 3/4 sampling
-    } // <=50 MHz BW
-    else if (fp->N_RB_UL <= 273) {
-      if (fp->threequarter_fs==0) {
-	prach2 = prach[aa] + (Ncp<<3); 
-	//80,90,100 MHz @ 122.88 Ms/s 
+        case 30720:
+          // 20, 25, 30 MHz @ 30.72 Ms/s
+          prach2 = prach[aa] + (2*Ncp); // Ncp is for 30.72 Ms/s, so just multiply by 2 for I/Q
+          if (prach_sequence_length == 0) {
+            if (prachFormat == 0 || prachFormat == 1 || prachFormat == 2) {
+              dftlen=24576;
+              dft(DFT_24576,prach2,rxsigF[aa],1);
+            }
+            if (prachFormat == 1 || prachFormat == 2) {
+              dft(DFT_24576,prach2+49152,rxsigF[aa]+49152,1);
+              reps++;
+            }
+            if (prachFormat == 2) {
+              dft(DFT_24576,prach2+(49152*2),rxsigF[aa]+(49152*2),1);
+              dft(DFT_24576,prach2+(49152*3),rxsigF[aa]+(49152*3),1);
+              reps+=2;
+            }
+            if (prachFormat == 3) {
+              dftlen=6144;
+              for (int i=0;i<4;i++) dft(DFT_6144,prach2+(i*6144*2),rxsigF[aa]+(i*6144*2),1);
+              reps=4;
+            }
+          } else { // 839 sequence
+            if (prachStartSymbol == 0) prach2+=32; // 16 samples @ 30.72 Ms/s in first symbol of each half subframe (15/30 kHz only)
 
-	if (prach_sequence_length == 0) {	
-	  if (prachFormat == 0 || prachFormat == 1 || prachFormat == 2) {
-            dftlen=98304;
-            dft(DFT_98304,prach2,rxsigF[aa],1);
+            dftlen=1024;
+            dft(DFT_1024,prach2,rxsigF[aa],1);
+            if (prachFormat != 9/*C0*/) {
+              dft(DFT_1024,prach2+2048,rxsigF[aa]+2048,1);
+              reps++;
+            }
+            if (prachFormat == 5/*A2*/ || prachFormat == 6/*A3*/|| prachFormat == 8/*B4*/ || prachFormat == 10/*C2*/) {
+              dft(DFT_1024,prach2+2048*2,rxsigF[aa]+2048*2,1);
+              dft(DFT_1024,prach2+2048*3,rxsigF[aa]+2048*3,1);
+              reps+=2;
+            }
+            if (prachFormat == 6/*A3*/ || prachFormat == 8/*B4*/) {
+              dft(DFT_1024,prach2+2048*4,rxsigF[aa]+2048*4,1);
+              dft(DFT_1024,prach2+2048*5,rxsigF[aa]+2048*5,1);
+              reps+=2;
+            }
+            if (prachFormat == 8/*B4*/) {
+              for (int i=6;i<12;i++) dft(DFT_1024,prach2+(2048*i),rxsigF[aa]+(2048*i),1);
+              reps+=6;
+            }
           }
-	  if (prachFormat == 1 || prachFormat == 2) {
-	    dft(DFT_98304,prach2+196608,rxsigF[aa]+196608,1);
-	    reps++;
-	  }
-	  if (prachFormat == 2) {
-	    dft(DFT_98304,prach2+(196608*2),rxsigF[aa]+(196608*2),1);
-	    dft(DFT_98304,prach2+(196608*3),rxsigF[aa]+(196608*3),1);
-	    reps+=2;
-	  }
-	  if (prachFormat == 3) {
-            dftlen=24576;
-	    for (int i=0;i<4;i++) dft(DFT_24576,prach2+(i*2*24576),rxsigF[aa]+(i*2*24576),1);
-	    reps=4;
-	  }
-	}
-	else {
-	  if (prachStartSymbol == 0) prach2+=128; // 64 samples @ 122.88 Ms/s in first symbol of each half subframe (15/30 kHz only) 
+          break;
 
-	  dftlen=4096;
-	  dft(DFT_4096,prach2,rxsigF[aa],1);
-	  if (prachFormat != 9/*C0*/) { 
-	    dft(DFT_4096,prach2+8192,rxsigF[aa]+8192,1);
-	    reps++;
-	  }
-	  
-	  if (prachFormat == 5/*A2*/ || prachFormat == 6/*A3*/|| prachFormat == 8/*B4*/ || prachFormat == 10/*C2*/) {     
-	    dft(DFT_4096,prach2+8192*2,rxsigF[aa]+8192*2,1);
-	    dft(DFT_4096,prach2+8192*3,rxsigF[aa]+8192*3,1);
-	    reps+=2;
-	  } 
-	  if (prachFormat == 6/*A3*/ || prachFormat == 8/*B4*/) {     
-	    dft(DFT_4096,prach2+8192*4,rxsigF[aa]+8192*4,1);
-	    dft(DFT_4096,prach2+8192*5,rxsigF[aa]+8192*5,1);
-	    reps+=2;
-	  } 
-	  if (prachFormat == 8/*B4*/) {
-	    for (int i=6;i<12;i++) dft(DFT_4096,prach2+(8192*i),rxsigF[aa]+(8192*i),1);
-	    reps+=6;
-	  }
-	}
-      } else {
-	AssertFatal(fp->N_RB_UL <= 217,"cannot do more than 217 PRBs with 3/4 sampling\n");
-	prach2 = prach[aa] + (6*Ncp);
-	//	80 MHz @ 92.16 Ms/s
-	if (prach_sequence_length == 0) {
-	  if (prachFormat == 0 || prachFormat == 1 || prachFormat == 2) {
-            dftlen=73728;
-	    dft(DFT_73728,prach2,rxsigF[aa],1);
-	    reps++;
-	  }
-	  if (prachFormat == 1 || prachFormat == 2) {
-	    dft(DFT_73728,prach2+(2*73728),rxsigF[aa]+(2*73728),1);
-	    reps++;
-	  }
-	  if (prachFormat == 3) {
-            dftlen=18432;
-	    for (int i=0;i<4;i++) dft(DFT_18432,prach2+(i*2*18432),rxsigF[aa]+(i*2*18432),1);
-	    reps=4;
-	  }
-	} else {
-	  if (prachStartSymbol == 0) prach2+=96; // 64 samples @ 122.88 Ms/s in first symbol of each half subframe (15/30 kHz only) 
+        case 61440:
+          // 40, 50, 60 MHz @ 61.44 Ms/s
+          prach2 = prach[aa] + (4*Ncp); // Ncp is for 30.72 Ms/s, so multiply by 2 for I/Q, and 2 to bring to 61.44 Ms/s
+          if (prach_sequence_length == 0) {
+            if (prachFormat == 0 || prachFormat == 1 || prachFormat == 2) {
+              dftlen=49152;
+              dft(DFT_49152,prach2,rxsigF[aa],1);
+            }
+            if (prachFormat == 1 || prachFormat == 2) {
+              dft(DFT_49152,prach2+98304,rxsigF[aa]+98304,1);
+              reps++;
+            }
+            if (prachFormat == 2) {
+              dft(DFT_49152,prach2+(98304*2),rxsigF[aa]+(98304*2),1);
+              dft(DFT_49152,prach2+(98304*3),rxsigF[aa]+(98304*3),1);
+              reps+=2;
+            }
+            if (prachFormat == 3) {
+              dftlen=12288;
+              for (int i=0;i<4;i++) dft(DFT_12288,prach2+(i*12288*2),rxsigF[aa]+(i*12288*2),1);
+              reps=4;
+            }
+          } else { // 839 sequence
+            if (prachStartSymbol == 0) prach2+=64; // 32 samples @ 61.44 Ms/s in first symbol of each half subframe (15/30 kHz only)
 
-	  dftlen=3072;
-	  dft(DFT_3072,prach2,rxsigF[aa],1);
-	  if (prachFormat != 9/*C0*/) {
-	    dft(DFT_3072,prach2+6144,rxsigF[aa]+6144,1);
-	    reps++;
-	  }
-	  
-	  if (prachFormat == 5/*A2*/ || prachFormat == 6/*A3*/|| prachFormat == 8/*B4*/ || prachFormat == 10/*C2*/) {     
-	    dft(DFT_3072,prach2+6144*2,rxsigF[aa]+6144*2,1);
-	    dft(DFT_3072,prach2+6144*3,rxsigF[aa]+6144*3,1);
-	    reps+=2;
-	  } 
-	  if (prachFormat == 6/*A3*/ || prachFormat == 8/*B4*/) {     
-	    dft(DFT_3072,prach2+6144*4,rxsigF[aa]+6144*4,1);
-	    dft(DFT_3072,prach2+6144*5,rxsigF[aa]+6144*5,1);
-	    reps+=2;
-	  } 
-	  if (prachFormat == 8/*B4*/) {
-	    for (int i=6;i<12;i++) dft(DFT_3072,prach2+(6144*i),rxsigF[aa]+(6144*i),1);
-	    reps+=6;
-	  }
-	}
+            dftlen=2048;
+            dft(DFT_2048,prach2,rxsigF[aa],1);
+            if (prachFormat != 9/*C0*/) {
+              dft(DFT_2048,prach2+4096,rxsigF[aa]+4096,1);
+              reps++;
+            }
+            if (prachFormat == 5/*A2*/ || prachFormat == 6/*A3*/|| prachFormat == 8/*B4*/ || prachFormat == 10/*C2*/) {
+              dft(DFT_2048,prach2+4096*2,rxsigF[aa]+4096*2,1);
+              dft(DFT_2048,prach2+4096*3,rxsigF[aa]+4096*3,1);
+              reps+=2;
+            }
+            if (prachFormat == 6/*A3*/ || prachFormat == 8/*B4*/) {
+              dft(DFT_2048,prach2+4096*4,rxsigF[aa]+4096*4,1);
+              dft(DFT_2048,prach2+4096*5,rxsigF[aa]+4096*5,1);
+              reps+=2;
+            }
+            if (prachFormat == 8/*B4*/) {
+              for (int i=6;i<12;i++) dft(DFT_2048,prach2+(4096*i),rxsigF[aa]+(4096*i),1);
+              reps+=6;
+            }
+          }
+          break;
+
+        case 46080:
+          // 40 MHz @ 46.08 Ms/s
+          prach2 = prach[aa] + (3*Ncp); // 46.08 is 1.5 * 30.72, times 2 for I/Q
+          if (prach_sequence_length == 0) {
+            if (prachFormat == 0 || prachFormat == 1 || prachFormat == 2) {
+              dftlen=36864;
+              dft(DFT_36864,prach2,rxsigF[aa],1);
+            }
+            if (prachFormat == 1 || prachFormat == 2) {
+              dft(DFT_36864,prach2+73728,rxsigF[aa]+73728,1);
+              reps++;
+            }
+            if (prachFormat == 2) {
+              dft(DFT_36864,prach2+(73728*2),rxsigF[aa]+(73728*2),1);
+              dft(DFT_36864,prach2+(73728*3),rxsigF[aa]+(73728*3),1);
+              reps+=2;
+            }
+            if (prachFormat == 3) {
+              dftlen=9216;
+              for (int i=0;i<4;i++) dft(DFT_9216,prach2+(i*9216*2),rxsigF[aa]+(i*9216*2),1);
+              reps=4;
+            }
+          } else { // 839 sequence
+            if (prachStartSymbol == 0) prach2+=48; // 24 samples @ 46.08 Ms/s in first symbol of each half subframe (15/30 kHz only)
+
+            dftlen=1536;
+            dft(DFT_1536,prach2,rxsigF[aa],1);
+            if (prachFormat != 9/*C0*/) {
+              dft(DFT_1536,prach2+3072,rxsigF[aa]+3072,1);
+              reps++;
+            }
+            if (prachFormat == 5/*A2*/ || prachFormat == 6/*A3*/|| prachFormat == 8/*B4*/ || prachFormat == 10/*C2*/) {
+              dft(DFT_1536,prach2+3072*2,rxsigF[aa]+3072*2,1);
+              dft(DFT_1536,prach2+3072*3,rxsigF[aa]+3072*3,1);
+              reps+=2;
+            }
+            if (prachFormat == 6/*A3*/ || prachFormat == 8/*B4*/) {
+              dft(DFT_1536,prach2+3072*4,rxsigF[aa]+3072*4,1);
+              dft(DFT_1536,prach2+3072*5,rxsigF[aa]+3072*5,1);
+              reps+=2;
+            }
+            if (prachFormat == 8/*B4*/) {
+              for (int i=6;i<12;i++) dft(DFT_1536,prach2+(3072*i),rxsigF[aa]+(3072*i),1);
+              reps+=6;
+            }
+          }
+          break;
+
+        case 122880:
+          // 70, 80, 90, 100 MHz @ 122.88 Ms/s
+          prach2 = prach[aa] + (8*Ncp);
+          if (prach_sequence_length == 0) {
+            if (prachFormat == 0 || prachFormat == 1 || prachFormat == 2) {
+              dftlen=98304;
+              dft(DFT_98304,prach2,rxsigF[aa],1);
+            }
+            if (prachFormat == 1 || prachFormat == 2) {
+              dft(DFT_98304,prach2+196608,rxsigF[aa]+196608,1);
+              reps++;
+            }
+            if (prachFormat == 2) {
+              dft(DFT_98304,prach2+(196608*2),rxsigF[aa]+(196608*2),1);
+              dft(DFT_98304,prach2+(196608*3),rxsigF[aa]+(196608*3),1);
+              reps+=2;
+            }
+            if (prachFormat == 3) {
+              dftlen=24576;
+              for (int i=0;i<4;i++) dft(DFT_24576,prach2+(i*2*24576),rxsigF[aa]+(i*2*24576),1);
+              reps=4;
+            }
+          } else { // 839 sequence
+            if (prachStartSymbol == 0) prach2+=128; // 64 samples @ 122.88 Ms/s in first symbol of each half subframe (15/30 kHz only)
+
+            dftlen=4096;
+            dft(DFT_4096,prach2,rxsigF[aa],1);
+            if (prachFormat != 9/*C0*/) {
+              dft(DFT_4096,prach2+8192,rxsigF[aa]+8192,1);
+              reps++;
+            }
+
+            if (prachFormat == 5/*A2*/ || prachFormat == 6/*A3*/|| prachFormat == 8/*B4*/ || prachFormat == 10/*C2*/) {
+              dft(DFT_4096,prach2+8192*2,rxsigF[aa]+8192*2,1);
+              dft(DFT_4096,prach2+8192*3,rxsigF[aa]+8192*3,1);
+              reps+=2;
+            }
+            if (prachFormat == 6/*A3*/ || prachFormat == 8/*B4*/) {
+              dft(DFT_4096,prach2+8192*4,rxsigF[aa]+8192*4,1);
+              dft(DFT_4096,prach2+8192*5,rxsigF[aa]+8192*5,1);
+              reps+=2;
+            }
+            if (prachFormat == 8/*B4*/) {
+              for (int i=6;i<12;i++) dft(DFT_4096,prach2+(8192*i),rxsigF[aa]+(8192*i),1);
+              reps+=6;
+            }
+          }
+          break;
+
+        case 92160:
+          // 80, 90 MHz @ 92.16 Ms/s
+          prach2 = prach[aa] + (6*Ncp);
+          if (prach_sequence_length == 0) {
+            if (prachFormat == 0 || prachFormat == 1 || prachFormat == 2) {
+              dftlen=73728;
+              dft(DFT_73728,prach2,rxsigF[aa],1);
+            }
+            if (prachFormat == 1 || prachFormat == 2) {
+              dft(DFT_73728,prach2+147456,rxsigF[aa]+147456,1);
+              reps++;
+            }
+            if (prachFormat == 2) {
+              dft(DFT_73728,prach2+(147456*2),rxsigF[aa]+(147456*2),1);
+              dft(DFT_73728,prach2+(147456*3),rxsigF[aa]+(147456*3),1);
+              reps+=2;
+            }
+            if (prachFormat == 3) {
+              dftlen=18432;
+              for (int i=0;i<4;i++) dft(DFT_18432,prach2+(i*2*18432),rxsigF[aa]+(i*2*18432),1);
+              reps=4;
+            }
+          } else {
+            if (prachStartSymbol == 0) prach2+=96; // 64 samples @ 122.88 Ms/s in first symbol of each half subframe (15/30 kHz only)
+
+            dftlen=3072;
+            dft(DFT_3072,prach2,rxsigF[aa],1);
+            if (prachFormat != 9/*C0*/) {
+              dft(DFT_3072,prach2+6144,rxsigF[aa]+6144,1);
+              reps++;
+            }
+
+            if (prachFormat == 5/*A2*/ || prachFormat == 6/*A3*/|| prachFormat == 8/*B4*/ || prachFormat == 10/*C2*/) {
+              dft(DFT_3072,prach2+6144*2,rxsigF[aa]+6144*2,1);
+              dft(DFT_3072,prach2+6144*3,rxsigF[aa]+6144*3,1);
+              reps+=2;
+            }
+            if (prachFormat == 6/*A3*/ || prachFormat == 8/*B4*/) {
+              dft(DFT_3072,prach2+6144*4,rxsigF[aa]+6144*4,1);
+              dft(DFT_3072,prach2+6144*5,rxsigF[aa]+6144*5,1);
+              reps+=2;
+            }
+            if (prachFormat == 8/*B4*/) {
+              for (int i=6;i<12;i++) dft(DFT_3072,prach2+(6144*i),rxsigF[aa]+(6144*i),1);
+              reps+=6;
+            }
+          }
+          break;
+        default:
+          AssertFatal(1==0,"sample_rate %f MHz not support for NR PRACH yet\n", fp->samples_per_subframe / 1000.0);
       }
-    }
     }
     else if (mu==3) {
       if (fp->threequarter_fs) {
@@ -558,7 +649,7 @@ void rx_nr_prach_ru(RU_t *ru,
     int16_t rxsigF_tmp[N_ZC<<1];
     //    if (k+N_ZC > dftlen) { // PRACH signal is split around DC 
     int16_t *rxsigF2=rxsigF[aa];
-    int k2=k<<1;
+    int k2=k1<<1;
 
     for (int j=0;j<N_ZC<<1;j++,k2++) {
       if (k2==(dftlen<<1)) k2=0;
@@ -589,8 +680,7 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
 
   uint16_t           rootSequenceIndex;  
   int                numrootSequenceIndex;
-  uint8_t            restricted_set;      
-  uint8_t            n_ra_prb=0xFF;
+  uint8_t            restricted_set;
   int16_t            *prachF=NULL;
   int                nb_rx;
 
@@ -625,7 +715,6 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
   numrootSequenceIndex   = cfg->num_prach_fd_occasions_list[prach_pdu->num_ra].num_root_sequences.value;
   NCS          = prach_pdu->num_cs;//cfg->num_prach_fd_occasions_list[0].prach_zero_corr_conf.value;
   int prach_sequence_length = cfg->prach_sequence_length.value;
-  int msg1_frequencystart   = cfg->num_prach_fd_occasions_list[prach_pdu->num_ra].k1.value;
   //  int num_unused_root_sequences = cfg->num_prach_fd_occasions_list[0].num_unused_root_sequences.value;
   // cfg->num_prach_fd_occasions_list[0].unused_root_sequences_list
 
@@ -639,7 +728,8 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
   prach_ifft        = gNB->prach_vars.prach_ifft;
   prachF            = gNB->prach_vars.prachF;
   if (LOG_DEBUGFLAG(PRACH)){
-    if ((frame&1023) < 20) LOG_D(PHY,"PRACH (gNB) : running rx_prach for subframe %d, msg1_frequencystart %d, rootSequenceIndex %d\n", subframe,msg1_frequencystart,rootSequenceIndex);
+    if ((frame&1023) < 20) LOG_D(PHY,"PRACH (gNB) : running rx_prach for subframe %d, rootSequenceIndex %d\n",
+                                 subframe, rootSequenceIndex);
   }
 
   start_meas(&gNB->rx_prach);
@@ -679,9 +769,9 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
       
       else {
         preamble_shift  -= NCS;
-	
+
         if (preamble_shift < 0)
-          preamble_shift+=N_ZC;
+          preamble_shift+=((N_ZC/NCS)*NCS);
       }
     } else { // This is the high-speed case
       new_dft = 0;
@@ -841,14 +931,13 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
   if (LOG_DUMPFLAG(PRACH)) {
     //int en = dB_fixed(signal_energy((int32_t*)&rxsigF[0][0],840));
     //    if (en>60) {
-      int k = (12*n_ra_prb) - 6*fp->N_RB_UL;
+      int k1 = (int16_t)cfg->num_prach_fd_occasions_list[prach_pdu->num_ra].k1.value;
       
-      if (k<0) k+=fp->ofdm_symbol_size;
+      if (k1<0) k1+=fp->ofdm_symbol_size;
       
-      k*=12;
-      k+=13;
-      k*=2;
-      
+      k1*=12;
+      k1+=13;
+      k1*=2;
 
       LOG_M("rxsigF.m","prach_rxF",&rxsigF[0][0],12288,1,1);
       LOG_M("prach_rxF_comp0.m","prach_rxF_comp0",prachF,1024,1,1);
