@@ -1160,7 +1160,6 @@ void *vnf_nr_p7_thread_start(void *ptr) {
   p7_vnf->config->nrach_indication = &phy_nrach_indication;
   p7_vnf->config->malloc = &vnf_allocate;
   p7_vnf->config->free = &vnf_deallocate;
-  p7_vnf->config->trace = &vnf_trace;
   p7_vnf->config->vendor_ext = &phy_vendor_ext;
   p7_vnf->config->user_data = p7_vnf;
   p7_vnf->mac->user_data = p7_vnf;
@@ -1197,7 +1196,6 @@ void *vnf_p7_thread_start(void *ptr) {
   p7_vnf->config->nrach_indication = &phy_nrach_indication;
   p7_vnf->config->malloc = &vnf_allocate;
   p7_vnf->config->free = &vnf_deallocate;
-  p7_vnf->config->trace = &vnf_trace;
   p7_vnf->config->vendor_ext = &phy_vendor_ext;
   p7_vnf->config->user_data = p7_vnf;
   p7_vnf->mac->user_data = p7_vnf;
@@ -1505,7 +1503,6 @@ void configure_nr_nfapi_vnf(char *vnf_addr, int vnf_p5_port) {
   nfapi_vnf_config_t *config = nfapi_vnf_config_create();
   config->malloc = malloc;
   config->free = free;
-  config->trace = &vnf_trace;
   config->vnf_p5_port = vnf_p5_port;
   config->vnf_ipv4 = 1;
   config->vnf_ipv6 = 0;
@@ -1556,7 +1553,6 @@ void configure_nfapi_vnf(char *vnf_addr, int vnf_p5_port) {
   nfapi_vnf_config_t *config = nfapi_vnf_config_create();
   config->malloc = malloc;
   config->free = free;
-  config->trace = &vnf_trace;
   config->vnf_p5_port = vnf_p5_port;
   config->vnf_ipv4 = 1;
   config->vnf_ipv6 = 0;
