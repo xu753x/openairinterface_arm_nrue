@@ -545,7 +545,8 @@ int main( int argc, char **argv ) {
     fapi_nr_config_request_t *nrUE_config = &UE[CC_id]->nrUE_config;
 
     nr_init_frame_parms_ue(&UE[CC_id]->frame_parms, nrUE_config, *mac->scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0]);
-    init_symbol_rotation(&UE[CC_id]->frame_parms, UE[CC_id]->frame_parms.dl_CarrierFreq);
+
+    init_symbol_rotation(&UE[CC_id]->frame_parms);
     init_nr_ue_vars(UE[CC_id], 0, abstraction_flag);
 
     #ifdef FR2_TEST
@@ -580,7 +581,7 @@ int main( int argc, char **argv ) {
   ctxt_pP.enb_flag = ENB_FLAG_NO;
   ctxt_pP.rnti = 0x1234;
   node_type = ngran_UE;
-  rrc_ue_generate_RRCSetupRequest(&ctxt_pP, 0);
+  nr_rrc_ue_generate_RRCSetupRequest(&ctxt_pP, 0);
   if (create_tasks_nrue(1) < 0) {
     printf("cannot create ITTI tasks\n");
     exit(-1); // need a softer mode

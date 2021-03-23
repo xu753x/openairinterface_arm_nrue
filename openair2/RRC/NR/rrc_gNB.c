@@ -117,7 +117,6 @@ extern rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * con
     const NR_DRB_ToAddModList_t   * const drb2add_listP,
     const NR_DRB_ToReleaseList_t  * const drb2release_listP,
     const LTE_PMCH_InfoList_r9_t * const pmch_InfoList_r9_pP,
-    struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_srb_bearer2add_list,
     struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_drb_bearer2add_list);
 
 static inline uint64_t bitStr_to_uint64(BIT_STRING_t *asn);
@@ -1030,7 +1029,6 @@ rrc_gNB_process_RRCReconfigurationComplete(
                           SRB_configList, // NULL,
                           DRB_configList,
                           DRB_Release_configList2,
-                          NULL,
                           NULL,
                           NULL);
   }
