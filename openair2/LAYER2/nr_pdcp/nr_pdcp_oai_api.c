@@ -746,6 +746,17 @@ boolean_t rrc_pdcp_config_asn1_req(
   return 0;
 }
 
+/* Dummy function due to dependency from LTE libraries */
+boolean_t rrc_pdcp_reestablishment_asn1_req (
+  const protocol_ctxt_t *const  ctxt_pP,
+  const rnti_t previous_rnti,
+  LTE_SRB_ToAddModList_t  *const srb2add_list_pP,
+  LTE_DRB_ToAddModList_t  *const drb2add_list_pP
+)
+{
+  return 0;
+}
+
 void nr_DRB_preconfiguration(uint16_t crnti)
 {
 

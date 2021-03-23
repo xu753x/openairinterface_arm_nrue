@@ -864,6 +864,15 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
   return 0;
 }
 
+/* Dummy function due to dependency from LTE libraries */
+rlc_op_status_t rrc_rlc_reestablishment_asn1_req (const protocol_ctxt_t    *const ctxt_pP,
+    const rnti_t                   previous_rnti,
+    const LTE_SRB_ToAddModList_t    *const srb2add_listP,
+    const LTE_DRB_ToAddModList_t    *const drb2add_listP)
+{
+  return 0;
+}
+
 rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP,
     const LTE_SRB_ToAddModList_t   * const srb2add_listP,
     const NR_DRB_ToAddModList_t   * const drb2add_listP,
