@@ -269,6 +269,19 @@ void nr_process_mac_pdu(
                               pdu_len-mac_subheader_len,
                               0);
               break;
+        case UL_SCH_LCID_CCCH_48:
+          mac_subheader_len = 1;
+          nr_mac_rrc_data_ind(module_idP,
+                              CC_id,
+                              frameP,
+                              0,
+                              0,
+                              rnti,
+                              CCCH,
+                              pdu_ptr+mac_subheader_len,
+                              pdu_len-mac_subheader_len,
+                              0);
+              break;
         case UL_SCH_LCID_DTCH:
                 //  check if LCID is valid at current time.
                 if(((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->F){

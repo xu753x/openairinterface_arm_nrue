@@ -912,7 +912,7 @@ static void add_srb(int is_gnb, int rnti, struct NR_SRB_ToAddMod *s)
   nr_pdcp_ue_t *ue;
 
   int srb_id = s->srb_Identity;
-  int t_reordering = decode_t_reordering(*s->pdcp_Config->t_Reordering);
+  int t_reordering = 0;// TODO decode_t_reordering(*s->pdcp_Config->t_Reordering);
   int sn_size = 12;
 
   if (srb_id > 3) {
