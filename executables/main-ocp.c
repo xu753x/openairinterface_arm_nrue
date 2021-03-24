@@ -82,6 +82,7 @@ int split73;
 int usrp_tx_thread = 0;
 char * split73_config;
 int split73;
+uint16_t ue_idx_standalone = 0xFFFF;
 AGENT_RRC_xface *agent_rrc_xface[NUM_MAX_ENB]= {0};
 AGENT_MAC_xface *agent_mac_xface[NUM_MAX_ENB]= {0};
 void flexran_agent_slice_update(mid_t module_idP) {
