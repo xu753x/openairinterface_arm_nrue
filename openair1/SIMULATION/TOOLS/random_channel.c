@@ -62,6 +62,9 @@ static double snr_dB=25;
 static double sinr_dB=0;
 static unsigned int max_chan;
 static channel_desc_t **defined_channels;
+static char modellist_name[MAX_OPTNAME_SIZE]={0};  
+
+
 void fill_channel_desc(channel_desc_t *chan_desc,
                        uint8_t nb_tx,
                        uint8_t nb_rx,
@@ -224,7 +227,6 @@ double tdl_a_amps_dB[] = {-13.4,
 			  -16.6,
 			  -19.9,
 			  -29.7};
-#define TDL_A_PATHS 23
 
 double tdl_b_delays[] = {0.0000,
 			 0.1072,
@@ -273,7 +275,6 @@ double tdl_b_amps_dB[] = {0,
 			  -14.9,
 			  -9.2,
 			  -11.3};
-#define TDL_B_PATHS 23
 
 double tdl_c_delays[] = {0,
 			 0.2099,
@@ -324,7 +325,6 @@ double tdl_c_amps_dB[] = {-4.4,
 			  -15.7,
 			  -21.6,
 			  -22.8};
-#define TDL_C_PATHS 24
 
 double tdl_d_delays[] = {//0,
 			 0,
@@ -357,7 +357,6 @@ double tdl_d_amps_dB[] = {//-0.2,
 			  -30.0,
 			  -27.7};
 
-#define TDL_D_PATHS 13
 #define TDL_D_RICEAN_FACTOR .046774
 
 double tdl_e_delays[] = {0,
@@ -392,7 +391,6 @@ double tdl_e_amps_dB[] = {//-0.03,
 			  -29.8,
 			  -29.2};
 
-#define TDL_E_PATHS 14
 #define TDL_E_RICEAN_FACTOR 0.0063096
 
 double epa_delays[] = { 0,.03,.07,.09,.11,.19,.41};
@@ -494,15 +492,17 @@ struct complex *R_sqrt_22_EPA_medium[1]     = {R_sqrt_22_EPA_medium_tap};
 
 //Rayleigh1_orth_eff_ch_TM4
 
+
 channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
                                      uint8_t nb_rx,
                                      SCM_t channel_model,
                                      double sampling_rate,
                                      double channel_bandwidth,
-				     double DS_TDL,
+				                     double DS_TDL,
                                      double forgetting_factor,
                                      int32_t channel_offset,
-                                     double path_loss_dB) {
+                                     double path_loss_dB,
+				                     float  noise_power_dB) {
   channel_desc_t *chan_desc = (channel_desc_t *)calloc(1,sizeof(channel_desc_t));
   for(int i=0; i<max_chan;i++) {
   	  if (defined_channels[i] == NULL) {
@@ -530,13 +530,15 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
   chan_desc->path_loss_dB               = path_loss_dB;
   chan_desc->first_run                  = 1;
   chan_desc->ip                                 = 0.0;
+  chan_desc->noise_power_dB             = noise_power_dB;
+
   LOG_I(OCM,"Channel Model (inside of new_channel_desc_scm)=%d\n\n", channel_model);
 
   int tdl_paths=0;
-  double tdl_ricean_factor = 1;
   double *tdl_amps_dB;
   double *tdl_delays;
 
+  /*  Spatial Channel Models (SCM)  channel model from TR 38.901 Section 7.7.2 */
   switch (channel_model) {
     case SCM_A:
       LOG_W(OCM,"channel model not yet supported\n");
@@ -667,36 +669,33 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 
       break;
       
+/*  tapped delay line (TDL)  channel model from TR 38.901 Section 7.7.2 */    
+#define tdl_m(MoDel)\
+    DevAssert(sizeof(tdl_ ## MoDel ## _amps_dB) == sizeof(tdl_ ## MoDel ## _delays)); \
+    tdl_paths=sizeof(tdl_ ## MoDel ## _amps_dB)/sizeof(*tdl_ ## MoDel ## _amps_dB);\
+    tdl_delays=tdl_ ## MoDel ## _delays;\
+    tdl_amps_dB=tdl_ ## MoDel ## _amps_dB
+
     case TDL_A:
     case TDL_B:
     case TDL_C:  
     case TDL_D:  
     case TDL_E:
+      chan_desc->ricean_factor  = 1;
       if (channel_model == TDL_A) {  
-	tdl_paths=TDL_A_PATHS;
-	tdl_delays=tdl_a_delays;
-	tdl_amps_dB=tdl_a_amps_dB;
+        tdl_m(a);
       }else if (channel_model == TDL_B) {
-	  tdl_paths=TDL_B_PATHS;
-	tdl_delays=tdl_b_delays;
-	tdl_amps_dB=tdl_b_amps_dB;      
+        tdl_m(b);
       }
       else if (channel_model == TDL_C) {
-	tdl_paths=TDL_C_PATHS;
-	tdl_delays=tdl_c_delays;
-	tdl_amps_dB=tdl_c_amps_dB;
-	printf("Initializing TDL_C channel with %d paths\n",TDL_C_PATHS);
+        tdl_m(c);
       } else if (channel_model == TDL_D) {
-	tdl_paths=TDL_D_PATHS;
-	tdl_delays=tdl_d_delays;
-	tdl_amps_dB=tdl_d_amps_dB;
-	tdl_ricean_factor = TDL_D_RICEAN_FACTOR;
+        tdl_m(d);
+	chan_desc->ricean_factor = TDL_D_RICEAN_FACTOR;
       } else if (channel_model == TDL_E) {
-	tdl_paths=TDL_E_PATHS-1;
-	tdl_delays=tdl_e_delays+1;
-	tdl_amps_dB=tdl_e_amps_dB;
-	tdl_ricean_factor = TDL_E_RICEAN_FACTOR;
-      }
+        tdl_m(e);
+	chan_desc->ricean_factor = TDL_E_RICEAN_FACTOR;
+      } 
 
       int tdl_pathsby3 = tdl_paths/3;
       if ((tdl_paths%3)>0) tdl_pathsby3++;
@@ -719,7 +718,6 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 	tdl_delays[i] *= DS_TDL;
       }
       chan_desc->delays         = tdl_delays;
-      chan_desc->ricean_factor  = tdl_ricean_factor;
       chan_desc->aoa            = 0;
       chan_desc->random_aoa     = 0;
       chan_desc->ch             = (struct complex **) malloc(nb_tx*nb_rx*sizeof(struct complex *));
@@ -1628,8 +1626,21 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 
   chan_desc->nb_paths = 10;
   return(chan_desc);
-}
-     
+} /* channel_desc_t *new_channel_desc_scm  */
+
+channel_desc_t * find_channel_desc_fromname( char *modelname ) {
+  for(int i=0; i<max_chan;i++) {
+  	  if (defined_channels[i] != NULL) {
+  	  	  if (strcmp(defined_channels[i]->model_name,modelname) == 0)
+  	  	  	  return defined_channels[i];                             
+  	     }
+  	  }
+  LOG_E(OCM,"Model %s not found \n", modelname);
+  return NULL;
+} /* channel_desc_t * new_channel_desc_fromconfig */
+
+
+
 void free_channel_desc_scm(channel_desc_t *ch) {
   // Must be made cleanly, a lot of leaks...
   if (max_chan != 0) defined_channels[ch->chan_idx]=NULL;
@@ -1654,12 +1665,19 @@ void free_channel_desc_scm(channel_desc_t *ch) {
   free(ch->R_sqrt);        
   free(ch->ch); 
   free(ch->chF);
-  free(ch->a);  
+  free(ch->a);
+  free(ch->model_name);
   free(ch);                                          
 }
 
 void set_channeldesc_owner(channel_desc_t *cdesc, uint32_t module_id) {
 	cdesc->module_id=module_id;
+}
+
+void set_channeldesc_name(channel_desc_t *cdesc,char *modelname) {
+	if(cdesc->model_name != NULL)
+      free(cdesc->model_name);
+	cdesc->model_name=strdup(modelname);
 }
 
 int random_channel(channel_desc_t *desc, uint8_t abstraction_flag) {
@@ -1848,7 +1866,7 @@ double N_RB2channel_bandwidth(uint16_t N_RB) {
       break;
 
     default:
-      LOG_E(PHY,"Unknown N_PRB\n");
+      LOG_E(OCM,"Unknown N_PRB\n");
       return(-1);
   }
   return(channel_bandwidth);
@@ -1861,21 +1879,19 @@ static int channelmod_print_help(char *buff, int debug, telnet_printfunc_t prnt 
 	prnt("channelmod show current: display the currently used models in the running executable\n");
 	prnt("channelmod modify <model index> <param name> <param value>: set the specified parameters in a current model to the given value\n");
 	prnt("                  <model index> specifies the model, the show current model command can be used to list the current models indexes\n");
-	prnt("                  <param name> can be one of \"riceanf\", \"aoa\", \"randaoa\", \"ploss\", \"offset\", \"forgetf\"\n");
+	prnt("                  <param name> can be one of \"riceanf\", \"aoa\", \"randaoa\", \"ploss\", \"noise_power_dB\", \"offset\", \"forgetf\"\n");
     return CMDSTATUS_FOUND;
 }
 
 
 static void display_channelmodel(channel_desc_t *cd,int debug, telnet_printfunc_t prnt) {
 	char *module_id_str[]=MODULEID_STR_INIT;
-	if (cd->module_id != 0) {
-		prnt("model owner: %s\n",module_id_str[cd->module_id]);
-	}
+		prnt("model owner: %s\n",(cd->module_id != 0)?module_id_str[cd->module_id]:"not set");
 	prnt("nb_tx: %i    nb_rx: %i    taps: %i bandwidth: %lf    sampling: %lf\n",cd->nb_tx, cd->nb_rx, cd->nb_taps, cd->channel_bandwidth, cd->sampling_rate);
 	prnt("channel length: %i    Max path delay: %lf   ricean fact.: %lf    angle of arrival: %lf (randomized:%s)\n",
 		 cd->channel_length, cd->Td, cd->ricean_factor, cd->aoa, (cd->random_aoa?"Yes":"No"));
-	prnt("max Doppler: %lf    path loss: %lf   rchannel offset: %i    forget factor; %lf\n",
-		 cd->max_Doppler, cd->path_loss_dB, cd->channel_offset, cd->forgetting_factor);	
+	prnt("max Doppler: %lf    path loss: %lf  noise: %lf rchannel offset: %i    forget factor; %lf\n",
+	     cd->max_Doppler, cd->path_loss_dB, cd->noise_power_dB, cd->channel_offset, cd->forgetting_factor);	
 	prnt("Initial phase: %lf   nb_path: %i \n",
 		 cd->ip, cd->nb_paths);		
 	for (int i=0; i<cd->nb_taps ; i++) {
@@ -1896,7 +1912,8 @@ static int channelmod_show_cmd(char *buff, int debug, telnet_printfunc_t prnt) {
     } else if ( strcmp(subcmd,"current") == 0) {
       for (int i=0; i < max_chan ; i++) {
       	if (defined_channels[i] != NULL) {
-      	  prnt("model %i %s: \n----------------\n", i, map_int_to_str(channelmod_names,defined_channels[i]->modelid));
+      	  prnt("model %i %s type %s: \n----------------\n", i, (defined_channels[i]->model_name !=NULL)?defined_channels[i]->model_name:"(no name set)",
+      	  	   map_int_to_str(channelmod_names,defined_channels[i]->modelid));
           display_channelmodel(defined_channels[i],debug,prnt); 
         }
       }
@@ -1945,6 +1962,9 @@ static int channelmod_modify_cmd(char *buff, int debug, telnet_printfunc_t prnt)
     } else if ( strcmp(param,"ploss") == 0) {
         double dbl = atof(value);
         defined_channels[cd_id]->path_loss_dB=dbl;     
+    } else if ( strcmp(param,"noise_power_dB") == 0) {
+      double dbl = atof(value);
+      defined_channels[cd_id]->noise_power_dB=dbl;
     } else if ( strcmp(param,"offset") == 0) {
         int i = atoi(value);
         defined_channels[cd_id]->channel_offset=i;     
@@ -1966,10 +1986,10 @@ static int channelmod_modify_cmd(char *buff, int debug, telnet_printfunc_t prnt)
   return CMDSTATUS_FOUND;           
 }
    
-int modelid_fromname(char *modelname) {                                             
-  int modelid=map_str_to_int(channelmod_names,modelname);   
+int modelid_fromstrtype(char *modeltype) {                                             
+  int modelid=map_str_to_int(channelmod_names,modeltype);   
   if (modelid < 0)   
-    LOG_E(OCM,"random_channel.c: Error channel model %s unknown\n",modelname);
+    LOG_E(OCM,"random_channel.c: Error channel model %s unknown\n",modeltype);
   return modelid;
 }
 
@@ -1983,18 +2003,60 @@ double channelmod_get_sinr_dB(void) {
 
 void init_channelmod(void) {
   paramdef_t channelmod_params[] = CHANNELMOD_PARAMS_DESC;
-  int ret = config_get( channelmod_params,sizeof(channelmod_params)/sizeof(paramdef_t),CHANNELMOD_SECTION);
+  
+  int numparams=sizeof(channelmod_params)/sizeof(paramdef_t);
+  int ret = config_get( channelmod_params,numparams,CHANNELMOD_SECTION);
   AssertFatal(ret >= 0, "configuration couldn't be performed");
     defined_channels=calloc(max_chan,sizeof( channel_desc_t*));
   AssertFatal(defined_channels!=NULL, "couldn't allocate %u channel descriptors\n",max_chan);
-  
+
   /* look for telnet server, if it is loaded, add the channel modeling commands to it */
   add_telnetcmd_func_t addcmd = (add_telnetcmd_func_t)get_shlibmodule_fptr("telnetsrv", TELNET_ADDCMD_FNAME);
 
   if (addcmd != NULL) {
     addcmd("channelmod",channelmod_vardef,channelmod_cmdarray);
   }
-}
+} /* init_channelmod */
+
+
+int load_channellist(uint8_t nb_tx, uint8_t nb_rx, double sampling_rate, double channel_bandwidth) {
+  paramdef_t achannel_params[] = CHANNELMOD_MODEL_PARAMS_DESC;
+  paramlist_def_t channel_list;
+  memset(&channel_list,0,sizeof(paramlist_def_t));
+  memcpy(channel_list.listname,modellist_name,sizeof(channel_list.listname)-1);
+
+  int numparams = sizeof(achannel_params)/sizeof(paramdef_t);
+  config_getlist( &channel_list,achannel_params,numparams, CHANNELMOD_SECTION);
+  AssertFatal(channel_list.numelt>0, "List %s.%s not found in config file\n",CHANNELMOD_SECTION,channel_list.listname);
+  int pindex_NAME = config_paramidx_fromname(achannel_params,numparams, CHANNELMOD_MODEL_NAME_PNAME);  
+  int pindex_DT = config_paramidx_fromname(achannel_params,numparams, CHANNELMOD_MODEL_DT_PNAME );
+  int pindex_FF = config_paramidx_fromname(achannel_params,numparams, CHANNELMOD_MODEL_FF_PNAME );
+  int pindex_CO = config_paramidx_fromname(achannel_params,numparams, CHANNELMOD_MODEL_CO_PNAME );
+  int pindex_PL = config_paramidx_fromname(achannel_params,numparams, CHANNELMOD_MODEL_PL_PNAME );
+  int pindex_NP = config_paramidx_fromname(achannel_params,numparams, CHANNELMOD_MODEL_NP_PNAME );
+  int pindex_TYPE = config_paramidx_fromname(achannel_params,numparams, CHANNELMOD_MODEL_TYPE_PNAME);
+  
+  for (int i=0; i<channel_list.numelt; i++) {
+
+    int modid = modelid_fromstrtype( *(channel_list.paramarray[i][pindex_TYPE].strptr) );
+    if (modid <0) {
+     LOG_E(OCM,"Valid channel model types:\n");
+     for (int m=0; channelmod_names[i].name != NULL ; m++) {
+          printf(" %s ", map_int_to_str(channelmod_names,m ));
+      }
+      AssertFatal(0, "\n  Choose a valid model type\n");
+    }
+    channel_desc_t *channeldesc_p = new_channel_desc_scm(nb_tx,nb_rx,modid,sampling_rate,channel_bandwidth,
+				                                         *(channel_list.paramarray[i][pindex_DT].dblptr), *(channel_list.paramarray[i][pindex_FF].dblptr), 
+				                                         *(channel_list.paramarray[i][pindex_CO].iptr), *(channel_list.paramarray[i][pindex_PL].dblptr),
+				                                         *(channel_list.paramarray[i][pindex_NP].dblptr) );
+	AssertFatal( (channeldesc_p!= NULL), "Could not allocate channel %s type %s \n",*(channel_list.paramarray[i][pindex_NAME].strptr), *(channel_list.paramarray[i][pindex_TYPE].strptr));
+	channeldesc_p->model_name = strdup(*(channel_list.paramarray[i][pindex_NAME].strptr));
+	LOG_I(OCM,"Model %s type %s allocated from config file, list %s\n",*(channel_list.paramarray[i][pindex_NAME].strptr), 
+		  *(channel_list.paramarray[i][pindex_TYPE].strptr), modellist_name);
+  } /* for loop on channel_list */
+  return channel_list.numelt;
+} /* load_channelist */
 
 #ifdef RANDOM_CHANNEL_MAIN
 #define sampling_rate 5.0
