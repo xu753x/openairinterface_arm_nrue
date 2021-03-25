@@ -577,7 +577,8 @@ void nr_initiate_ra_proc(module_id_t module_idP,
       LOG_D(MAC, "%s() Msg2[%04d%d] SFN/SF:%04d%d\n", __FUNCTION__, ra->Msg2_frame, ra->Msg2_slot, frameP, slotP);
 
       int loop = 0;
-      if (!ra->cfra) {
+      // This condition allows for the usage of a preconfigured rnti for the first UE
+      if (!ra->cfra || ra->rnti == 0) {
         do {
           ra->rnti = (taus() % 65518) + 1;
           loop++;
@@ -1293,6 +1294,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
                                                                                     pdsch_pdu_rel15->rbStart,
                                                                                     pdsch_pdu_rel15->BWPSize);
 
+    dci_payload.format_indicator = 1;
     dci_payload.time_domain_assignment.val = time_domain_assignment;
     dci_payload.vrb_to_prb_mapping.val = 0;
     dci_payload.mcs = pdsch_pdu_rel15->mcsIndex[0];
@@ -1378,14 +1380,13 @@ void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, sub_fram
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
   NR_UE_harq_t *harq = &UE_info->UE_sched_ctrl[UE_id].harq_processes[current_harq_pid];
 
-  LOG_D(MAC, "ue %d, rnti %d, harq is waiting %d, round %d, frame %d %d, harq id %d\n", UE_id, ra->rnti, harq->is_waiting, harq->round, frame, slot, current_harq_pid);
+  LOG_D(NR_MAC, "ue %d, rnti %d, harq is waiting %d, round %d, frame %d %d, harq id %d\n", UE_id, ra->rnti, harq->is_waiting, harq->round, frame, slot, current_harq_pid);
 
   if (harq->is_waiting == 0)
   {
     if (harq->round == 0)
     {
       nr_clear_ra_proc(module_id, CC_id, frame, ra);
-      free(ra->preambles.preamble_list);
       UE_info->active[UE_id] = true;
       LOG_I(NR_MAC, "(ue %i, rnti 0x%04x) Received Ack of RA-Msg4. CBRA procedure succeeded!\n", UE_id, ra->rnti);
     }

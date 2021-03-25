@@ -257,19 +257,7 @@ void nr_process_mac_pdu(
               // todo
               break;
         case UL_SCH_LCID_CCCH:
-          mac_subheader_len = 1;
-          nr_mac_rrc_data_ind(module_idP,
-                              CC_id,
-                              frameP,
-                              0,
-                              0,
-                              rnti,
-                              CCCH,
-                              pdu_ptr+mac_subheader_len,
-                              pdu_len-mac_subheader_len,
-                              0);
-              break;
-        case UL_SCH_LCID_CCCH_48:
+        case UL_SCH_LCID_CCCH1:
           mac_subheader_len = 1;
           nr_mac_rrc_data_ind(module_idP,
                               CC_id,
@@ -523,6 +511,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
 
       if(no_sig) {
         LOG_W(NR_MAC, "Random Access %i failed at state %i\n", i, ra->state);
+        nr_mac_remove_ra_rnti_ue(gnb_mod_idP, ra->rnti);
         nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
       } else {
 
@@ -547,8 +536,8 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
         if(ra->cfra) {
 
           LOG_I(NR_MAC, "(ue %i, rnti 0x%04x) CFRA procedure succeeded!\n", UE_id, ra->rnti);
+          nr_mac_remove_ra_rnti_ue(gnb_mod_idP, ra->rnti);
           nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
-          free(ra->preambles.preamble_list);
           UE_info->active[UE_id] = true;
 
         } else {
@@ -586,6 +575,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
         continue;
 
       LOG_W(NR_MAC, "Random Access %i failed at state %i\n", i, ra->state);
+      nr_mac_remove_ra_rnti_ue(gnb_mod_idP, ra->rnti);
       nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
     }
   }
