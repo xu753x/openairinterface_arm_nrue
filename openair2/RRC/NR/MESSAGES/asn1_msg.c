@@ -1023,6 +1023,9 @@ uint8_t do_RRCSetup(const protocol_ctxt_t        *const ctxt_pP,
     SRB1_config = calloc(1, sizeof(NR_SRB_ToAddMod_t));
     SRB1_config->srb_Identity = 1;
     // pdcp_Config->t_Reordering
+    pdcp_Config = calloc(1,sizeof(*pdcp_Config));
+    pdcp_Config->t_Reordering = calloc(1,sizeof(*pdcp_Config->t_Reordering));
+    *pdcp_Config->t_Reordering = NR_PDCP_Config__t_Reordering_ms0;
     SRB1_config->pdcp_Config = pdcp_Config;
     ie->radioBearerConfig.srb_ToAddModList = *SRB_configList;
     ASN_SEQUENCE_ADD(&(*SRB_configList)->list, SRB1_config);

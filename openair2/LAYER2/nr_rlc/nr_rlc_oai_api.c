@@ -493,6 +493,9 @@ rb_found:
       if (ccch_flag) {
         /* for rfsim, because UE send RRCSetupRequest in SRB1 */
         LOG_I(RLC, "[MSG] RRC Setup Request\n");
+	uint8_t *message_buffer;
+        message_buffer = itti_malloc(TASK_RLC_ENB, TASK_DU_F1, size);
+        memcpy (message_buffer, buf, size);
         msg = itti_alloc_new_message(TASK_RLC_ENB, 0, F1AP_INITIAL_UL_RRC_MESSAGE);
         F1AP_INITIAL_UL_RRC_MESSAGE(msg).gNB_DU_ue_id         = 0;
         F1AP_INITIAL_UL_RRC_MESSAGE(msg).mcc                  = RC.nrrrc[0]->configuration.mcc[0];
@@ -500,7 +503,9 @@ rb_found:
         F1AP_INITIAL_UL_RRC_MESSAGE(msg).mnc_digit_length     = RC.nrrrc[0]->configuration.mnc_digit_length[0];
         F1AP_INITIAL_UL_RRC_MESSAGE(msg).nr_cellid            = RC.nrrrc[0]->nr_cellid;
         F1AP_INITIAL_UL_RRC_MESSAGE(msg).crnti                = ue->rnti;
-        F1AP_INITIAL_UL_RRC_MESSAGE(msg).rrc_container        = (unsigned char *)buf;
+//        F1AP_INITIAL_UL_RRC_MESSAGE(msg).rrc_container        = (unsigned char *)buf;
+        F1AP_INITIAL_UL_RRC_MESSAGE(msg).rrc_container        = message_buffer;
+
         F1AP_INITIAL_UL_RRC_MESSAGE(msg).rrc_container_length = size;
         itti_send_msg_to_task(TASK_DU_F1, ENB_MODULE_ID_TO_INSTANCE(0), msg);
         ccch_flag = 0;

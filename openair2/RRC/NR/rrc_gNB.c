@@ -706,6 +706,9 @@ rrc_gNB_generate_defaultRRCReconfiguration(
   memset(*SRB_configList2, 0, sizeof(**SRB_configList2));
   SRB2_config = CALLOC(1, sizeof(*SRB2_config));
   SRB2_config->srb_Identity = 2;
+  SRB2_config->pdcp_Config =  calloc(1,sizeof(*SRB2_config->pdcp_Config));
+  SRB2_config->pdcp_Config->t_Reordering = calloc(1,sizeof(*SRB2_config->pdcp_Config->t_Reordering));
+  *SRB2_config->pdcp_Config->t_Reordering = NR_PDCP_Config__t_Reordering_ms0;
   ASN_SEQUENCE_ADD(&(*SRB_configList2)->list, SRB2_config);
   ASN_SEQUENCE_ADD(&SRB_configList->list, SRB2_config);
 

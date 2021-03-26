@@ -581,7 +581,7 @@ int main( int argc, char **argv ) {
   ctxt_pP.enb_flag = ENB_FLAG_NO;
   ctxt_pP.rnti = 0x1234;
   node_type = ngran_UE;
-  nr_rrc_ue_generate_RRCSetupRequest(&ctxt_pP, 0);
+  nr_rrc_ue_generate_RRCSetupRequest(ctxt_pP.module_id, 0);
   if (create_tasks_nrue(1) < 0) {
     printf("cannot create ITTI tasks\n");
     exit(-1); // need a softer mode

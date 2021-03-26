@@ -708,13 +708,13 @@ printf("\n");
     memcpy (message_buffer, buf, size);
 
     if (first_dcch == 1) {
-      dec_rval = uper_decode(NULL,
+/*      dec_rval = uper_decode(NULL,
                             &asn_DEF_NR_DL_DCCH_Message,
                             (void**)&dl_dcch_msg,
                             &buf[2],
                             size-6,0,0);
       if (dec_rval.code == RC_OK) {
-        if (dl_dcch_msg->message.choice.c1->present == NR_DL_DCCH_MessageType__c1_PR_securityModeCommand) {
+        if (dl_dcch_msg->message.choice.c1->present == NR_DL_DCCH_MessageType__c1_PR_securityModeCommand) { */
           LOG_I(PDCP, "CU send securityModeCommand by F1AP_UE_CONTEXT_SETUP_REQ\n");
           message_p = itti_alloc_new_message (TASK_PDCP_ENB, 0, F1AP_UE_CONTEXT_SETUP_REQ);
           F1AP_UE_CONTEXT_SETUP_REQ (message_p).rrc_container = message_buffer;
@@ -736,7 +736,7 @@ printf("\n");
           F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup_length = 1;
           F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup = &drb;
           itti_send_msg_to_task (TASK_CU_F1, ctxt.module_id, message_p);
-        } else {
+/*        } else {
           LOG_I(PDCP, "other NR_DL_DCCH_Message \n");
           message_p = itti_alloc_new_message (TASK_PDCP_ENB, 0, F1AP_DL_RRC_MESSAGE);
           F1AP_DL_RRC_MESSAGE (message_p).rrc_container = message_buffer;
@@ -752,7 +752,7 @@ printf("\n");
         }
       } else {
         LOG_E(PDCP, "error NR_DL_DCCH_Message \n");
-      }
+      } */
     } else {
       first_dcch = 1;
       message_p = itti_alloc_new_message (TASK_PDCP_ENB, 0, F1AP_DL_RRC_MESSAGE);
@@ -882,12 +882,14 @@ void pdcp_run(const protocol_ctxt_t *const  ctxt_pP)
   }
 }
 
-static void add_srb(int rnti, struct NR_SRB_ToAddMod *s)
+static void add_srb(int is_gnb, int rnti, struct NR_SRB_ToAddMod *s)
 {
   nr_pdcp_entity_t *pdcp_srb;
   nr_pdcp_ue_t *ue;
 
   int srb_id = s->srb_Identity;
+  int t_reordering = decode_t_reordering(*s->pdcp_Config->t_Reordering);
+  int sn_size = 12;
 
   if (srb_id > 3) {
     LOG_E(PDCP, "%s:%d:%s: fatal, bad srb id %d\n",
@@ -901,7 +903,11 @@ static void add_srb(int rnti, struct NR_SRB_ToAddMod *s)
     LOG_W(PDCP, "%s:%d:%s: warning SRB %d already exist for ue %d, do nothing\n",
           __FILE__, __LINE__, __FUNCTION__, srb_id, rnti);
   } else {
-    pdcp_srb = new_nr_pdcp_entity_srb(1, srb_id, deliver_sdu_srb, ue, deliver_pdu_srb, ue);
+//    pdcp_srb = new_nr_pdcp_entity_srb(1, srb_id, deliver_sdu_srb, ue, deliver_pdu_srb, ue);
+    pdcp_srb = new_nr_pdcp_entity(NR_PDCP_SRB, is_gnb, srb_id,
+                                  deliver_sdu_srb, ue, deliver_pdu_srb, ue,
+                                  sn_size, t_reordering, 0,
+                                  0, 0, NULL, NULL);
     nr_pdcp_ue_add_srb_pdcp_entity(ue, srb_id, pdcp_srb);
 
     LOG_I(PDCP, "%s:%d:%s: added srb %d to ue 0x%x\n",
@@ -1021,7 +1027,7 @@ boolean_t nr_rrc_pdcp_config_asn1_req(
 
   if (srb2add_list != NULL) {
     for (i = 0; i < srb2add_list->list.count; i++) {
-      add_srb(rnti, srb2add_list->list.array[i]);
+      add_srb(ctxt_pP->enb_flag, rnti, srb2add_list->list.array[i]);
     }
   }
 
@@ -1079,7 +1085,10 @@ void nr_DRB_preconfiguration(uint16_t crnti)
   srb_ToAddMod->srb_Identity = 1;
   srb_ToAddMod->reestablishPDCP = NULL;
   srb_ToAddMod->discardOnPDCP = NULL;
-  srb_ToAddMod->pdcp_Config = NULL;
+//  srb_ToAddMod->pdcp_Config = NULL;
+  srb_ToAddMod->pdcp_Config = calloc(1,sizeof(*srb_ToAddMod->pdcp_Config));
+  srb_ToAddMod->pdcp_Config->t_Reordering = calloc(1,sizeof(*srb_ToAddMod->pdcp_Config->t_Reordering));
+  *srb_ToAddMod->pdcp_Config->t_Reordering = NR_PDCP_Config__t_Reordering_ms0;
   ASN_SEQUENCE_ADD(&rbconfig->srb_ToAddModList->list,srb_ToAddMod);
 
   rbconfig->srb3_ToRelease = NULL;
