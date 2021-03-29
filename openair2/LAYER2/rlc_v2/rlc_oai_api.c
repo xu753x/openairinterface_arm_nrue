@@ -27,7 +27,8 @@
 #include "asn1_utils.h"
 #include "rlc_ue_manager.h"
 #include "rlc_entity.h"
-
+#include "rlc_entity_am.h"
+#include "rlc_entity_um.h"
 #include <stdint.h>
 
 static rlc_ue_manager_t *rlc_ue_manager;
@@ -1058,22 +1059,28 @@ rlc_op_status_t rrc_rlc_reestablishment_asn1_req (const protocol_ctxt_t    *cons
       if (ue->srb[srb_id-1] != NULL) {
         LOG_D(RLC, "%s:%d:%s: warning SRB %d already exist for ue %d, do nothing\n",
               __FILE__, __LINE__, __FUNCTION__, srb_id, rnti);
+        rlc_manager_unlock(rlc_ue_manager);
         continue;
       }
-
+      
+      if (old_ue->srb[srb_id-1] != NULL) {
+        // TS36 322 5.4 Re-establishment procedure
+        // discard the remaining AMD PDUs and byte segments of AMD PDUs in the receiving side
+        // discard all RLC SDUs and AMD PDUs in the transmitting side
+        // discard all RLC control PDUs.
+        ue->srb[srb_id-1]=old_ue->srb[srb_id-1];
+        rlc_entity_am_reestablishment(ue->srb[srb_id-1]);
+        old_ue->srb[srb_id-1]=NULL;
+        LOG_D(RLC, "%s:%d:%s: reestablishment SRB %d from %d to ue %d\n",
+              __FILE__, __LINE__, __FUNCTION__, srb_id, previous_rnti, rnti);
+        rlc_manager_unlock(rlc_ue_manager);
+        continue;
+      }
       rlc_manager_unlock(rlc_ue_manager);
+      
       // create new
       add_srb(rnti, module_id, srb2add_listP->list.array[cnt]);
       
-      // TODO take over some parameter from old rnti. But discard all parameters
-      // TS36 322 5.4 Re-establishment procedure
-      // discard the remaining AMD PDUs and byte segments of AMD PDUs in the receiving side
-      // discard all RLC SDUs and AMD PDUs in the transmitting side
-      // discard all RLC control PDUs.
-      if (old_ue->srb[srb_id-1] != NULL) {
-        LOG_D(RLC, "%s:%d:%s: reestablishment SRB %d from %d to ue %d\n",
-              __FILE__, __LINE__, __FUNCTION__, srb_id, previous_rnti, rnti);
-      }
     }
   }
 
@@ -1088,22 +1095,40 @@ rlc_op_status_t rrc_rlc_reestablishment_asn1_req (const protocol_ctxt_t    *cons
       if (ue->drb[drb_id-1] != NULL) {
         LOG_D(RLC, "%s:%d:%s: warning DRB %d already exist for ue %d, do nothing\n",
               __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
+        rlc_manager_unlock(rlc_ue_manager);
         continue;
       }
       
+      if ((old_ue->drb[drb_id-1] != NULL)) {
+        // TS36 322 5.4 Re-establishment procedure
+        // discard the remaining AMD PDUs and byte segments of AMD PDUs in the receiving side
+        // discard all RLC SDUs and AMD PDUs in the transmitting side
+        // discard all RLC control PDUs.
+        ue->drb[drb_id-1]=old_ue->drb[drb_id-1];
+        switch (drb2add_listP->list.array[cnt]->rlc_Config->present) {
+        case LTE_RLC_Config_PR_am:
+          rlc_entity_am_reestablishment(ue->drb[drb_id-1]);
+          break;
+        case LTE_RLC_Config_PR_um_Bi_Directional:
+          rlc_entity_um_reestablishment(ue->drb[drb_id-1]);
+          break;
+        default:
+          LOG_E(RLC, "%s:%d:%s: fatal: unhandled DRB type\n",
+                __FILE__, __LINE__, __FUNCTION__);
+          exit(1);
+        }
+        
+        old_ue->drb[drb_id-1]=NULL;
+        LOG_D(RLC, "%s:%d:%s: reestablishment DRB %d from %d to ue %d\n",
+              __FILE__, __LINE__, __FUNCTION__, drb_id, previous_rnti, rnti);
+        rlc_manager_unlock(rlc_ue_manager);
+        continue;
+      }
       rlc_manager_unlock(rlc_ue_manager);
+      
       // create new
       add_drb(rnti, module_id, drb2add_listP->list.array[cnt]);
       
-      // TODO take over some parameter from old rnti. But discard all parameters
-      // TS36 322 5.4 Re-establishment procedure
-      // discard the remaining AMD PDUs and byte segments of AMD PDUs in the receiving side
-      // discard all RLC SDUs and AMD PDUs in the transmitting side
-      // discard all RLC control PDUs.
-      if ((old_ue->drb[drb_id-1] != NULL)) {
-        LOG_D(RLC, "%s:%d:%s: reestablishment DRB %d from %d to ue %d\n",
-              __FILE__, __LINE__, __FUNCTION__, drb_id, previous_rnti, rnti);
-      }
     }
   }
   return RLC_OP_STATUS_OK;

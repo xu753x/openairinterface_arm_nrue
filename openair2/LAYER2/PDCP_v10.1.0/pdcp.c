@@ -1506,6 +1506,52 @@ boolean_t rrc_pdcp_reestablishment_asn1_req (
               key);
         continue;
       }
+      if(pdcp_p_old!=NULL) {
+        // Reestablishment case
+        // When upper layers request a PDCP re-establishment, the UE shall:
+        //  -    set Next_PDCP_TX_SN, and TX_HFN to 0;
+        //  -    set Next_PDCP_RX_SN, and RX_HFN to 0; 
+        //  -    discard all stored PDCP SDUs and PDCP PDUs;
+        //  -    apply the ciphering and integrity protection algorithms and keys provided by upper layers during the re-establishment procedure. 
+        pdcp_p = calloc(1, sizeof(pdcp_t));
+        memcpy(pdcp_p,pdcp_p_old,sizeof(pdcp_t));
+        h_rc = hashtable_insert(pdcp_coll_p, key, pdcp_p);
+        
+        if (h_rc != HASH_TABLE_OK) {
+          LOG_E(PDCP, PROTOCOL_PDCP_CTXT_FMT" CONFIG_ACTION_ADD key 0x%"PRIx64" FAILED\n",
+                PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP, pdcp_p),
+                key);
+          free(pdcp_p);
+          return TRUE;
+        } else {
+          LOG_D(PDCP, PROTOCOL_PDCP_CTXT_FMT" CONFIG_ACTION_ADD key 0x%"PRIx64"\n",
+                PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP, pdcp_p),
+                key);
+        }
+        
+        pdcp_p->is_ue = FALSE;
+        pdcp_add_UE(ctxt_pP);
+        for(int i = 0; i<MAX_MOBILES_PER_ENB; i++) {
+          if(pdcp_eNB_UE_instance_to_rnti[pdcp_eNB_UE_instance_to_rnti_index] == NOT_A_RNTI) {
+            break;
+          }
+        
+          pdcp_eNB_UE_instance_to_rnti_index = (pdcp_eNB_UE_instance_to_rnti_index + 1) % MAX_MOBILES_PER_ENB;
+        }
+        
+        pdcp_eNB_UE_instance_to_rnti[pdcp_eNB_UE_instance_to_rnti_index] = ctxt_pP->rnti;
+        pdcp_eNB_UE_instance_to_rnti_index = (pdcp_eNB_UE_instance_to_rnti_index + 1) % MAX_MOBILES_PER_ENB;
+        LOG_D(PDCP, PROTOCOL_PDCP_CTXT_FMT" reestablishment SRB %ld key 0x%"PRIx64" old rnti %x old key 0x%"PRIx64"\n",
+              PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP, pdcp_p),
+              srb_id,key,previous_rnti,old_key);
+        pdcp_p->next_pdcp_tx_sn                  = 0;
+        pdcp_p->next_pdcp_rx_sn                  = 0;
+        pdcp_p->tx_hfn                           = 0;
+        pdcp_p->rx_hfn                           = 0;
+        pdcp_p->last_submitted_pdcp_rx_sn       = 4095;
+        pdcp_p->first_missing_pdu               = -1;
+        continue;
+      }
       rlc_type = RLC_MODE_AM;
       lc_id = srb_id;
       action = CONFIG_ACTION_ADD;
@@ -1539,14 +1585,6 @@ boolean_t rrc_pdcp_reestablishment_asn1_req (
         NULL,
         NULL,
         NULL);
-      if(pdcp_p_old!=NULL) {
-        // TODO When upper layers request a PDCP re-establishment, the UE shall:
-        //  -    set Next_PDCP_TX_SN, and TX_HFN to 0;
-        //  -    set Next_PDCP_RX_SN, and RX_HFN to 0; 
-        //  -    discard all stored PDCP SDUs and PDCP PDUs;
-        //  -    apply the ciphering and integrity protection algorithms and keys provided by upper layers during the re-establishment procedure. 
-        // Discard all data and sn clear, so create as new bearer
-      }
     }
   }
 
