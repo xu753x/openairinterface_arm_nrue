@@ -138,8 +138,10 @@ typedef struct {
 typedef struct {
   /// Pointers to variables related to DLSCH harq process
   NR_DL_gNB_HARQ_t harq_process;
-  /// TX buffers for UE-spec transmission (antenna ports 5 or 7..14, prior to precoding)
+  /// TX buffers for UE-spec transmission (antenna layers 1,...,4 after to precoding)
   int32_t *txdataF[NR_MAX_NB_LAYERS];
+  /// TX buffers for UE-spec transmission (antenna ports 1000 or 1001,...,1007, before precoding)
+  int32_t *txdataF_precoding[NR_MAX_NB_LAYERS];
   /// Modulated symbols buffer
   int32_t *mod_symbs[NR_MAX_NB_CODEWORDS];
   /// beamforming weights for UE-spec transmission (antenna ports 5 or 7..14), for each codeword, maximum 4 layers?
@@ -830,6 +832,9 @@ typedef struct PHY_VARS_gNB_s {
   time_stats_t ulsch_freq_offset_estimation_stats;
   */
   notifiedFIFO_t *respDecode;
+  notifiedFIFO_t *resp_L1;
+  notifiedFIFO_t *resp_L1_tx;
+  notifiedFIFO_t *resp_RU_tx;
   tpool_t *threadPool;
   int nbDecode;
   uint8_t pusch_proc_threads;
@@ -870,5 +875,14 @@ union ldpcReqUnion {
   struct ldpcReqId s;
   uint64_t p;
 };
+
+typedef struct processingData_L1 {
+  int frame_rx;
+  int frame_tx;
+  int slot_rx;
+  int slot_tx;
+  openair0_timestamp timestamp_tx;
+  PHY_VARS_gNB *gNB;
+} processingData_L1_t;
 
 #endif
