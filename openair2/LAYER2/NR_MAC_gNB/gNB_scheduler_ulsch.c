@@ -256,9 +256,26 @@ void nr_process_mac_pdu(
         case UL_SCH_LCID_SRB3:
               // todo
               break;
+
         case UL_SCH_LCID_CCCH:
         case UL_SCH_LCID_CCCH1:
+          // fixed length
           mac_subheader_len = 1;
+
+          if ( rx_lcid == UL_SCH_LCID_CCCH1 ) {
+            // RRCResumeRequest1 message includes the full I-RNTI and has a size of 8 bytes
+            mac_sdu_len = 8;
+
+            // Check if it is a valid CCCH1 message, we get all 00's messages very often
+            if (pdu_len != 9) {
+              //LOG_E(MAC, "%s() Invalid CCCH1 message!, pdu_len: %d\n", __func__, pdu_len);
+              return;
+            }
+          } else {
+            // fixed length of 6 bytes
+            mac_sdu_len = 6;
+          }
+
           nr_mac_rrc_data_ind(module_idP,
                               CC_id,
                               frameP,
@@ -267,7 +284,7 @@ void nr_process_mac_pdu(
                               rnti,
                               CCCH,
                               pdu_ptr+mac_subheader_len,
-                              pdu_len-mac_subheader_len,
+                              mac_sdu_len,
                               0);
               break;
         case UL_SCH_LCID_DTCH:
@@ -523,8 +540,18 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
               current_rnti);
         continue;
       }
+
       const int UE_id = add_new_nr_ue(gnb_mod_idP, ra->rnti, ra->secondaryCellGroup);
       UE_info->UE_beam_index[UE_id] = ra->beam_id;
+
+        // re-initialize ta update variables after RA procedure completion
+        UE_info->UE_sched_ctrl[UE_id].ta_frame = frameP;
+
+        LOG_I(NR_MAC,
+              "reset RA state information for RA-RNTI %04x/index %d\n",
+              ra->rnti,
+              i);
+
         LOG_I(NR_MAC,
               "[gNB %d][RAPROC] PUSCH with TC-RNTI %x received correctly, "
             "adding UE MAC Context UE_id %d/RNTI %04x\n",
