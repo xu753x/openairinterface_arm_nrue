@@ -1876,6 +1876,7 @@ void configure_gnb_du_mac(int inst) {
   rrc_mac_config_req_gNB(rrc->module_id,
                         rrc->configuration.ssb_SubcarrierOffset,
                         rrc->configuration.pdsch_AntennaPorts,
+                        rrc->configuration.pusch_AntennaPorts,
                         rrc->configuration.pusch_TargetSNRx10,
                         rrc->configuration.pucch_TargetSNRx10,
                         rrc->configuration.scc,
