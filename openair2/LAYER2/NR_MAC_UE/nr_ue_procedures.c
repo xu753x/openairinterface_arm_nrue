@@ -1789,7 +1789,7 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
   frame_t frameP         = dl_info->frame;
   int slot               = dl_info->slot;
   uint8_t *pduP          = (dl_info->rx_ind->rx_indication_body + pdu_id)->pdsch_pdu.pdu;
-  uint16_t pdu_len       = (dl_info->rx_ind->rx_indication_body + pdu_id)->pdsch_pdu.pdu_length;
+  int32_t pdu_len        = (dl_info->rx_ind->rx_indication_body + pdu_id)->pdsch_pdu.pdu_length;
   uint8_t gNB_index      = dl_info->gNB_index;
   uint8_t CC_id          = dl_info->cc_id;
   uint8_t done           = 0;
@@ -1800,7 +1800,7 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
     return;
   }
 
-  LOG_D(MAC, "In %s [%d.%d]: processing PDU %d of %d total number of PDUs...\n", __FUNCTION__, frameP, slot, pdu_id, dl_info->rx_ind->number_pdus);
+  LOG_D(MAC, "In %s [%d.%d]: processing PDU %d (with length %d) of %d total number of PDUs...\n", __FUNCTION__, frameP, slot, pdu_id, pdu_len, dl_info->rx_ind->number_pdus);
 
     while (!done && pdu_len > 0){
         mac_ce_len = 0x0000;
@@ -1825,6 +1825,12 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
               } else {
                 mac_sdu_len = ((NR_MAC_SUBHEADER_LONG *) pduP)->L1;
                 mac_subheader_len = 2;
+              }
+
+              // Check if it is a valid CCCH message, we get all 00's messages very often
+              if ( pdu_len != (mac_subheader_len+mac_sdu_len) ) {
+                LOG_D(NR_MAC, "%s() Invalid CCCH message!, pdu_len: %d\n", __func__, pdu_len);
+                return;
               }
 
               if ( mac_sdu_len > 0 ) {
@@ -2037,7 +2043,7 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
         pduP += ( mac_subheader_len + mac_ce_len + mac_sdu_len );
         pdu_len -= ( mac_subheader_len + mac_ce_len + mac_sdu_len );
         if (pdu_len < 0)
-          LOG_E(MAC, "[MAC] nr_ue_process_mac_pdu, residual mac pdu length %d < 0!\n", pdu_len);
+          LOG_E(MAC, "[UE %d][%d.%d] nr_ue_process_mac_pdu, residual mac pdu length %d < 0!\n", module_idP, frameP, slot, pdu_len);
     }
 }
 
@@ -2372,7 +2378,7 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
       rnti = mac->crnti;
     }
 
-    // FIXME: To be removed
+#ifdef DEBUG_RAR
     LOG_I(NR_MAC, "rarh->E = 0x%x\n", rarh->E);
     LOG_I(NR_MAC, "rarh->T = 0x%x\n", rarh->T);
     LOG_I(NR_MAC, "rarh->RAPID = 0x%x (%i)\n", rarh->RAPID, rarh->RAPID);
@@ -2390,20 +2396,19 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
     LOG_I(NR_MAC, "rar->TCRNTI_1 = 0x%x\n", rar->TCRNTI_1);
     LOG_I(NR_MAC, "rar->TCRNTI_2 = 0x%x\n", rar->TCRNTI_2);
 
-  //#ifdef DEBUG_RAR
-  LOG_I(NR_MAC, "In %s:[%d.%d]: [UE %d] Received RAR with t_alloc %d f_alloc %d ta_command %d mcs %d freq_hopping %d tpc_command %d t_crnti %x \n",
-    __FUNCTION__,
-    frame,
-    slot,
-    mod_id,
-    rar_grant.Msg3_t_alloc,
-    rar_grant.Msg3_f_alloc,
-    ul_time_alignment->ta_command,
-    rar_grant.mcs,
-    rar_grant.freq_hopping,
-    tpc_command,
-    ra->t_crnti);
-  //#endif
+    LOG_I(NR_MAC, "In %s:[%d.%d]: [UE %d] Received RAR with t_alloc %d f_alloc %d ta_command %d mcs %d freq_hopping %d tpc_command %d t_crnti %x \n",
+      __FUNCTION__,
+      frame,
+      slot,
+      mod_id,
+      rar_grant.Msg3_t_alloc,
+      rar_grant.Msg3_f_alloc,
+      ul_time_alignment->ta_command,
+      rar_grant.mcs,
+      rar_grant.freq_hopping,
+      tpc_command,
+      ra->t_crnti);
+#endif
 
     // Schedule Msg3
     ret = nr_ue_pusch_scheduler(mac, is_Msg3, frame, slot, &frame_tx, &slot_tx, rar_grant.Msg3_t_alloc);
