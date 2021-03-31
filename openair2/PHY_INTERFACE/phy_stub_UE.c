@@ -72,6 +72,7 @@ extern nfapi_tx_request_pdu_t* tx_request_pdu[1023][NUM_NFAPI_SUBFRAME][10]; //T
 //extern int timer_subframe;
 //extern int timer_frame;
 
+extern UE_RRC_INST *UE_rrc_inst;
 extern uint16_t sf_ahead;
 
 void Msg1_transmitted(module_id_t module_idP,uint8_t CC_id,frame_t frameP, uint8_t eNB_id);
@@ -2085,6 +2086,17 @@ static bool should_drop_transport_block(int sf, uint16_t rnti)
   {
     return false;
   }
+
+  /* We want to avoid dropping setup messages because this would be pathological.
+     This assumes were in standalone_pnf mode where
+     UE_rrc_inst[0] is module_id = 0 and Info[0] is eNB_index = 0. */
+  UE_STATE_t state = UE_rrc_inst[0].Info[0].State;
+  if (state < RRC_CONNECTED)
+  {
+    LOG_I(MAC, "Not dropping because state: %d", state);
+    return false;
+  }
+
   /* Get block error rate (bler_val) from table based on every saved
      MCS and SINR to be used as the cutoff rate for dropping packets.
      Generate random uniform vairable to compare against bler_val. */
