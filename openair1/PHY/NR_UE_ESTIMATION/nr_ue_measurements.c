@@ -56,7 +56,7 @@ int16_t get_nr_PL(uint8_t Mod_id, uint8_t CC_id, uint8_t gNB_index){
   PHY_VARS_NR_UE *ue = PHY_vars_UE_g[Mod_id][CC_id];
   int16_t pathloss;
 
-  if (get_softmodem_params()->do_ra){
+  if (get_softmodem_params()->do_ra || get_softmodem_params()->sa){
 
     long referenceSignalPower = ue->nrUE_config.ssb_config.ss_pbch_power;
     double rsrp_dBm = 10*log10(ue->measurements.rsrp[gNB_index]) + 30 - ue->rx_total_gain_dB;

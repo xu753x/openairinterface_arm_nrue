@@ -1818,6 +1818,13 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
             case DL_SCH_LCID_CCCH:
               //  MSG4 RRC Setup 38.331
               //  variable length
+              if((ra->ra_state == WAIT_CONTENTION_RESOLUTION)&&(get_softmodem_params()->sa==1)) {
+                LOG_I(MAC, "[UE %d][RAPROC] Frame %d : received Msg3\n",module_idP, frameP);
+
+                if (ra->RA_active == 1){
+                  nr_ra_succeeded(module_idP, frameP, slot);
+                }
+              }
               if(((NR_MAC_SUBHEADER_SHORT *)pduP)->F){
                 mac_sdu_len = ((uint16_t)(((NR_MAC_SUBHEADER_LONG *) pduP)->L1 & 0x7f) << 8)
                               | ((uint16_t)((NR_MAC_SUBHEADER_LONG *) pduP)->L2 & 0xff);

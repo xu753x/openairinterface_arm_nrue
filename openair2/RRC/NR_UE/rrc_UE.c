@@ -1707,11 +1707,12 @@ nr_rrc_ue_process_securityModeCommand(
 //-----------------------------------------------------------------------------
 void nr_rrc_ue_generate_RRCSetupRequest(module_id_t module_id, const uint8_t gNB_index) {
   uint8_t i=0,rv[6];
+  protocol_ctxt_t  ctxt;
 
   if(IS_SOFTMODEM_NOS1) {
     AMF_MODE_ENABLED = 1;
   }
-  
+  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_id, GNB_FLAG_NO, NOT_A_RNTI, 0, 0,gNB_index);
   if(NR_UE_rrc_inst[module_id].Srb0[gNB_index].Tx_buffer.payload_size ==0) {
     // Get RRCConnectionRequest, fill random for now
     // Generate random byte stream for contention resolution
@@ -1745,7 +1746,7 @@ void nr_rrc_ue_generate_RRCSetupRequest(module_id_t module_id, const uint8_t gNB
     log_dump(RRC,NR_UE_rrc_inst[module_id].Srb0[gNB_index].Tx_buffer.Payload,NR_UE_rrc_inst[module_id].Srb0[gNB_index].Tx_buffer.payload_size,
     LOG_DUMP_CHAR,"RRCSetupRequest :\n");
     rrc_data_req_ue (
-      NULL,//ctxt_pP
+      &ctxt,
       DCCH,
       nr_rrc_mui++,
       SDU_CONFIRM_NO,

@@ -539,7 +539,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
         // initialisation by RRC
 
       // TODO: To be removed after RA procedures fully implemented
-      if(get_softmodem_params()->do_ra) {
+      if(get_softmodem_params()->do_ra || get_softmodem_params()->sa) {
         nr_rrc_ue_generate_RRCSetupRequest(mod_id,gNB_id);
       }
 

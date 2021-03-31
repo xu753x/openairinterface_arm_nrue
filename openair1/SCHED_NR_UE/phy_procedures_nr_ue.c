@@ -384,7 +384,7 @@ void nr_ue_pbch_procedures(uint8_t gNB_id,
 
     // Switch to PRACH state if it is first PBCH after initial synch and no timing correction is performed
     if (ue->UE_mode[gNB_id] == NOT_SYNCHED && ue->no_timing_correction == 1){
-      if (get_softmodem_params()->do_ra) {
+      if (get_softmodem_params()->do_ra || get_softmodem_params()->sa) {
         ue->UE_mode[gNB_id] = PRACH;
         ue->prach_resources[gNB_id]->sync_frame = frame_rx;
         ue->prach_resources[gNB_id]->init_msg1 = 0;
