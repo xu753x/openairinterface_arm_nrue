@@ -290,10 +290,14 @@ void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
   // if no data in dmrs cdm group is 1 only even REs have no data
   // if no data in dmrs cdm group is 2 both odd and even REs have no data
   ps->N_PRB_DMRS = num_dmrs_cdm_grps_no_data * (ps->dmrsConfigType == NFAPI_NR_DMRS_TYPE1 ? 6 : 4);
-  ps->N_DMRS_SLOT =
-      get_num_dmrs_symbols(bwp->bwp_Dedicated->pdsch_Config->choice.setup, scc->dmrs_TypeA_Position, ps->nrOfSymbols);
-  ps->dl_dmrs_symb_pos =
-      fill_dmrs_mask(bwp->bwp_Dedicated->pdsch_Config->choice.setup, scc->dmrs_TypeA_Position, ps->nrOfSymbols);
+  ps->N_DMRS_SLOT = get_num_dmrs_symbols(bwp->bwp_Dedicated->pdsch_Config->choice.setup,
+                                         scc->dmrs_TypeA_Position,
+                                         ps->nrOfSymbols,
+                                         ps->startSymbolIndex);
+  ps->dl_dmrs_symb_pos = fill_dmrs_mask(bwp->bwp_Dedicated->pdsch_Config->choice.setup,
+                                        scc->dmrs_TypeA_Position,
+                                        ps->nrOfSymbols,
+                                        ps->startSymbolIndex);
 }
 
 void nr_set_pusch_semi_static(const NR_ServingCellConfigCommon_t *scc,

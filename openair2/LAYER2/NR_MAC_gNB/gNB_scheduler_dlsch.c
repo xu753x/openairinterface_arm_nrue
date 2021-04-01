@@ -378,6 +378,33 @@ int nr_write_ce_dlsch_pdu(module_id_t module_idP,
   return offset;
 }
 
+void getStartNrOfSymbols(NR_BWP_Downlink_t *bwp, int tda, int *startSymbol, int *nrOfSymbols) {
+  struct NR_PDSCH_TimeDomainResourceAllocationList *tdaList =
+    bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
+  AssertFatal(tda < tdaList->list.count,
+              "time_domain_allocation %d>=%d\n",
+              tda,
+              tdaList->list.count);
+
+  const int startSymbolAndLength = tdaList->list.array[tda]->startSymbolAndLength;
+  SLIV2SL(startSymbolAndLength, startSymbol, nrOfSymbols);
+}
+
+nfapi_nr_dmrs_type_e getDmrsConfigType(NR_BWP_Downlink_t *bwp) {
+  return bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1;
+}
+
+uint8_t getN_PRB_DMRS(NR_BWP_Downlink_t *bwp, int numDmrsCdmGrpsNoData) {
+  const nfapi_nr_dmrs_type_e dmrsConfigType = getDmrsConfigType(bwp);
+  if (dmrsConfigType == NFAPI_NR_DMRS_TYPE1) {
+    // if no data in dmrs cdm group is 1 only even REs have no data
+    // if no data in dmrs cdm group is 2 both odd and even REs have no data
+    return numDmrsCdmGrpsNoData * 6;
+  } else {
+    return numDmrsCdmGrpsNoData * 4;
+  }
+}
+
 void nr_store_dlsch_buffer(module_id_t module_id,
                            frame_t frame,
                            sub_frame_t slot) {
