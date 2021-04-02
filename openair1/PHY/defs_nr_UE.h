@@ -142,6 +142,7 @@ typedef struct {
   uint32_t rsrp[7];
   float rsrp_filtered[7]; // after layer 3 filtering
   float rsrq_filtered[7];
+  short rsrp_dBm[7];
   // common measurements
   //! estimated noise power (linear)
   unsigned int   n0_power[NB_ANTENNAS_RX];
@@ -840,8 +841,14 @@ typedef struct {
   /// PDSCH DMRS
   uint32_t ****nr_gold_pdsch[NUMBER_OF_CONNECTED_eNB_MAX];
 
+  // Scrambling IDs used in PDSCH DMRS
+  uint16_t scramblingID[2];
+
   /// PDCCH DMRS
   uint32_t ***nr_gold_pdcch[NUMBER_OF_CONNECTED_eNB_MAX];
+
+  // Scrambling IDs used in PDCCH DMRS
+  uint16_t scramblingID_pdcch;
 
   /// PUSCH DMRS sequence
   uint32_t ****nr_gold_pusch_dmrs;
