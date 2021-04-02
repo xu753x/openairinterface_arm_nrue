@@ -742,7 +742,7 @@ if(!IS_SOFTMODEM_NOS1)
 //  if(IS_SOFTMODEM_NOS1)
 //    init_pdcp();
 
-  if (RC.nb_nr_inst > 0)  {
+  if (RC.nb_nr_L1_inst > 0)  {
     nr_read_config_and_init();
   } else {
     printf("No ITTI, Initializing L1\n");
