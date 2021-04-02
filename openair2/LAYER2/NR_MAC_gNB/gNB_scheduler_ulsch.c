@@ -542,6 +542,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
       }
 
       const int UE_id = add_new_nr_ue(gnb_mod_idP, ra->rnti, ra->secondaryCellGroup);
+      UE_info->UE_sched_ctrl[UE_id].ra_state=1;
       UE_info->UE_beam_index[UE_id] = ra->beam_id;
 
         // re-initialize ta update variables after RA procedure completion
@@ -658,6 +659,7 @@ void pf_ul(module_id_t module_id,
   /* Loop UE_list to calculate throughput and coeff */
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+    if(sched_ctrl->ra_state==1) continue;
     int rbStart = NRRIV2PRBOFFSET(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
 

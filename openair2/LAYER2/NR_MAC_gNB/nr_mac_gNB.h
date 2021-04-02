@@ -541,6 +541,7 @@ typedef struct {
   NR_list_t retrans_ul_harq;
   int dummy;
   NR_UE_mac_ce_ctrl_t UE_mac_ce_ctrl;// MAC CE related information
+  int ra_state;
 } NR_UE_sched_ctrl_t;
 
 typedef struct {
