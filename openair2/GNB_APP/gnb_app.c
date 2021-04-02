@@ -49,7 +49,7 @@ extern unsigned char NB_gNB_INST;
 extern RAN_CONTEXT_t RC;
 
 #define GNB_REGISTER_RETRY_DELAY 10
-#if 0
+
 /*------------------------------------------------------------------------------*/
 static void configure_nr_rrc(uint32_t gnb_id)
 {
@@ -68,7 +68,7 @@ static void configure_nr_rrc(uint32_t gnb_id)
   }
   else AssertFatal(0,"NRRRC context for gNB %d not allocated\n",gnb_id);
 }
-#endif
+
 /*------------------------------------------------------------------------------*/
 
 
@@ -159,8 +159,6 @@ void *gNB_app_task(void *args_p)
 
   LOG_I(PHY, "%s() Task ready initialize structures\n", __FUNCTION__);
 
-<<<<<<< HEAD
-=======
   RCconfig_nr_macrlc();
 
   LOG_I(PHY, "%s() RC.nb_nr_L1_inst:%d\n", __FUNCTION__, RC.nb_nr_L1_inst);
@@ -173,9 +171,6 @@ void *gNB_app_task(void *args_p)
 
   LOG_I(GNB_APP,"Allocating gNB_RRC_INST for %d instances\n",RC.nb_nr_inst);
 
-  RC.nrrrc = (gNB_RRC_INST **)malloc(RC.nb_nr_inst*sizeof(gNB_RRC_INST *));
-  LOG_I(PHY, "%s() RC.nb_nr_inst:%d RC.nrrrc:%p\n", __FUNCTION__, RC.nb_nr_inst, RC.nrrrc);
-
   for (gnb_id = gnb_id_start; (gnb_id < gnb_id_end) ; gnb_id++) {
     RC.nrrrc[gnb_id] = (gNB_RRC_INST*)malloc(sizeof(gNB_RRC_INST));
     LOG_I(PHY, "%s() Creating RRC instance RC.nrrrc[%d]:%p (%d of %d)\n", __FUNCTION__, gnb_id, RC.nrrrc[gnb_id], gnb_id+1, gnb_id_end);
@@ -183,7 +178,6 @@ void *gNB_app_task(void *args_p)
     configure_nr_rrc(gnb_id);
   }
 
->>>>>>> remotes/oai/develop-SA-CBRA
   if (is_x2ap_enabled() ) { //&& !NODE_IS_DU(RC.rrc[0]->node_type)
 	  LOG_I(X2AP, "X2AP enabled \n");
 	  __attribute__((unused)) uint32_t x2_register_gnb_pending = gNB_app_register_x2 (gnb_id_start, gnb_id_end);
