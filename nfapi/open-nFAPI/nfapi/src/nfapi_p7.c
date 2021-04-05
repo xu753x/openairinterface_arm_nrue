@@ -4324,7 +4324,7 @@ static uint8_t unpack_dl_tti_request_body_value(uint8_t **ppReadPackedMsg, uint8
 {
 	nfapi_nr_dl_tti_request_pdu_t* value = (nfapi_nr_dl_tti_request_pdu_t*)msg;
 
-	if(!(pull16(ppReadPackedMsg, &value->PDUSize, end) &&
+	if(!(pull32(ppReadPackedMsg, &value->PDUSize, end) &&
 	 	 pull16(ppReadPackedMsg, &value->PDUType, end) ))
 		  return 0;
 
@@ -6487,8 +6487,7 @@ static uint8_t unpack_rx_indication_body_value(void *tlv, uint8_t **ppReadPacked
 {
 	nfapi_rx_indication_body_t *value = (nfapi_rx_indication_body_t *)tlv;
 
-	NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s value->tl.length in unpack: %u \n", __FUNCTION__,
-				value->tl.length);
+	// the rxBodyEnd points to the end of the cqi PDU's
 	uint8_t *rxBodyEnd = *ppReadPackedMsg + value->tl.length;
 
 	NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s rxBodyEnd: %p end: %p\n", __FUNCTION__,
@@ -6522,11 +6521,8 @@ static uint8_t unpack_rx_indication_body_value(void *tlv, uint8_t **ppReadPacked
 	{
 		value->rx_pdu_list = 0;
 	}
-
-	NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s number_of_pdus = %u\n", __FUNCTION__, value->number_of_pdus);
 	for (int i = 0; i < value->number_of_pdus; i++)
 	{
-		NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s i = %u\n", __FUNCTION__, i);
 		nfapi_tl_t generic_tl;
 
 		// NFAPI_RX_UE_INFORMATION_TAG
