@@ -1150,8 +1150,6 @@ void ru_tx_func(void *param) {
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
   int frame_tx = info->frame_tx;
   int slot_tx = info->slot_tx;
-  int print_frame = 8;
-  char filename[40];
 
   // do TX front-end processing if needed (precoding and/or IDFTs)
   if (ru->feptx_prec) ru->feptx_prec(ru,frame_tx,slot_tx);
@@ -1159,45 +1157,6 @@ void ru_tx_func(void *param) {
   // do OFDM with/without TX front-end processing  if needed
   if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru,frame_tx,slot_tx);
 
-  if(!emulate_rf) {
-    // do outgoing fronthaul (south) if needed
-    if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru,frame_tx,slot_tx,info->timestamp_tx);
-
-    if (ru->fh_north_out) ru->fh_north_out(ru);
-  } else {
-    if(frame_tx == print_frame) {
-      for (int i=0; i<ru->nb_tx; i++) {
-
-        if(slot_tx == 0) {
-          sprintf(filename,"gNBdataF_frame%d_sl%d.m", print_frame, slot_tx);
-          LOG_M(filename,"txdataF_frame",&ru->gNB_list[0]->common_vars.txdataF[i][0],fp->samples_per_frame_wCP, 1, 1);
-
-          sprintf(filename,"tx%ddataF_frame%d_sl%d.m", i, print_frame, slot_tx);
-          LOG_M(filename,"txdataF_frame",&ru->common.txdataF[i][0],fp->samples_per_frame_wCP, 1, 1);
-
-          sprintf(filename,"tx%ddataF_BF_frame%d_sl%d.m", i, print_frame, slot_tx);
-          LOG_M(filename,"txdataF_BF_frame",&ru->common.txdataF_BF[i][0],fp->samples_per_subframe_wCP, 1, 1);
-        }
-
-        if(slot_tx == 9) {
-          sprintf(filename,"tx%ddata_frame%d.m", i, print_frame);
-          LOG_M(filename,"txdata_frame",&ru->common.txdata[i][0],fp->samples_per_frame, 1, 1);
-          sprintf(filename,"tx%ddata_frame%d.dat", i, print_frame);
-          FILE *output_fd = fopen(filename,"w");
-
-          if (output_fd) {
-            fwrite(&ru->common.txdata[i][0],
-                   sizeof(int32_t),
-                   fp->samples_per_frame,
-                   output_fd);
-            fclose(output_fd);
-          } else {
-            LOG_E(PHY,"Cannot write to file %s\n",filename);
-          }
-        }//if(slot_tx == 9)
-      }//for (i=0; i<ru->nb_tx; i++)
-    }//if(frame_tx == print_frame)
-  }//else  emulate_rf
 }
 
 void *ru_thread( void *param ) {
@@ -1211,6 +1170,8 @@ void *ru_thread( void *param ) {
   int                frame    = 1023;
   char               threadname[40];
   int                aa;
+  int print_frame = 8;
+  char filename[40];
 
   nfapi_nr_config_request_scf_t *cfg = &ru->config;
   
@@ -1315,10 +1276,49 @@ void *ru_thread( void *param ) {
     LOG_D(PHY,"[RU_thread] read data: frame_rx = %d, tti_rx = %d\n", frame, slot);
     if (ru->fh_south_in) ru->fh_south_in(ru,&frame,&slot);
     else AssertFatal(1==0, "No fronthaul interface at south port");
+    proc->timestamp_tx = proc->timestamp_rx;
+    proc->frame_tx     = proc->frame_rx;
+    proc->tti_tx      = proc->tti_rx;
 
-    proc->timestamp_tx = proc->timestamp_rx + (sf_ahead*fp->samples_per_subframe);
-    proc->frame_tx     = (proc->tti_rx > (fp->slots_per_frame-1-(fp->slots_per_subframe*sf_ahead))) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
-    proc->tti_tx      = (proc->tti_rx + (fp->slots_per_subframe*sf_ahead))%fp->slots_per_frame;
+    if(!emulate_rf) {
+      // do outgoing fronthaul (south) if needed
+      if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru,proc->frame_tx,proc->tti_tx,proc->timestamp_tx);
+
+      if (ru->fh_north_out) ru->fh_north_out(ru);
+    } else {
+      if(proc->frame_tx == print_frame) {
+        for (int i=0; i<ru->nb_tx; i++) {
+
+          if(proc->tti_tx == 0) {
+            sprintf(filename,"gNBdataF_frame%d_sl%d.m", print_frame, proc->tti_tx);
+            LOG_M(filename,"txdataF_frame",&ru->gNB_list[0]->common_vars.txdataF[i][0],fp->samples_per_frame_wCP, 1, 1);
+
+            sprintf(filename,"tx%ddataF_frame%d_sl%d.m", i, print_frame, proc->tti_tx);
+            LOG_M(filename,"txdataF_frame",&ru->common.txdataF[i][0],fp->samples_per_frame_wCP, 1, 1);
+
+            sprintf(filename,"tx%ddataF_BF_frame%d_sl%d.m", i, print_frame, proc->tti_tx);
+            LOG_M(filename,"txdataF_BF_frame",&ru->common.txdataF_BF[i][0],fp->samples_per_subframe_wCP, 1, 1);
+          }
+
+          if(proc->tti_tx == 9) {
+            sprintf(filename,"tx%ddata_frame%d.m", i, print_frame);
+            LOG_M(filename,"txdata_frame",&ru->common.txdata[i][0],fp->samples_per_frame, 1, 1);
+            sprintf(filename,"tx%ddata_frame%d.dat", i, print_frame);
+            FILE *output_fd = fopen(filename,"w");
+
+            if (output_fd) {
+              fwrite(&ru->common.txdata[i][0],
+                     sizeof(int32_t),
+                     fp->samples_per_frame,
+                     output_fd);
+              fclose(output_fd);
+            } else {
+              LOG_E(PHY,"Cannot write to file %s\n",filename);
+            }
+          }//if(proc->tti_tx == 9)
+        }//for (i=0; i<ru->nb_tx; i++)
+      }//if(proc->frame_tx == print_frame)
+    }//else  emulate_rf
 
     LOG_D(PHY,"AFTER fh_south_in - SFN/SL:%d%d RU->proc[RX:%d.%d TX:%d.%d] RC.gNB[0]:[RX:%d%d TX(SFN):%d]\n",
           frame,slot,
@@ -1380,6 +1380,9 @@ void *ru_thread( void *param ) {
       }
       }
     }
+
+    proc->frame_tx     = (proc->tti_rx > (fp->slots_per_frame-1-(fp->slots_per_subframe*sf_ahead))) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
+    proc->tti_tx      = (proc->tti_rx + (fp->slots_per_subframe*sf_ahead))%fp->slots_per_frame;
 
     // At this point, all information for subframe has been received on FH interface
     res = pullTpool(gNB->resp_L1, gNB->threadPool);
