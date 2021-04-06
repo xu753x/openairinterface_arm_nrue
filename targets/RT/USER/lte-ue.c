@@ -439,14 +439,15 @@ void init_UE_standalone_thread(int ue_idx)
 void init_UE_stub(int nb_inst,
                   int eMBMS_active,
                   int uecap_xer_in,
-                  const char *emul_iface)
+                  const char *emul_iface,
+                  const char *nsa_ipaddr)
 {
   int         inst;
   LOG_I(PHY,"UE : Calling Layer 2 for initialization\n");
   l2_init_ue(eMBMS_active,(uecap_xer_in==1)?uecap_xer:NULL,
              0,// cba_group_active
              0, // HO flag
-             NULL);
+             nsa_ipaddr);
 
   for (inst=0; inst<nb_inst; inst++) {
     LOG_I(PHY,"Initializing memory for UE instance %d (%p)\n",inst,PHY_vars_UE_g[inst]);

@@ -718,7 +718,8 @@ void *UE_thread(void *arg) {
   return NULL;
 }
 
-void init_NR_UE(int nb_inst, const char* rrc_config_path, const char *nsa_ipaddr) {
+void init_NR_UE(int nb_inst, const char *rrc_config_path, const char *nsa_ipaddr)
+{
   int inst;
   NR_UE_MAC_INST_t *mac_inst;
   NR_UE_RRC_INST_t* rrc_inst;

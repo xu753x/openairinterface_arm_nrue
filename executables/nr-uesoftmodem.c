@@ -421,7 +421,7 @@ int main( int argc, char **argv ) {
 #endif
   LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
 
-  init_NR_UE(1,rrc_config_path, nsa_ipaddr);
+  init_NR_UE(1, rrc_config_path, nsa_ipaddr);
   if(IS_SOFTMODEM_NOS1)
 	  init_pdcp();
 
