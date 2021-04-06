@@ -44,7 +44,8 @@
 #include "PHY_INTERFACE/phy_stub_UE.h"
 #include "common/ran_context.h"
 
-extern void openair_rrc_top_init_ue( int eMBMS_active, char *uecap_xer, uint8_t cba_group_active, uint8_t HO_active);
+extern void openair_rrc_top_init_ue(int eMBMS_active, char *uecap_xer, uint8_t cba_group_active,
+                                    uint8_t HO_active, const char *nsa_ipaddr);
 
 void dl_phy_sync_success(module_id_t module_idP, frame_t frameP, unsigned char eNB_index, uint8_t first_sync) { //init as MR
   LOG_D(MAC, "[UE %d] Frame %d: PHY Sync to eNB_index %d successful \n",
@@ -67,7 +68,8 @@ mac_UE_out_of_sync_ind(module_id_t module_idP, frame_t frameP,
 
 int
 mac_top_init_ue(int eMBMS_active, char *uecap_xer,
-                uint8_t cba_group_active, uint8_t HO_active) {
+                uint8_t cba_group_active, uint8_t HO_active,
+                const char *nsa_ipaddr) {
   int i;
   LOG_I(MAC, "[MAIN] Init function start:Nb_UE_INST=%d\n", NB_UE_INST);
 
@@ -101,7 +103,7 @@ mac_top_init_ue(int eMBMS_active, char *uecap_xer,
 
   LOG_I(MAC, "[MAIN] calling RRC\n");
   openair_rrc_top_init_ue(eMBMS_active, uecap_xer, cba_group_active,
-                          HO_active);
+                          HO_active, nsa_ipaddr);
   LOG_I(MAC, "[MAIN][INIT] Init function finished\n");
   return (0);
 }
@@ -120,13 +122,13 @@ int rlcmac_init_global_param_ue(void) {
 
 int
 l2_init_ue(int eMBMS_active, char *uecap_xer, uint8_t cba_group_active,
-           uint8_t HO_active) {
+           uint8_t HO_active, const char *nsa_ipaddr) {
   LOG_I(MAC, "[MAIN] MAC_INIT_GLOBAL_PARAM IN...\n");
   //    NB_NODE=2;
   //    NB_INST=2;
   rlcmac_init_global_param_ue();
   LOG_I(MAC, "[MAIN] init UE MAC functions \n");
-  mac_top_init_ue(eMBMS_active, uecap_xer, cba_group_active, HO_active);
+  mac_top_init_ue(eMBMS_active, uecap_xer, cba_group_active, HO_active, nsa_ipaddr);
   return (1);
 }
 

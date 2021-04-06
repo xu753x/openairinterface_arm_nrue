@@ -166,7 +166,9 @@ rrc_ue_process_MBMSCountingRequest(
   LTE_MBMSCountingRequest_r10_t *MBMSCountingRequest,
   uint8_t eNB_index
 		);
- 
+
+void init_nr_ue_socket(const char *nsa_ipaddr);
+
 protocol_ctxt_t ctxt_pP_local;
 
 
@@ -4907,7 +4909,8 @@ openair_rrc_top_init_ue(
   int eMBMS_active,
   char *uecap_xer,
   uint8_t cba_group_active,
-  uint8_t HO_active
+  uint8_t HO_active,
+  const char *nsa_ipaddr
 )
 //-----------------------------------------------------------------------------
 {
@@ -4941,6 +4944,10 @@ openair_rrc_top_init_ue(
      * crashes when calling this function.
      */
     //init_SL_preconfig(&UE_rrc_inst[module_id],0);
+    if (nsa_ipaddr && *nsa_ipaddr) {
+      LOG_I(PHY, "Starting UE LTE-NR link on %s\n", nsa_ipaddr);
+      init_nr_ue_socket(nsa_ipaddr);
+    }
   } else {
     UE_rrc_inst = NULL;
   }
@@ -6001,5 +6008,119 @@ rrc_rx_tx_ue(
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_RX_TX,VCD_FUNCTION_OUT);
   return (RRC_OK);
+}
+
+/* NSA UE-NR UDP Interface*/
+void *nr_msg_thread_main(void *arg)
+{
+    for (;;)
+    {
+        nsa_msg_t msg;
+        int recvLen = recvfrom(nsa_sock_fd, msg.msg_buffer, sizeof(msg.msg_buffer),
+                               MSG_WAITALL | MSG_TRUNC, NULL, NULL);
+        if (recvLen == -1)
+        {
+            LOG_E(RRC, "%s: recvfrom: %s\n", __func__, strerror(errno));
+            continue;
+        }
+        if (recvLen > sizeof(msg.msg_buffer))
+        {
+            LOG_E(RRC, "%s: truncated message: %d\n", __func__, recvLen);
+            continue;
+        }
+        process_nsa_msg(msg.msg_buffer, recvLen, msg.msg_type);
+  }
+}
+
+void init_nr_ue_socket(const char *nsa_ipaddr)
+{
+    struct sockaddr_in sa =
+    {
+        .sin_family = AF_INET,
+        .sin_port = htons(6007),
+    };
+
+    assert(nsa_sock_fd == -1);
+    nsa_sock_fd = socket(sa.sin_family, SOCK_DGRAM, 0);
+    if (nsa_sock_fd == -1)
+    {
+        LOG_E(RRC, "%s: Error opening socket %d (%d:%s)\n", __FUNCTION__, nsa_sock_fd, errno, strerror(errno));
+        abort();
+    }
+
+    if (inet_aton(nsa_ipaddr, &sa.sin_addr) == 0)
+    {
+        LOG_E(RRC, "Bad nsa_ipaddr '%s'\n", nsa_ipaddr);
+        abort();
+    }
+
+    if (bind(nsa_sock_fd, (struct sockaddr *) &sa, sizeof(sa)) == -1)
+    {
+        LOG_E(RRC,"%s: Failed to bind the socket\n", __FUNCTION__);
+        abort();
+    }
+
+    pthread_t nsa_thread;
+    if (pthread_create(&nsa_thread, NULL, nr_msg_thread_main, NULL) != 0)
+    {
+        LOG_E(RRC,"UE LTE-NR UDP thread error");
+        abort();
+    }
+}
+
+void nsa_sendmsg(const void *message, size_t msgLen, Rrc_Msg_Type_t msgType)
+{
+    nsa_msg_t n_msg;
+    if (msgLen > sizeof(n_msg.msg_buffer))
+    {
+        LOG_E(RRC, "%s: message too big: %zu\n", __func__, msgLen);
+        abort();
+    }
+    n_msg.msg_type = msgType;
+    memcpy(n_msg.msg_buffer, message, msgLen);
+
+    struct sockaddr_in sa;
+    memset(&sa, 0, sizeof(sa)); // TODO: set sa correctly
+    socklen_t addrLen = sizeof(sa);
+    int sent = sendto(nsa_sock_fd, n_msg.msg_buffer, sizeof(n_msg.msg_buffer), 0,
+                      (struct sockaddr_in *)&sa, addrLen);
+    if (sent == -1)
+    {
+        LOG_E(RRC, "%s: sendto: %s\n", __func__, strerror(errno));
+        return;
+    }
+    if (sent != msgLen)
+    {
+        LOG_E(RRC, "%s: sent wrong size: %d != %zu\n", __func__, sent, msgLen);
+        return;
+    }
+}
+
+void process_nsa_msg(const void * buffer, size_t bufLen, Rrc_Msg_Type_t msgType)
+{
+    uint8_t *const msg_buffer[100];
+    switch (msgType)
+    {
+        case UE_CAPABILITY_INFO:
+        {
+            LTE_UE_EUTRA_Capability_v1510_IEs_t * ue_cap_info = NULL;
+            asn_dec_rval_t dec_rval = uper_decode_complete(NULL,
+                            &asn_DEF_LTE_UE_EUTRA_Capability_v1510_IEs,
+                            (void **)&ue_cap_info,
+                            (const void *)msg_buffer,
+                            100);  // What is correct size!!?
+            if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0))
+            {
+              LOG_E( RRC, "Failed to decode UECapabilityInfo (%zu bits)\n",
+              dec_rval.consumed );
+            }
+            // Extract the parameters needed by LTE
+            // Print out contents to verify... as a placeholder
+            // Send 1st RRC message back to NR UE
+        }
+
+        default:
+            LOG_E(RRC, "No NSA Message Found\n");
+    }
 }
 

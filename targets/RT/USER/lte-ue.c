@@ -80,18 +80,10 @@ void init_UE_threads(int);
 void init_UE_threads_stub(int);
 void init_UE_single_thread_stub(int);
 void *UE_thread(void *arg);
-void init_UE(int nb_inst,int eMBMS_active, int uecap_xer_in, int timing_correction, int phy_test, int UE_scan, int UE_scan_carrier, runmode_t mode,int rxgain,int txpowermax,LTE_DL_FRAME_PARMS *fp);
-void init_UE_stub(int nb_inst,int,int,char *);
-void init_UE_stub_single_thread(int nb_inst,int,int,char *);
 int init_timer_thread(void);
-extern void oai_subframe_ind(uint16_t sfn, uint16_t sf);
 extern void multicast_link_start(void (*rx_handlerP) (unsigned int, char *),
-                                 unsigned char _multicast_group, char *multicast_ifname);
-extern int oai_nfapi_crc_indication(nfapi_crc_indication_t *crc_ind);
-extern int oai_nfapi_cqi_indication(nfapi_cqi_indication_t *cqi_ind);
-extern int oai_nfapi_harq_indication(nfapi_harq_indication_t *harq_ind);
-extern int oai_nfapi_sr_indication(nfapi_sr_indication_t *ind);
-extern int oai_nfapi_rx_ind(nfapi_rx_indication_t *ind);
+                                 unsigned char _multicast_group,
+                                 const char *multicast_ifname);
 extern int multicast_link_write_sock(int groupP, char *dataP, uint32_t sizeP);
 
 
@@ -265,7 +257,8 @@ void init_UE(int nb_inst,
              runmode_t mode,
              int rxgain,
              int txpowermax,
-             LTE_DL_FRAME_PARMS *fp0)
+             LTE_DL_FRAME_PARMS *fp0,
+             const char *nsa_ipaddr)
 {
   PHY_VARS_UE *UE;
   int         inst;
@@ -274,7 +267,8 @@ void init_UE(int nb_inst,
   LOG_I(PHY,"UE : Calling Layer 2 for initialization\n");
   l2_init_ue(eMBMS_active,(uecap_xer_in==1)?uecap_xer:NULL,
              0,// cba_group_active
-             0); // HO flag
+             0, // HO flag
+             nsa_ipaddr);
 
   if (PHY_vars_UE_g==NULL) PHY_vars_UE_g = (PHY_VARS_UE ***)calloc(1+nb_inst,sizeof(PHY_VARS_UE **));
 
@@ -400,13 +394,15 @@ void init_UE(int nb_inst,
 void init_UE_stub_single_thread(int nb_inst,
                                 int eMBMS_active,
                                 int uecap_xer_in,
-                                char *emul_iface)
+                                const char *emul_iface,
+                                const char *nsa_ipaddr)
 {
   int         inst;
   LOG_I(PHY,"UE : Calling Layer 2 for initialization, nb_inst: %d \n", nb_inst);
   l2_init_ue(eMBMS_active,(uecap_xer_in==1)?uecap_xer:NULL,
              0,// cba_group_active
-             0); // HO flag
+             0, // HO flag
+             nsa_ipaddr);
 
   for (inst=0; inst<nb_inst; inst++) {
     LOG_I(PHY,"Initializing memory for UE instance %d (%p)\n",inst,PHY_vars_UE_g[inst]);
@@ -443,13 +439,14 @@ void init_UE_standalone_thread(int ue_idx)
 void init_UE_stub(int nb_inst,
                   int eMBMS_active,
                   int uecap_xer_in,
-                  char *emul_iface)
+                  const char *emul_iface)
 {
   int         inst;
   LOG_I(PHY,"UE : Calling Layer 2 for initialization\n");
   l2_init_ue(eMBMS_active,(uecap_xer_in==1)?uecap_xer:NULL,
              0,// cba_group_active
-             0); // HO flag
+             0, // HO flag
+             NULL);
 
   for (inst=0; inst<nb_inst; inst++) {
     LOG_I(PHY,"Initializing memory for UE instance %d (%p)\n",inst,PHY_vars_UE_g[inst]);
