@@ -242,6 +242,21 @@ void rx_func(void *param) {
   int tx_slot_type         = nr_slot_select(cfg,frame_tx,slot_tx);
   int rx_slot_type         = nr_slot_select(cfg,frame_rx,slot_rx);
 
+  notifiedFIFO_elt_t *res;
+
+  if (tx_slot_type == NR_DOWNLINK_SLOT || tx_slot_type == NR_MIXED_SLOT) {
+    res = pullTpool(gNB->resp_L1_tx, gNB->threadPool);
+    processingData_L1_t *syncMsg = (processingData_L1_t *)NotifiedFifoData(res);
+    syncMsg->gNB = gNB;
+    syncMsg->frame_rx = frame_rx;
+    syncMsg->slot_rx = slot_rx;
+    syncMsg->frame_tx = frame_tx;
+    syncMsg->slot_tx = slot_tx;
+    syncMsg->timestamp_tx = info->timestamp_tx;
+    res->key = slot_tx;
+    pushTpool(gNB->threadPool, res);
+  }
+
   if (rx_slot_type == NR_UPLINK_SLOT || rx_slot_type == NR_MIXED_SLOT) {
     // UE-specific RX processing for subframe n
     // TODO: check if this is correct for PARALLEL_RU_L1_TRX_SPLIT
@@ -263,21 +278,6 @@ void rx_func(void *param) {
   stop_meas( &softmodem_stats_rxtx_sf );
   LOG_D(PHY,"%s() Exit proc[rx:%d%d tx:%d%d]\n", __FUNCTION__, frame_rx, slot_rx, frame_tx, slot_tx);
 
-  notifiedFIFO_elt_t *res; 
-
-  if (tx_slot_type == NR_DOWNLINK_SLOT || tx_slot_type == NR_MIXED_SLOT) {
-    res = pullTpool(gNB->resp_L1_tx, gNB->threadPool);
-    processingData_L1_t *syncMsg = (processingData_L1_t *)NotifiedFifoData(res);
-    syncMsg->gNB = gNB;
-    syncMsg->frame_rx = frame_rx;
-    syncMsg->slot_rx = slot_rx;
-    syncMsg->frame_tx = frame_tx;
-    syncMsg->slot_tx = slot_tx;
-    syncMsg->timestamp_tx = info->timestamp_tx;
-    res->key = slot_tx;
-    pushTpool(gNB->threadPool, res);
-  }
-    
 #if 0
   LOG_D(PHY, "rxtx:%lld nfapi:%lld phy:%lld tx:%lld rx:%lld prach:%lld ofdm:%lld ",
         softmodem_stats_rxtx_sf.diff_now, nfapi_meas.diff_now,
