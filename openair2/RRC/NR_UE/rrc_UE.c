@@ -201,6 +201,11 @@ extern rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * con
     const LTE_PMCH_InfoList_r9_t * const pmch_InfoList_r9_pP,
     struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
 
+void init_lte_ue_socket(const char *nsa_ipaddr);
+void *lte_msg_thread_main(void *nsa_sock_fd);
+void nsa_thread(void);
+int nsa_sock_fd;
+
 // from LTE-RRC DL-DCCH RRCConnectionReconfiguration nr-secondary-cell-group-config (encoded)
 int8_t nr_rrc_ue_decode_secondary_cellgroup_config(
     const module_id_t module_id,
@@ -511,7 +516,14 @@ NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(const char* rrc_config_path, const 
                   strerror(errno));
       msg_len=fread(buffer,1,1024,fd);
       fclose(fd);
-      process_nsa_message(NR_UE_rrc_inst, nr_RadioBearerConfigX_r15, buffer,msg_len); 
+      process_nsa_message(NR_UE_rrc_inst, nr_RadioBearerConfigX_r15, buffer,msg_len);
+
+      if (nsa_ipaddr && *nsa_ipaddr)
+      {
+        LOG_I(PHY,"Starting UE LTE-NR link on %s\n", nsa_ipaddr);
+        init_lte_ue_socket(nsa_ipaddr);
+      }
+
     }
   }else{
     NR_UE_rrc_inst = NULL;
@@ -1332,7 +1344,7 @@ static void rrc_ue_generate_RRCSetupComplete(
        "[FRAME %05d][RRC_UE][MOD %02d][][--- PDCP_DATA_REQ/%d Bytes (RRCConnectionSetupComplete to gNB %d MUI %d) --->][PDCP][MOD %02d][RB %02d]\n",
        ctxt_pP->frame, ctxt_pP->module_id+NB_RN_INST, size, gNB_index, nr_rrc_mui, ctxt_pP->module_id+NB_eNB_INST, DCCH);
    // ctxt_pP_local.rnti = ctxt_pP->rnti;
-  rrc_data_req_ue(
+  rrc_data_req_nr_ue(
       ctxt_pP,
       DCCH,
       nr_rrc_mui++,
@@ -2216,7 +2228,7 @@ void nr_rrc_ue_generate_RRCReconfigurationComplete( const protocol_ctxt_t *const
   itti_send_msg_to_task (TASK_RRC_GNB_SIM, ctxt_pP->instance, message_p);
 
 #else
-  rrc_data_req_ue (
+  rrc_data_req_nr_ue (
     ctxt_pP,
     DCCH,
     nr_rrc_mui++,
@@ -2546,14 +2558,14 @@ void *rrc_nrue_task( void *args_p ) {
 #else
         // check if SRB2 is created, if yes request data_req on DCCH1 (SRB2)
         if(NR_UE_rrc_inst[ue_mod_id].SRB2_config[0] == NULL) {
-          rrc_data_req_ue (&ctxt,
+          rrc_data_req_nr_ue (&ctxt,
                            DCCH,
                            nr_rrc_mui++,
                            SDU_CONFIRM_NO,
                            length, buffer,
                            PDCP_TRANSMISSION_MODE_CONTROL);
         } else {
-          rrc_data_req_ue (&ctxt,
+          rrc_data_req_nr_ue (&ctxt,
                            DCCH1,
                            nr_rrc_mui++,
                            SDU_CONFIRM_NO,
@@ -2693,7 +2705,7 @@ nr_rrc_ue_process_ueCapabilityEnquiry(
       GNB_RRC_DCCH_DATA_IND (message_p).size  = (enc_rval.encoded + 7) / 8;
       itti_send_msg_to_task (TASK_RRC_GNB_SIM, ctxt_pP->instance, message_p);
 #else
-      rrc_data_req_ue (
+      rrc_data_req_nr_ue (
         ctxt_pP,
         DCCH,
         nr_rrc_mui++,
@@ -2762,4 +2774,60 @@ nr_rrc_ue_generate_rrcReestablishmentComplete(
     itti_send_msg_to_task (TASK_RRC_GNB_SIM, ctxt_pP->instance, message_p);
 
 #endif
+}
+
+/* NSA UE-NR UDP Interface*/
+void *lte_msg_thread_main(void *arg)
+{
+    for (;;)
+    {
+        nsa_msg_t msg;
+        int recvLen = recvfrom(nsa_sock_fd, msg.msg_buffer, sizeof(msg.msg_buffer),
+                               MSG_WAITALL | MSG_TRUNC, NULL, NULL);
+        if (recvLen == -1)
+        {
+            LOG_E(RRC, "%s: recvfrom: %s\n", __func__, strerror(errno));
+            continue;
+        }
+        if (recvLen > sizeof(msg.msg_buffer))
+        {
+            LOG_E(RRC, "%s: truncated message %d\n", __func__, recvLen);
+            continue;
+        }
+        //process_nsa_msg(msg.msg_buffer, recvLen, msg.msg_type);
+    }
+}
+
+void init_lte_ue_socket(const char *nsa_ipaddr)
+{
+    struct sockaddr_in sa =
+    {
+        .sin_family = AF_INET,
+        .sin_port = htons(6008),
+    };
+
+    nsa_sock_fd = socket(sa.sin_family, SOCK_DGRAM, 0);
+    if (nsa_sock_fd == -1)
+    {
+        LOG_E(RRC, "%s: socket: %s\n", __FUNCTION__, strerror(errno));
+        abort();
+    }
+
+    if (inet_aton(nsa_ipaddr, &sa.sin_addr) == 0)
+    {
+        LOG_E(RRC, "Bad nsa_ipaddr '%s'\n", nsa_ipaddr);
+    }
+
+    if (bind(nsa_sock_fd, (struct sockaddr *) &sa, sizeof(sa)) == -1)
+    {
+        LOG_E(RRC, "%s: bind: %s\n", __FUNCTION__, strerror(errno));
+        abort();
+    }
+
+    pthread_t nsa_thread;
+    if (pthread_create(&nsa_thread, NULL, lte_msg_thread_main, NULL) != 0)
+    {
+        LOG_E(RRC, "%s: pthread_create failed\n", strerror(errno));
+        abort();
+    }
 }
