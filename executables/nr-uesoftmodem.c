@@ -88,6 +88,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "executables/thread-common.h"
 
 extern const char *duplex_mode[];
+char *nsa_ipaddr;
 
 // Thread variables
 pthread_cond_t nfapi_sync_cond;
@@ -420,7 +421,7 @@ int main( int argc, char **argv ) {
 #endif
   LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
 
-  init_NR_UE(1,rrc_config_path);
+  init_NR_UE(1,rrc_config_path, nsa_ipaddr);
   if(IS_SOFTMODEM_NOS1)
 	  init_pdcp();
 

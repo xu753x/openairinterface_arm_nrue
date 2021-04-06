@@ -406,7 +406,7 @@ void process_nsa_message(NR_UE_RRC_INST_t *rrc, nsa_message_t nsa_message_type, 
 
 }
 
-NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* rrc_config_path){
+NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(const char* rrc_config_path, const char* nsa_ipaddr){
   int nr_ue;
   if(NB_NR_UE_INST > 0){
     NR_UE_rrc_inst = (NR_UE_RRC_INST_t *)malloc(NB_NR_UE_INST * sizeof(NR_UE_RRC_INST_t));
