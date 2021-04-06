@@ -92,7 +92,7 @@
 
 //for D2D
 int ctrl_sock_fd;
-#define BUFSIZE 1024
+int nsa_sock_fd;
 struct sockaddr_in prose_app_addr;
 int slrb_id;
 int send_ue_information = 0;
@@ -5214,9 +5214,6 @@ void rrc_control_socket_init() {
 
 //--------------------------------------------------------
 void *rrc_control_socket_thread_fct(void *arg) {
-  int prose_addr_len;
-  char send_buf[BUFSIZE];
-  char receive_buf[BUFSIZE];
   //int optval;
   int n;
   struct sidelink_ctrl_element *sl_ctrl_msg_recv = NULL;
@@ -5235,15 +5232,16 @@ void *rrc_control_socket_thread_fct(void *arg) {
   int j = 0;
   int i = 0;
   //from the main program, listen for the incoming messages from control socket (ProSe App)
-  prose_addr_len = sizeof(prose_app_addr);
 
   //int enable_notification = 1;
   while (1) {
     LOG_I(RRC,"Listening to incoming connection from ProSe App \n");
     // receive a message from ProSe App
-    memset(receive_buf, 0, BUFSIZE);
-    n = recvfrom(ctrl_sock_fd, receive_buf, BUFSIZE, MSG_TRUNC,
-                 (struct sockaddr *) &prose_app_addr, (socklen_t *)&prose_addr_len);
+    char receive_buf[MAX_MESSAGE_SIZE];
+    memset(receive_buf, 0, sizeof(receive_buf));
+    socklen_t prose_addr_len = sizeof(prose_app_addr);
+    n = recvfrom(ctrl_sock_fd, receive_buf, sizeof(receive_buf), MSG_TRUNC,
+                 (struct sockaddr *) &prose_app_addr, &prose_addr_len);
 
     if (n < 0) {
       LOG_E(RRC, "ERROR: Failed to receive from ProSe App\n");
@@ -5252,7 +5250,7 @@ void *rrc_control_socket_thread_fct(void *arg) {
     if (n == 0) {
       LOG_E(RRC, "%s(%d). EOF for ctrl_sock_fd\n", __FUNCTION__, __LINE__);
     }
-    if (n > BUFSIZE) {
+    if (n > MAX_MESSAGE_SIZE) {
       LOG_E(RRC, "%s(%d). Message truncated. %d\n", __FUNCTION__, __LINE__, n);
       exit(EXIT_FAILURE);
     }
@@ -5263,6 +5261,7 @@ void *rrc_control_socket_thread_fct(void *arg) {
     memcpy((void *)sl_ctrl_msg_recv, (void *)receive_buf, sizeof(struct sidelink_ctrl_element));
 
     //process the message
+    char send_buf[MAX_MESSAGE_SIZE];
     switch (sl_ctrl_msg_recv->type) {
       case SESSION_INIT_REQ:
         if (LOG_DEBUGFLAG(DEBUG_CTRLSOCKET)) {
@@ -5271,14 +5270,14 @@ void *rrc_control_socket_thread_fct(void *arg) {
 
         //TODO: get SL_UE_STATE from lower layer
         LOG_I(RRC,"Send UEStateInformation to ProSe App \n");
-        memset(send_buf, 0, BUFSIZE);
+        memset(send_buf, 0, MAX_MESSAGE_SIZE);
         sl_ctrl_msg_send = calloc(1, sizeof(struct sidelink_ctrl_element));
         sl_ctrl_msg_send->type = UE_STATUS_INFO;
         sl_ctrl_msg_send->sidelinkPrimitive.ue_state = UE_STATE_OFF_NETWORK; //off-network
         memcpy((void *)send_buf, (void *)sl_ctrl_msg_send, sizeof(struct sidelink_ctrl_element));
         free(sl_ctrl_msg_send);
-        prose_addr_len = sizeof(prose_app_addr);
-        n = sendto(ctrl_sock_fd, (char *)send_buf, sizeof(struct sidelink_ctrl_element), 0, (struct sockaddr *)&prose_app_addr, prose_addr_len);
+        n = sendto(ctrl_sock_fd, (char *)send_buf, sizeof(struct sidelink_ctrl_element), 0,
+                   (struct sockaddr *)&prose_app_addr, sizeof(prose_app_addr));
 
         if (n < 0) {
           LOG_E(RRC, "ERROR: Failed to send to ProSe App\n");
@@ -5424,14 +5423,14 @@ void *rrc_control_socket_thread_fct(void *arg) {
                               (LTE_MBSFN_AreaInfoList_r9_t *)NULL
                              );
         LOG_I(RRC,"Send GroupCommunicationEstablishResp to ProSe App\n");
-        memset(send_buf, 0, BUFSIZE);
+        memset(send_buf, 0, MAX_MESSAGE_SIZE);
         sl_ctrl_msg_send = calloc(1, sizeof(struct sidelink_ctrl_element));
         sl_ctrl_msg_send->type = GROUP_COMMUNICATION_ESTABLISH_RSP;
         sl_ctrl_msg_send->sidelinkPrimitive.slrb_id = 3; //slrb_id
         memcpy((void *)send_buf, (void *)sl_ctrl_msg_send, sizeof(struct sidelink_ctrl_element));
         free(sl_ctrl_msg_send);
-        prose_addr_len = sizeof(prose_app_addr);
-        n = sendto(ctrl_sock_fd, (char *)send_buf, sizeof(struct sidelink_ctrl_element), 0, (struct sockaddr *)&prose_app_addr, prose_addr_len);
+        n = sendto(ctrl_sock_fd, (char *)send_buf, sizeof(struct sidelink_ctrl_element), 0,
+                   (struct sockaddr *)&prose_app_addr, sizeof(prose_app_addr));
 
         if (n < 0) {
           LOG_E(RRC, "ERROR: Failed to send to ProSe App\n");
@@ -5485,7 +5484,7 @@ void *rrc_control_socket_thread_fct(void *arg) {
                               (LTE_MBSFN_AreaInfoList_r9_t *)NULL
                              );
         LOG_I(RRC,"Send GroupCommunicationReleaseResponse to ProSe App \n");
-        memset(send_buf, 0, BUFSIZE);
+        memset(send_buf, 0, MAX_MESSAGE_SIZE);
         sl_ctrl_msg_send = calloc(1, sizeof(struct sidelink_ctrl_element));
         sl_ctrl_msg_send->type = GROUP_COMMUNICATION_RELEASE_RSP;
 
@@ -5499,8 +5498,8 @@ void *rrc_control_socket_thread_fct(void *arg) {
 
         memcpy((void *)send_buf, (void *)sl_ctrl_msg_send, sizeof(struct sidelink_ctrl_element));
         free(sl_ctrl_msg_send);
-        prose_addr_len = sizeof(prose_app_addr);
-        n = sendto(ctrl_sock_fd, (char *)send_buf, sizeof(struct sidelink_ctrl_element), 0, (struct sockaddr *)&prose_app_addr, prose_addr_len);
+        n = sendto(ctrl_sock_fd, (char *)send_buf, sizeof(struct sidelink_ctrl_element), 0,
+                   (struct sockaddr *)&prose_app_addr, sizeof(prose_app_addr));
 
         if (n < 0) {
           LOG_E(RRC, "ERROR: Failed to send to ProSe App\n");
@@ -5628,14 +5627,14 @@ void *rrc_control_socket_thread_fct(void *arg) {
                               (LTE_MBSFN_AreaInfoList_r9_t *)NULL
                              );
         LOG_I(RRC,"Send DirectCommunicationEstablishResp to ProSe App\n");
-        memset(send_buf, 0, BUFSIZE);
+        memset(send_buf, 0, MAX_MESSAGE_SIZE);
         sl_ctrl_msg_send = calloc(1, sizeof(struct sidelink_ctrl_element));
         sl_ctrl_msg_send->type = DIRECT_COMMUNICATION_ESTABLISH_RSP;
         sl_ctrl_msg_send->sidelinkPrimitive.slrb_id = 3; //slrb_id
         memcpy((void *)send_buf, (void *)sl_ctrl_msg_send, sizeof(struct sidelink_ctrl_element));
         free(sl_ctrl_msg_send);
-        prose_addr_len = sizeof(prose_app_addr);
-        n = sendto(ctrl_sock_fd, (char *)send_buf, sizeof(struct sidelink_ctrl_element), 0, (struct sockaddr *)&prose_app_addr, prose_addr_len);
+        n = sendto(ctrl_sock_fd, (char *)send_buf, sizeof(struct sidelink_ctrl_element), 0,
+                   (struct sockaddr *)&prose_app_addr, sizeof(prose_app_addr));
 
         if (n < 0) {
           LOG_E(RRC, "ERROR: Failed to send to ProSe App\n");
@@ -5815,15 +5814,15 @@ void *rrc_control_socket_thread_fct(void *arg) {
         }
 
         LOG_I(RRC,"Send PC5EstablishRsp to ProSe App\n");
-        memset(send_buf, 0, BUFSIZE);
+        memset(send_buf, 0, MAX_MESSAGE_SIZE);
         sl_ctrl_msg_send = calloc(1, sizeof(struct sidelink_ctrl_element));
         sl_ctrl_msg_send->type = PC5S_ESTABLISH_RSP;
         sl_ctrl_msg_send->sidelinkPrimitive.pc5s_establish_rsp.slrbid_lcid28 = 10;
         sl_ctrl_msg_send->sidelinkPrimitive.pc5s_establish_rsp.slrbid_lcid29 = 10;
         sl_ctrl_msg_send->sidelinkPrimitive.pc5s_establish_rsp.slrbid_lcid30 = 10;
         memcpy((void *)send_buf, (void *)sl_ctrl_msg_send, sizeof(struct sidelink_ctrl_element));
-        prose_addr_len = sizeof(prose_app_addr);
-        n = sendto(ctrl_sock_fd, (char *)send_buf, sizeof(struct sidelink_ctrl_element), 0, (struct sockaddr *)&prose_app_addr, prose_addr_len);
+        n = sendto(ctrl_sock_fd, (char *)send_buf, sizeof(struct sidelink_ctrl_element), 0,
+                   (struct sockaddr *)&prose_app_addr, sizeof(prose_app_addr));
 
         //         free(sl_ctrl_msg_send);
         if (n < 0) {
@@ -5863,27 +5862,24 @@ int decode_SL_Discovery_Message(
   const uint8_t                eNB_index,
   const uint8_t               *Sdu,
   const uint8_t                Sdu_len) {
-  int prose_addr_len;
-  char send_buf[BUFSIZE];
+  char send_buf[MAX_MESSAGE_SIZE];
   int n;
   struct sidelink_ctrl_element *sl_ctrl_msg_send = NULL;
   //from the main program, listen for the incoming messages from control socket (ProSe App)
-  prose_addr_len = sizeof(prose_app_addr);
   //Store in Rx_buffer
   memcpy((void *)&UE_rrc_inst[ctxt_pP->module_id].SL_Discovery[0].Rx_buffer.Payload[0], (void *)Sdu, Sdu_len);
   UE_rrc_inst[ctxt_pP->module_id].SL_Discovery[0].Rx_buffer.payload_size = Sdu_len;
-  memset(send_buf, 0, BUFSIZE);
+  memset(send_buf, 0, MAX_MESSAGE_SIZE);
   //send to ProSeApp
   memcpy((void *)send_buf, (void *)Sdu, Sdu_len);
-  prose_addr_len = sizeof(prose_app_addr);
   sl_ctrl_msg_send = calloc(1, sizeof(struct sidelink_ctrl_element));
   sl_ctrl_msg_send->type = PC5_DISCOVERY_MESSAGE;
   // TODO:  Add a check for the SDU size.
   memcpy((void *)&sl_ctrl_msg_send->sidelinkPrimitive.pc5_discovery_message.payload[0], (void *) Sdu,  PC5_DISCOVERY_PAYLOAD_SIZE);
   memcpy((void *)send_buf, (void *)sl_ctrl_msg_send, sizeof(struct sidelink_ctrl_element));
   free(sl_ctrl_msg_send);
-  prose_addr_len = sizeof(prose_app_addr);
-  n = sendto(ctrl_sock_fd, (char *)send_buf, sizeof(struct sidelink_ctrl_element), 0, (struct sockaddr *)&prose_app_addr, prose_addr_len);
+  n = sendto(ctrl_sock_fd, (char *)send_buf, sizeof(struct sidelink_ctrl_element), 0,
+             (struct sockaddr *)&prose_app_addr, sizeof(prose_app_addr));
 
   if (n < 0) {
     // TODO:  We should not just exit if the Prose App has not yet attached.  It creates a race condition.

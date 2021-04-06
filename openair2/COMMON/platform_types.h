@@ -220,6 +220,9 @@ typedef enum config_action_e {
   CONFIG_ACTION_MBMS_MODIFY       = 11
 } config_action_t;
 
+/* Maximum size of any message we might send or receive (e.g., via a socket) */
+#define MAX_MESSAGE_SIZE 8192
+
 //-----------------------------------------------------------------------------
 // GTPV1U TYPES
 //-----------------------------------------------------------------------------

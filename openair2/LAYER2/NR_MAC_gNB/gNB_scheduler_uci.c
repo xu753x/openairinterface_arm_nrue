@@ -975,7 +975,7 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
 
   // NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon;
   // const int num_slots = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
-  const int num_slots = 20;
+  //const int num_slots = 20;
   
   // if (((uci_01->pduBitmap >> 1) & 0x01)) {
   //   // iterate over received harq bits
@@ -1022,7 +1022,7 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
     return;
   }
   NR_CSI_MeasConfig_t *csi_MeasConfig = RC.nrmac[mod_id]->UE_info.secondaryCellGroup[UE_id]->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
-  NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
+  //NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
   // tpc (power control)

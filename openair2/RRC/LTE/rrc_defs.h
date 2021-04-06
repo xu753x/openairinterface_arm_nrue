@@ -52,7 +52,6 @@
 
 //for D2D
 #define DEBUG_CTRL_SOCKET
-#define BUFSIZE                1024
 #define CONTROL_SOCKET_PORT_NO 8888
 #define MAX_NUM_DEST           10
 //netlink
