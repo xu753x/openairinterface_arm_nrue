@@ -1748,7 +1748,7 @@ void nr_rrc_ue_generate_RRCSetupRequest(module_id_t module_id, const uint8_t gNB
   uint8_t i=0,rv[6];
   protocol_ctxt_t  ctxt;
 
-  if(IS_SOFTMODEM_NOS1) {
+  if(!IS_SOFTMODEM_NOS1) {
     AMF_MODE_ENABLED = 1;
   }
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_id, GNB_FLAG_NO, NOT_A_RNTI, 0, 0,gNB_index);
