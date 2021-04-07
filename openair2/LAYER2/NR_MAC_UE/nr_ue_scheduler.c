@@ -109,7 +109,11 @@ long get_k2(NR_UE_MAC_INST_t *mac, uint8_t time_domain_ind) {
     }
     k2 = *pusch_TimeDomainAllocationList->list.array[time_domain_ind]->k2;
   }
-  
+
+  AssertFatal(k2 >= DURATION_RX_TO_TX,
+              "Slot offset K2 (%ld) cannot be less than DURATION_RX_TO_TX (%d)\n",
+              k2,DURATION_RX_TO_TX);
+
   LOG_D(MAC, "get_k2(): k2 is %ld\n", k2);
   return k2;
 }
@@ -643,7 +647,7 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
       return -1;
     }
     /* TIME_DOM_RESOURCE_ASSIGNMENT */
-    if (nr_ue_process_dci_time_dom_resource_assignment(mac, pusch_config_pdu, NULL, dci->time_domain_assignment.val) < 0) {
+    if (nr_ue_process_dci_time_dom_resource_assignment(mac, pusch_config_pdu, NULL, dci->time_domain_assignment.val,false) < 0) {
       return -1;
     }
 
@@ -999,6 +1003,10 @@ int nr_ue_pusch_scheduler(NR_UE_MAC_INST_t *mac,
         delta = 6;
         break;
     }
+
+    AssertFatal((k2+delta) >= DURATION_RX_TO_TX,
+                "Slot offset (%d) for Msg3 cannot be less than DURATION_RX_TO_TX (%d)\n",
+                k2+delta,DURATION_RX_TO_TX);
 
     *slot_tx = (current_slot + k2 + delta) % nr_slots_per_frame[mu];
     if (current_slot + k2 + delta > nr_slots_per_frame[mu]){
