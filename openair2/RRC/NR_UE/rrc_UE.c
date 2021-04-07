@@ -129,12 +129,8 @@ nr_rrc_ue_generate_rrcReestablishmentComplete(
 mui_t nr_rrc_mui=0;
 uint8_t first_rrcreconfigurationcomplete = 0;
 
-int nsa_nr_sock_fd;
-struct sockaddr_in sa_nr =
-{
-  .sin_family = AF_INET,
-  .sin_port = htons(6008),
-};
+static int nsa_nr_sock_fd;
+static struct sockaddr_in sa_nr;
 
 static Rrc_State_NR_t nr_rrc_get_state (module_id_t ue_mod_idP) {
   return NR_UE_rrc_inst[ue_mod_idP].nrRrcState;
@@ -208,8 +204,9 @@ extern rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * con
     const LTE_PMCH_InfoList_r9_t * const pmch_InfoList_r9_pP,
     struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
 
-void *lte_msg_thread_main(void *arg);
-void nsa_thread(void);
+static void init_lte_ue_socket(void);
+static void *lte_msg_thread_main(void *arg);
+static void process_lte_nsa_msg(const void * buffer, size_t bufLen, Rrc_Msg_Type_t msgType);
 
 // from LTE-RRC DL-DCCH RRCConnectionReconfiguration nr-secondary-cell-group-config (encoded)
 int8_t nr_rrc_ue_decode_secondary_cellgroup_config(
@@ -522,6 +519,9 @@ NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* rrc_config_path){
       msg_len=fread(buffer,1,1024,fd);
       fclose(fd);
       process_nsa_message(NR_UE_rrc_inst, nr_RadioBearerConfigX_r15, buffer,msg_len);
+
+      init_lte_ue_socket();
+      LOG_I(RRC, "Started LTE-NR link in the nr-UE\n");
     }
   }else{
     NR_UE_rrc_inst = NULL;
@@ -2777,6 +2777,27 @@ nr_rrc_ue_generate_rrcReestablishmentComplete(
 /* NSA UE-NR UDP Interface*/
 void *lte_msg_thread_main(void *arg)
 {
+    for (;;)
+    {
+        nsa_msg_t msg;
+        int recvLen = recvfrom(nsa_nr_sock_fd, msg.msg_buffer, sizeof(msg.msg_buffer),
+                               MSG_WAITALL | MSG_TRUNC, NULL, NULL);
+        if (recvLen == -1)
+        {
+            LOG_E(RRC, "%s: recvfrom: %s\n", __func__, strerror(errno));
+            continue;
+        }
+        if (recvLen > sizeof(msg.msg_buffer))
+        {
+            LOG_E(RRC, "%s: truncated message %d\n", __func__, recvLen);
+            continue;
+        }
+        process_lte_nsa_msg(msg.msg_buffer, recvLen, msg.msg_type);
+    }
+}
+
+void init_lte_ue_socket(void)
+{
     const char nsa_ipaddr[] = "127.0.0.1";
 
     nsa_nr_sock_fd = socket(sa_nr.sin_family, SOCK_DGRAM, 0);
@@ -2803,21 +2824,33 @@ void *lte_msg_thread_main(void *arg)
         LOG_E(RRC, "%s: pthread_create failed\n", strerror(errno));
         abort();
     }
-    for (;;)
+}
+
+void process_lte_nsa_msg(const void * buffer, size_t bufLen, Rrc_Msg_Type_t msgType)
+{
+    LOG_I(RRC, "We are processing an NSA message \n");
+    /* uint8_t *const msg_buffer[100];
+    switch (msgType)
     {
-        nsa_msg_t msg;
-        int recvLen = recvfrom(nsa_nr_sock_fd, msg.msg_buffer, sizeof(msg.msg_buffer),
-                               MSG_WAITALL | MSG_TRUNC, NULL, NULL);
-        if (recvLen == -1)
+        case UE_CAPABILITY_INFO:
         {
-            LOG_E(RRC, "%s: recvfrom: %s\n", __func__, strerror(errno));
-            continue;
+            LTE_UE_EUTRA_Capability_v1510_IEs_t * ue_cap_info = NULL;
+            asn_dec_rval_t dec_rval = uper_decode_complete(NULL,
+                            &asn_DEF_LTE_UE_EUTRA_Capability_v1510_IEs,
+                            (void **)&ue_cap_info,
+                            (const void *)msg_buffer,
+                            100);  // What is correct size!!?
+            if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0))
+            {
+              LOG_E( RRC, "Failed to decode UECapabilityInfo (%zu bits)\n",
+              dec_rval.consumed );
+            }
+            // Extract the parameters needed by LTE
+            // Print out contents to verify... as a placeholder
+            // Send 1st RRC message back to NR UE
         }
-        if (recvLen > sizeof(msg.msg_buffer))
-        {
-            LOG_E(RRC, "%s: truncated message %d\n", __func__, recvLen);
-            continue;
-        }
-        //process_nsa_msg(msg.msg_buffer, recvLen, msg.msg_type);
-    }
+
+        default:
+            LOG_E(RRC, "No NSA Message Found\n");
+    } */
 }

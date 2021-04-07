@@ -89,10 +89,6 @@ rrc_rx_tx_ue(
 
 // UE RRC Procedures
 
-void process_nsa_msg(const void * buffer, size_t bufLen, Rrc_Msg_Type_t msgType);
-
-void nsa_sendmsg(const void *message, size_t msgLen, Rrc_Msg_Type_t msgType, sockaddr_in sa, int nsa_sock_fd);
-
 /** \brief Decodes DL-CCCH message and invokes appropriate routine to handle the message
     \param ctxt_pP Running context
     \param Srb_info Pointer to SRB_INFO structure (SRB0)

@@ -92,13 +92,9 @@
 
 //for D2D
 int ctrl_sock_fd;
-int nsa_lte_sock_fd;
 struct sockaddr_in prose_app_addr;
-struct sockaddr_in sa_lte =
-{
-  .sin_family = AF_INET,
-  .sin_port = htons(6007),
-};
+static int nsa_lte_sock_fd;
+static struct sockaddr_in sa_lte;
 int slrb_id;
 int send_ue_information = 0;
 
@@ -172,6 +168,9 @@ rrc_ue_process_MBMSCountingRequest(
   uint8_t eNB_index
 		);
 
+static void init_nr_ue_socket(void);
+static void process_nr_nsa_msg(const void * buffer, size_t bufLen, Rrc_Msg_Type_t msgType);
+static void nsa_sendmsg(const void *message, size_t msgLen, Rrc_Msg_Type_t msgType);
 protocol_ctxt_t ctxt_pP_local;
 
 
@@ -4953,6 +4952,10 @@ openair_rrc_top_init_ue(
      * crashes when calling this function.
      */
     //init_SL_preconfig(&UE_rrc_inst[module_id],0);
+
+    init_nr_ue_socket();
+    LOG_I(RRC, "Started LTE-NR link in the LTE UE\n");
+
   } else {
     UE_rrc_inst = NULL;
   }
@@ -6018,6 +6021,56 @@ rrc_rx_tx_ue(
 /* NSA UE-NR UDP Interface*/
 void *nr_msg_thread_main(void *arg)
 {
+    for (;;)
+    {
+        nsa_msg_t msg;
+        int recvLen = recvfrom(nsa_lte_sock_fd, msg.msg_buffer, sizeof(msg.msg_buffer),
+                               MSG_WAITALL | MSG_TRUNC, NULL, NULL);
+        if (recvLen == -1)
+        {
+            LOG_E(RRC, "%s: recvfrom: %s\n", __func__, strerror(errno));
+            continue;
+        }
+        if (recvLen > sizeof(msg.msg_buffer))
+        {
+            LOG_E(RRC, "%s: truncated message: %d\n", __func__, recvLen);
+            continue;
+        }
+        process_nr_nsa_msg(msg.msg_buffer, recvLen, msg.msg_type);
+    }
+}
+
+void nsa_sendmsg(const void *message, size_t msgLen, Rrc_Msg_Type_t msgType)
+{
+    nsa_msg_t n_msg;
+    if (msgLen > sizeof(n_msg.msg_buffer))
+    {
+        LOG_E(RRC, "%s: message too big: %zu\n", __func__, msgLen);
+        abort();
+    }
+    n_msg.msg_type = msgType;
+    memcpy(n_msg.msg_buffer, message, msgLen);
+
+    sa_lte.sin_family = AF_INET;
+    sa_lte.sin_port = htons(6007);
+    memset(&sa_lte, 0, sizeof(sa_lte)); // TODO: set sa_lte correctly
+    socklen_t addrLen = sizeof(sa_lte);
+    int sent = sendto(nsa_lte_sock_fd, n_msg.msg_buffer, sizeof(n_msg.msg_buffer), 0,
+                      (struct sockaddr_in *)&sa_lte, addrLen);
+    if (sent == -1)
+    {
+        LOG_E(RRC, "%s: sendto: %s\n", __func__, strerror(errno));
+        return;
+    }
+    if (sent != msgLen)
+    {
+        LOG_E(RRC, "%s: sent wrong size: %d != %zu\n", __func__, sent, msgLen);
+        return;
+    }
+}
+
+void init_nr_ue_socket(void)
+{
     const char nsa_ipaddr[] = "127.0.0.1";
     nsa_lte_sock_fd = socket(sa_lte.sin_family, SOCK_DGRAM, 0);
     if (nsa_lte_sock_fd == -1)
@@ -6044,55 +6097,9 @@ void *nr_msg_thread_main(void *arg)
         LOG_E(RRC,"UE LTE-NR UDP thread error");
         abort();
     }
-
-    create_nsa_msg();
-    for (;;)
-    {
-        nsa_msg_t msg;
-        int recvLen = recvfrom(nsa_lte_sock_fd, msg.msg_buffer, sizeof(msg.msg_buffer),
-                               MSG_WAITALL | MSG_TRUNC, NULL, NULL);
-        if (recvLen == -1)
-        {
-            LOG_E(RRC, "%s: recvfrom: %s\n", __func__, strerror(errno));
-            continue;
-        }
-        if (recvLen > sizeof(msg.msg_buffer))
-        {
-            LOG_E(RRC, "%s: truncated message: %d\n", __func__, recvLen);
-            continue;
-        }
-        process_nsa_msg(msg.msg_buffer, recvLen, msg.msg_type);
-    }
 }
 
-void nsa_sendmsg(const void *message, size_t msgLen, Rrc_Msg_Type_t msgType)
-{
-    nsa_msg_t n_msg;
-    if (msgLen > sizeof(n_msg.msg_buffer))
-    {
-        LOG_E(RRC, "%s: message too big: %zu\n", __func__, msgLen);
-        abort();
-    }
-    n_msg.msg_type = msgType;
-    memcpy(n_msg.msg_buffer, message, msgLen);
-
-    memset(&sa_lte, 0, sizeof(sa_lte)); // TODO: set sa_lte correctly
-    socklen_t addrLen = sizeof(sa_lte);
-    int sent = sendto(nsa_lte_sock_fd, n_msg.msg_buffer, sizeof(n_msg.msg_buffer), 0,
-                      (struct sockaddr_in *)&sa_lte, addrLen);
-    if (sent == -1)
-    {
-        LOG_E(RRC, "%s: sendto: %s\n", __func__, strerror(errno));
-        return;
-    }
-    if (sent != msgLen)
-    {
-        LOG_E(RRC, "%s: sent wrong size: %d != %zu\n", __func__, sent, msgLen);
-        return;
-    }
-}
-
-void process_nsa_msg(const void * buffer, size_t bufLen, Rrc_Msg_Type_t msgType)
+void process_nr_nsa_msg(const void * buffer, size_t bufLen, Rrc_Msg_Type_t msgType)
 {
     LOG_I(RRC, "We are processing an NSA message \n");
     /* uint8_t *const msg_buffer[100];
