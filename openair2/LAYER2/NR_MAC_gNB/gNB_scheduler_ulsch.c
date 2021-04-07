@@ -652,6 +652,7 @@ void pf_ul(module_id_t module_id,
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     int rbStart = NRRIV2PRBOFFSET(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+    rbStart+=27;
     const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
 
     /* Calculate throughput */
@@ -1136,7 +1137,11 @@ void nr_schedule_ulsch(module_id_t module_id,
     /* PUSCH PDU */
     pusch_pdu->pusch_data.rv_index = nr_rv_round_map[cur_harq->round];
     pusch_pdu->pusch_data.harq_process_id = harq_id;
-    pusch_pdu->pusch_data.new_data_indicator = cur_harq->ndi;
+    if (cur_harq->round == 0) {
+      pusch_pdu->pusch_data.new_data_indicator = 1 - cur_harq->ndi;
+    }else{
+      pusch_pdu->pusch_data.new_data_indicator = cur_harq->ndi;
+    }
     pusch_pdu->pusch_data.tb_size = sched_pusch->tb_size;
     pusch_pdu->pusch_data.num_cb = 0; //CBG not supported
 

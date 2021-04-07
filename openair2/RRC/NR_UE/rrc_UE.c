@@ -1299,7 +1299,46 @@ nr_rrc_ue_process_masterCellGroup(
     //TODO (perform the BH RLC channel addition/modification as specified in 5.3.5.5.11)
   }
 }
+/*--------------------------------------------------*/
+static void rrc_ue_generate_RRCSetup_procedure(
+  const protocol_ctxt_t *const ctxt_pP,
+  uint8_t gNB_index,
+  OCTET_STRING_t *masterCellGroup,
+  NR_RadioBearerConfig_t *const      radioBearerConfig
+){
+    NR_CellGroupConfig_t *cellGroupConfig;
+    asn_dec_rval_t       dec_rval;
+    dec_rval = uper_decode(NULL,
+                         &asn_DEF_NR_CellGroupConfig,
+                         (void **)&cellGroupConfig,
+                         masterCellGroup->buf,
+                         masterCellGroup->size,
+                         0, 0);
+    if (dec_rval.code != RC_OK) {
+      LOG_E(RRC, "could not decode RRCSetup\n");
+      return;
+    }
+    nr_rrc_pdcp_config_asn1_req(
+    ctxt_pP,
+    radioBearerConfig->srb_ToAddModList,
+    NULL,
+    NULL,
+    0xff,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL);
 
+    nr_rrc_rlc_config_asn1_req (ctxt_pP,
+      radioBearerConfig->srb_ToAddModList,
+      NULL,
+      NULL,
+      (LTE_PMCH_InfoList_r9_t *) NULL,
+      cellGroupConfig->rlc_BearerToAddModList);
+}
 /*--------------------------------------------------*/
 static void rrc_ue_generate_RRCSetupComplete(
   const protocol_ctxt_t *const ctxt_pP,
@@ -1332,7 +1371,7 @@ static void rrc_ue_generate_RRCSetupComplete(
        "[FRAME %05d][RRC_UE][MOD %02d][][--- PDCP_DATA_REQ/%d Bytes (RRCConnectionSetupComplete to gNB %d MUI %d) --->][PDCP][MOD %02d][RB %02d]\n",
        ctxt_pP->frame, ctxt_pP->module_id+NB_RN_INST, size, gNB_index, nr_rrc_mui, ctxt_pP->module_id+NB_eNB_INST, DCCH);
    // ctxt_pP_local.rnti = ctxt_pP->rnti;
-  rrc_data_req_ue(
+  nr_rrc_data_req_ue(
       ctxt_pP,
       DCCH,
       nr_rrc_mui++,
@@ -1369,13 +1408,13 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
     if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
       xer_fprint(stdout,&asn_DEF_NR_DL_CCCH_Message,(void *)dl_ccch_msg);
     }
-    
+
     if ((dec_rval.code != RC_OK) && (dec_rval.consumed==0)) {
       LOG_E(RRC,"[UE %d] Frame %d : Failed to decode DL-CCCH-Message (%zu bytes)\n",ctxt_pP->module_id,ctxt_pP->frame,dec_rval.consumed);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_CCCH, VCD_FUNCTION_OUT);
       return -1;
     }
-    
+
     if (dl_ccch_msg->message.present == NR_DL_CCCH_MessageType_PR_c1) {
       if (NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].State == NR_RRC_SI_RECEIVED) {
         switch (dl_ccch_msg->message.choice.c1->present) {
@@ -1385,7 +1424,7 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
                   ctxt_pP->frame);
             rval = 0;
             break;
-    
+
           case NR_DL_CCCH_MessageType__c1_PR_rrcReject:
             LOG_I(NR_RRC,
                   "[UE%d] Frame %d : Logical Channel DL-CCCH (SRB0), Received RRCConnectionReject \n",
@@ -1393,7 +1432,7 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
                   ctxt_pP->frame);
             rval = 0;
             break;
-    
+
           case NR_DL_CCCH_MessageType__c1_PR_rrcSetup:
             LOG_I(NR_RRC,
                   "[UE%d][RAPROC] Frame %d : Logical Channel DL-CCCH (SRB0), Received NR_RRCSetup RNTI %x\n",
@@ -1404,7 +1443,7 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
             // Get configuration
             // Release T300 timer
             NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].T300_active = 0;
-            
+
             nr_rrc_ue_process_masterCellGroup(
               ctxt_pP,
               gNB_index,
@@ -1413,6 +1452,11 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
               ctxt_pP,
               gNB_index,
               &dl_ccch_msg->message.choice.c1->choice.rrcSetup->criticalExtensions.choice.rrcSetup->radioBearerConfig);
+            rrc_ue_generate_RRCSetup_procedure(
+                ctxt_pP,
+                gNB_index,
+                &dl_ccch_msg->message.choice.c1->choice.rrcSetup->criticalExtensions.choice.rrcSetup->masterCellGroup,
+                &dl_ccch_msg->message.choice.c1->choice.rrcSetup->criticalExtensions.choice.rrcSetup->radioBearerConfig);
             nr_rrc_set_state (ctxt_pP->module_id, RRC_STATE_CONNECTED);
             nr_rrc_set_sub_state (ctxt_pP->module_id, RRC_SUB_STATE_CONNECTED);
             NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].rnti = ctxt_pP->rnti;
@@ -1423,7 +1467,7 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
               NR_UE_rrc_inst[ctxt_pP->module_id].selected_plmn_identity);
             rval = 0;
             break;
-    
+
           default:
             LOG_E(NR_RRC, "[UE%d] Frame %d : Unknown message\n",
                   ctxt_pP->module_id,
@@ -1433,7 +1477,7 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
         }
       }
     }
-  
+
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_CCCH, VCD_FUNCTION_OUT);
   return rval;
 }
@@ -1683,7 +1727,7 @@ nr_rrc_ue_process_securityModeCommand(
     GNB_RRC_DCCH_DATA_IND (message_p).size    = (enc_rval.encoded + 7) / 8;
     itti_send_msg_to_task (TASK_RRC_GNB_SIM, ctxt_pP->instance, message_p);
 #else
-    rrc_data_req (
+    nr_rrc_data_req_ue (
       ctxt_pP,
       DCCH,
       nr_rrc_mui++,
@@ -2216,7 +2260,7 @@ void nr_rrc_ue_generate_RRCReconfigurationComplete( const protocol_ctxt_t *const
   itti_send_msg_to_task (TASK_RRC_GNB_SIM, ctxt_pP->instance, message_p);
 
 #else
-  rrc_data_req_ue (
+  nr_rrc_data_req_ue (
     ctxt_pP,
     DCCH,
     nr_rrc_mui++,
@@ -2546,14 +2590,14 @@ void *rrc_nrue_task( void *args_p ) {
 #else
         // check if SRB2 is created, if yes request data_req on DCCH1 (SRB2)
         if(NR_UE_rrc_inst[ue_mod_id].SRB2_config[0] == NULL) {
-          rrc_data_req_ue (&ctxt,
+          nr_rrc_data_req_ue (&ctxt,
                            DCCH,
                            nr_rrc_mui++,
                            SDU_CONFIRM_NO,
                            length, buffer,
                            PDCP_TRANSMISSION_MODE_CONTROL);
         } else {
-          rrc_data_req_ue (&ctxt,
+          nr_rrc_data_req_ue (&ctxt,
                            DCCH1,
                            nr_rrc_mui++,
                            SDU_CONFIRM_NO,
@@ -2693,7 +2737,7 @@ nr_rrc_ue_process_ueCapabilityEnquiry(
       GNB_RRC_DCCH_DATA_IND (message_p).size  = (enc_rval.encoded + 7) / 8;
       itti_send_msg_to_task (TASK_RRC_GNB_SIM, ctxt_pP->instance, message_p);
 #else
-      rrc_data_req_ue (
+      nr_rrc_data_req_ue (
         ctxt_pP,
         DCCH,
         nr_rrc_mui++,

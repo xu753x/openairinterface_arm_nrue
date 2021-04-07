@@ -149,7 +149,7 @@ int8_t nr_mac_rrc_data_req_ue(const module_id_t Mod_idP,
 }
 
 uint8_t
-rrc_data_req_ue(
+nr_rrc_data_req_ue(
   const protocol_ctxt_t   *const ctxt_pP,
   const rb_id_t                  rb_idP,
   const mui_t                    muiP,
@@ -163,11 +163,11 @@ rrc_data_req_ue(
     // Uses a new buffer to avoid issue with PDCP buffer content that could be changed by PDCP (asynchronous message handling).
     uint8_t *message_buffer;
     message_buffer = itti_malloc (
-                       ctxt_pP->enb_flag ? TASK_RRC_ENB : TASK_RRC_UE,
+                       ctxt_pP->enb_flag ? TASK_RRC_ENB : TASK_RRC_NRUE,
                        ctxt_pP->enb_flag ? TASK_PDCP_ENB : TASK_PDCP_UE,
                        sdu_sizeP);
     memcpy (message_buffer, buffer_pP, sdu_sizeP);
-    message_p = itti_alloc_new_message (ctxt_pP->enb_flag ? TASK_RRC_ENB : TASK_RRC_UE, 0, RRC_DCCH_DATA_REQ);
+    message_p = itti_alloc_new_message (ctxt_pP->enb_flag ? TASK_RRC_ENB : TASK_RRC_NRUE, 0, RRC_DCCH_DATA_REQ);
     RRC_DCCH_DATA_REQ (message_p).frame     = ctxt_pP->frame;
     RRC_DCCH_DATA_REQ (message_p).enb_flag  = ctxt_pP->enb_flag;
     RRC_DCCH_DATA_REQ (message_p).rb_id     = rb_idP;
