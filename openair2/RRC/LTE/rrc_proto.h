@@ -91,7 +91,7 @@ rrc_rx_tx_ue(
 
 void process_nsa_msg(const void * buffer, size_t bufLen, Rrc_Msg_Type_t msgType);
 
-void nsa_sendmsg(const void *message, size_t msgLen, Rrc_Msg_Type_t msgType);
+void nsa_sendmsg(const void *message, size_t msgLen, Rrc_Msg_Type_t msgType, sockaddr_in sa, int nsa_sock_fd);
 
 /** \brief Decodes DL-CCCH message and invokes appropriate routine to handle the message
     \param ctxt_pP Running context
@@ -683,8 +683,7 @@ void openair_rrc_top_init_ue(
   int eMBMS_active,
   char *uecap_xer,
   uint8_t cba_group_active,
-  uint8_t HO_active,
-  const char *nsa_ipaddr
+  uint8_t HO_active
 );
 
 extern pthread_mutex_t      rrc_release_freelist;

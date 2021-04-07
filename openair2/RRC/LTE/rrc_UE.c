@@ -92,8 +92,13 @@
 
 //for D2D
 int ctrl_sock_fd;
-int nsa_sock_fd;
+int nsa_lte_sock_fd;
 struct sockaddr_in prose_app_addr;
+struct sockaddr_in sa_lte =
+{
+  .sin_family = AF_INET,
+  .sin_port = htons(6007),
+};
 int slrb_id;
 int send_ue_information = 0;
 
@@ -166,8 +171,6 @@ rrc_ue_process_MBMSCountingRequest(
   LTE_MBMSCountingRequest_r10_t *MBMSCountingRequest,
   uint8_t eNB_index
 		);
-
-void init_nr_ue_socket(const char *nsa_ipaddr);
 
 protocol_ctxt_t ctxt_pP_local;
 
@@ -1675,6 +1678,13 @@ rrc_ue_process_ueCapabilityEnquiry(
   OCTET_STRING_fromBuf(&ue_CapabilityRAT_Container.ueCapabilityRAT_Container,
                        (const char *)UE_rrc_inst[ctxt_pP->module_id].UECapability,
                        UE_rrc_inst[ctxt_pP->module_id].UECapability_size);
+  // Note: Send UECapEnquiry to NR and wait for UECapInformation ... requestedFreqBandsNR-MRDC-r15.  Do similar on NR side with UECapInfo
+  OCTET_STRING_t * requestedFreqBandsNR = UECapabilityEnquiry->criticalExtensions.choice.c1.choice.ueCapabilityEnquiry_r8.nonCriticalExtension->
+                        nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->
+                        nonCriticalExtension->requestedFreqBandsNR_MRDC_r15;
+  nsa_sendmsg(requestedFreqBandsNR->buf, requestedFreqBandsNR->size, UE_CAPABILITY_ENQUIRY);
+  // Block function until UE Capability Info is received!
+
   //  ue_CapabilityRAT_Container.ueCapabilityRAT_Container.buf  = UE_rrc_inst[ue_mod_idP].UECapability;
   // ue_CapabilityRAT_Container.ueCapabilityRAT_Container.size = UE_rrc_inst[ue_mod_idP].UECapability_size;
   AssertFatal(UECapabilityEnquiry->criticalExtensions.present == LTE_UECapabilityEnquiry__criticalExtensions_PR_c1,
@@ -4909,8 +4919,7 @@ openair_rrc_top_init_ue(
   int eMBMS_active,
   char *uecap_xer,
   uint8_t cba_group_active,
-  uint8_t HO_active,
-  const char *nsa_ipaddr
+  uint8_t HO_active
 )
 //-----------------------------------------------------------------------------
 {
@@ -4944,10 +4953,6 @@ openair_rrc_top_init_ue(
      * crashes when calling this function.
      */
     //init_SL_preconfig(&UE_rrc_inst[module_id],0);
-    if (nsa_ipaddr && *nsa_ipaddr) {
-      LOG_I(PHY, "Starting UE LTE-NR link on %s\n", nsa_ipaddr);
-      init_nr_ue_socket(nsa_ipaddr);
-    }
   } else {
     UE_rrc_inst = NULL;
   }
@@ -6013,10 +6018,38 @@ rrc_rx_tx_ue(
 /* NSA UE-NR UDP Interface*/
 void *nr_msg_thread_main(void *arg)
 {
+    const char nsa_ipaddr[] = "127.0.0.1";
+    nsa_lte_sock_fd = socket(sa_lte.sin_family, SOCK_DGRAM, 0);
+    if (nsa_lte_sock_fd == -1)
+    {
+        LOG_E(RRC, "%s: Error opening socket %d (%d:%s)\n", __FUNCTION__, nsa_lte_sock_fd, errno, strerror(errno));
+        abort();
+    }
+
+    if (inet_aton(nsa_ipaddr, &sa_lte.sin_addr) == 0)
+    {
+        LOG_E(RRC, "Bad nsa_ipaddr '%s'\n", nsa_ipaddr);
+        abort();
+    }
+
+    if (bind(nsa_lte_sock_fd, (struct sockaddr *) &sa_lte, sizeof(sa_lte)) == -1)
+    {
+        LOG_E(RRC,"%s: Failed to bind the socket\n", __FUNCTION__);
+        abort();
+    }
+
+    pthread_t nsa_thread;
+    if (pthread_create(&nsa_thread, NULL, nr_msg_thread_main, NULL) != 0)
+    {
+        LOG_E(RRC,"UE LTE-NR UDP thread error");
+        abort();
+    }
+
+    create_nsa_msg();
     for (;;)
     {
         nsa_msg_t msg;
-        int recvLen = recvfrom(nsa_sock_fd, msg.msg_buffer, sizeof(msg.msg_buffer),
+        int recvLen = recvfrom(nsa_lte_sock_fd, msg.msg_buffer, sizeof(msg.msg_buffer),
                                MSG_WAITALL | MSG_TRUNC, NULL, NULL);
         if (recvLen == -1)
         {
@@ -6029,42 +6062,6 @@ void *nr_msg_thread_main(void *arg)
             continue;
         }
         process_nsa_msg(msg.msg_buffer, recvLen, msg.msg_type);
-  }
-}
-
-void init_nr_ue_socket(const char *nsa_ipaddr)
-{
-    struct sockaddr_in sa =
-    {
-        .sin_family = AF_INET,
-        .sin_port = htons(6007),
-    };
-
-    assert(nsa_sock_fd == -1);
-    nsa_sock_fd = socket(sa.sin_family, SOCK_DGRAM, 0);
-    if (nsa_sock_fd == -1)
-    {
-        LOG_E(RRC, "%s: Error opening socket %d (%d:%s)\n", __FUNCTION__, nsa_sock_fd, errno, strerror(errno));
-        abort();
-    }
-
-    if (inet_aton(nsa_ipaddr, &sa.sin_addr) == 0)
-    {
-        LOG_E(RRC, "Bad nsa_ipaddr '%s'\n", nsa_ipaddr);
-        abort();
-    }
-
-    if (bind(nsa_sock_fd, (struct sockaddr *) &sa, sizeof(sa)) == -1)
-    {
-        LOG_E(RRC,"%s: Failed to bind the socket\n", __FUNCTION__);
-        abort();
-    }
-
-    pthread_t nsa_thread;
-    if (pthread_create(&nsa_thread, NULL, nr_msg_thread_main, NULL) != 0)
-    {
-        LOG_E(RRC,"UE LTE-NR UDP thread error");
-        abort();
     }
 }
 
@@ -6079,11 +6076,10 @@ void nsa_sendmsg(const void *message, size_t msgLen, Rrc_Msg_Type_t msgType)
     n_msg.msg_type = msgType;
     memcpy(n_msg.msg_buffer, message, msgLen);
 
-    struct sockaddr_in sa;
-    memset(&sa, 0, sizeof(sa)); // TODO: set sa correctly
-    socklen_t addrLen = sizeof(sa);
-    int sent = sendto(nsa_sock_fd, n_msg.msg_buffer, sizeof(n_msg.msg_buffer), 0,
-                      (struct sockaddr_in *)&sa, addrLen);
+    memset(&sa_lte, 0, sizeof(sa_lte)); // TODO: set sa_lte correctly
+    socklen_t addrLen = sizeof(sa_lte);
+    int sent = sendto(nsa_lte_sock_fd, n_msg.msg_buffer, sizeof(n_msg.msg_buffer), 0,
+                      (struct sockaddr_in *)&sa_lte, addrLen);
     if (sent == -1)
     {
         LOG_E(RRC, "%s: sendto: %s\n", __func__, strerror(errno));
@@ -6098,7 +6094,8 @@ void nsa_sendmsg(const void *message, size_t msgLen, Rrc_Msg_Type_t msgType)
 
 void process_nsa_msg(const void * buffer, size_t bufLen, Rrc_Msg_Type_t msgType)
 {
-    uint8_t *const msg_buffer[100];
+    LOG_I(RRC, "We are processing an NSA message \n");
+    /* uint8_t *const msg_buffer[100];
     switch (msgType)
     {
         case UE_CAPABILITY_INFO:
@@ -6121,6 +6118,6 @@ void process_nsa_msg(const void * buffer, size_t bufLen, Rrc_Msg_Type_t msgType)
 
         default:
             LOG_E(RRC, "No NSA Message Found\n");
-    }
+    } */
 }
 

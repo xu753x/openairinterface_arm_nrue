@@ -98,7 +98,6 @@ int nfapi_sync_var=-1; //!< protected by mutex \ref nfapi_sync_mutex
 uint16_t sf_ahead=4;
 int tddflag;
 char *emul_iface;
-char *nsa_ipaddr;
 
 
 pthread_cond_t sync_cond;
@@ -163,9 +162,7 @@ static LTE_DL_FRAME_PARMS      *frame_parms[MAX_NUM_CCs];
 uint64_t num_missed_slots=0; // counter for the number of missed slots
 
 // prototypes from function implemented in lte-ue.c, probably should be elsewhere in a include file.
-extern void init_UE_stub_single_thread(int nb_inst, int eMBMS_active, int uecap_xer_in,
-                                       const char *emul_iface,
-                                       const char *nsa_ipaddr);
+extern void init_UE_stub_single_thread(int nb_inst,int eMBMS_active, int uecap_xer_in, char *emul_iface);
 extern PHY_VARS_UE *init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms, uint8_t UE_id, uint8_t abstraction_flag);
 extern void get_uethreads_params(void);
 
@@ -755,7 +752,7 @@ int main( int argc, char **argv ) {
     wait_nfapi_init("main?");
     //Panos: Temporarily we will be using single set of threads for multiple UEs.
     //init_UE_stub(1,eMBMS_active,uecap_xer_in,emul_iface);
-    init_UE_stub_single_thread(NB_UE_INST, eMBMS_active, uecap_xer_in, emul_iface, nsa_ipaddr);
+    init_UE_stub_single_thread(NB_UE_INST,eMBMS_active,uecap_xer_in,emul_iface);
   } else if (NFAPI_MODE==NFAPI_MODE_STANDALONE_PNF) {
     init_queue(&dl_config_req_tx_req_queue);
     init_queue(&hi_dci0_req_queue);
@@ -769,21 +766,11 @@ int main( int argc, char **argv ) {
       LOG_E(MAC, "sem_init() error\n");
       abort();
     }
-    init_UE_stub_single_thread(NB_UE_INST, eMBMS_active, uecap_xer_in, emul_iface, nsa_ipaddr);
+    init_UE_stub_single_thread(NB_UE_INST,eMBMS_active,uecap_xer_in,emul_iface);
     init_UE_standalone_thread(ue_id_g);
   } else {
-    init_UE(NB_UE_INST,
-            eMBMS_active,
-            uecap_xer_in,
-            0,
-            get_softmodem_params()->phy_test,
-            UE_scan,
-            UE_scan_carrier,
-            mode,
-            (int) rx_gain[0][0],
-            tx_max_power[0],
-            frame_parms[0],
-            nsa_ipaddr);
+    init_UE(NB_UE_INST,eMBMS_active,uecap_xer_in,0,get_softmodem_params()->phy_test,UE_scan,UE_scan_carrier,mode,(int)rx_gain[0][0],tx_max_power[0],
+            frame_parms[0]);
   }
 
   if (get_softmodem_params()->phy_test==0) {

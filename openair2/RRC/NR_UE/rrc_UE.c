@@ -129,6 +129,13 @@ nr_rrc_ue_generate_rrcReestablishmentComplete(
 mui_t nr_rrc_mui=0;
 uint8_t first_rrcreconfigurationcomplete = 0;
 
+int nsa_nr_sock_fd;
+struct sockaddr_in sa_nr =
+{
+  .sin_family = AF_INET,
+  .sin_port = htons(6008),
+};
+
 static Rrc_State_NR_t nr_rrc_get_state (module_id_t ue_mod_idP) {
   return NR_UE_rrc_inst[ue_mod_idP].nrRrcState;
 }
@@ -201,10 +208,8 @@ extern rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * con
     const LTE_PMCH_InfoList_r9_t * const pmch_InfoList_r9_pP,
     struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
 
-void init_lte_ue_socket(const char *nsa_ipaddr);
-void *lte_msg_thread_main(void *nsa_sock_fd);
+void *lte_msg_thread_main(void *arg);
 void nsa_thread(void);
-int nsa_sock_fd;
 
 // from LTE-RRC DL-DCCH RRCConnectionReconfiguration nr-secondary-cell-group-config (encoded)
 int8_t nr_rrc_ue_decode_secondary_cellgroup_config(
@@ -411,8 +416,7 @@ void process_nsa_message(NR_UE_RRC_INST_t *rrc, nsa_message_t nsa_message_type, 
 
 }
 
-NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(const char* rrc_config_path, const char* nsa_ipaddr)
-{
+NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* rrc_config_path){
   int nr_ue;
   if(NB_NR_UE_INST > 0){
     NR_UE_rrc_inst = (NR_UE_RRC_INST_t *)malloc(NB_NR_UE_INST * sizeof(NR_UE_RRC_INST_t));
@@ -518,13 +522,6 @@ NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(const char* rrc_config_path, const 
       msg_len=fread(buffer,1,1024,fd);
       fclose(fd);
       process_nsa_message(NR_UE_rrc_inst, nr_RadioBearerConfigX_r15, buffer,msg_len);
-
-      if (nsa_ipaddr && *nsa_ipaddr)
-      {
-        LOG_I(PHY,"Starting UE LTE-NR link on %s\n", nsa_ipaddr);
-        init_lte_ue_socket(nsa_ipaddr);
-      }
-
     }
   }else{
     NR_UE_rrc_inst = NULL;
@@ -2780,10 +2777,36 @@ nr_rrc_ue_generate_rrcReestablishmentComplete(
 /* NSA UE-NR UDP Interface*/
 void *lte_msg_thread_main(void *arg)
 {
+    const char nsa_ipaddr[] = "127.0.0.1";
+
+    nsa_nr_sock_fd = socket(sa_nr.sin_family, SOCK_DGRAM, 0);
+    if (nsa_nr_sock_fd == -1)
+    {
+        LOG_E(RRC, "%s: socket: %s\n", __FUNCTION__, strerror(errno));
+        abort();
+    }
+
+    if (inet_aton(nsa_ipaddr, &sa_nr.sin_addr) == 0)
+    {
+        LOG_E(RRC, "Bad nsa_ipaddr '%s'\n", nsa_ipaddr);
+    }
+
+    if (bind(nsa_nr_sock_fd, (struct sockaddr *) &sa_nr, sizeof(sa_nr)) == -1)
+    {
+        LOG_E(RRC, "%s: bind: %s\n", __FUNCTION__, strerror(errno));
+        abort();
+    }
+
+    pthread_t nsa_thread;
+    if (pthread_create(&nsa_thread, NULL, lte_msg_thread_main, NULL) != 0)
+    {
+        LOG_E(RRC, "%s: pthread_create failed\n", strerror(errno));
+        abort();
+    }
     for (;;)
     {
         nsa_msg_t msg;
-        int recvLen = recvfrom(nsa_sock_fd, msg.msg_buffer, sizeof(msg.msg_buffer),
+        int recvLen = recvfrom(nsa_nr_sock_fd, msg.msg_buffer, sizeof(msg.msg_buffer),
                                MSG_WAITALL | MSG_TRUNC, NULL, NULL);
         if (recvLen == -1)
         {
@@ -2796,39 +2819,5 @@ void *lte_msg_thread_main(void *arg)
             continue;
         }
         //process_nsa_msg(msg.msg_buffer, recvLen, msg.msg_type);
-    }
-}
-
-void init_lte_ue_socket(const char *nsa_ipaddr)
-{
-    struct sockaddr_in sa =
-    {
-        .sin_family = AF_INET,
-        .sin_port = htons(6008),
-    };
-
-    nsa_sock_fd = socket(sa.sin_family, SOCK_DGRAM, 0);
-    if (nsa_sock_fd == -1)
-    {
-        LOG_E(RRC, "%s: socket: %s\n", __FUNCTION__, strerror(errno));
-        abort();
-    }
-
-    if (inet_aton(nsa_ipaddr, &sa.sin_addr) == 0)
-    {
-        LOG_E(RRC, "Bad nsa_ipaddr '%s'\n", nsa_ipaddr);
-    }
-
-    if (bind(nsa_sock_fd, (struct sockaddr *) &sa, sizeof(sa)) == -1)
-    {
-        LOG_E(RRC, "%s: bind: %s\n", __FUNCTION__, strerror(errno));
-        abort();
-    }
-
-    pthread_t nsa_thread;
-    if (pthread_create(&nsa_thread, NULL, lte_msg_thread_main, NULL) != 0)
-    {
-        LOG_E(RRC, "%s: pthread_create failed\n", strerror(errno));
-        abort();
     }
 }

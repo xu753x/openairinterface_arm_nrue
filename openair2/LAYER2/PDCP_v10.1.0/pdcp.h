@@ -294,7 +294,6 @@ void rrc_pdcp_config_req (
   const rb_id_t     rb_idP,
   const uint8_t     security_modeP);
 
-
 /*! \fn bool rrc_pdcp_config_asn1_req (const protocol_ctxt_t* const , SRB_ToAddModList_t* srb2add_list, DRB_ToAddModList_t* drb2add_list, DRB_ToReleaseList_t*  drb2release_list)
 * \brief  Function for RRC to configure a Radio Bearer.
 * \param[in]  ctxt_pP           Running context.

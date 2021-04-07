@@ -43,14 +43,14 @@
 //  main_rrc.c
 //
 /**\brief Layer 3 initialization*/
-NR_UE_RRC_INST_t* nr_l3_init_ue(const char *rrc_config_path, const char *nsa_ipaddr);
+NR_UE_RRC_INST_t* nr_l3_init_ue(char*);
 
 //
 //  UE_rrc.c
 //
 
 /**\brief Initial the top level RRC structure instance*/
-NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(const char *rrc_config_path, const char *nsa_ipaddr);
+NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char*);
 
 
 

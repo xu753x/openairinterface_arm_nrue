@@ -76,7 +76,7 @@ extern int sync_var;
 char uecap_xer_in;
 
 extern void init_eNB_afterRU(void);
-extern void init_UE_stub(int nb_inst, int, int, const char *, const char *);
+extern void init_UE_stub(int nb_inst,int,int);
 extern void handle_nfapi_dci_dl_pdu(PHY_VARS_eNB *eNB, int frame, int subframe, L1_rxtx_proc_t *proc, nfapi_dl_config_request_pdu_t *dl_config_pdu);
 extern void handle_nfapi_ul_pdu(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc, nfapi_ul_config_request_pdu_t *ul_config_pdu, uint16_t frame,uint8_t subframe,uint8_t srs_present);
 extern void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame, int subframe, L1_rxtx_proc_t *proc,  nfapi_dl_config_request_pdu_t *dl_config_pdu, uint8_t codeword_index, uint8_t *sdu);

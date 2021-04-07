@@ -257,8 +257,7 @@ void init_UE(int nb_inst,
              runmode_t mode,
              int rxgain,
              int txpowermax,
-             LTE_DL_FRAME_PARMS *fp0,
-             const char *nsa_ipaddr)
+             LTE_DL_FRAME_PARMS *fp0)
 {
   PHY_VARS_UE *UE;
   int         inst;
@@ -267,8 +266,7 @@ void init_UE(int nb_inst,
   LOG_I(PHY,"UE : Calling Layer 2 for initialization\n");
   l2_init_ue(eMBMS_active,(uecap_xer_in==1)?uecap_xer:NULL,
              0,// cba_group_active
-             0, // HO flag
-             nsa_ipaddr);
+             0); // HO flag
 
   if (PHY_vars_UE_g==NULL) PHY_vars_UE_g = (PHY_VARS_UE ***)calloc(1+nb_inst,sizeof(PHY_VARS_UE **));
 
@@ -394,15 +392,13 @@ void init_UE(int nb_inst,
 void init_UE_stub_single_thread(int nb_inst,
                                 int eMBMS_active,
                                 int uecap_xer_in,
-                                const char *emul_iface,
-                                const char *nsa_ipaddr)
+                                char *emul_iface)
 {
   int         inst;
   LOG_I(PHY,"UE : Calling Layer 2 for initialization, nb_inst: %d \n", nb_inst);
   l2_init_ue(eMBMS_active,(uecap_xer_in==1)?uecap_xer:NULL,
              0,// cba_group_active
-             0, // HO flag
-             nsa_ipaddr);
+             0); // HO flag
 
   for (inst=0; inst<nb_inst; inst++) {
     LOG_I(PHY,"Initializing memory for UE instance %d (%p)\n",inst,PHY_vars_UE_g[inst]);
@@ -439,15 +435,13 @@ void init_UE_standalone_thread(int ue_idx)
 void init_UE_stub(int nb_inst,
                   int eMBMS_active,
                   int uecap_xer_in,
-                  const char *emul_iface,
-                  const char *nsa_ipaddr)
+                  char *emul_iface)
 {
   int         inst;
   LOG_I(PHY,"UE : Calling Layer 2 for initialization\n");
   l2_init_ue(eMBMS_active,(uecap_xer_in==1)?uecap_xer:NULL,
              0,// cba_group_active
-             0, // HO flag
-             nsa_ipaddr);
+             0); // HO flag
 
   for (inst=0; inst<nb_inst; inst++) {
     LOG_I(PHY,"Initializing memory for UE instance %d (%p)\n",inst,PHY_vars_UE_g[inst]);
