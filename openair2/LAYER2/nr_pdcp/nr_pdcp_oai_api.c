@@ -672,13 +672,8 @@ rb_found:
   ctxt.brOption = 0;
   ctxt.rnti = ue->rnti;
 
+  nr_rrc_data_ind( &ctxt, srb_id, size, buf);
 
-  if (ccch_or_dcch == 0) {
-    nr_rrc_data_ind_ccch( &ctxt, srb_id, size, buf);
-    ccch_or_dcch = 1;
-  } else {
-    nr_rrc_data_ind( &ctxt, srb_id, size, buf);
-  }
   return;
 }
 
@@ -1045,7 +1040,7 @@ boolean_t nr_rrc_pdcp_config_asn1_req(
       //kUPenc != NULL ||
       pmch_InfoList_r9 != NULL /*||
       defaultDRB != NULL */) {
-    TODO;
+    //TODO;
   }
 
   if (srb2add_list != NULL) {
@@ -1302,6 +1297,7 @@ static boolean_t pdcp_data_req_srb(
   if (rb == NULL) {
     LOG_E(PDCP, "%s:%d:%s: no SRB found (rnti %d, rb_id %ld)\n",
           __FILE__, __LINE__, __FUNCTION__, rnti, rb_id);
+    nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
     return 0;
   }
 

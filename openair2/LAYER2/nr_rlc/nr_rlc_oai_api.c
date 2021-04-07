@@ -666,7 +666,7 @@ static void add_srb(int rnti, struct NR_SRB_ToAddMod *s, NR_RLC_BearerConfig_t *
   if (channel_id != srb_id) {
     LOG_E(RLC, "%s:%d:%s: todo, remove this limitation\n",
           __FILE__, __LINE__, __FUNCTION__);
-    exit(1);
+    //exit(1);
   }
 
   logical_channel_group = *l->ul_SpecificParameters->logicalChannelGroup;

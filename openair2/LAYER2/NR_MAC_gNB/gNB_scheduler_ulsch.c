@@ -738,7 +738,7 @@ void pf_ul(module_id_t module_id,
 
     /* Calculate TBS from MCS */
     NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
-    const int mcs = 9;
+    const int mcs = 4;
     sched_pusch->mcs = mcs;
     sched_pusch->R = nr_get_code_rate_ul(mcs, ps->mcs_table);
     sched_pusch->Qm = nr_get_Qm_ul(mcs, ps->mcs_table);
