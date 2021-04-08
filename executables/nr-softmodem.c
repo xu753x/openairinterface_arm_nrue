@@ -92,11 +92,12 @@ pthread_mutex_t nfapi_sync_mutex;
 int nfapi_sync_var=-1; //!< protected by mutex \ref nfapi_sync_mutex
 
 extern uint8_t nfapi_mode; // Default to monolithic mode
-
+THREAD_STRUCT thread_struct;
 pthread_cond_t sync_cond;
 pthread_mutex_t sync_mutex;
 int sync_var=-1; //!< protected by mutex \ref sync_mutex.
 int config_sync_var=-1;
+msc_interface_t msc_interface;
 
 volatile int             start_gNB = 0;
 volatile int             oai_exit = 0;
@@ -114,7 +115,6 @@ int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 //Temp fix for inexistent NR upper layer
 unsigned char NB_gNB_INST = 1;
 
-static char                    *itti_dump_file = NULL;
 
 int UE_scan = 1;
 int UE_scan_carrier = 0;

@@ -45,6 +45,8 @@ include_directories(${CONFIG_INCLUDE_DIRS})
 pkg_search_module(CRYPTO libcrypto REQUIRED)
 include_directories(${CRYPTO_INCLUDE_DIRS})
 
+#uhd 4.0 and iris installs by default in /usr/local
+include_directories("/usr/local/include/")
 #use native cmake method as this package is not in pkg-config
 if (${RF_BOARD} STREQUAL "OAI_USRP")
   find_package(Boost REQUIRED)
@@ -52,7 +54,7 @@ if (${RF_BOARD} STREQUAL "OAI_USRP")
 
 elseif (${RF_BOARD} STREQUAL "OAI_IRIS")
     include_directories("${OPENAIR_TARGETS}/ARCH/IRIS/USERSPACE/LIB/")
-    include_directories("/usr/local/include/")
+
     set(HW_SOURCE ${HW_SOURCE}
             ${OPENAIR_TARGETS}/ARCH/IRIS/USERSPACE/LIB/iris_lib.cpp)
     LINK_DIRECTORIES("/usr/local/lib")
@@ -2800,6 +2802,7 @@ add_library(rfsimulator MODULE
   ${OPENAIR_TARGETS}/ARCH/rfsimulator/simulator.c
   ${OPENAIR_TARGETS}/ARCH/rfsimulator/apply_channelmod.c
   ${OPENAIR_TARGETS}/ARCH/rfsimulator/new_channel_sim.c
+  ${OPENAIR1_DIR}/PHY/TOOLS/signal_energy.c
 	)
 target_link_libraries(rfsimulator SIMU_COMMON ${ATLAS_LIBRARIES})
 
@@ -3061,6 +3064,7 @@ add_executable(nr-softmodem
   ${T_SOURCE}
   ${CONFIG_SOURCES}
   ${SHLIB_LOADER_SOURCES}
+  ${OPENAIR2_DIR}/ENB_APP/flexran_agent_ran_api_to_fix.c
   )
 
 target_link_libraries (nr-softmodem
@@ -3095,6 +3099,7 @@ add_executable(ocp-gnb
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${OPENAIR_DIR}/common/utils/utils.c
   ${OPENAIR_DIR}/common/utils/system.c
+  ${OPENAIR3_DIR}/GTPV1-U/gtpv1u_gNB.c
   ${GTPU_need_ITTI}
   ${XFORMS_SOURCE_NR}
   ${T_SOURCE}
@@ -3183,6 +3188,17 @@ target_link_libraries (dlsim_tm4
   -Wl,--start-group SIMU_COMMON SIMU UTIL SCHED_LIB SCHED_RU_LIB PHY LFDS ${ITTI_LIB} -Wl,--end-group
   pthread m rt ${CONFIG_LIB} ${ATLAS_LIBRARIES} ${T_LIB}
   )
+
+add_executable(rftest 
+  ${OPENAIR_DIR}/openair1/PHY/TOOLS/calibration_test.c
+  ${OPENAIR_DIR}/openair1/PHY/TOOLS/calibration_scope.c
+  ${OPENAIR_DIR}/common/utils/system.c
+  ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
+  ${OPENAIR_DIR}/executables/softmodem-common.c
+  ${CONFIG_SOURCES}
+  ${SHLIB_LOADER_SOURCES}
+)
+target_link_libraries(rftest minimal_lib PHY_NR_COMMON pthread dl m forms ${T_LIB} )
 
 add_executable(polartest 
   ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/polartest.c
