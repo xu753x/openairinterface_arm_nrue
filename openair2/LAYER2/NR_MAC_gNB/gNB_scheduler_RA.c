@@ -1155,6 +1155,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     // Bytes to be transmitted
     uint8_t *buf = (uint8_t *) harq->tb;
     uint16_t mac_pdu_length = 0;
+    //TODO Don't set MAC header in SA.
     if (get_softmodem_params()->sa != 1) {
       mac_pdu_length = nr_write_ce_dlsch_pdu(module_idP, nr_mac->sched_ctrlCommon, buf, 255, ra->cont_res_id);
     }

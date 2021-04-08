@@ -433,7 +433,7 @@ rrc_gNB_generate_RRCSetup(
       }
       // for rfsim, send RRCSetup messgae in SRB1
       nr_rrc_data_req(ctxt_pP,
-            DCCH,
+            CCCH,
             rrc_gNB_mui++,
             SDU_CONFIRM_NO,
             ue_p->Srb0.Tx_buffer.payload_size,
@@ -488,7 +488,7 @@ rrc_gNB_generate_RRCSetup(
       //   ue_context_pP->ue_context.ue_rrc_inactivity_timer = 0;
 
       nr_rrc_data_req(ctxt_pP,
-            DCCH,
+            CCCH,
             rrc_gNB_mui++,
             SDU_CONFIRM_NO,
             ue_p->Srb0.Tx_buffer.payload_size,

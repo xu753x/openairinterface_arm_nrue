@@ -1040,7 +1040,7 @@ boolean_t nr_rrc_pdcp_config_asn1_req(
       //kUPenc != NULL ||
       pmch_InfoList_r9 != NULL /*||
       defaultDRB != NULL */) {
-    //TODO;
+    TODO;
   }
 
   if (srb2add_list != NULL) {

@@ -1353,6 +1353,7 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
 #else
     int off = 0;
 #endif
+    // TODO this is temporary change to get message5 should revert.
     double p_shift=0.00476190476190476;
     short * IQ_temp = (short*)&gNB->pusch_vars[ulsch_id]->rxdataF_comp[0][rel15_ul->start_symbol_index * (off + rel15_ul->rb_size * NR_NB_SC_PER_RB)];
     double ttt[2];
