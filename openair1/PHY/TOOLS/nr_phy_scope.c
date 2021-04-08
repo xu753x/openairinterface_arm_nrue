@@ -226,7 +226,8 @@ static void oai_xygraph(OAIgraph_t *graph, float *x, float *y, int len, int laye
 
 static void genericWaterFall (OAIgraph_t *graph, scopeSample_t *values, const int datasize, const int divisions, const char *label) {
   if ( values == NULL )
-     return;
+    return;
+
   fl_winset(FL_ObjWin(graph->graph));
   const int samplesPerPixel=datasize/graph->w;
   int displayPart=graph->waterFallh-ScaleZone;
@@ -242,7 +243,7 @@ static void genericWaterFall (OAIgraph_t *graph, scopeSample_t *values, const in
   for (int pix=0; pix<graph->w; pix++) {
     scopeSample_t *end=values+(pix+1)*samplesPerPixel;
     end-=2;
-    AssertFatal(end <= values+datasize,"diff : %ld", end-values+datasize);
+    AssertFatal(end <= values+datasize,"diff : %u", end-values+datasize);
     double val=0;
 
     for (scopeSample_t *s=values+(pix)*samplesPerPixel;
@@ -278,7 +279,7 @@ static void genericWaterFall (OAIgraph_t *graph, scopeSample_t *values, const in
     graph->initDone=true;
   }
 
-  fl_set_object_label_f(graph->text, "%s, avg I/Q pow: %4.1f", label, sqrt(avg));
+  fl_set_object_label_f(graph->text, "%s, avg I/Q pow: %4.1f", label, 0/*sqrt(avg)*/);
   graph->iteration++;
 }
 
