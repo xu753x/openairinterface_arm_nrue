@@ -93,8 +93,9 @@
 //for D2D
 int ctrl_sock_fd;
 struct sockaddr_in prose_app_addr;
-static int nsa_lte_sock_fd;
-static struct sockaddr_in sa_lte;
+static const char nsa_ipaddr[] = "127.0.0.1";
+static int from_nr_ue_fd = -1;
+static int to_nr_ue_fd = -1;
 int slrb_id;
 int send_ue_information = 0;
 
@@ -168,7 +169,7 @@ rrc_ue_process_MBMSCountingRequest(
   uint8_t eNB_index
 		);
 
-static void init_nr_ue_socket(void);
+static void init_connections_with_nr_ue(void);
 static void process_nr_nsa_msg(const void * buffer, size_t bufLen, Rrc_Msg_Type_t msgType);
 static void nsa_sendmsg(const void *message, size_t msgLen, Rrc_Msg_Type_t msgType);
 protocol_ctxt_t ctxt_pP_local;
@@ -4953,7 +4954,7 @@ openair_rrc_top_init_ue(
      */
     //init_SL_preconfig(&UE_rrc_inst[module_id],0);
 
-    init_nr_ue_socket();
+    init_connections_with_nr_ue();
     LOG_I(RRC, "Started LTE-NR link in the LTE UE\n");
 
   } else {
@@ -6019,12 +6020,12 @@ rrc_rx_tx_ue(
 }
 
 /* NSA UE-NR UDP Interface*/
-void *nr_msg_thread_main(void *arg)
+void *recv_msgs_from_nr_ue(void *arg)
 {
     for (;;)
     {
         nsa_msg_t msg;
-        int recvLen = recvfrom(nsa_lte_sock_fd, msg.msg_buffer, sizeof(msg.msg_buffer),
+        int recvLen = recvfrom(from_nr_ue_fd, msg.msg_buffer, sizeof(msg.msg_buffer),
                                MSG_WAITALL | MSG_TRUNC, NULL, NULL);
         if (recvLen == -1)
         {
@@ -6038,6 +6039,8 @@ void *nr_msg_thread_main(void *arg)
         }
         process_nr_nsa_msg(msg.msg_buffer, recvLen, msg.msg_type);
     }
+    return NULL;
+
 }
 
 void nsa_sendmsg(const void *message, size_t msgLen, Rrc_Msg_Type_t msgType)
@@ -6051,12 +6054,13 @@ void nsa_sendmsg(const void *message, size_t msgLen, Rrc_Msg_Type_t msgType)
     n_msg.msg_type = msgType;
     memcpy(n_msg.msg_buffer, message, msgLen);
 
-    sa_lte.sin_family = AF_INET;
-    sa_lte.sin_port = htons(6007);
-    memset(&sa_lte, 0, sizeof(sa_lte)); // TODO: set sa_lte correctly
-    socklen_t addrLen = sizeof(sa_lte);
-    int sent = sendto(nsa_lte_sock_fd, n_msg.msg_buffer, sizeof(n_msg.msg_buffer), 0,
-                      (struct sockaddr_in *)&sa_lte, addrLen);
+    struct sockaddr_in sa =
+    {
+        .sin_family = AF_INET,
+        .sin_port = htons(6008),
+    };
+    int sent = sendto(to_nr_ue_fd, n_msg.msg_buffer, sizeof(n_msg.msg_buffer), 0,
+                      (struct sockaddr_in *)&sa, sizeof(sa));
     if (sent == -1)
     {
         LOG_E(RRC, "%s: sendto: %s\n", __func__, strerror(errno));
@@ -6069,30 +6073,43 @@ void nsa_sendmsg(const void *message, size_t msgLen, Rrc_Msg_Type_t msgType)
     }
 }
 
-void init_nr_ue_socket(void)
+void init_connections_with_nr_ue(void)
 {
-    const char nsa_ipaddr[] = "127.0.0.1";
-    nsa_lte_sock_fd = socket(sa_lte.sin_family, SOCK_DGRAM, 0);
-    if (nsa_lte_sock_fd == -1)
+    struct sockaddr_in sa =
     {
-        LOG_E(RRC, "%s: Error opening socket %d (%d:%s)\n", __FUNCTION__, nsa_lte_sock_fd, errno, strerror(errno));
+        .sin_family = AF_INET,
+        .sin_port = htons(6007),
+    };
+    AssertFatal(from_nr_ue_fd == -1, "from_nr_ue_fd was assigned already");
+    from_nr_ue_fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (from_nr_ue_fd == -1)
+    {
+        LOG_E(RRC, "%s: Error opening socket %d (%d:%s)\n", __FUNCTION__, from_nr_ue_fd, errno, strerror(errno));
         abort();
     }
 
-    if (inet_aton(nsa_ipaddr, &sa_lte.sin_addr) == 0)
+    if (inet_aton(nsa_ipaddr, &sa.sin_addr) == 0)
     {
         LOG_E(RRC, "Bad nsa_ipaddr '%s'\n", nsa_ipaddr);
         abort();
     }
 
-    if (bind(nsa_lte_sock_fd, (struct sockaddr *) &sa_lte, sizeof(sa_lte)) == -1)
+    if (bind(from_nr_ue_fd, (struct sockaddr *) &sa, sizeof(sa)) == -1)
     {
         LOG_E(RRC,"%s: Failed to bind the socket\n", __FUNCTION__);
         abort();
     }
 
+    AssertFatal(to_nr_ue_fd == -1, "to_nr_ue_fd was assigned already");
+    to_nr_ue_fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (to_nr_ue_fd == -1)
+    {
+        LOG_E(RRC, "%s: Error opening socket %d (%d:%s)\n", __FUNCTION__, to_nr_ue_fd, errno, strerror(errno));
+        abort();
+    }
+
     pthread_t nsa_thread;
-    if (pthread_create(&nsa_thread, NULL, nr_msg_thread_main, NULL) != 0)
+    if (pthread_create(&nsa_thread, NULL, recv_msgs_from_nr_ue, NULL) != 0)
     {
         LOG_E(RRC,"UE LTE-NR UDP thread error");
         abort();

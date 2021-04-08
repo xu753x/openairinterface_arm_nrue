@@ -129,8 +129,9 @@ nr_rrc_ue_generate_rrcReestablishmentComplete(
 mui_t nr_rrc_mui=0;
 uint8_t first_rrcreconfigurationcomplete = 0;
 
-static int nsa_nr_sock_fd;
-static struct sockaddr_in sa_nr;
+static const char nsa_ipaddr[] = "127.0.0.1";
+static int from_lte_ue_fd = -1;
+static int to_lte_ue_fd = -1;
 
 static Rrc_State_NR_t nr_rrc_get_state (module_id_t ue_mod_idP) {
   return NR_UE_rrc_inst[ue_mod_idP].nrRrcState;
@@ -204,8 +205,8 @@ extern rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * con
     const LTE_PMCH_InfoList_r9_t * const pmch_InfoList_r9_pP,
     struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
 
-static void init_lte_ue_socket(void);
-static void *lte_msg_thread_main(void *arg);
+static void init_connections_with_lte_ue(void);
+static void *recv_msgs_from_lte_ue(void *arg);
 static void process_lte_nsa_msg(const void * buffer, size_t bufLen, Rrc_Msg_Type_t msgType);
 
 // from LTE-RRC DL-DCCH RRCConnectionReconfiguration nr-secondary-cell-group-config (encoded)
@@ -520,7 +521,7 @@ NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* rrc_config_path){
       fclose(fd);
       process_nsa_message(NR_UE_rrc_inst, nr_RadioBearerConfigX_r15, buffer,msg_len);
 
-      init_lte_ue_socket();
+      init_connections_with_lte_ue();
       LOG_I(RRC, "Started LTE-NR link in the nr-UE\n");
     }
   }else{
@@ -2775,12 +2776,12 @@ nr_rrc_ue_generate_rrcReestablishmentComplete(
 }
 
 /* NSA UE-NR UDP Interface*/
-void *lte_msg_thread_main(void *arg)
+void *recv_msgs_from_lte_ue(void *arg)
 {
     for (;;)
     {
         nsa_msg_t msg;
-        int recvLen = recvfrom(nsa_nr_sock_fd, msg.msg_buffer, sizeof(msg.msg_buffer),
+        int recvLen = recvfrom(from_lte_ue_fd, msg.msg_buffer, sizeof(msg.msg_buffer),
                                MSG_WAITALL | MSG_TRUNC, NULL, NULL);
         if (recvLen == -1)
         {
@@ -2794,34 +2795,48 @@ void *lte_msg_thread_main(void *arg)
         }
         process_lte_nsa_msg(msg.msg_buffer, recvLen, msg.msg_type);
     }
+    return NULL;
 }
 
-void init_lte_ue_socket(void)
+void init_connections_with_lte_ue(void)
 {
-    const char nsa_ipaddr[] = "127.0.0.1";
-
-    nsa_nr_sock_fd = socket(sa_nr.sin_family, SOCK_DGRAM, 0);
-    if (nsa_nr_sock_fd == -1)
+    struct sockaddr_in sa =
     {
-        LOG_E(RRC, "%s: socket: %s\n", __FUNCTION__, strerror(errno));
+        .sin_family = AF_INET,
+        .sin_port = htons(6008),
+    };
+    AssertFatal(from_lte_ue_fd == -1, "from_lte_ue_fd was assigned already");
+    from_lte_ue_fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (from_lte_ue_fd == -1)
+    {
+        LOG_E(RRC, "%s: Error opening socket %d (%d:%s)\n", __FUNCTION__, from_lte_ue_fd, errno, strerror(errno));
         abort();
     }
 
-    if (inet_aton(nsa_ipaddr, &sa_nr.sin_addr) == 0)
+    if (inet_aton(nsa_ipaddr, &sa.sin_addr) == 0)
     {
         LOG_E(RRC, "Bad nsa_ipaddr '%s'\n", nsa_ipaddr);
+        abort();
     }
 
-    if (bind(nsa_nr_sock_fd, (struct sockaddr *) &sa_nr, sizeof(sa_nr)) == -1)
+    if (bind(from_lte_ue_fd, (struct sockaddr *) &sa, sizeof(sa)) == -1)
     {
-        LOG_E(RRC, "%s: bind: %s\n", __FUNCTION__, strerror(errno));
+        LOG_E(RRC,"%s: Failed to bind the socket\n", __FUNCTION__);
+        abort();
+    }
+
+    AssertFatal(to_lte_ue_fd == -1, "to_lte_ue_fd was assigned already");
+    to_lte_ue_fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (to_lte_ue_fd == -1)
+    {
+        LOG_E(RRC, "%s: Error opening socket %d (%d:%s)\n", __FUNCTION__, to_lte_ue_fd, errno, strerror(errno));
         abort();
     }
 
     pthread_t nsa_thread;
-    if (pthread_create(&nsa_thread, NULL, lte_msg_thread_main, NULL) != 0)
+    if (pthread_create(&nsa_thread, NULL, recv_msgs_from_lte_ue, NULL) != 0)
     {
-        LOG_E(RRC, "%s: pthread_create failed\n", strerror(errno));
+        LOG_E(RRC,"UE LTE-NR UDP thread error");
         abort();
     }
 }
