@@ -668,8 +668,6 @@ void pf_ul(module_id_t module_id,
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     if(sched_ctrl->ra_state==1) continue;
     int rbStart = NRRIV2PRBOFFSET(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-    // TODO this is temporary change to get message5 should revert.
-    rbStart+=27;
     const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
 
     /* Calculate throughput */
@@ -739,7 +737,7 @@ void pf_ul(module_id_t module_id,
 
     /* Calculate TBS from MCS */
     NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
-    const int mcs = 4; // TODO This is temporary change to get message5 stable. should revert.
+    const int mcs = 9;
     sched_pusch->mcs = mcs;
     sched_pusch->R = nr_get_code_rate_ul(mcs, ps->mcs_table);
     sched_pusch->Qm = nr_get_Qm_ul(mcs, ps->mcs_table);

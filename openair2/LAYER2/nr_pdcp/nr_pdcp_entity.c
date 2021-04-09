@@ -50,6 +50,7 @@ static void nr_pdcp_entity_recv_pdu(nr_pdcp_entity_t *entity,
     return;
   }
 
+  /* Check D/C bit inly DRBs */
   if ((entity->type == NR_PDCP_DRB_AM || entity->type == NR_PDCP_DRB_UM) && !(buffer[0] & 0x80)) {
     LOG_E(PDCP, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
     exit(1);

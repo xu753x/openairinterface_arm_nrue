@@ -1353,18 +1353,6 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
 #else
     int off = 0;
 #endif
-    // TODO this is temporary change to get message5 should revert.
-    double p_shift=0.00476190476190476;
-    short * IQ_temp = (short*)&gNB->pusch_vars[ulsch_id]->rxdataF_comp[0][rel15_ul->start_symbol_index * (off + rel15_ul->rb_size * NR_NB_SC_PER_RB)];
-    double ttt[2];
-    if(rel15_ul->num_dmrs_cdm_grps_no_data==1){
-      for(int pp=0; pp< rel15_ul->nr_of_symbols * rel15_ul->rb_size * NR_NB_SC_PER_RB;pp++){
-        ttt[0]=(double)IQ_temp[pp*2]*cos(pp*p_shift) - (double)IQ_temp[pp*2+1]*sin(pp*p_shift);
-        ttt[1]=(double)IQ_temp[pp*2]*sin(pp*p_shift) + (double)IQ_temp[pp*2+1]*cos(pp*p_shift);
-        IQ_temp[pp*2]=(short)ttt[0];
-        IQ_temp[pp*2+1]=(short)ttt[1];
-      }
-    }
     uint32_t rxdataF_ext_offset = 0;
     for(uint8_t i =rel15_ul->start_symbol_index; i< (rel15_ul->start_symbol_index + rel15_ul->nr_of_symbols);i++) {
       start_meas(&gNB->ulsch_llr_stats);
