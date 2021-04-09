@@ -506,7 +506,6 @@ NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* rrc_config_path){
                   strerror(errno));
       int msg_len=fread(buffer,1,1024,fd);
       fclose(fd);
-      process_nsa_message(NR_UE_rrc_inst, nr_SecondaryCellGroupConfig_r15, buffer,msg_len);
       if (rrc_config_path)
         sprintf(filename,"%s/rbconfig.raw",rrc_config_path);
       else
@@ -519,10 +518,13 @@ NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* rrc_config_path){
                   strerror(errno));
       msg_len=fread(buffer,1,1024,fd);
       fclose(fd);
-      process_nsa_message(NR_UE_rrc_inst, nr_RadioBearerConfigX_r15, buffer,msg_len);
 
+    }
+    else if (get_softmodem_params()->nsa == 1)
+    {
       init_connections_with_lte_ue();
       LOG_I(RRC, "Started LTE-NR link in the nr-UE\n");
+      //process_nsa_message(NR_UE_rrc_inst, nr_SecondaryCellGroupConfig_r15, buffer,msg_len);
     }
   }else{
     NR_UE_rrc_inst = NULL;
@@ -2774,10 +2776,17 @@ nr_rrc_ue_generate_rrcReestablishmentComplete(
 
 #endif
 }
+/*
+   1. Create an itti task (itti_nsa_task). This will get added into
+      targets/common/create_tasks. (Hopefully for nr, if not find nr version).
+   2. Add my thread here thats listening on the socket
+   3. Finish the itti task below
+*/
 
 /* NSA UE-NR UDP Interface*/
 void *recv_msgs_from_lte_ue(void *arg)
 {
+    LOG_I(RRC, "Entered %s:\n", __func__);
     for (;;)
     {
         nsa_msg_t msg;

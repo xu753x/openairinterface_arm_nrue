@@ -405,6 +405,12 @@ int create_tasks_nrue(uint32_t ue_nb) {
       return -1;
     }
   }
+ /* if (ue_nb > 0) {
+    if (itti_create_task (TASK_RRC_NSA_UE, recv_msgs_from_lte_ue, NULL) < 0) {
+      LOG_E(RRC, "Create task for RRC NSA UE failed\n");
+      return -1;
+    }
+  } */
 
 
   itti_wait_ready(0);
