@@ -358,7 +358,10 @@ void init_gNB_Tpool(int inst) {
     sprintf(ul_pool+2+s_offset,",-1");
     s_offset += 3;
   }
-  initTpool(ul_pool, gNB->threadPool, true);
+  if (opp_enabled == 1)
+    initTpool(ul_pool, gNB->threadPool, true);
+  else
+    initTpool(ul_pool, gNB->threadPool, false);
   // ULSCH decoder result FIFO
   gNB->respDecode = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
   initNotifiedFIFO(gNB->respDecode);
