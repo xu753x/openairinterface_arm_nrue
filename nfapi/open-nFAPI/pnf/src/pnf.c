@@ -1512,7 +1512,7 @@ void pnf_handle_vendor_extension(void* pRecvMsg, int recvMsgLen, pnf_t* pnf, uin
 
 			if(msg == 0)
 			{
-				NFAPI_TRACE(NFAPI_TRACE_INFO, "%s failed to allocate vendor extention structure\n");
+				NFAPI_TRACE(NFAPI_TRACE_INFO, "failed to allocate vendor extention structure\n");
 				return;
 			}
 
@@ -2382,3 +2382,4 @@ int pnf_nr_message_pump(pnf_t* pnf)
 	return 0;
 
 }
+

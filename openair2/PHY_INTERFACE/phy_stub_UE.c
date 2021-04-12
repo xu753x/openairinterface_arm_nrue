@@ -72,6 +72,7 @@ extern nfapi_tx_request_pdu_t* tx_request_pdu[1023][NUM_NFAPI_SUBFRAME][10]; //T
 //extern int timer_subframe;
 //extern int timer_frame;
 
+extern UE_RRC_INST *UE_rrc_inst;
 extern uint16_t sf_ahead;
 
 void Msg1_transmitted(module_id_t module_idP,uint8_t CC_id,frame_t frameP, uint8_t eNB_id);
@@ -841,6 +842,7 @@ void dl_config_req_UE_MAC_dci(int sfn,
       for (int ue_id = 0; ue_id < num_ue; ue_id++) {
         if (UE_mac_inst[ue_id].UE_mode[0] == NOT_SYNCHED)
           continue;
+
         ue_decode_si(ue_id, 0, sfn, 0,
             tx_req_pdu_list->pdus[pdu_index].segments[0].segment_data,
             tx_req_pdu_list->pdus[pdu_index].segments[0].segment_length);
@@ -849,7 +851,6 @@ void dl_config_req_UE_MAC_dci(int sfn,
       for (int ue_id = 0; ue_id < num_ue; ue_id++) {
         LOG_I(MAC, "%s() Received paging message: sfn/sf:%d.%d\n",
               __func__, sfn, sf);
-
         ue_decode_p(ue_id, 0, sfn, 0,
                     tx_req_pdu_list->pdus[pdu_index].segments[0].segment_data,
                     tx_req_pdu_list->pdus[pdu_index].segments[0].segment_length);
@@ -872,7 +873,6 @@ void dl_config_req_UE_MAC_dci(int sfn,
           LOG_E(MAC,
                 "%s(): Received RAR, PreambleIndex: %d\n",
                 __func__, UE_mac_inst[ue_id].RA_prach_resources.ra_PreambleIndex);
-
           ue_process_rar(ue_id, 0, sfn,
               ra_rnti, //RA-RNTI
               tx_req_pdu_list->pdus[pdu_index].segments[0].segment_data,
@@ -1264,6 +1264,7 @@ void *ue_standalone_pnf_task(void *context)
   struct sockaddr_in server_address;
   socklen_t addr_len = sizeof(server_address);
   char buffer[NFAPI_MAX_PACKED_MESSAGE_SIZE];
+
   int sd = ue_rx_sock_descriptor;
   assert(sd > 0);
 
@@ -1312,14 +1313,11 @@ void *ue_standalone_pnf_task(void *context)
         LOG_E(MAC, "sem_post() error\n");
         abort();
       }
-        uint16_t sf = ch_info->sfn_sf & 15;
-        if(sf > 10 && sf < 0)
-        {
-          LOG_E(MAC, "sf out of bounds, sfn: %d\n", sf);
-          abort();
-        }
-        sf_rnti_mcs[sf].sinr = ch_info->sinr;
-        LOG_D(MAC, "Received_SINR = %f\n",ch_info->sinr);
+      uint16_t sf = ch_info->sfn_sf & 15;
+      assert(sf < 10);
+
+      sf_rnti_mcs[sf].sinr = ch_info->sinr;
+      LOG_D(MAC, "Received_SINR = %f\n",ch_info->sinr);
     }
     else if (len == sizeof(phy_channel_params_t))
     {
@@ -2075,8 +2073,30 @@ static float get_bler_val(uint8_t mcs, int sinr)
 
 }
 
+static inline bool is_channel_modeling(void)
+{
+  /* TODO: For now we enable channel modeling based on the node_number.
+     Replace with a command line option to enable/disable channel modeling. */
+  return node_number == 0;
+}
+
 static bool should_drop_transport_block(int sf, uint16_t rnti)
 {
+  if (!is_channel_modeling())
+  {
+    return false;
+  }
+
+  /* We want to avoid dropping setup messages because this would be pathological.
+     This assumes were in standalone_pnf mode where
+     UE_rrc_inst[0] is module_id = 0 and Info[0] is eNB_index = 0. */
+  UE_STATE_t state = UE_rrc_inst[0].Info[0].State;
+  if (state < RRC_CONNECTED)
+  {
+    LOG_I(MAC, "Not dropping because state: %d", state);
+    return false;
+  }
+
   /* Get block error rate (bler_val) from table based on every saved
      MCS and SINR to be used as the cutoff rate for dropping packets.
      Generate random uniform vairable to compare against bler_val. */

@@ -426,15 +426,6 @@ void rrc_ue_generate_RRCConnectionRequest( const protocol_ctxt_t *const ctxt_pP,
 #endif
       LOG_T(RRC,"%x.",rv[i]);
     }
-    rv[0] = ctxt_pP->module_id; // Debugging duplicate random values
-    LOG_A(RRC, "%s: random = %02X %02X %02X %02X %02X %02X\n",
-          __func__,
-          rv[0],
-          rv[1],
-          rv[2],
-          rv[3],
-          rv[4],
-          rv[5]);
 
     LOG_T(RRC,"\n");
     UE_rrc_inst[ctxt_pP->module_id].Srb0[eNB_index].Tx_buffer.payload_size =
