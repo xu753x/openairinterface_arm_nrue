@@ -192,7 +192,7 @@ int create_tasks_nrue(uint32_t ue_nb) {
     }
   }
   if (ue_nb > 0 && get_softmodem_params()->nsa == 1) {
-    LOG_E(NR_RRC, "Create task for TASK_RRC_NSA_UE about to be called\n");
+    LOG_D(NR_RRC, "Create task for TASK_RRC_NSA_UE about to be called\n");
     if (itti_create_task (TASK_RRC_NSA_UE, recv_msgs_from_lte_ue, NULL) < 0) {
       LOG_E(NR_RRC, "Create task for RRC NSA UE failed\n");
       return -1;
