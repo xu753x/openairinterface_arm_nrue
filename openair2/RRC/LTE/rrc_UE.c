@@ -4953,9 +4953,12 @@ openair_rrc_top_init_ue(
      * crashes when calling this function.
      */
     //init_SL_preconfig(&UE_rrc_inst[module_id],0);
-
-    init_connections_with_nr_ue();
-    LOG_I(RRC, "Started LTE-NR link in the LTE UE\n");
+    if (get_softmodem_params()->nsa == 1)
+    {
+      init_connections_with_nr_ue();
+      LOG_I(RRC, "Started LTE-NR link in the LTE UE\n");
+      //process_nsa_message(NR_UE_rrc_inst, nr_SecondaryCellGroupConfig_r15, buffer,msg_len);
+    }
 
   } else {
     UE_rrc_inst = NULL;
@@ -6022,6 +6025,7 @@ rrc_rx_tx_ue(
 /* NSA UE-NR UDP Interface*/
 void *recv_msgs_from_nr_ue(void *arg)
 {
+    itti_mark_task_ready (TASK_RRC_NSA_UE);
     for (;;)
     {
         nsa_msg_t msg;
@@ -6029,7 +6033,7 @@ void *recv_msgs_from_nr_ue(void *arg)
                                MSG_WAITALL | MSG_TRUNC, NULL, NULL);
         if (recvLen == -1)
         {
-            LOG_E(RRC, "%s: recvfrom: %s\n", __func__, strerror(errno));
+            LOG_D(RRC, "%s: recvfrom: %s\n", __func__, strerror(errno));
             continue;
         }
         if (recvLen > sizeof(msg.msg_buffer))
@@ -6108,12 +6112,6 @@ void init_connections_with_nr_ue(void)
         abort();
     }
 
-    pthread_t nsa_thread;
-    if (pthread_create(&nsa_thread, NULL, recv_msgs_from_nr_ue, NULL) != 0)
-    {
-        LOG_E(RRC,"UE LTE-NR UDP thread error");
-        abort();
-    }
 }
 
 void process_nr_nsa_msg(const void * buffer, size_t bufLen, Rrc_Msg_Type_t msgType)

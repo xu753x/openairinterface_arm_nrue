@@ -2785,7 +2785,7 @@ nr_rrc_ue_generate_rrcReestablishmentComplete(
 /* NSA UE-NR UDP Interface*/
 void *recv_msgs_from_lte_ue(void *args_p)
 {
-    itti_mark_task_ready (TASK_RRC_NSA_UE);
+    itti_mark_task_ready (TASK_RRC_NSA_NRUE);
     LOG_D(NR_RRC, "Entered %s\n", __FUNCTION__);
 
     for (;;)

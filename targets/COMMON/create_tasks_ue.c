@@ -22,6 +22,7 @@
 # include "intertask_interface.h"
 # include "create_tasks.h"
 # include "common/utils/LOG/log.h"
+# include "executables/softmodem-common.h"
 
 #ifdef OPENAIR2
   #include "sctp_eNB_task.h"
@@ -64,6 +65,14 @@ int create_tasks_ue(uint32_t ue_nb) {
     if (itti_create_task (TASK_RRC_UE, rrc_ue_task, NULL) < 0) {
       LOG_E(RRC, "Create task for RRC UE failed\n");
       return -1;
+    }
+
+    if (get_softmodem_params()->nsa == 1) {
+      LOG_I(RRC, "Create task for TASK_RRC_NSA_UE is called\n");
+      if (itti_create_task (TASK_RRC_NSA_UE, recv_msgs_from_nr_ue, NULL) < 0) {
+        LOG_E(RRC, "Create task for RRC NSA UE failed\n");
+        return -1;
+      }
     }
   }
 
