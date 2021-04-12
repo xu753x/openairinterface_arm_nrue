@@ -131,7 +131,7 @@ void *rrc_nrue_task(void *args_p);
 
 /**\brief RRC NSA UE task.
    \param void *args_p Pointer on arguments to start the task. */
-//void *recv_msgs_from_lte_ue(void *args_p);
+void *recv_msgs_from_lte_ue(void *args_p);
 
 /**\brief RRC UE generate RRCSetupRequest message.
    \param module_id  module id

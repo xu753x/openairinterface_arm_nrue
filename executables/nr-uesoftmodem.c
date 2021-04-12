@@ -181,6 +181,27 @@ void print_difftimes(void) {
   LOG_I(HW,"difftimes min = %lu ns ; max = %lu ns\n", min_diff_time.tv_nsec, max_diff_time.tv_nsec);
 }
 
+int create_tasks_nrue(uint32_t ue_nb) {
+  LOG_D(NR_RRC, "%s(ue_nb:%d)\n", __FUNCTION__, ue_nb);
+  itti_wait_ready(1);
+
+  if (ue_nb > 0) {
+    if (itti_create_task (TASK_RRC_NRUE, rrc_nrue_task, NULL) < 0) {
+      LOG_E(NR_RRC, "Create task for RRC UE failed\n");
+      return -1;
+    }
+  }
+  if (ue_nb > 0 && get_softmodem_params()->nsa == 1) {
+    LOG_E(NR_RRC, "Create task for TASK_RRC_NSA_UE about to be called\n");
+    if (itti_create_task (TASK_RRC_NSA_UE, recv_msgs_from_lte_ue, NULL) < 0) {
+      LOG_E(NR_RRC, "Create task for RRC NSA UE failed\n");
+      return -1;
+    }
+  }
+  itti_wait_ready(0);
+  return 0;
+}
+
 void exit_function(const char *file, const char *function, const int line, const char *s) {
   int CC_id;
 
@@ -435,9 +456,12 @@ int main( int argc, char **argv ) {
   if (get_softmodem_params()->sa)
     AssertFatal(get_softmodem_params()->phy_test == 0,"Standalone mode and phy_test are mutually exclusive\n");
 
+  if (create_tasks_nrue(1) < 0) {
+    printf("cannot create ITTI tasks\n");
+    exit(-1); // need a softer mode
+  }
+
   for (int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-
-
     PHY_vars_UE_g[0][CC_id] = (PHY_VARS_NR_UE *)malloc(sizeof(PHY_VARS_NR_UE));
     UE[CC_id] = PHY_vars_UE_g[0][CC_id];
     memset(UE[CC_id],0,sizeof(PHY_VARS_NR_UE));

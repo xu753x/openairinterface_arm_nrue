@@ -206,7 +206,6 @@ extern rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * con
     struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
 
 static void init_connections_with_lte_ue(void);
-static void *recv_msgs_from_lte_ue(void *arg);
 static void process_lte_nsa_msg(const void * buffer, size_t bufLen, Rrc_Msg_Type_t msgType);
 
 // from LTE-RRC DL-DCCH RRCConnectionReconfiguration nr-secondary-cell-group-config (encoded)
@@ -2784,9 +2783,11 @@ nr_rrc_ue_generate_rrcReestablishmentComplete(
 */
 
 /* NSA UE-NR UDP Interface*/
-void *recv_msgs_from_lte_ue(void *arg)
+void *recv_msgs_from_lte_ue(void *args_p)
 {
-    LOG_I(RRC, "Entered %s:\n", __func__);
+    itti_mark_task_ready (TASK_RRC_NSA_UE);
+    LOG_D(NR_RRC, "Entered %s\n", __FUNCTION__);
+
     for (;;)
     {
         nsa_msg_t msg;
@@ -2842,12 +2843,6 @@ void init_connections_with_lte_ue(void)
         abort();
     }
 
-    pthread_t nsa_thread;
-    if (pthread_create(&nsa_thread, NULL, recv_msgs_from_lte_ue, NULL) != 0)
-    {
-        LOG_E(RRC,"UE LTE-NR UDP thread error");
-        abort();
-    }
 }
 
 void process_lte_nsa_msg(const void * buffer, size_t bufLen, Rrc_Msg_Type_t msgType)
