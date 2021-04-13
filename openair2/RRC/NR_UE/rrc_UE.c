@@ -206,7 +206,8 @@ extern rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * con
     struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
 
 static void init_connections_with_lte_ue(void);
-static void process_lte_nsa_msg(const void * buffer, size_t bufLen, Rrc_Msg_Type_t msgType);
+static void process_lte_nsa_msg(MessageDef *message, size_t msgLen, MessagesIds msgType);
+static void nsa_sendmsg(MessageDef *message, size_t msgLen, MessagesIds msgType);
 
 // from LTE-RRC DL-DCCH RRCConnectionReconfiguration nr-secondary-cell-group-config (encoded)
 int8_t nr_rrc_ue_decode_secondary_cellgroup_config(
@@ -2808,6 +2809,41 @@ void *recv_msgs_from_lte_ue(void *args_p)
     return NULL;
 }
 
+void nsa_sendmsg(MessageDef *message, size_t msgLen, MessagesIds msgType)
+{
+    LOG_I(RRC, "Entered %s \n", __FUNCTION__);
+    nsa_msg_t n_msg;
+    if (msgLen > sizeof(n_msg.msg_buffer))
+    {
+        LOG_E(RRC, "%s: message too big: %zu\n", __func__, msgLen);
+        abort();
+    }
+    n_msg.msg_type = msgType;
+    memcpy(n_msg.msg_buffer, message, msgLen);
+
+    struct sockaddr_in sa =
+    {
+        .sin_family = AF_INET,
+        .sin_port = htons(6007),
+    };
+    int sent = sendto(from_lte_ue_fd, n_msg.msg_buffer, sizeof(n_msg.msg_buffer), 0,
+                      (struct sockaddr_in *)&sa, sizeof(sa));
+    if (sent == -1)
+    {
+        LOG_E(RRC, "%s: sendto: %s\n", __func__, strerror(errno));
+        return;
+    }
+}
+
+void send_dummy_msg (void)
+{
+    LOG_I(RRC, "Mellissa::::::::::::::::::We are about to send a dummy message \n");
+    //reconfigure RRC again, the agent might have changed the configuration
+    //itti_send_msg_to_task(TASK_RRC_NSA_NRUE, UE_MODULE_ID_TO_INSTANCE(0), msg_p);
+    MessageDef *msg_p = itti_alloc_new_message(TASK_RRC_NSA_NRUE, 0, MESSAGE_TEST);
+    nsa_sendmsg(msg_p, sizeof(msg_p), MESSAGE_TEST);
+}
+
 void init_connections_with_lte_ue(void)
 {
     struct sockaddr_in sa =
@@ -2845,9 +2881,10 @@ void init_connections_with_lte_ue(void)
 
 }
 
-void process_lte_nsa_msg(const void * buffer, size_t bufLen, Rrc_Msg_Type_t msgType)
+void process_lte_nsa_msg(MessageDef *message, size_t msgLen, MessagesIds msgType)
 {
     LOG_I(RRC, "We are processing an NSA message \n");
+    return;
     /* uint8_t *const msg_buffer[100];
     switch (msgType)
     {

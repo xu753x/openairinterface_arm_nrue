@@ -170,8 +170,8 @@ rrc_ue_process_MBMSCountingRequest(
 		);
 
 static void init_connections_with_nr_ue(void);
-static void process_nr_nsa_msg(const void * buffer, size_t bufLen, Rrc_Msg_Type_t msgType);
-static void nsa_sendmsg(const void *message, size_t msgLen, Rrc_Msg_Type_t msgType);
+void process_nr_nsa_msg(MessageDef * buffer, size_t bufLen, MessagesIds msgType);
+static void nsa_sendmsg(MessageDef *message, size_t msgLen, MessagesIds msgType);
 protocol_ctxt_t ctxt_pP_local;
 
 
@@ -1673,7 +1673,7 @@ rrc_ue_process_ueCapabilityEnquiry(
   OCTET_STRING_t * requestedFreqBandsNR = UECapabilityEnquiry->criticalExtensions.choice.c1.choice.ueCapabilityEnquiry_r8.nonCriticalExtension->
                         nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->
                         nonCriticalExtension->requestedFreqBandsNR_MRDC_r15;
-  nsa_sendmsg(requestedFreqBandsNR->buf, requestedFreqBandsNR->size, UE_CAPABILITY_ENQUIRY);
+  send_dummy_msg();
   // Block function until UE Capability Info is received!
 
   //  ue_CapabilityRAT_Container.ueCapabilityRAT_Container.buf  = UE_rrc_inst[ue_mod_idP].UECapability;
@@ -6038,8 +6038,9 @@ void *recv_msgs_from_nr_ue(void *arg)
 
 }
 
-void nsa_sendmsg(const void *message, size_t msgLen, Rrc_Msg_Type_t msgType)
+void nsa_sendmsg(MessageDef *message, size_t msgLen, MessagesIds msgType)
 {
+    LOG_I(RRC, "Entered %s \n", __FUNCTION__);
     nsa_msg_t n_msg;
     if (msgLen > sizeof(n_msg.msg_buffer))
     {
@@ -6061,15 +6062,20 @@ void nsa_sendmsg(const void *message, size_t msgLen, Rrc_Msg_Type_t msgType)
         LOG_E(RRC, "%s: sendto: %s\n", __func__, strerror(errno));
         return;
     }
-    if (sent != msgLen)
-    {
-        LOG_E(RRC, "%s: sent wrong size: %d != %zu\n", __func__, sent, msgLen);
-        return;
-    }
+}
+
+void send_dummy_msg (void)
+{
+    LOG_I(RRC, "Mellissa::::::::::::::::::We are about to send a dummy message \n");
+    //reconfigure RRC again, the agent might have changed the configuration
+    //itti_send_msg_to_task(TASK_RRC_NSA_UE, UE_MODULE_ID_TO_INSTANCE(0), msg_p);
+    MessageDef *msg_p = itti_alloc_new_message(TASK_RRC_NSA_UE, 0, MESSAGE_TEST);
+    nsa_sendmsg(msg_p, sizeof(msg_p), MESSAGE_TEST);
 }
 
 void init_connections_with_nr_ue(void)
 {
+    LOG_I(RRC, "Melissssssaaa:::::::::::::::::Entered %s \n", __FUNCTION__);
     struct sockaddr_in sa =
     {
         .sin_family = AF_INET,
@@ -6105,9 +6111,10 @@ void init_connections_with_nr_ue(void)
 
 }
 
-void process_nr_nsa_msg(const void * buffer, size_t bufLen, Rrc_Msg_Type_t msgType)
+void process_nr_nsa_msg(MessageDef * buffer, size_t bufLen, MessagesIds msgType)
 {
     LOG_I(RRC, "We are processing an NSA message \n");
+    return;
     /* uint8_t *const msg_buffer[100];
     switch (msgType)
     {

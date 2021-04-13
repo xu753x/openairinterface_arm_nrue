@@ -192,7 +192,7 @@ int create_tasks_nrue(uint32_t ue_nb) {
     }
   }
   if (ue_nb > 0 && get_softmodem_params()->nsa == 1) {
-    LOG_I(NR_RRC, "Create task for TASK_RRC_NSA_NRUE about to be called\n");
+    LOG_D(NR_RRC, "Create task for TASK_RRC_NSA_NRUE about to be called\n");
     if (itti_create_task (TASK_RRC_NSA_NRUE, recv_msgs_from_lte_ue, NULL) < 0) {
       LOG_E(NR_RRC, "Create task for RRC NSA nr-UE failed\n");
       return -1;
@@ -460,7 +460,7 @@ int main( int argc, char **argv ) {
     printf("cannot create ITTI tasks\n");
     exit(-1); // need a softer mode
   }
-
+#if 0
   for (int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     PHY_vars_UE_g[0][CC_id] = (PHY_VARS_NR_UE *)malloc(sizeof(PHY_VARS_NR_UE));
     UE[CC_id] = PHY_vars_UE_g[0][CC_id];
@@ -503,6 +503,7 @@ int main( int argc, char **argv ) {
   
   init_NR_UE_threads(1);
   printf("UE threads created by %ld\n", gettid());
+#endif
   
   // wait for end of program
   printf("TYPE <CTRL-C> TO TERMINATE\n");

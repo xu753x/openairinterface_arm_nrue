@@ -389,12 +389,12 @@ uint64_t pdcp_module_init(uint64_t _pdcp_optmask, int id)
       netlink_init_tun("nrue", num_if, id);
       //Add --nr-ip-over-lte option check for next line
       if (IS_SOFTMODEM_NOS1)
-          nas_config(1, 1, 3, "ue");
+          nas_config(1, 1, 3, "nrue");
       LOG_I(PDCP, "UE pdcp will use tun interface\n");
       start_pdcp_tun_ue();
     } else if(ENB_NAS_USE_TUN) {
-      netlink_init_tun("enb", 1, id);
-      nas_config(1, 1, 1, "enb");
+      netlink_init_tun("gnb", 1, id);
+      nas_config(1, 1, 1, "gnb");
       LOG_I(PDCP, "ENB pdcp will use tun interface\n");
       start_pdcp_tun_enb();
     } else {
