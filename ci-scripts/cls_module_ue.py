@@ -56,7 +56,8 @@ class Module_UE:
 		for k, v in Module.items():
 			setattr(self, k, v)
 		self.UEIPAddress = ""
-		
+		#dictionary linking command names and related module scripts
+        self.cmd_dict= {"wup": self.WakeupScript,"detach":self.DetachScript}#dictionary of function scripts		
 
 
 
@@ -80,22 +81,32 @@ class Module_UE:
 
 	#Wakeup/Detach can probably be improved with encapsulation of the command such def Command(self, command)
 	#this method wakes up the module by calling the specified python script 
-	def WakeUp(self):
-		mySSH = sshconnection.SSHConnection()
-		mySSH.open(self.HostIPAddress, self.HostUsername, self.HostPassword)
-		mySSH.command('echo ' + self.HostPassword + ' | sudo -S python3 ' + self.WakeupScript + ' ','\$',5)
-		time.sleep(5)
-		logging.debug("Module wake-up")
-		mySSH.close()
+	# def WakeUp(self):
+	# 	mySSH = sshconnection.SSHConnection()
+	# 	mySSH.open(self.HostIPAddress, self.HostUsername, self.HostPassword)
+	# 	mySSH.command('echo ' + self.HostPassword + ' | sudo -S python3 ' + self.WakeupScript + ' ','\$',5)
+	# 	time.sleep(5)
+	# 	logging.debug("Module wake-up")
+	# 	mySSH.close()
 
 	#this method detaches the module by calling the specified python script 
-	def Detach(self):
+	# def Detach(self):
+	# 	mySSH = sshconnection.SSHConnection()
+	# 	mySSH.open(self.HostIPAddress, self.HostUsername, self.HostPassword)
+	# 	mySSH.command('echo ' + self.HostPassword + ' | sudo -S python3 ' + self.DetachScript + ' ','\$',5)
+	# 	time.sleep(5)
+	# 	logging.debug("Module detach")
+	# 	mySSH.close()
+
+	#tentative: generic command function 
+	def Command(self,cmd):
 		mySSH = sshconnection.SSHConnection()
 		mySSH.open(self.HostIPAddress, self.HostUsername, self.HostPassword)
-		mySSH.command('echo ' + self.HostPassword + ' | sudo -S python3 ' + self.DetachScript + ' ','\$',5)
+		mySSH.command('echo ' + self.HostPassword + ' | sudo -S python3 ' + self.cmd_dict[cmd] + ' ','\$',5)
 		time.sleep(5)
-		logging.debug("Module detach")
+		logging.debug("Module "+ cmd)
 		mySSH.close()
+
 
 	#this method retrieves the Module IP address (not the Host IP address) 
 	def GetModuleIPAddress(self):
