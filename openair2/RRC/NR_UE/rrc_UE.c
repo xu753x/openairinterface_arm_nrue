@@ -520,7 +520,7 @@ NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* rrc_config_path){
       fclose(fd);
 
     }
-    else if (get_softmodem_params()->nsa == 1)
+    else if (get_softmodem_params()->nsa)
     {
       init_connections_with_lte_ue();
       LOG_I(RRC, "Started LTE-NR link in the nr-UE\n");
@@ -2465,7 +2465,9 @@ void *rrc_nrue_task( void *args_p ) {
   NR_SRB_INFO   *srb_info_p;
   protocol_ctxt_t  ctxt;
   itti_mark_task_ready (TASK_RRC_NRUE);
-
+  /* TODO: Add case to handle nr-UE messages we want from nrUE RRC layer
+     The first one is the UE capability message from LTE UE. In the capability inquiry
+     with a particular special field, then we query the 5G side. */
   while(1) {
     // Wait for a message
     itti_receive_msg (TASK_RRC_NRUE, &msg_p);
@@ -2787,8 +2789,6 @@ nr_rrc_ue_generate_rrcReestablishmentComplete(
 void *recv_msgs_from_lte_ue(void *args_p)
 {
     itti_mark_task_ready (TASK_RRC_NSA_NRUE);
-    LOG_D(NR_RRC, "Entered %s\n", __FUNCTION__);
-
     for (;;)
     {
         nsa_msg_t msg;

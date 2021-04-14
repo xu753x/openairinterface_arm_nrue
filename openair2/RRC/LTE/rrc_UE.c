@@ -169,7 +169,6 @@ rrc_ue_process_MBMSCountingRequest(
   uint8_t eNB_index
 		);
 
-static void init_connections_with_nr_ue(void);
 void process_nr_nsa_msg(MessageDef * buffer, size_t bufLen, MessagesIds msgType);
 static void nsa_sendmsg(MessageDef *message, size_t msgLen, MessagesIds msgType);
 protocol_ctxt_t ctxt_pP_local;
@@ -4473,6 +4472,7 @@ void *rrc_ue_task( void *args_p ) {
     instance = ITTI_MSG_DESTINATION_INSTANCE (msg_p);
     ue_mod_id = UE_INSTANCE_TO_MODULE_ID(instance);
 
+    /* TODO: Add case to handle nr-UE messages we want from nrUE RRC layer */
     switch (ITTI_MSG_ID(msg_p)) {
       case TERMINATE_MESSAGE:
         LOG_W(RRC, " *** Exiting RRC thread\n");
@@ -4946,8 +4946,7 @@ openair_rrc_top_init_ue(
     //init_SL_preconfig(&UE_rrc_inst[module_id],0);
     if (get_softmodem_params()->nsa == 1)
     {
-      init_connections_with_nr_ue();
-      LOG_I(RRC, "Started LTE-NR link in the LTE UE\n");
+      LOG_I(RRC, "Calling process_nsa_message\n");
       //process_nsa_message(NR_UE_rrc_inst, nr_SecondaryCellGroupConfig_r15, buffer,msg_len);
     }
 
@@ -6014,7 +6013,7 @@ rrc_rx_tx_ue(
 }
 
 /* NSA UE-NR UDP Interface*/
-void *recv_msgs_from_nr_ue(void *arg)
+void *recv_msgs_from_nr_ue(void *args_p)
 {
     itti_mark_task_ready (TASK_RRC_NSA_UE);
     for (;;)
@@ -6024,7 +6023,7 @@ void *recv_msgs_from_nr_ue(void *arg)
                                MSG_WAITALL | MSG_TRUNC, NULL, NULL);
         if (recvLen == -1)
         {
-            LOG_D(RRC, "%s: recvfrom: %s\n", __func__, strerror(errno));
+            LOG_E(RRC, "%s: recvfrom: %s\n", __func__, strerror(errno));
             continue;
         }
         if (recvLen > sizeof(msg.msg_buffer))
@@ -6034,7 +6033,6 @@ void *recv_msgs_from_nr_ue(void *arg)
         }
         process_nr_nsa_msg(msg.msg_buffer, recvLen, msg.msg_type);
     }
-    return NULL;
 
 }
 
@@ -6075,7 +6073,6 @@ void send_dummy_msg (void)
 
 void init_connections_with_nr_ue(void)
 {
-    LOG_I(RRC, "Melissssssaaa:::::::::::::::::Entered %s \n", __FUNCTION__);
     struct sockaddr_in sa =
     {
         .sin_family = AF_INET,

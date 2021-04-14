@@ -460,35 +460,35 @@ int main( int argc, char **argv ) {
     printf("cannot create ITTI tasks\n");
     exit(-1); // need a softer mode
   }
-#if 0
-  for (int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    PHY_vars_UE_g[0][CC_id] = (PHY_VARS_NR_UE *)malloc(sizeof(PHY_VARS_NR_UE));
-    UE[CC_id] = PHY_vars_UE_g[0][CC_id];
-    memset(UE[CC_id],0,sizeof(PHY_VARS_NR_UE));
+  if (get_softmodem_params()->nsa) {
+    for (int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+      PHY_vars_UE_g[0][CC_id] = (PHY_VARS_NR_UE *)malloc(sizeof(PHY_VARS_NR_UE));
+      UE[CC_id] = PHY_vars_UE_g[0][CC_id];
+      memset(UE[CC_id],0,sizeof(PHY_VARS_NR_UE));
 
-    set_options(CC_id, UE[CC_id]);
+      set_options(CC_id, UE[CC_id]);
 
-    NR_UE_MAC_INST_t *mac = get_mac_inst(0);
-    if(mac->if_module != NULL && mac->if_module->phy_config_request != NULL)
-      mac->if_module->phy_config_request(&mac->phy_config);
+      NR_UE_MAC_INST_t *mac = get_mac_inst(0);
+      if(mac->if_module != NULL && mac->if_module->phy_config_request != NULL)
+        mac->if_module->phy_config_request(&mac->phy_config);
 
-    fapi_nr_config_request_t *nrUE_config = &UE[CC_id]->nrUE_config;
+      fapi_nr_config_request_t *nrUE_config = &UE[CC_id]->nrUE_config;
 
-    nr_init_frame_parms_ue(&UE[CC_id]->frame_parms, nrUE_config, *mac->scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0]);
+      nr_init_frame_parms_ue(&UE[CC_id]->frame_parms, nrUE_config, *mac->scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0]);
 
-    init_symbol_rotation(&UE[CC_id]->frame_parms);
-    init_nr_ue_vars(UE[CC_id], 0, abstraction_flag);
+      init_symbol_rotation(&UE[CC_id]->frame_parms);
+      init_nr_ue_vars(UE[CC_id], 0, abstraction_flag);
 
-    #ifdef FR2_TEST
-    // Overwrite DL frequency (for FR2 testing)
-    if (downlink_frequency[0][0]!=0){
-      frame_parms[CC_id]->dl_CarrierFreq = downlink_frequency[0][0];
-      if (frame_parms[CC_id]->frame_type == TDD)
-        frame_parms[CC_id]->ul_CarrierFreq = downlink_frequency[0][0];
+      #ifdef FR2_TEST
+      // Overwrite DL frequency (for FR2 testing)
+      if (downlink_frequency[0][0]!=0){
+        frame_parms[CC_id]->dl_CarrierFreq = downlink_frequency[0][0];
+        if (frame_parms[CC_id]->frame_type == TDD)
+          frame_parms[CC_id]->ul_CarrierFreq = downlink_frequency[0][0];
+      }
+      #endif
     }
-    #endif
   }
-
   init_openair0();
   // init UE_PF_PO and mutex lock
   pthread_mutex_init(&ue_pf_po_mutex, NULL);
@@ -503,7 +503,7 @@ int main( int argc, char **argv ) {
   
   init_NR_UE_threads(1);
   printf("UE threads created by %ld\n", gettid());
-#endif
+
   
   // wait for end of program
   printf("TYPE <CTRL-C> TO TERMINATE\n");
