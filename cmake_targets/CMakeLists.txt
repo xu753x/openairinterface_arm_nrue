@@ -2869,6 +2869,11 @@ add_executable(replay_node
   )
 target_link_libraries (replay_node minimal_lib)
 
+add_executable(convertSMVB
+  ${OPENAIR_TARGETS}/ARCH/rfsimulator/convert_SMVB.c
+  )
+target_link_libraries (convertSMVB minimal_lib)
+
 add_executable(measurement_display
   ${OPENAIR_DIR}/common/utils/threadPool/measurement_display.c)
 target_link_libraries (measurement_display minimal_lib)

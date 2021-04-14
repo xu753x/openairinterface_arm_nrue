@@ -178,6 +178,7 @@ int main(int argc, char *argv[]) {
   int fd;
   AssertFatal((fd=open(argv[1],O_RDONLY)) != -1, "file: %s", argv[1]);
   off_t fileSize=lseek(fd, 0, SEEK_END);
+  lseek(fd, 0, SEEK_SET);
   int serviceSock;
 
   if (strcmp(argv[2],"server")==0) {
@@ -186,15 +187,23 @@ int main(int argc, char *argv[]) {
     serviceSock=client_start(argv[2],atoi(argv[3]));
   }
 
-  uint64_t typeStamp=ENB_MAGICDL_FDD;
+  uint64_t typeStamp=ENB_MAGICDL;
   boolean_t raw=false;
 
   if ( argc == 5 ) {
     raw=true;
 
     if (strcmp(argv[4],"UL") == 0 )
-      typeStamp=UE_MAGICDL_FDD;
+      typeStamp=UE_MAGICUL;
   }
+  
+  uint64_t magic;
+  read(fd,&magic,sizeof(magic));
+  if (magic== UE_MAGICDL || magic == UE_MAGICUL || magic== ENB_MAGICDL || magic == ENB_MAGICUL ) {
+    printf("detected rfsimulator recorded file\n");
+    raw=false;
+  }
+  lseek(fd, 0, SEEK_SET);
 
   samplesBlockHeader_t header;
   int bufSize=100000;
@@ -207,8 +216,11 @@ int main(int argc, char *argv[]) {
 
   while (1) {
     //Rewind the file to loop on the samples
-    if ( lseek(fd, 0, SEEK_CUR) >= fileSize )
+    if ( lseek(fd, 0, SEEK_CUR) >= fileSize ) {
       lseek(fd, 0, SEEK_SET);
+      // we will increment timestamp when we roll on the file
+      timestamp+=header.timestamp+header.size;
+    }
 
     // Read one block and send it
     setblocking(serviceSock, blocking);
@@ -223,6 +235,7 @@ int main(int argc, char *argv[]) {
       header.option_flag=0;
     } else {
       AssertFatal(read(fd,&header,sizeof(header)), "");
+      header.timestamp+=timestamp;
     }
 
     fullwrite(serviceSock, &header, sizeof(header));
@@ -240,11 +253,9 @@ int main(int argc, char *argv[]) {
     }
 
     AssertFatal(read(fd,buff,dataSize) == dataSize, "");
-
     if (raw) // UHD shifts the 12 ADC values in MSB
       for (int i=0; i<header.size*header.nbAnt*2; i++)
         ((int16_t *)buff)[i]/=16;
-
     usleep(1000);
     printf("sending at ts: %lu, number of samples: %d, energy: %d\n",
            header.timestamp, header.size, signal_energy(buff, header.size));
