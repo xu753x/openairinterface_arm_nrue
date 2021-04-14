@@ -738,6 +738,8 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
                           100,
                           0,
                           0);
+
+  xer_fprint(stdout, &asn_DEF_NR_UL_CCCH_Message, (void *)ul_ccch_msg);
                             
   if (dec_rval.consumed == 0) {
     /* TODO */
