@@ -460,7 +460,7 @@ int main( int argc, char **argv ) {
     printf("cannot create ITTI tasks\n");
     exit(-1); // need a softer mode
   }
-  if (get_softmodem_params()->nsa) {
+  if (!get_softmodem_params()->nsa) {
     for (int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
       PHY_vars_UE_g[0][CC_id] = (PHY_VARS_NR_UE *)malloc(sizeof(PHY_VARS_NR_UE));
       UE[CC_id] = PHY_vars_UE_g[0][CC_id];
@@ -488,23 +488,23 @@ int main( int argc, char **argv ) {
       }
       #endif
     }
+
+    init_openair0();
+    // init UE_PF_PO and mutex lock
+    pthread_mutex_init(&ue_pf_po_mutex, NULL);
+    memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*NUMBER_OF_UE_MAX*MAX_NUM_CCs);
+    configure_linux();
+    mlockall(MCL_CURRENT | MCL_FUTURE);
+
+    if(IS_SOFTMODEM_DOFORMS) {
+      load_softscope("nr",PHY_vars_UE_g[0][0]);
+    }
+
+
+    init_NR_UE_threads(1);
+    printf("UE threads created by %ld\n", gettid());
+
   }
-  init_openair0();
-  // init UE_PF_PO and mutex lock
-  pthread_mutex_init(&ue_pf_po_mutex, NULL);
-  memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*NUMBER_OF_UE_MAX*MAX_NUM_CCs);
-  configure_linux();
-  mlockall(MCL_CURRENT | MCL_FUTURE);
- 
-  if(IS_SOFTMODEM_DOFORMS) { 
-    load_softscope("nr",PHY_vars_UE_g[0][0]);
-  }     
-
-  
-  init_NR_UE_threads(1);
-  printf("UE threads created by %ld\n", gettid());
-
-  
   // wait for end of program
   printf("TYPE <CTRL-C> TO TERMINATE\n");
   // Sleep a while before checking all parameters have been used
