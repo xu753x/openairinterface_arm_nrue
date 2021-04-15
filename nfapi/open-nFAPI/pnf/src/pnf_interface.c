@@ -583,4 +583,3 @@ int nfapi_pnf_vendor_extension(nfapi_pnf_config_t* config, nfapi_p4_p5_message_h
 
 	return pnf_pack_and_send_p5_message(_this, msg, msg_len);
 }
-

@@ -2780,14 +2780,7 @@ nr_rrc_ue_generate_rrcReestablishmentComplete(
 
 #endif
 }
-/*
-   1. Create an itti task (itti_nsa_task). This will get added into
-      targets/common/create_tasks. (Hopefully for nr, if not find nr version).
-   2. Add my thread here thats listening on the socket
-   3. Finish the itti task below
-*/
 
-/* NSA UE-NR UDP Interface*/
 void *recv_msgs_from_lte_ue(void *args_p)
 {
     itti_mark_task_ready (TASK_RRC_NSA_NRUE);
@@ -2835,13 +2828,6 @@ void nsa_sendmsg(MessageDef *message, size_t msg_len, MessagesIds msg_type)
         LOG_E(NR_RRC, "%s: sendto: %s\n", __func__, strerror(errno));
         return;
     }
-}
-
-void send_dummy_msg (void)
-{
-    LOG_D(NR_RRC, "Sending a dummy message \n");
-    MessageDef *msg_p = itti_alloc_new_message(TASK_RRC_NSA_NRUE, 0, MESSAGE_TEST);
-    nsa_sendmsg(msg_p, sizeof(msg_p), MESSAGE_TEST);
 }
 
 void init_connections_with_lte_ue(void)

@@ -385,6 +385,9 @@ uint64_t pdcp_module_init(uint64_t _pdcp_optmask, int id)
     nas_getparams();
 
     if(UE_NAS_USE_TUN) {
+      /* TODO: Brute force changes made below to allow nr-UE to have unique tunnel interfaces.
+         When the NODE_NUMBER param is not used to determine functionality and LTE tunnel
+         interfaces, we should update the netlink_init_tun() and nas_config() calls below as well. */
       int num_if = (NFAPI_MODE == NFAPI_UE_STUB_PNF || IS_SOFTMODEM_SIML1 )? MAX_MOBILES_PER_ENB : 1;
       netlink_init_tun("nrue", num_if, id);
       //Add --nr-ip-over-lte option check for next line

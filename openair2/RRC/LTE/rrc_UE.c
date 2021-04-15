@@ -6012,7 +6012,6 @@ rrc_rx_tx_ue(
   return (RRC_OK);
 }
 
-/* NSA UE-NR UDP Interface*/
 void *recv_msgs_from_nr_ue(void *args_p)
 {
     itti_mark_task_ready (TASK_RRC_NSA_UE);
@@ -6060,13 +6059,6 @@ void nsa_sendmsg(const void *message, size_t msg_len, Rrc_Msg_Type_t msg_type)
         LOG_E(RRC, "%s: sendto: %s\n", __func__, strerror(errno));
         return;
     }
-}
-
-void send_dummy_msg (void)
-{
-    LOG_D(RRC, "Sending a dummy message \n");
-    MessageDef *msg_p = itti_alloc_new_message(TASK_RRC_NSA_UE, 0, MESSAGE_TEST);
-    nsa_sendmsg(msg_p, sizeof(msg_p), MESSAGE_TEST);
 }
 
 void init_connections_with_nr_ue(void)

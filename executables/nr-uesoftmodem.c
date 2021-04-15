@@ -192,7 +192,6 @@ int create_tasks_nrue(uint32_t ue_nb) {
     }
   }
   if (ue_nb > 0 && get_softmodem_params()->nsa == 1) {
-    LOG_D(NR_RRC, "Create task for TASK_RRC_NSA_NRUE about to be called\n");
     if (itti_create_task (TASK_RRC_NSA_NRUE, recv_msgs_from_lte_ue, NULL) < 0) {
       LOG_E(NR_RRC, "Create task for RRC NSA nr-UE failed\n");
       return -1;
@@ -457,8 +456,8 @@ int main( int argc, char **argv ) {
     AssertFatal(get_softmodem_params()->phy_test == 0,"Standalone mode and phy_test are mutually exclusive\n");
 
   if (create_tasks_nrue(1) < 0) {
-    printf("cannot create ITTI tasks\n");
-    exit(-1); // need a softer mode
+    LOG_E(NR_RRC,"Cannot create ITTI tasks for RRC layer of nr-UE\n");
+    exit(-1);
   }
   if (!get_softmodem_params()->nsa) {
     for (int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
