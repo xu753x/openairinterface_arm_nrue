@@ -27,15 +27,10 @@ extern FILL_UL_INFO_MUTEX_t fill_ul_mutex;
 extern UL_IND_t *UL_INFO;
 // New
 /// Pointers to config_request types. Used from nfapi callback functions.
-//below 3 difinitions move to phy_stub_UE.c to add initialization when difinition.
-
-//below 2 difinitions move to lte-ue.c to add initialization when difinition.
-//int next_ra_frame;
-//module_id_t next_Mod_id;
-eth_params_t         stub_eth_params;
-
-
-
+extern nfapi_dl_config_request_t* dl_config_req;
+extern nfapi_ul_config_request_t* ul_config_req;
+extern nfapi_hi_dci0_request_t* hi_dci0_req;
+extern int	tx_req_num_elems;
 
 // This function should return all the sched_response config messages which concern a specific UE. Inside this
 // function we should somehow make the translation of config message's rnti to Mod_ID.

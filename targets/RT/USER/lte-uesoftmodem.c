@@ -87,6 +87,8 @@
 #include "lte-softmodem.h"
 
 extern int ue_id_g;
+
+msc_interface_t msc_interface;
 /* temporary compilation wokaround (UE/eNB split */
 
 
@@ -168,7 +170,6 @@ extern void get_uethreads_params(void);
 
 int transmission_mode=1;
 
-int usrp_tx_thread = 0;
 
 
 char *usrp_args=NULL;
@@ -801,7 +802,7 @@ int main( int argc, char **argv ) {
     PHY_vars_UE_g[0][0]->no_timing_correction = 1;
   }
 
-  if(IS_SOFTMODEM_DOFORMS)
+  if(IS_SOFTMODEM_DOSCOPE)
     load_softscope("ue",NULL);
 
   config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
@@ -826,7 +827,7 @@ int main( int argc, char **argv ) {
   printf("oai_exit=%d\n",oai_exit);
 
   // stop threads
-  if(IS_SOFTMODEM_DOFORMS)
+  if(IS_SOFTMODEM_DOSCOPE)
     end_forms();
 
   printf("stopping MODEM threads\n");
