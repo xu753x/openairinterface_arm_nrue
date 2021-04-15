@@ -169,8 +169,8 @@ rrc_ue_process_MBMSCountingRequest(
   uint8_t eNB_index
 		);
 
-void process_nr_nsa_msg(MessageDef * buffer, size_t bufLen, MessagesIds msgType);
-static void nsa_sendmsg(MessageDef *message, size_t msgLen, MessagesIds msgType);
+static void process_nr_nsa_msg(const void * buffer, size_t buf_len, Rrc_Msg_Type_t msg_type);
+static void nsa_sendmsg(const void *message, size_t msg_len, Rrc_Msg_Type_t msg_type);
 protocol_ctxt_t ctxt_pP_local;
 
 
@@ -1672,7 +1672,7 @@ rrc_ue_process_ueCapabilityEnquiry(
   OCTET_STRING_t * requestedFreqBandsNR = UECapabilityEnquiry->criticalExtensions.choice.c1.choice.ueCapabilityEnquiry_r8.nonCriticalExtension->
                         nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->
                         nonCriticalExtension->requestedFreqBandsNR_MRDC_r15;
-  send_dummy_msg();
+  nsa_sendmsg(requestedFreqBandsNR->buf, requestedFreqBandsNR->size, UE_CAPABILITY_ENQUIRY);
   // Block function until UE Capability Info is received!
 
   //  ue_CapabilityRAT_Container.ueCapabilityRAT_Container.buf  = UE_rrc_inst[ue_mod_idP].UECapability;
@@ -6036,17 +6036,17 @@ void *recv_msgs_from_nr_ue(void *args_p)
 
 }
 
-void nsa_sendmsg(MessageDef *message, size_t msgLen, MessagesIds msgType)
+void nsa_sendmsg(const void *message, size_t msg_len, Rrc_Msg_Type_t msg_type)
 {
     LOG_I(RRC, "Entered %s \n", __FUNCTION__);
     nsa_msg_t n_msg;
-    if (msgLen > sizeof(n_msg.msg_buffer))
+    if (msg_len > sizeof(n_msg.msg_buffer))
     {
-        LOG_E(RRC, "%s: message too big: %zu\n", __func__, msgLen);
+        LOG_E(RRC, "%s: message too big: %zu\n", __func__, msg_len);
         abort();
     }
-    n_msg.msg_type = msgType;
-    memcpy(n_msg.msg_buffer, message, msgLen);
+    n_msg.msg_type = msg_type;
+    memcpy(n_msg.msg_buffer, message, msg_len);
 
     struct sockaddr_in sa =
     {
@@ -6064,9 +6064,7 @@ void nsa_sendmsg(MessageDef *message, size_t msgLen, MessagesIds msgType)
 
 void send_dummy_msg (void)
 {
-    LOG_I(RRC, "Mellissa::::::::::::::::::We are about to send a dummy message \n");
-    //reconfigure RRC again, the agent might have changed the configuration
-    //itti_send_msg_to_task(TASK_RRC_NSA_UE, UE_MODULE_ID_TO_INSTANCE(0), msg_p);
+    LOG_D(RRC, "Sending a dummy message \n");
     MessageDef *msg_p = itti_alloc_new_message(TASK_RRC_NSA_UE, 0, MESSAGE_TEST);
     nsa_sendmsg(msg_p, sizeof(msg_p), MESSAGE_TEST);
 }
@@ -6108,12 +6106,12 @@ void init_connections_with_nr_ue(void)
 
 }
 
-void process_nr_nsa_msg(MessageDef * buffer, size_t bufLen, MessagesIds msgType)
+void process_nr_nsa_msg(const void * buffer, size_t buf_len, Rrc_Msg_Type_t msg_type)
 {
     LOG_I(RRC, "We are processing an NSA message \n");
     return;
-    /* uint8_t *const msg_buffer[100];
-    switch (msgType)
+    uint8_t *const msg_buffer[MAX_MESSAGE_SIZE];
+    switch (msg_type)
     {
         case UE_CAPABILITY_INFO:
         {
@@ -6122,7 +6120,7 @@ void process_nr_nsa_msg(MessageDef * buffer, size_t bufLen, MessagesIds msgType)
                             &asn_DEF_LTE_UE_EUTRA_Capability_v1510_IEs,
                             (void **)&ue_cap_info,
                             (const void *)msg_buffer,
-                            100);  // What is correct size!!?
+                            MAX_MESSAGE_SIZE);
             if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0))
             {
               LOG_E( RRC, "Failed to decode UECapabilityInfo (%zu bits)\n",
@@ -6131,10 +6129,11 @@ void process_nr_nsa_msg(MessageDef * buffer, size_t bufLen, MessagesIds msgType)
             // Extract the parameters needed by LTE
             // Print out contents to verify... as a placeholder
             // Send 1st RRC message back to NR UE
+            break;
         }
 
         default:
             LOG_E(RRC, "No NSA Message Found\n");
-    } */
+    }
 }
 

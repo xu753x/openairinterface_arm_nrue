@@ -206,8 +206,8 @@ extern rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * con
     struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
 
 static void init_connections_with_lte_ue(void);
-static void process_lte_nsa_msg(MessageDef *message, size_t msgLen, MessagesIds msgType);
-static void nsa_sendmsg(MessageDef *message, size_t msgLen, MessagesIds msgType);
+static void process_lte_nsa_msg(const void * buffer, size_t buf_len, Rrc_Msg_Type_t msg_type);
+static void nsa_sendmsg(MessageDef *message, size_t msg_len, MessagesIds msg_type);
 
 // from LTE-RRC DL-DCCH RRCConnectionReconfiguration nr-secondary-cell-group-config (encoded)
 int8_t nr_rrc_ue_decode_secondary_cellgroup_config(
@@ -379,7 +379,7 @@ void process_nsa_message(NR_UE_RRC_INST_t *rrc, nsa_message_t nsa_message_type, 
                                 msg_len); 
         
         if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
-          LOG_E(RRC,"NR_RRCReconfiguration decode error\n");
+          LOG_E(NR_RRC,"NR_RRCReconfiguration decode error\n");
           // free the memory
           SEQUENCE_free( &asn_DEF_NR_RRCReconfiguration, RRCReconfiguration, 1 );
           return;
@@ -398,7 +398,7 @@ void process_nsa_message(NR_UE_RRC_INST_t *rrc, nsa_message_t nsa_message_type, 
                                 msg_len); 
         
         if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
-          LOG_E(RRC,"NR_RadioBearerConfig decode error\n");
+          LOG_E(NR_RRC,"NR_RadioBearerConfig decode error\n");
           // free the memory
           SEQUENCE_free( &asn_DEF_NR_RadioBearerConfig, RadioBearerConfig, 1 );
           return;
@@ -523,7 +523,7 @@ NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* rrc_config_path){
     else if (get_softmodem_params()->nsa)
     {
       init_connections_with_lte_ue();
-      LOG_I(RRC, "Started LTE-NR link in the nr-UE\n");
+      LOG_I(NR_RRC, "Started LTE-NR link in the nr-UE\n");
       //process_nsa_message(NR_UE_rrc_inst, nr_SecondaryCellGroupConfig_r15, buffer,msg_len);
     }
   }else{
@@ -1044,7 +1044,7 @@ int nr_decode_SI( const protocol_ctxt_t *const ctxt_pP, const uint8_t gNB_index 
   //  if (NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIcnt == sib1->schedulingInfoList.list.count)
   //    rrc_set_sub_state( ctxt_pP->module_id, RRC_SUB_STATE_IDLE_SIB_COMPLETE );
 
-  //  LOG_I(RRC,"SIStatus %x, SIcnt %d/%d\n",
+  //  LOG_I(NR_RRC,"SIStatus %x, SIcnt %d/%d\n",
   //        NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus,
   //        NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIcnt,
   //        sib1->schedulingInfoList.list.count);
@@ -1060,13 +1060,13 @@ int8_t check_requested_SI_List(module_id_t module_id, BIT_STRING_t requested_SI_
 
     bool SIB_to_request[32] = {};
 
-    LOG_D(RRC, "SIBs broadcasting: ");
+    LOG_D(NR_RRC, "SIBs broadcasting: ");
     for(int i = 0; i < sib1.si_SchedulingInfo->schedulingInfoList.list.array[0]->sib_MappingInfo.list.count; i++) {
       printf("SIB%li  ", sib1.si_SchedulingInfo->schedulingInfoList.list.array[0]->sib_MappingInfo.list.array[i]->type + 2);
     }
     printf("\n");
 
-    LOG_D(RRC, "SIBs needed by UE: ");
+    LOG_D(NR_RRC, "SIBs needed by UE: ");
     for(int j = 0; j < 8*requested_SI_List.size; j++) {
       if( ((requested_SI_List.buf[j/8]>>(j%8))&1) == 1) {
 
@@ -1084,7 +1084,7 @@ int8_t check_requested_SI_List(module_id_t module_id, BIT_STRING_t requested_SI_
     }
     printf("\n");
 
-    LOG_D(RRC, "SIBs to request by UE: ");
+    LOG_D(NR_RRC, "SIBs to request by UE: ");
     bool do_ra = false;
     for(int j = 0; j < 8*requested_SI_List.size; j++) {
       if(SIB_to_request[j]) {
@@ -1100,9 +1100,9 @@ int8_t check_requested_SI_List(module_id_t module_id, BIT_STRING_t requested_SI_
       get_softmodem_params()->do_ra = 1;
 
       if(sib1.si_SchedulingInfo->si_RequestConfig) {
-        LOG_D(RRC, "Trigger contention-free RA procedure (ra_trigger = %i)\n", NR_UE_rrc_inst[module_id].ra_trigger);
+        LOG_D(NR_RRC, "Trigger contention-free RA procedure (ra_trigger = %i)\n", NR_UE_rrc_inst[module_id].ra_trigger);
       } else {
-        LOG_D(RRC, "Trigger contention-based RA procedure (ra_trigger = %i)\n", NR_UE_rrc_inst[module_id].ra_trigger);
+        LOG_D(NR_RRC, "Trigger contention-based RA procedure (ra_trigger = %i)\n", NR_UE_rrc_inst[module_id].ra_trigger);
       }
 
     }
@@ -1371,7 +1371,7 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
     asn_dec_rval_t dec_rval;
     int rval=0;
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_CCCH, VCD_FUNCTION_IN);
-    //    LOG_D(RRC,"[UE %d] Decoding DL-CCCH message (%d bytes), State %d\n",ue_mod_idP,Srb_info->Rx_buffer.payload_size,
+    //    LOG_D(NR_RRC,"[UE %d] Decoding DL-CCCH message (%d bytes), State %d\n",ue_mod_idP,Srb_info->Rx_buffer.payload_size,
     //    NR_UE_rrc_inst[ue_mod_idP].Info[gNB_index].State);
     dec_rval = uper_decode(NULL,
                            &asn_DEF_NR_DL_CCCH_Message,
@@ -1384,7 +1384,7 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
     // }
     
     if ((dec_rval.code != RC_OK) && (dec_rval.consumed==0)) {
-      LOG_E(RRC,"[UE %d] Frame %d : Failed to decode DL-CCCH-Message (%zu bytes)\n",ctxt_pP->module_id,ctxt_pP->frame,dec_rval.consumed);
+      LOG_E(NR_RRC,"[UE %d] Frame %d : Failed to decode DL-CCCH-Message (%zu bytes)\n",ctxt_pP->module_id,ctxt_pP->frame,dec_rval.consumed);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_CCCH, VCD_FUNCTION_OUT);
       return -1;
     }
@@ -2669,6 +2669,8 @@ nr_rrc_ue_process_ueCapabilityEnquiry(
   OCTET_STRING_fromBuf(&ue_CapabilityRAT_Container.ue_CapabilityRAT_Container,
                        (const char *)NR_UE_rrc_inst[ctxt_pP->module_id].UECapability,
                        NR_UE_rrc_inst[ctxt_pP->module_id].UECapability_size);
+  OCTET_STRING_t * requestedFreqBandsNR = UECapabilityEnquiry->criticalExtensions.choice.ueCapabilityEnquiry->ue_CapabilityEnquiryExt;
+  nsa_sendmsg(requestedFreqBandsNR->buf, requestedFreqBandsNR->size, UE_CAPABILITY_INFO);
   //  ue_CapabilityRAT_Container.ueCapabilityRAT_Container.buf  = UE_rrc_inst[ue_mod_idP].UECapability;
   // ue_CapabilityRAT_Container.ueCapabilityRAT_Container.size = UE_rrc_inst[ue_mod_idP].UECapability_size;
   AssertFatal(UECapabilityEnquiry->criticalExtensions.present == NR_UECapabilityEnquiry__criticalExtensions_PR_ueCapabilityEnquiry,
@@ -2694,7 +2696,7 @@ nr_rrc_ue_process_ueCapabilityEnquiry(
         xer_fprint(stdout, &asn_DEF_NR_UL_DCCH_Message, (void *)&ul_dcch_msg);
       }
 
-      LOG_I(RRC,"UECapabilityInformation Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+      LOG_I(NR_RRC,"UECapabilityInformation Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
 #ifdef ITTI_SIM
       MessageDef *message_p;
       uint8_t *message_buffer;
@@ -2796,12 +2798,12 @@ void *recv_msgs_from_lte_ue(void *args_p)
                                MSG_WAITALL | MSG_TRUNC, NULL, NULL);
         if (recvLen == -1)
         {
-            LOG_E(RRC, "%s: recvfrom: %s\n", __func__, strerror(errno));
+            LOG_E(NR_RRC, "%s: recvfrom: %s\n", __func__, strerror(errno));
             continue;
         }
         if (recvLen > sizeof(msg.msg_buffer))
         {
-            LOG_E(RRC, "%s: truncated message %d\n", __func__, recvLen);
+            LOG_E(NR_RRC, "%s: truncated message %d\n", __func__, recvLen);
             continue;
         }
         process_lte_nsa_msg(msg.msg_buffer, recvLen, msg.msg_type);
@@ -2809,17 +2811,17 @@ void *recv_msgs_from_lte_ue(void *args_p)
     return NULL;
 }
 
-void nsa_sendmsg(MessageDef *message, size_t msgLen, MessagesIds msgType)
+void nsa_sendmsg(MessageDef *message, size_t msg_len, MessagesIds msg_type)
 {
-    LOG_I(RRC, "Entered %s \n", __FUNCTION__);
+    LOG_I(NR_RRC, "Entered %s \n", __FUNCTION__);
     nsa_msg_t n_msg;
-    if (msgLen > sizeof(n_msg.msg_buffer))
+    if (msg_len > sizeof(n_msg.msg_buffer))
     {
-        LOG_E(RRC, "%s: message too big: %zu\n", __func__, msgLen);
+        LOG_E(NR_RRC, "%s: message too big: %zu\n", __func__, msg_len);
         abort();
     }
-    n_msg.msg_type = msgType;
-    memcpy(n_msg.msg_buffer, message, msgLen);
+    n_msg.msg_type = msg_type;
+    memcpy(n_msg.msg_buffer, message, msg_len);
 
     struct sockaddr_in sa =
     {
@@ -2830,16 +2832,14 @@ void nsa_sendmsg(MessageDef *message, size_t msgLen, MessagesIds msgType)
                       (struct sockaddr_in *)&sa, sizeof(sa));
     if (sent == -1)
     {
-        LOG_E(RRC, "%s: sendto: %s\n", __func__, strerror(errno));
+        LOG_E(NR_RRC, "%s: sendto: %s\n", __func__, strerror(errno));
         return;
     }
 }
 
 void send_dummy_msg (void)
 {
-    LOG_I(RRC, "Mellissa::::::::::::::::::We are about to send a dummy message \n");
-    //reconfigure RRC again, the agent might have changed the configuration
-    //itti_send_msg_to_task(TASK_RRC_NSA_NRUE, UE_MODULE_ID_TO_INSTANCE(0), msg_p);
+    LOG_D(NR_RRC, "Sending a dummy message \n");
     MessageDef *msg_p = itti_alloc_new_message(TASK_RRC_NSA_NRUE, 0, MESSAGE_TEST);
     nsa_sendmsg(msg_p, sizeof(msg_p), MESSAGE_TEST);
 }
@@ -2855,19 +2855,19 @@ void init_connections_with_lte_ue(void)
     from_lte_ue_fd = socket(AF_INET, SOCK_DGRAM, 0);
     if (from_lte_ue_fd == -1)
     {
-        LOG_E(RRC, "%s: Error opening socket %d (%d:%s)\n", __FUNCTION__, from_lte_ue_fd, errno, strerror(errno));
+        LOG_E(NR_RRC, "%s: Error opening socket %d (%d:%s)\n", __FUNCTION__, from_lte_ue_fd, errno, strerror(errno));
         abort();
     }
 
     if (inet_aton(nsa_ipaddr, &sa.sin_addr) == 0)
     {
-        LOG_E(RRC, "Bad nsa_ipaddr '%s'\n", nsa_ipaddr);
+        LOG_E(NR_RRC, "Bad nsa_ipaddr '%s'\n", nsa_ipaddr);
         abort();
     }
 
     if (bind(from_lte_ue_fd, (struct sockaddr *) &sa, sizeof(sa)) == -1)
     {
-        LOG_E(RRC,"%s: Failed to bind the socket\n", __FUNCTION__);
+        LOG_E(NR_RRC,"%s: Failed to bind the socket\n", __FUNCTION__);
         abort();
     }
 
@@ -2875,27 +2875,27 @@ void init_connections_with_lte_ue(void)
     to_lte_ue_fd = socket(AF_INET, SOCK_DGRAM, 0);
     if (to_lte_ue_fd == -1)
     {
-        LOG_E(RRC, "%s: Error opening socket %d (%d:%s)\n", __FUNCTION__, to_lte_ue_fd, errno, strerror(errno));
+        LOG_E(NR_RRC, "%s: Error opening socket %d (%d:%s)\n", __FUNCTION__, to_lte_ue_fd, errno, strerror(errno));
         abort();
     }
 
 }
 
-void process_lte_nsa_msg(MessageDef *message, size_t msgLen, MessagesIds msgType)
+void process_lte_nsa_msg(const void * buffer, size_t buf_len, Rrc_Msg_Type_t msg_type)
 {
-    LOG_I(RRC, "We are processing an NSA message \n");
-    return;
-    /* uint8_t *const msg_buffer[100];
-    switch (msgType)
+    LOG_I(NR_RRC, "We are processing an NSA message \n");
+    uint8_t *const msg_buffer[MAX_MESSAGE_SIZE];
+    switch (msg_type)
     {
-        case UE_CAPABILITY_INFO:
+        case UE_CAPABILITY_ENQUIRY:
         {
-            LTE_UE_EUTRA_Capability_v1510_IEs_t * ue_cap_info = NULL;
+            LOG_I(NR_RRC, "We are processing a UE_CAPABILITY_ENQUIRY message \n");
+            LTE_UE_EUTRA_Capability_v1510_IEs_t * ue_cap_enquiry = NULL;
             asn_dec_rval_t dec_rval = uper_decode_complete(NULL,
                             &asn_DEF_LTE_UE_EUTRA_Capability_v1510_IEs,
-                            (void **)&ue_cap_info,
+                            (void **)&ue_cap_enquiry,
                             (const void *)msg_buffer,
-                            100);  // What is correct size!!?
+                            MAX_MESSAGE_SIZE);
             if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0))
             {
               LOG_E( RRC, "Failed to decode UECapabilityInfo (%zu bits)\n",
@@ -2903,10 +2903,11 @@ void process_lte_nsa_msg(MessageDef *message, size_t msgLen, MessagesIds msgType
             }
             // Extract the parameters needed by LTE
             // Print out contents to verify... as a placeholder
-            // Send 1st RRC message back to NR UE
+            // Send 1st RRC message back to NR UE*/
+            break;
         }
 
         default:
-            LOG_E(RRC, "No NSA Message Found\n");
-    } */
+            LOG_E(NR_RRC, "No NSA Message Found\n");
+    }
 }
