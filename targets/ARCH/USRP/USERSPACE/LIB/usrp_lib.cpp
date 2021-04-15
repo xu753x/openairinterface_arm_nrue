@@ -273,6 +273,7 @@ static int sync_to_gps(openair0_device *device) {
 static int trx_usrp_start(openair0_device *device) {
   usrp_state_t *s = (usrp_state_t *)device->priv;
 
+  if (device->type != USRP_X400_DEV) {
   // setup GPIO for TDD, GPIO(4) = ATR_RX
   //set data direction register (DDR) to output
   s->usrp->set_gpio_attr("FP0", "DDR", 0xfff, 0xfff);
@@ -285,6 +286,7 @@ static int trx_usrp_start(openair0_device *device) {
   s->usrp->set_gpio_attr("FP0", "ATR_XX", (1<<5), 0x7f);
   // set the output pins to 1
   s->usrp->set_gpio_attr("FP0", "OUT", 7<<7, 0xf80);
+  }
 
   s->wait_for_first_pps = 1;
   s->rx_count = 0;
@@ -825,8 +827,8 @@ rx_gain_calib_table_t calib_table_x310[] = {
   {-1,0}
 };
 
-/*! \brief USRPB210 RX calibration table */
-rx_gain_calib_table_t calib_table_n310[] = {
+/*! \brief Empty RX calibration table */
+rx_gain_calib_table_t calib_table_none[] = {
   {3500000000.0,0.0},
   {2660000000.0,0.0},
   {2300000000.0,0.0},
@@ -988,9 +990,8 @@ extern "C" {
       device->type=USRP_N300_DEV; 
       usrp_master_clock = 122.88e6;
       args += boost::str(boost::format(",master_clock_rate=%f") % usrp_master_clock);
-      //args += ", send_buff_size=33554432";
     }
-  
+
     if (device_adds[0].get("type") == "x300") {
       printf("Found USRP x300\n");
       device->type=USRP_X300_DEV;
@@ -1002,6 +1003,13 @@ extern "C" {
         LOG_W(HW,"Can't set kernel parameters for X3xx\n");
     }
   
+    if (device_adds[0].get("type") == "x4xx") {
+      printf("Found USRP x400\n");
+      device->type=USRP_X400_DEV; 
+      usrp_master_clock = 122.88e6;
+      args += boost::str(boost::format(",master_clock_rate=%f") % usrp_master_clock);
+    }
+    
     s->usrp = uhd::usrp::multi_usrp::make(args);
   
     if (args.find("clock_source")==std::string::npos) {
@@ -1073,14 +1081,13 @@ extern "C" {
     openair0_cfg[0].rx_gain_calib_table = calib_table_x310;
     std::cerr << "-- Using calibration table: calib_table_x310" << std::endl; 
   }
-
-  if (device->type==USRP_N300_DEV) {
-    openair0_cfg[0].rx_gain_calib_table = calib_table_n310;
-    std::cerr << "-- Using calibration table: calib_table_n310" << std::endl; 
+  else {
+    openair0_cfg[0].rx_gain_calib_table = calib_table_none;
+    std::cerr << "-- Using calibration table: calib_table_none" << std::endl; 
   }
 
 
-  if (device->type==USRP_N300_DEV || device->type==USRP_X300_DEV) {
+  if (device->type==USRP_N300_DEV || device->type==USRP_X300_DEV || device->type==USRP_X400_DEV) {
     LOG_I(HW,"%s() sample_rate:%u\n", __FUNCTION__, (int)openair0_cfg[0].sample_rate);
 
     switch ((int)openair0_cfg[0].sample_rate) {
