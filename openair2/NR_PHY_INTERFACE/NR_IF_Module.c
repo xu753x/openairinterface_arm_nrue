@@ -267,3 +267,9 @@ NR_IF_Module_t *NR_IF_Module_init(int Mod_id) {
 
   return nr_if_inst[Mod_id];
 }
+
+void memclr_mac(int Mod_id, int CC_id) {
+
+  nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdu_list = &RC.nrmac[Mod_id]->DL_req[CC_id].dl_tti_request_body.dl_tti_pdu_list[0];
+  memset(dl_tti_pdu_list, 0, sizeof(nfapi_nr_dl_tti_request_pdu_t)*NFAPI_NR_MAX_DL_TTI_PDUS);
+}
