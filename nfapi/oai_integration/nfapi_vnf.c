@@ -236,7 +236,6 @@ void oai_enb_init(void) {
   init_eNB_afterRU();
 }
 
-
 void oai_create_gnb(void) {
   int bodge_counter=0;
   PHY_VARS_gNB *gNB = RC.gNB[0];

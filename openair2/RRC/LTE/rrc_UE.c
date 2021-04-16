@@ -1665,15 +1665,37 @@ rrc_ue_process_ueCapabilityEnquiry(
   ul_dcch_msg.message.choice.c1.present = LTE_UL_DCCH_MessageType__c1_PR_ueCapabilityInformation;
   ul_dcch_msg.message.choice.c1.choice.ueCapabilityInformation.rrc_TransactionIdentifier = UECapabilityEnquiry->rrc_TransactionIdentifier;
   ue_CapabilityRAT_Container.rat_Type = LTE_RAT_Type_eutra;
-  OCTET_STRING_fromBuf(&ue_CapabilityRAT_Container.ueCapabilityRAT_Container,
-                       (const char *)UE_rrc_inst[ctxt_pP->module_id].UECapability,
-                       UE_rrc_inst[ctxt_pP->module_id].UECapability_size);
-  // Note: Send UECapEnquiry to NR and wait for UECapInformation ... requestedFreqBandsNR-MRDC-r15.  Do similar on NR side with UECapInfo
   OCTET_STRING_t * requestedFreqBandsNR = UECapabilityEnquiry->criticalExtensions.choice.c1.choice.ueCapabilityEnquiry_r8.nonCriticalExtension->
                         nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->
                         nonCriticalExtension->requestedFreqBandsNR_MRDC_r15;
   nsa_sendmsg(requestedFreqBandsNR->buf, requestedFreqBandsNR->size, UE_CAPABILITY_ENQUIRY);
-  // Block function until UE Capability Info is received!
+   /* Melissa:
+        This is the UE capabilities; it has no 5G info in it (second arg in
+        OCTET_STRING_fromBuf() function call below).
+        We could create a UECapability in the begining with 5G info,
+        if get the UE Capabilites from eNB that says were doing 5G then we
+        send in this particular pre-computed 5G ueCapabilty.
+        Need to wait on filling this RAT_Container until we get 3 params from 5G UE
+
+  LTE_SupportedBandListUTRA_FDD_t irat_ParametersNR_r15 = UE_EUTRA_Capability->interRAT_Parameters.utraFDD->supportedBandListUTRA_FDD.list[?];;
+  BIT_STRING_t *LTE_UE_EUTRA_Capability featureSetsEUTRA_r15 = UE_EUTRA_Capability->featureGroupIndicators->buf = featureSetsEUTRA_r15;
+  LTE_PDCP_Parameters_t pdcp_ParametersNR_r15 = UE_EUTRA_Capability->pdcp_Parameters.maxNumberROHC_ContextSessions = pdcp_ParametersNR_r15;
+  if (get_softmodem_params()->nsa) {
+    if (irat_ParametersNR_r15 && featureSetsEUTRA_r15 && pdcp_ParametersNR_r15) {
+      OCTET_STRING_fromBuf(&ue_CapabilityRAT_Container.ueCapabilityRAT_Container,
+                          (const char *)UE_rrc_inst[ctxt_pP->module_id].UECapability,
+                          UE_rrc_inst[ctxt_pP->module_id].UECapability_size);
+    }
+    else{
+      LOG_I(RRC, "Waiting for proper 5G Capability parameters \n");
+      //return;?
+    }
+  }
+  else{
+    OCTET_STRING_fromBuf(&ue_CapabilityRAT_Container.ueCapabilityRAT_Container,
+                        (const char *)UE_rrc_inst[ctxt_pP->module_id].UECapability,
+                        UE_rrc_inst[ctxt_pP->module_id].UECapability_size);
+  } */
 
   //  ue_CapabilityRAT_Container.ueCapabilityRAT_Container.buf  = UE_rrc_inst[ue_mod_idP].UECapability;
   // ue_CapabilityRAT_Container.ueCapabilityRAT_Container.size = UE_rrc_inst[ue_mod_idP].UECapability_size;
@@ -4926,7 +4948,9 @@ openair_rrc_top_init_ue(
     memset (UE_rrc_inst, 0, NB_UE_INST * sizeof(UE_RRC_INST));
     LOG_D(RRC, "ALLOCATE %d Bytes for UE_RRC_INST @ %p\n", (unsigned int)(NB_UE_INST*sizeof(UE_RRC_INST)), UE_rrc_inst);
     // fill UE capability
-    UECap = fill_ue_capability (uecap_xer);
+    UECap = fill_ue_capability (uecap_xer, NULL); /*Melissa: 3 paramters from NR UE must augment this UECap here.
+    Before we start the LTE UE we wait until we get NR exchange and then we can fill this stucture */
+    // Melissa: UECap->UE_EUTRA_Capability->interRAT_Parameters
 
     for (module_id = 0; module_id < NB_UE_INST; module_id++) {
       UE_rrc_inst[module_id].UECap = UECap;
@@ -6107,20 +6131,15 @@ void process_nr_nsa_msg(const void * buffer, size_t buf_len, Rrc_Msg_Type_t msg_
     {
         case UE_CAPABILITY_INFO:
         {
-            LTE_UE_EUTRA_Capability_v1510_IEs_t * ue_cap_info = NULL;
-            asn_dec_rval_t dec_rval = uper_decode_complete(NULL,
-                            &asn_DEF_LTE_UE_EUTRA_Capability_v1510_IEs,
-                            (void **)&ue_cap_info,
-                            (const void *)msg_buffer,
-                            MAX_MESSAGE_SIZE);
-            if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0))
-            {
-              LOG_E( RRC, "Failed to decode UECapabilityInfo (%zu bits)\n",
-              dec_rval.consumed );
-            }
-            // Extract the parameters needed by LTE
-            // Print out contents to verify... as a placeholder
-            // Send 1st RRC message back to NR UE
+            /* Melissa:
+            1. Extract these parameters from the UE_CAPABILITY_INFO message:
+                a. irat-ParametersNR-r15
+                b. featureSetsEUTRA-r15
+                c. pdcp-ParametersNR-r15
+            2. Print the contents of each parameter
+            3. Call OAI_UECapability_t *fill_ue_capability(char *UE_EUTRA_Capability_xer_fname)
+               and pass in the UE CAPABILITY INFO */
+            fill_ue_capability(NULL, buffer);
             break;
         }
 

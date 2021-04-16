@@ -4374,7 +4374,7 @@ int do_HandoverCommand(char *ho_buf, int ho_size, char *rrc_buf, int rrc_size) {
   return((enc_rval.encoded+7)/8);
 }
 
-OAI_UECapability_t *fill_ue_capability(char *UE_EUTRA_Capability_xer_fname) {
+OAI_UECapability_t *fill_ue_capability(char *UE_EUTRA_Capability_xer_fname, void * arg) {
   static OAI_UECapability_t UECapability; /* TODO declared static to allow returning this has an address should be allocated in a cleaner way. */
   static LTE_SupportedBandEUTRA_t Bandlist[4]; // the macro ASN_SEQUENCE_ADD() does not copy the source, but only stores a reference to it
   static LTE_InterFreqBandInfo_t InterFreqBandInfo[4][4]; // the macro ASN_SEQUENCE_ADD() does not copy the source, but only stores a reference to it
@@ -4472,6 +4472,21 @@ OAI_UECapability_t *fill_ue_capability(char *UE_EUTRA_Capability_xer_fname) {
       UE_EUTRA_Capability->featureGroupIndicators = bit_string;
     }
 
+    /* Melissa:
+       1. Fill the UECapability.UE_EUTRA_Capability with the following three parameters recevied from the NRUE
+                a. irat-ParametersNR-r15
+                b. featureSetsEUTRA-r15
+                c. pdcp-ParametersNR-r15
+    if (get_softmodem_params()->nsa) {
+      A_SEQUENCE_OF(LTE_SupportedBandUTRA_FDD_t) irat_ParametersNR_r15 = arg->interRAT_Parameters.utraFDD->supportedBandListUTRA_FDD.list;
+      BIT_STRING_t *featureSetsEUTRA_r15 = arg->featureGroupIndicators->buf;
+      LTE_PDCP_Parameters_t pdcp_ParametersNR_r15 = arg->pdcp_Parameters.maxNumberROHC_ContextSessions;
+      UE_EUTRA_Capability->interRAT_Parameters.utraFDD->supportedBandListUTRA_FDD.list[?] = irat_ParametersNR_r15;
+      UE_EUTRA_Capability->featureGroupIndicators->buf = featureSetsEUTRA_r15;
+      UE_EUTRA_Capability->pdcp_Parameters.maxNumberROHC_ContextSessions = pdcp_ParametersNR_r15;
+    }  */
+
+
     // UE_EUTRA_Capability->interRAT_Parameters     // null
   } else {
     FILE *f = fopen(UE_EUTRA_Capability_xer_fname, "r");
@@ -4489,7 +4504,7 @@ OAI_UECapability_t *fill_ue_capability(char *UE_EUTRA_Capability_xer_fname) {
     assert(dec_rval.code == RC_OK);
   }
 
-  UECapability.UE_EUTRA_Capability = UE_EUTRA_Capability;
+  UECapability.UE_EUTRA_Capability = UE_EUTRA_Capability; //Melissa: This is where 3 parameter elements from 5G UE must go
 
   if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
     xer_fprint(stdout,&asn_DEF_LTE_UE_EUTRA_Capability,(void *)UE_EUTRA_Capability);

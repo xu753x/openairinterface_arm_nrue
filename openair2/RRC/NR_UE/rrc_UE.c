@@ -2876,10 +2876,11 @@ void process_lte_nsa_msg(const void * buffer, size_t buf_len, Rrc_Msg_Type_t msg
         case UE_CAPABILITY_ENQUIRY:
         {
             LOG_I(NR_RRC, "We are processing a UE_CAPABILITY_ENQUIRY message \n");
-            LTE_UE_EUTRA_Capability_v1510_IEs_t * ue_cap_enquiry = NULL;
+            //Melissa: asn_DEF_NR_FreqBandList is the struct and the only band we should see if 78
+            NR_FreqBandList_t * nr_freq_band_list = NULL;
             asn_dec_rval_t dec_rval = uper_decode_complete(NULL,
-                            &asn_DEF_LTE_UE_EUTRA_Capability_v1510_IEs,
-                            (void **)&ue_cap_enquiry,
+                            &asn_DEF_NR_FreqBandList,
+                            (void **)&nr_freq_band_list,
                             (const void *)msg_buffer,
                             MAX_MESSAGE_SIZE);
             if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0))
@@ -2887,6 +2888,8 @@ void process_lte_nsa_msg(const void * buffer, size_t buf_len, Rrc_Msg_Type_t msg
               LOG_E( RRC, "Failed to decode UECapabilityInfo (%zu bits)\n",
               dec_rval.consumed );
             }
+            LOG_I(NR_RRC, "We are using ?? band.\n");
+
             // Extract the parameters needed by LTE
             // Print out contents to verify... as a placeholder
             // Send 1st RRC message back to NR UE*/
