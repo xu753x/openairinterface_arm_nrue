@@ -172,13 +172,13 @@ void calculate_preferred_ul_tda(module_id_t module_id, const NR_BWP_Uplink_t *ub
           tdd->nrofUplinkSlots);
 }
 
-void nr_process_mac_pdu(module_id_t module_idP,
-                        int UE_id,
-                        uint8_t CC_id,
-                        frame_t frameP,
-                        sub_frame_t slot,
-                        uint8_t *pduP,
-                        uint16_t mac_pdu_len)
+void nr_process_mac_pdu(
+    module_id_t module_idP,
+    rnti_t rnti,
+    uint8_t CC_id,
+    frame_t frameP,
+    uint8_t *pduP,
+    uint16_t mac_pdu_len)
 {
 
     // This function is adapting code from the old
@@ -190,6 +190,11 @@ void nr_process_mac_pdu(module_id_t module_idP,
 
 
     NR_UE_info_t *UE_info = &RC.nrmac[module_idP]->UE_info;
+    int UE_id = find_nr_UE_id(module_idP, rnti);
+    if (UE_id == -1) {
+      LOG_E(MAC, "%s() UE_id == -1\n",__func__);
+      return;
+    }
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     //  For both DL/UL-SCH
     //  Except:
@@ -251,10 +256,7 @@ void nr_process_mac_pdu(module_id_t module_idP,
                NR_BSR_SHORT *bsr_s = (NR_BSR_SHORT *) ce_ptr;
                sched_ctrl->estimated_ul_buffer = 0;
                sched_ctrl->estimated_ul_buffer = NR_SHORT_BSR_TABLE[bsr_s->Buffer_size];
-               LOG_D(MAC,
-                     "SHORT BSR at %4d.%2d, LCG ID %d, BS Index %d, BS value < %d, est buf %d\n",
-                     frameP,
-                     slot,
+               LOG_D(MAC, "SHORT BSR, LCG ID %d, BS Index %d, BS value < %d, est buf %d\n",
                      bsr_s->LcgID,
                      bsr_s->Buffer_size,
                      NR_SHORT_BSR_TABLE[bsr_s->Buffer_size],
@@ -283,9 +285,7 @@ void nr_process_mac_pdu(module_id_t module_idP,
                  sched_ctrl->estimated_ul_buffer +=
                        NR_LONG_BSR_TABLE[pdu_ptr[mac_subheader_len + 1 + n]];
                  LOG_D(MAC,
-                       "LONG BSR at %4d.%2d, %d/%d (n/n_Lcg), BS Index %d, BS value < %d, total %d\n",
-                       frameP,
-                       slot,
+                       "LONG BSR, %d/%d (n/n_Lcg), BS Index %d, BS value < %d, total %d\n",
                        n,
                        n_Lcg,
                        pdu_ptr[mac_subheader_len + 1 + n],
@@ -394,7 +394,7 @@ void nr_process_mac_pdu(module_id_t module_idP,
                               frameP,
                               0,
                               0,
-                              UE_info->rnti[UE_id],
+                              rnti,
                               CCCH,
                               pdu_ptr+mac_subheader_len,
                               mac_sdu_len,
@@ -618,7 +618,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
       if (UE_scheduling_control->sched_ul_bytes < 0)
         UE_scheduling_control->sched_ul_bytes = 0;
 
-      nr_process_mac_pdu(gnb_mod_idP, UE_id, CC_idP, frameP, slotP, sduP, sdu_lenP);
+      nr_process_mac_pdu(gnb_mod_idP, current_rnti, CC_idP, frameP, sduP, sdu_lenP);
     }
   } else if(sduP) {
 
@@ -707,7 +707,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
           // First byte corresponds to R/LCID MAC sub-header
           memcpy(ra->cont_res_id, &sduP[1], sizeof(uint8_t) * 6);
 
-          nr_process_mac_pdu(gnb_mod_idP, UE_id, CC_idP, frameP, slotP, sduP, sdu_lenP);
+          nr_process_mac_pdu(gnb_mod_idP, current_rnti, CC_idP, frameP, sduP, sdu_lenP);
 
           ra->state = Msg4;
           ra->Msg4_frame = ( frameP +2 ) % 1024;
