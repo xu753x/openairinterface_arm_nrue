@@ -359,14 +359,6 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
 void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, sub_frame_t slot, NR_RA_t *ra);
 
-void nr_process_mac_pdu(
-    module_id_t module_idP,
-    rnti_t rnti,
-    uint8_t CC_id,
-    frame_t frameP,
-    uint8_t *pduP,
-    uint16_t mac_pdu_len);
-
 int binomial(int n, int k);
 
 bool is_xlsch_in_slot(uint64_t bitmap, sub_frame_t slot);

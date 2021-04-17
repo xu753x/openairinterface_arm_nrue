@@ -1203,22 +1203,23 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     uint16_t N_DMRS_SLOT = get_num_dmrs(dlDmrsSymbPos);
 
     long dmrsConfigType = bwp!=NULL ? (bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1) : 0;
-    uint8_t N_PRB_DMRS = 0;
 
-    uint8_t numDmrsCdmGrpsNoData = 2;
+    nr_mac->sched_ctrlCommon->pdsch_semi_static.numDmrsCdmGrpsNoData = 2;
     if (nrOfSymbols == 2) {
-      numDmrsCdmGrpsNoData = 1;
+      nr_mac->sched_ctrlCommon->pdsch_semi_static.numDmrsCdmGrpsNoData = 1;
     }
 
-    AssertFatal(numDmrsCdmGrpsNoData == 1 || numDmrsCdmGrpsNoData == 2,
-                "nr_mac->schedCtrlCommon->numDmrsCdmGrpsNoData %d is not possible",
-                numDmrsCdmGrpsNoData);
+    AssertFatal(nr_mac->sched_ctrlCommon->pdsch_semi_static.numDmrsCdmGrpsNoData == 1
+                || nr_mac->sched_ctrlCommon->pdsch_semi_static.numDmrsCdmGrpsNoData == 2,
+                "nr_mac->schedCtrlCommon->pdsch_semi_static.numDmrsCdmGrpsNoData %d is not possible",
+                nr_mac->sched_ctrlCommon->pdsch_semi_static.numDmrsCdmGrpsNoData);
 
+    uint8_t N_PRB_DMRS = 0;
     if (dmrsConfigType==NFAPI_NR_DMRS_TYPE1) {
-      N_PRB_DMRS = numDmrsCdmGrpsNoData * 6;
+      N_PRB_DMRS = nr_mac->sched_ctrlCommon->pdsch_semi_static.numDmrsCdmGrpsNoData * 6;
     }
     else {
-      N_PRB_DMRS = numDmrsCdmGrpsNoData * 4;
+      N_PRB_DMRS = nr_mac->sched_ctrlCommon->pdsch_semi_static.numDmrsCdmGrpsNoData * 4;
     }
 
     uint8_t mcsTableIdx = 0;
