@@ -120,8 +120,6 @@ typedef struct NR_IF_Module_s {
 /*Initial */
 NR_IF_Module_t *NR_IF_Module_init(int Mod_id);
 
-void memclr_mac(int Mod_id, int CC_id);
-
 void NR_IF_Module_kill(int Mod_id);
 
 void NR_UL_indication(NR_UL_IND_t *UL_INFO);

@@ -695,7 +695,6 @@ typedef struct PHY_VARS_gNB_s {
   NR_IF_Module_t       *if_inst;
   NR_UL_IND_t          UL_INFO;
   pthread_mutex_t      UL_INFO_mutex;
-  void (*memclr_mac)(int Mod_id, int CC_id);
 
   /// NFAPI RX ULSCH information
   nfapi_nr_rx_data_pdu_t  rx_pdu_list[MAX_UL_PDUS_PER_SLOT];

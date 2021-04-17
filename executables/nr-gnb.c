@@ -128,7 +128,6 @@ void tx_func(void *param) {
   syncMsg->ru = gNB->RU_list[0];
   res->key = slot_tx;
   pushTpool(gNB->threadPool, res);
-  gNB->memclr_mac(gNB->Mod_id, gNB->CC_id);
 }
 
 void rx_func(void *param) {
@@ -494,7 +493,6 @@ void init_gNB(int single_thread_flag,int wait_for_sync) {
     LOG_I(PHY,"Registering with MAC interface module (after %p)\n",gNB->if_inst);
     gNB->if_inst->NR_Schedule_response   = nr_schedule_response;
     gNB->if_inst->NR_PHY_config_req      = nr_phy_config_request;
-    gNB->memclr_mac = memclr_mac;
     memset((void *)&gNB->UL_INFO,0,sizeof(gNB->UL_INFO));
     LOG_I(PHY,"Setting indication lists\n");
 
