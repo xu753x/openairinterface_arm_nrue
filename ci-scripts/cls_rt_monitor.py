@@ -171,13 +171,11 @@ def build_RT_Row(Branch,Commit,keys,filename):
                 real_time_stats[k]=tmp.group(1)       
     f.close()
 
-    rt={}
     for k in keys:
         tmp=re.match(r'^(?P<metric>.*):\s+(?P<avg>\d+\.\d+) us;\s+\d+;\s+(?P<max>\d+\.\d+) us;',real_time_stats[k])
         metric=tmp.group('metric')
         avg=tmp.group('avg')
         max=tmp.group('max')
-        rt[metric]={'avg' : avg, 'max' : max}
         row.append(float(avg))
         row.append(float(max))
     
