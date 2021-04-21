@@ -877,10 +877,10 @@ class RANManagement():
 			########################
 			#data log to google sheet
 			#########################
-    		keys=['feprx','feptx_prec','feptx_ofdm','feptx_total','L1 Tx processing','DLSCH encoding','L1 Rx processing','PUSCH inner-receiver','PUSCH decoding']
-    		columns=["Date Time","Branch","Commit",\
+			keys=['feprx','feptx_prec','feptx_ofdm','feptx_total','L1 Tx processing','DLSCH encoding','L1 Rx processing','PUSCH inner-receiver','PUSCH decoding']
+			columns=["Date Time","Branch","Commit",\
 			'feprx avg','feprx max',\
-            'feptx_prec avg','feptx_prec max',\
+			'feptx_prec avg','feptx_prec max',\
 			'feptx_ofdm avg','feptx_ofdm max',\
 			'feptx_total avg','feptx_total max',\
 			'L1 Tx processing avg','L1 Tx processing max',\
