@@ -37,6 +37,7 @@ import logging
 import os
 import time
 from multiprocessing import Process, Lock, SimpleQueue
+import cls_rt_monitor
 
 #-----------------------------------------------------------
 # OAI Testing modules
@@ -872,6 +873,34 @@ class RANManagement():
 					#remove 1- all useless char before relevant info  2- trailing char
 					tmp=re.match(rf'^.*?(\b{k}\b.*)',line.rstrip()) #from python 3.6 we can use literal string interpolation for the variable k, using rf' in the regex 
 					real_time_stats[k]=tmp.group(1)
+
+			########################
+			#data log to google sheet
+			#########################
+    		keys=['feprx','feptx_prec','feptx_ofdm','feptx_total','L1 Tx processing','DLSCH encoding','L1 Rx processing','PUSCH inner-receiver','PUSCH decoding']
+    		columns=["Date Time","Branch","Commit",\
+			'feprx avg','feprx max',\
+            'feptx_prec avg','feptx_prec max',\
+			'feptx_ofdm avg','feptx_ofdm max',\
+			'feptx_total avg','feptx_total max',\
+			'L1 Tx processing avg','L1 Tx processing max',\
+			'DLSCH encoding avg','DLSCH encoding max',\
+			'L1 Rx processing avg','L1 Rx processing max',\
+			'PUSCH inner-receiver avg','PUSCH inner-receiver max',\
+			'PUSCH decoding avg','PUSCH decoding max']
+
+			#open gsheet
+			gRT=cls_rt_monitor.gSheet("/home/oaicicd/ci_gsheet_creds.json", 'RealTime Monitor', 'timeseries', columns, 10000, 50)
+			#insert row
+			row=cls_rt_monitor.build_RT_Row(self.ranBranch,self.ranCommitID,keys,eNBlogFile)
+			gRT.insertRow(row)
+    
+			#updating charts
+			#will plot avg and max on the same chart, these 2 columns have to be side by side
+			#spreadsheet , chart name, chart type, x title , y title, start row inc header, end row, start col, end col excluded
+			gRT.cls_rt_monitor.gChart('timeseries', 'feprx', 'COLUMN', 'CI RUNs DateTime' , 'ProcessingTime (us)' , 0, 1000, 3, 4)
+			########################
+
 			#count "problem receiving samples" msg
 			result = re.search('\[PHY\]\s+problem receiving samples', str(line))
 			if result is not None:
