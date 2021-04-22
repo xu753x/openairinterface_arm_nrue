@@ -897,8 +897,16 @@ class RANManagement():
     
 			#updating charts
 			#will plot avg and max on the same chart, these 2 columns have to be side by side
-			#spreadsheet , chart name, chart type, x title , y title, start row inc header, end row, start col, end col excluded
-			gRT.cls_rt_monitor.gChart('timeseries', 'feprx', 'COLUMN', 'CI RUNs DateTime' , 'ProcessingTime (us)' , 0, 1000, 3, 4)
+			#spreadsheet , chart name, chart type, x title , y title, start row inc header, end row, start col, end col
+			gRT.gChart('timeseries', 'feprx', 'COLUMN', 'CI RUNs DateTime' , 'ProcessingTime (us)' , 0, 1000, 3, 4)
+			gRT.gChart('timeseries', 'feptx_prec', 'COLUMN', 'CI RUNs DateTime' , 'ProcessingTime (us)' , 0, 1000, 5, 6)
+			gRT.gChart('timeseries', 'feptx_ofdm', 'COLUMN', 'CI RUNs DateTime' , 'ProcessingTime (us)' , 0, 1000, 7, 8)
+			gRT.gChart('timeseries', 'feptx_total', 'COLUMN', 'CI RUNs DateTime' , 'ProcessingTime (us)' , 0, 1000, 9, 10)
+			gRT.gChart('timeseries', 'L1 Tx proc', 'COLUMN', 'CI RUNs DateTime' , 'ProcessingTime (us)' , 0, 1000, 11, 12)
+			gRT.gChart('timeseries', 'DLSCH enc', 'COLUMN', 'CI RUNs DateTime' , 'ProcessingTime (us)' , 0, 1000, 13, 14)
+			gRT.gChart('timeseries', 'L1 Rx proc', 'COLUMN', 'CI RUNs DateTime' , 'ProcessingTime (us)' , 0, 1000, 15, 16)
+			gRT.gChart('timeseries', 'PUSCH inner-rec', 'COLUMN', 'CI RUNs DateTime' , 'ProcessingTime (us)' , 0, 1000, 17, 18)
+			gRT.gChart('timeseries', 'PUSCH dec', 'COLUMN', 'CI RUNs DateTime' , 'ProcessingTime (us)' , 0, 1000, 19, 20)					
 			########################
 
 			#count "problem receiving samples" msg
