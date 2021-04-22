@@ -217,7 +217,7 @@ class OaiCiTest():
 
 		# if the commit ID is provided use it to point to it
 		if self.ranCommitID != '':
-			SSH.command('git checkout -f ' + self.ranCommitID, '\$', 5)
+			SSH.command('git checkout -f ' + self.ranCommitID, '\$', 15)
 		# if the branch is not develop, then it is a merge request and we need to do 
 		# the potential merge. Note that merge conflicts should already been checked earlier
 		if self.ranAllowMerge:

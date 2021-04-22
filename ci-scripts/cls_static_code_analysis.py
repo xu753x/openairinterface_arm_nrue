@@ -115,7 +115,7 @@ class StaticCodeAnalysis():
 		mySSH.command('mkdir -p cmake_targets/log', '\$', 5)
 		# if the commit ID is provided use it to point to it
 		if self.ranCommitID != '':
-			mySSH.command('git checkout -f ' + self.ranCommitID, '\$', 5)
+			mySSH.command('git checkout -f ' + self.ranCommitID, '\$', 15)
 
 		mySSH.command('docker image rm oai-cppcheck:bionic oai-cppcheck:xenial || true', '\$', 60)
 		mySSH.command('docker build --tag oai-cppcheck:xenial --file ci-scripts/docker/Dockerfile.cppcheck.xenial . > cmake_targets/log/cppcheck-xenial.txt 2>&1', '\$', 600)
