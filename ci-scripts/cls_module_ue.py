@@ -57,7 +57,7 @@ class Module_UE:
 			setattr(self, k, v)
 		self.UEIPAddress = ""
 		#dictionary linking command names and related module scripts
-        self.cmd_dict= {"wup": self.WakeupScript,"detach":self.DetachScript}#dictionary of function scripts		
+		self.cmd_dict= {"wup": self.WakeupScript,"detach":self.DetachScript}#dictionary of function scripts		
 
 
 
@@ -112,6 +112,7 @@ class Module_UE:
 	def GetModuleIPAddress(self):
 		HOST=self.HostIPAddress
 		COMMAND="ip a show dev " + self.UENetwork + " | grep inet | grep " + self.UENetwork
+		logging.debug(COMMAND)
 		ssh = subprocess.Popen(["ssh", "%s" % HOST, COMMAND],shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 		response = ssh.stdout.readlines()
 		if len(response)!=0:

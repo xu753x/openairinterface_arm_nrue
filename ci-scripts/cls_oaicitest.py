@@ -393,7 +393,7 @@ class OaiCiTest():
 				Module_UE.GetModuleIPAddress()
 				HTML.CreateHtmlTestRow(Module_UE.UEIPAddress, 'OK', CONST.ALL_PROCESSES_OK)	
 				self.UEIPAddresses.append(Module_UE.UEIPAddress)
-		logging.debug('UEs IP addresses : '+ self.UEIPAddresses)
+				logging.debug('UE IP addresss : '+ Module_UE.UEIPAddress)
 
 	def InitializeOAIUE(self,HTML,RAN,EPC,COTS_UE):
 		if self.UEIPAddress == '' or self.UEUserName == '' or self.UEPassword == '' or self.UESourceCodePath == '':
