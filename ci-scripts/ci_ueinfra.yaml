@@ -1,0 +1,24 @@
+idefix:
+  ID: idefix
+  State : enabled
+  Kind : quectel
+  Process : quectel-CM
+  WakeupScript : ci_ctl_qtel.py /dev/ttyUSB2 wup
+  DetachScript : ci_ctl_qtel.py /dev/ttyUSB2 detach
+  UENetwork : wwan0
+  HostIPAddress : 192.168.18.188
+  HostUsername : oaicicd
+  HostPassword : oaicicd
+  HostSourceCodePath : none
+dummy:
+  ID: dummy
+dummy2:  
+  ID: dummy2
+  Kind : cots
+  State : disabled
+  Process : quectel-cm
+  HostIPAddress : 192.168.18.186
+  HostUsername : oaicicd
+  HostPassword : oaicicd
+  HostSourceCodePath : none
+
