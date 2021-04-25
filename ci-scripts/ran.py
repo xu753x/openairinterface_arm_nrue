@@ -37,7 +37,6 @@ import logging
 import os
 import time
 from multiprocessing import Process, Lock, SimpleQueue
-import cls_rt_monitor
 
 #-----------------------------------------------------------
 # OAI Testing modules
@@ -874,41 +873,6 @@ class RANManagement():
 					tmp=re.match(rf'^.*?(\b{k}\b.*)',line.rstrip()) #from python 3.6 we can use literal string interpolation for the variable k, using rf' in the regex 
 					real_time_stats[k]=tmp.group(1)
 
-			########################
-			#data log to google sheet
-			#########################
-			keys=['feprx','feptx_prec','feptx_ofdm','feptx_total','L1 Tx processing','DLSCH encoding','L1 Rx processing','PUSCH inner-receiver','PUSCH decoding']
-			columns=["Date Time","Branch","Commit",\
-			'feprx avg','feprx max',\
-			'feptx_prec avg','feptx_prec max',\
-			'feptx_ofdm avg','feptx_ofdm max',\
-			'feptx_total avg','feptx_total max',\
-			'L1 Tx processing avg','L1 Tx processing max',\
-			'DLSCH encoding avg','DLSCH encoding max',\
-			'L1 Rx processing avg','L1 Rx processing max',\
-			'PUSCH inner-receiver avg','PUSCH inner-receiver max',\
-			'PUSCH decoding avg','PUSCH decoding max']
-
-			#open gsheet
-			gRT=cls_rt_monitor.gSheet("/home/oaicicd/ci_gsheet_creds.json", 'RealTime Monitor', 'timeseries', columns, 10000, 50)
-			#insert row
-			row=cls_rt_monitor.build_RT_Row(self.ranBranch,self.ranCommitID,keys,eNBlogFile)
-			gRT.insertRow(row)
-    
-			#updating charts
-			#will plot avg and max on the same chart, these 2 columns have to be side by side
-			#spreadsheet , chart name, chart type, x title , y title, start row inc header, end row, start col, end col
-			gRT.gChart('timeseries', 'feprx', 'COLUMN', 'CI RUNs DateTime' , 'ProcessingTime (us)' , 0, 1000, 3, 4)
-			gRT.gChart('timeseries', 'feptx_prec', 'COLUMN', 'CI RUNs DateTime' , 'ProcessingTime (us)' , 0, 1000, 5, 6)
-			gRT.gChart('timeseries', 'feptx_ofdm', 'COLUMN', 'CI RUNs DateTime' , 'ProcessingTime (us)' , 0, 1000, 7, 8)
-			gRT.gChart('timeseries', 'feptx_total', 'COLUMN', 'CI RUNs DateTime' , 'ProcessingTime (us)' , 0, 1000, 9, 10)
-			gRT.gChart('timeseries', 'L1 Tx proc', 'COLUMN', 'CI RUNs DateTime' , 'ProcessingTime (us)' , 0, 1000, 11, 12)
-			gRT.gChart('timeseries', 'DLSCH enc', 'COLUMN', 'CI RUNs DateTime' , 'ProcessingTime (us)' , 0, 1000, 13, 14)
-			gRT.gChart('timeseries', 'L1 Rx proc', 'COLUMN', 'CI RUNs DateTime' , 'ProcessingTime (us)' , 0, 1000, 15, 16)
-			gRT.gChart('timeseries', 'PUSCH inner-rec', 'COLUMN', 'CI RUNs DateTime' , 'ProcessingTime (us)' , 0, 1000, 17, 18)
-			gRT.gChart('timeseries', 'PUSCH dec', 'COLUMN', 'CI RUNs DateTime' , 'ProcessingTime (us)' , 0, 1000, 19, 20)					
-			########################
-
 			#count "problem receiving samples" msg
 			result = re.search('\[PHY\]\s+problem receiving samples', str(line))
 			if result is not None:
@@ -968,6 +932,10 @@ class RANManagement():
 				statMsg = 'No real time stats found in the log file\n'
 				logging.debug('No real time stats found in the log file')
 				htmleNBFailureMsg += statMsg
+
+			#data log of gNB rela time stats
+			import cls_rt_monitor #import here (rather than on top) is to avoid installing the libs onto 4G bench servers, possibly temporary solution 
+			cls_rt_monitor.gNB_RT_monitor(self.ranBranch,self.ranCommitID, eNBlogFile)
 
 		if uciStatMsgCount > 0:
 			statMsg = nodeB_prefix + 'NB showed ' + str(uciStatMsgCount) + ' "uci->stat" message(s)'
