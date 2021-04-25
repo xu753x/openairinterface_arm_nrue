@@ -27,6 +27,7 @@
 /*------------------------------------------------------------------------------------------------------------------------------------------*/
 #define CMDLINE_NRUEPARAMS_DESC {  \
     {"usrp-args",                CONFIG_HLP_USRP_ARGS,   0,               strptr:(char **)&usrp_args,         defstrval:"type=b200", TYPE_STRING,   0},    \
+    {"yunsdr-args",              CONFIG_HLP_YUNSDR_ARGS, 0,               strptr:(char **)&yunsdr_args,       defstrval:"dev=pciex:0", TYPE_STRING,   0},    \
     {"single-thread-disable",    CONFIG_HLP_NOSNGLT,     PARAMFLAG_BOOL,  iptr:&single_thread_flag,           defintval:1,           TYPE_INT,    0}, \
     {"dlsch-parallel",           CONFIG_HLP_DLSCH_PARA,  0,               iptr:(int32_t *)&nrUE_params.nr_dlsch_parallel,       defintval:0,           TYPE_UINT8,  0}, \
     {"nr-dlsch-demod-shift",     CONFIG_HLP_DLSHIFT,     0,               iptr:(int32_t *)&nr_dlsch_demod_shift,    defintval:0,     TYPE_INT,    0}, \
