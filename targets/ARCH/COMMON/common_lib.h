@@ -96,6 +96,8 @@ typedef enum {
   USRP_N300_DEV,
   /*!\brief device is BLADE RF*/
   BLADERF_DEV,
+  /*!\brief device is YUNSDR pcie*/
+  YUNSDR_DEV,
   /*!\brief device is LMSSDR (SoDeRa)*/
   LMSSDR_DEV,
   /*!\brief device is Iris */
@@ -109,7 +111,7 @@ typedef enum {
   RFSIMULATOR,
   MAX_RF_DEV_TYPE
 } dev_type_t;
-#define DEVTYPE_NAMES {"","EXMIMO","USRP B200","USRP X300","USRP N300","BLADERF","LMSSDR","IRIS","No HW","ADRV9371_ZC706","UEDv2", "RFSIMULATOR"} 
+#define DEVTYPE_NAMES {"","EXMIMO","USRP B200","USRP X300","USRP N300","BLADERF","YUNSDR", "LMSSDR","IRIS","No HW","ADRV9371_ZC706","UEDv2", "RFSIMULATOR"}
 /*!\brief transport protocol types
  */
 typedef enum {
@@ -210,7 +212,7 @@ typedef struct {
   //! timing_source
   clock_source_t time_source;
   //! Manual SDR IP address
-  //#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
+  //#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR) || defined(OAI_YUNSDR)
   char *sdr_addrs;
   //! Auto calibration flag
   int autocal[4];
