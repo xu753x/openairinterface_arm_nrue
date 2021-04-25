@@ -172,13 +172,16 @@ def build_RT_Row(Branch,Commit,keys,filename):
     f.close()
 
     for k in keys:
-        tmp=re.match(r'^(?P<metric>.*):\s+(?P<avg>\d+\.\d+) us;\s+\d+;\s+(?P<max>\d+\.\d+) us;',real_time_stats[k])
-        metric=tmp.group('metric')
-        avg=tmp.group('avg')
-        max=tmp.group('max')
-        row.append(float(avg))
-        row.append(float(max))
+      tmp=re.match(r'^(?P<metric>.*):\s+(?P<avg>\d+\.\d+) us;\s+\d+;\s+(?P<max>\d+\.\d+) us;',real_time_stats[k])
+      if tmp is not None:
+          metric=tmp.group('metric')
+          avg=tmp.group('avg')
+          max=tmp.group('max')
+          row.append(float(avg))
+          row.append(float(max))
     
+    if len(row)==3: #if row was not updated (missing data for ex), then return an empty row
+        row=[]
     return row
 
 #-----------------------------------------------------------
@@ -294,23 +297,23 @@ def gNB_RT_monitor(ranBranch, ranCommitID, eNBlogFile):
 
 	#open gsheet
 	gRT=gSheet("/home/oaicicd/ci_gsheet_creds.json", 'RealTime Monitor', 'timeseries', columns, 10000, 50)
-	#insert row
+	#build row, but insert row and update charts only if data were found
 	row=build_RT_Row(ranBranch,ranCommitID,keys,eNBlogFile)
-	gRT.insertRow(row)
-    
-	#updating charts
-	#will plot avg and max on the same chart, these 2 columns have to be side by side
-	#spreadsheet , chart name, chart type, x title , y title, start row inc header, end row, start col, end col
-	gRT.gChart('timeseries', 'feprx', 'COLUMN', 'CI RUNs DateTime' , 'ProcessingTime (us)' , 0, 1000, 3, 4)
-	gRT.gChart('timeseries', 'feptx_prec', 'COLUMN', 'CI RUNs DateTime' , 'ProcessingTime (us)' , 0, 1000, 5, 6)
-	gRT.gChart('timeseries', 'feptx_ofdm', 'COLUMN', 'CI RUNs DateTime' , 'ProcessingTime (us)' , 0, 1000, 7, 8)
-	gRT.gChart('timeseries', 'feptx_total', 'COLUMN', 'CI RUNs DateTime' , 'ProcessingTime (us)' , 0, 1000, 9, 10)
-	gRT.gChart('timeseries', 'L1 Tx proc', 'COLUMN', 'CI RUNs DateTime' , 'ProcessingTime (us)' , 0, 1000, 11, 12)
-	gRT.gChart('timeseries', 'DLSCH enc', 'COLUMN', 'CI RUNs DateTime' , 'ProcessingTime (us)' , 0, 1000, 13, 14)
-	gRT.gChart('timeseries', 'L1 Rx proc', 'COLUMN', 'CI RUNs DateTime' , 'ProcessingTime (us)' , 0, 1000, 15, 16)
-	gRT.gChart('timeseries', 'PUSCH inner-rec', 'COLUMN', 'CI RUNs DateTime' , 'ProcessingTime (us)' , 0, 1000, 17, 18)
-	gRT.gChart('timeseries', 'PUSCH dec', 'COLUMN', 'CI RUNs DateTime' , 'ProcessingTime (us)' , 0, 1000, 19, 20)					
-	########################
+	if len(row)!=0:
+		gRT.insertRow(row)
+		#updating charts
+		#will plot avg and max on the same chart, these 2 columns have to be side by side
+		#spreadsheet , chart name, chart type, x title , y title, start row inc header, end row, start col, end col
+		gRT.gChart('timeseries', 'feprx', 'COLUMN', 'CI RUNs DateTime' , 'ProcessingTime (us)' , 0, 1000, 3, 4)
+		gRT.gChart('timeseries', 'feptx_prec', 'COLUMN', 'CI RUNs DateTime' , 'ProcessingTime (us)' , 0, 1000, 5, 6)
+		gRT.gChart('timeseries', 'feptx_ofdm', 'COLUMN', 'CI RUNs DateTime' , 'ProcessingTime (us)' , 0, 1000, 7, 8)
+		gRT.gChart('timeseries', 'feptx_total', 'COLUMN', 'CI RUNs DateTime' , 'ProcessingTime (us)' , 0, 1000, 9, 10)
+		gRT.gChart('timeseries', 'L1 Tx proc', 'COLUMN', 'CI RUNs DateTime' , 'ProcessingTime (us)' , 0, 1000, 11, 12)
+		gRT.gChart('timeseries', 'DLSCH enc', 'COLUMN', 'CI RUNs DateTime' , 'ProcessingTime (us)' , 0, 1000, 13, 14)
+		gRT.gChart('timeseries', 'L1 Rx proc', 'COLUMN', 'CI RUNs DateTime' , 'ProcessingTime (us)' , 0, 1000, 15, 16)
+		gRT.gChart('timeseries', 'PUSCH inner-rec', 'COLUMN', 'CI RUNs DateTime' , 'ProcessingTime (us)' , 0, 1000, 17, 18)
+		gRT.gChart('timeseries', 'PUSCH dec', 'COLUMN', 'CI RUNs DateTime' , 'ProcessingTime (us)' , 0, 1000, 19, 20)
+	  ########################
         
     
 
