@@ -934,6 +934,7 @@ class RANManagement():
 				htmleNBFailureMsg += statMsg
 
 			#data log of gNB rela time stats
+			#attention this leads to reading the log file a second time, not very efficient
 			import cls_rt_monitor #import here (rather than on top) is to avoid installing the libs onto 4G bench servers, possibly temporary solution 
 			cls_rt_monitor.gNB_RT_monitor(self.ranBranch,self.ranCommitID, eNBlogFile)
 

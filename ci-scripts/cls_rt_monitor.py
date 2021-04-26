@@ -161,6 +161,7 @@ def build_RT_Row(Branch,Commit,keys,filename):
     row.append(Branch)
     row.append(Commit)    
 
+    #parsing the log file
     real_time_stats = {}
     f=open(filename,"r")
     for line in f.readlines():
@@ -171,14 +172,17 @@ def build_RT_Row(Branch,Commit,keys,filename):
                 real_time_stats[k]=tmp.group(1)       
     f.close()
 
-    for k in keys:
-      tmp=re.match(r'^(?P<metric>.*):\s+(?P<avg>\d+\.\d+) us;\s+\d+;\s+(?P<max>\d+\.\d+) us;',real_time_stats[k])
-      if tmp is not None:
-          metric=tmp.group('metric')
-          avg=tmp.group('avg')
-          max=tmp.group('max')
-          row.append(float(avg))
-          row.append(float(max))
+    #parsing the dictionary with the keys we are looking for
+    #dict may be empty if no data found above
+    if len(real_time_stats)!=0:
+      for k in keys:
+        tmp=re.match(r'^(?P<metric>.*):\s+(?P<avg>\d+\.\d+) us;\s+\d+;\s+(?P<max>\d+\.\d+) us;',real_time_stats[k])
+        if tmp is not None:
+            metric=tmp.group('metric')
+            avg=tmp.group('avg')
+            max=tmp.group('max')
+            row.append(float(avg))
+            row.append(float(max))
     
     if len(row)==3: #if row was not updated (missing data for ex), then return an empty row
         row=[]
