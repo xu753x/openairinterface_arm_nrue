@@ -386,7 +386,7 @@ class OaiCiTest():
 		else: #if an ID is specified, it is a module from the yaml infrastructure file
 			#RH
 			Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra[self.ue_id])
-			is_module=Module_UE.CheckIsModule()
+			is_module=Module_UE.CheckCMProcess()
 			if is_module:
 				#Module_UE.WakeUp()
 				Module_UE.Command("wup")
@@ -1074,7 +1074,7 @@ class OaiCiTest():
 				cnt += 1
 		else:#if an ID is specified, it is a module from the yaml infrastructure file
 			Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra[self.ue_id])
-			is_module=Module_UE.CheckIsModule()
+			is_module=Module_UE.CheckCMProcess()
 			if is_module:
 				#Module_UE.Detach()
 				Module_UE.Command("detach")
