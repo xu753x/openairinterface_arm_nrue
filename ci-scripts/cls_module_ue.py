@@ -76,18 +76,32 @@ class Module_UE:
 		if len(result)!=0:
 			logging.debug(self.Process['Name'] + " process found")
 			return True 
-		else:
+		else:#start process and check again  
 			logging.debug(self.Process['Name'] + " process NOT found")
+			#starting the process
 			logging.debug('Starting ' + self.Process['Name'])
-			logging.debug(self.Process['Cmd'])
-			ssh = subprocess.Popen(["ssh", "%s" % HOST, self.Process['Cmd']],shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-			return False 
+			mySSH = sshconnection.SSHConnection()
+			mySSH.open(self.HostIPAddress, self.HostUsername, self.HostPassword)
+			mySSH.command('echo ' + self.HostPassword + ' | sudo -S ' + self.Process['Cmd'] + ' &','\$',5)
+			mySSH.close()
+			#checking the process
+			HOST=self.HostIPAddress
+			COMMAND="ps aux | grep " + self.Process['Name'] + " | grep -v grep "
+			logging.debug(COMMAND)
+			ssh = subprocess.Popen(["ssh", "%s" % HOST, COMMAND],shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+			result = ssh.stdout.readlines()
+			if len(result)!=0:
+				logging.debug(self.Process['Name'] + " process found")
+				return True
+			else:
+				logging.debug(self.Process['Name'] + " process NOT found")
+				return False 
 
 	#Generic command function, using function pointers dictionary
 	def Command(self,cmd):
 		mySSH = sshconnection.SSHConnection()
 		mySSH.open(self.HostIPAddress, self.HostUsername, self.HostPassword)
-		mySSH.command('echo ' + self.HostPassword + ' | sudo -S python3 ' + self.cmd_dict[cmd] + ' ','\$',5)
+		mySSH.command('echo ' + self.HostPassword + ' | sudo -S python3 ' + self.cmd_dict[cmd],'\$',5)
 		time.sleep(5)
 		logging.debug("Module "+ cmd)
 		mySSH.close()
@@ -104,17 +118,20 @@ class Module_UE:
 			ssh = subprocess.Popen(["ssh", "%s" % HOST, COMMAND],shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 			response = ssh.stdout.readlines()
 			tentative-=1
-			sleep(10)
+			time.sleep(10)
 		if (tentative==0) and (len(response)==0):
 			logging.debug('\u001B[1;37;41m Module IP Address Not Found! Time expired \u001B[0m')
-		else #check response
+			return -1
+		else: #check response
 			result = re.search('inet (?P<moduleipaddress>[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)', response[0].decode("utf-8") )
 			if result is not None: 
 				if result.group('moduleipaddress') is not None: 
 					self.UEIPAddress = result.group('moduleipaddress')
 					logging.debug('\u001B[1mUE Module IP Address is ' + self.UEIPAddress + '\u001B[0m')
+					return 0
 				else:
 					logging.debug('\u001B[1;37;41m Module IP Address Not Found! \u001B[0m')
+					return -1
 
 
 
