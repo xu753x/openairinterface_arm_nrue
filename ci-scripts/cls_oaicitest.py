@@ -388,7 +388,6 @@ class OaiCiTest():
 			Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra[self.ue_id])
 			is_module=Module_UE.CheckCMProcess()
 			if is_module:
-				#Module_UE.WakeUp()
 				Module_UE.Command("wup")
 				Module_UE.GetModuleIPAddress()
 				HTML.CreateHtmlTestRow(Module_UE.UEIPAddress, 'OK', CONST.ALL_PROCESSES_OK)	
@@ -1040,7 +1039,7 @@ class OaiCiTest():
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
 
-	def DetachUE(self,HTML,RAN,EPC,COTS_UE):
+	def DetachUE(self,HTML,RAN,EPC,COTS_UE,InfraUE):
 		if self.ue_id=='':#no ID specified, then it is a COTS controlled by ADB
 			if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
 				HELP.GenericHelp(CONST.Version)
@@ -1076,7 +1075,6 @@ class OaiCiTest():
 			Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra[self.ue_id])
 			is_module=Module_UE.CheckCMProcess()
 			if is_module:
-				#Module_UE.Detach()
 				Module_UE.Command("detach")
 				Module_UE.GetModuleIPAddress()
 				HTML.CreateHtmlTestRow(Module_UE.UEIPAddress, 'OK', CONST.ALL_PROCESSES_OK)			
