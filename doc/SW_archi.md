@@ -20,7 +20,7 @@ Bob-->Alice: I am good thanks!
     opt Extra response
     Bob->>Alice: Thanks for asking
     end
-​```
+```
 
 ```flow
 st=>start: Start
@@ -30,7 +30,7 @@ e=>end
 st->op->cond
 cond(yes)->e
 cond(no)->op
-​```
+```
 
 # Top file: executables/ocp-gnb.c
 
