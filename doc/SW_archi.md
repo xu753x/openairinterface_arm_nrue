@@ -1,6 +1,6 @@
 
 
-#trial diagrams and gitlab
+# trial diagrams and gitlab
 
 ```sequence
 Alice->Bob: Hello Bob, how are you?
