@@ -8,16 +8,6 @@ Note right of Bob: Bob thinks
 Bob-->Alice: I am good thanks!
 ```
 
-```flow
-st=>start: Start
-op=>operation: Your Operation
-cond=>condition: Yes or No?
-e=>end
-st->op->cond
-cond(yes)->e
-cond(no)->op
-​```
-
 ```mermaid
 %% Example of sequence diagram
   sequenceDiagram
@@ -32,6 +22,15 @@ cond(no)->op
     end
 ​```
 
+```flow
+st=>start: Start
+op=>operation: Your Operation
+cond=>condition: Yes or No?
+e=>end
+st->op->cond
+cond(yes)->e
+cond(no)->op
+​```
 
 # Top file: executables/ocp-gnb.c
 
