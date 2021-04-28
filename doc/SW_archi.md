@@ -1,25 +1,4 @@
-<style type="text/css" rel="stylesheet">
 
-body {
-   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-   font-size: 13px;
-   line-height: 18px;
-   color: #fff;
-   background-color: #110F14;
-}
-  h2 { margin-left: 20px; }
-  h3 { margin-left: 40px; }
-  h4 { margin-left: 60px; }
-
-.func2 { margin-left: 20px; }
-.func3 { margin-left: 40px; }
-.func4 { margin-left: 60px; }
-
-</style>
-
-
-This tuto for 5G gNB design, with Open Cells main
-{: .text-center}
 
 #trial diagrams and gitlab
 
