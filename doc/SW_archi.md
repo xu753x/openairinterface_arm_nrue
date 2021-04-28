@@ -15,10 +15,6 @@ body {
 .func3 { margin-left: 40px; }
 .func4 { margin-left: 60px; }
 
-:root {
-  --sequence-theme: hand
-}
-
 </style>
 
 
