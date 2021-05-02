@@ -315,11 +315,24 @@ static void trx_usrp_end(openair0_device *device) {
     return;
 
   usrp_state_t *s = (usrp_state_t *)device->priv;
-
   if (s == NULL)
     return;
-  iqrecorder_end(device);
 
+  // if last packet sent was end of burst no need to do anything. otherwise send end of burst packet
+  if (s->tx_md.end_of_burst != true) {
+    s->tx_md.end_of_burst = true;
+    s->tx_md.start_of_burst = false;
+    s->tx_md.has_time_spec = false;
+    
+    int32_t dummy=0; 
+    std::vector<const void*> buffs;
+    for (size_t ch = 0; ch < s->tx_stream->get_num_channels(); ch++)
+      buffs.push_back(&dummy); // same buffer for each channel
+    
+    s->tx_stream->send(buffs, 0, s->tx_md);
+  }
+  
+  iqrecorder_end(device);
 
 }
 
