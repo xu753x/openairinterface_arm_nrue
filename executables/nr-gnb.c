@@ -113,10 +113,14 @@ void tx_func(void *param) {
 
   processingData_L1_t *info = (processingData_L1_t *) param;
   PHY_VARS_gNB *gNB = info->gNB;
+  nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
   int frame_tx = info->frame_tx;
   int slot_tx = info->slot_tx;
+  int tx_slot_type         = nr_slot_select(cfg,frame_tx,slot_tx);
 
+  if (tx_slot_type == NR_DOWNLINK_SLOT || tx_slot_type == NR_MIXED_SLOT) {
   phy_procedures_gNB_TX(gNB, frame_tx,slot_tx, 1);
+  }
 
   // start FH TX processing
   notifiedFIFO_elt_t *res; 
@@ -229,7 +233,6 @@ void rx_func(void *param) {
   if (pthread_mutex_unlock(&rnti_to_remove_mutex)) exit(1);
 
   // RX processing
-  int tx_slot_type         = nr_slot_select(cfg,frame_tx,slot_tx);
   int rx_slot_type         = nr_slot_select(cfg,frame_rx,slot_rx);
 
   if (rx_slot_type == NR_UPLINK_SLOT || rx_slot_type == NR_MIXED_SLOT) {
@@ -268,7 +271,6 @@ void rx_func(void *param) {
   
   notifiedFIFO_elt_t *res; 
 
-  if (tx_slot_type == NR_DOWNLINK_SLOT || tx_slot_type == NR_MIXED_SLOT) {
     res = pullTpool(gNB->resp_L1_tx, gNB->threadPool);
     processingData_L1_t *syncMsg = (processingData_L1_t *)NotifiedFifoData(res);
     syncMsg->gNB = gNB;
@@ -279,7 +281,6 @@ void rx_func(void *param) {
     syncMsg->timestamp_tx = info->timestamp_tx;
     res->key = slot_tx;
     pushTpool(gNB->threadPool, res);
-  }
     
 #if 0
   LOG_D(PHY, "rxtx:%lld nfapi:%lld phy:%lld tx:%lld rx:%lld prach:%lld ofdm:%lld ",

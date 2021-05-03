@@ -329,7 +329,7 @@ static void trx_usrp_end(openair0_device *device) {
     for (size_t ch = 0; ch < s->tx_stream->get_num_channels(); ch++)
       buffs.push_back(&dummy); // same buffer for each channel
     
-    s->tx_stream->send(buffs, 0, s->tx_md);
+    //s->tx_stream->send(buffs, 0, s->tx_md);
   }
   
   iqrecorder_end(device);

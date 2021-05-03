@@ -724,10 +724,20 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
   int sf_extension  = 0;                 //sf_extension = ru->sf_extension;
   int siglen=fp->get_samples_per_slot(slot,fp);
   int flags=1;
+  static int first_tx = 1;
+
+  if (first_tx==1) {
+    flags=2;
+    first_tx=0;
+  }
+  else {
+    flags=1;
+  }
 
   //nr_subframe_t SF_type     = nr_slot_select(cfg,slot%fp->slots_per_frame);
-  if (slot_type == NR_DOWNLINK_SLOT || slot_type == NR_MIXED_SLOT || IS_SOFTMODEM_RFSIM) {
-
+  //if (slot_type == NR_DOWNLINK_SLOT || slot_type == NR_MIXED_SLOT || IS_SOFTMODEM_RFSIM) {
+  if (1) {
+    /*
     if (cfg->cell_config.frame_duplex_type.value == TDD){
       if(slot_type == NR_MIXED_SLOT) {
         txsymb = 0;
@@ -750,6 +760,7 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
       if (slot_type == NR_DOWNLINK_SLOT && nextslot_type == NR_UPLINK_SLOT)
         flags = 3; // end of burst
     }
+    */
 
     if (fp->freq_range==nr_FR2) {
       // the beam index is written in bits 8-10 of the flags
