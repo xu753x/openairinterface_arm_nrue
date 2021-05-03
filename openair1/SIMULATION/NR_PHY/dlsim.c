@@ -1061,7 +1061,8 @@ int main(int argc, char **argv)
             nr_normal_prefix_mod(&gNB->common_vars.txdataF[aa][txdataF_offset],
                                  &txdata[aa][tx_offset],
                                  14,
-                                 frame_parms);
+                                 frame_parms,
+                                 slot);
           }
         }
        
