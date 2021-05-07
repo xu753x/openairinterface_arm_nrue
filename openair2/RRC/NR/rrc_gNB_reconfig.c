@@ -1184,13 +1184,13 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  ASN_SEQUENCE_ADD(&csirep1->reportConfigType.choice.periodic->pucch_CSI_ResourceList.list,pucchcsires1);
  csirep1->reportQuantity.present = NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP;
  csirep1->reportQuantity.choice.ssb_Index_RSRP=(NULL_t)0;
- csirep1->reportFreqConfiguration = calloc(1,sizeof(*csirep1->reportFreqConfiguration));
+ csirep1->reportFreqConfiguration = NULL; /*calloc(1,sizeof(*csirep1->reportFreqConfiguration));
  csirep1->reportFreqConfiguration->cqi_FormatIndicator=NR_CSI_ReportConfig__reportFreqConfiguration__cqi_FormatIndicator_widebandCQI;
  csirep1->reportFreqConfiguration->pmi_FormatIndicator=NR_CSI_ReportConfig__reportFreqConfiguration__pmi_FormatIndicator_widebandPMI;
- csirep1->reportFreqConfiguration->csi_ReportingBand=NULL;
+ csirep1->reportFreqConfiguration->csi_ReportingBand=NULL;*/
  csirep1->timeRestrictionForChannelMeasurements= NR_CSI_ReportConfig__timeRestrictionForChannelMeasurements_configured;
  csirep1->timeRestrictionForInterferenceMeasurements=NR_CSI_ReportConfig__timeRestrictionForInterferenceMeasurements_configured;
- csirep1->codebookConfig=calloc(1,sizeof(*csirep1->codebookConfig));
+ /*csirep1->codebookConfig=calloc(1,sizeof(*csirep1->codebookConfig));
  csirep1->codebookConfig->codebookType.present = NR_CodebookConfig__codebookType_PR_type1;
  csirep1->codebookConfig->codebookType.choice.type1 = calloc(1,sizeof(*csirep1->codebookConfig->codebookType.choice.type1));
  csirep1->codebookConfig->codebookType.choice.type1->subType.present=NR_CodebookConfig__codebookType__type1__subType_PR_typeI_SinglePanel;
@@ -1210,7 +1210,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  csirep1->codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel->typeI_SinglePanel_ri_Restriction.buf=malloc(1); 
  csirep1->codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel->typeI_SinglePanel_ri_Restriction.buf[0]=0xc0; //'00000011'B
 
- csirep1->codebookConfig->codebookType.choice.type1->codebookMode=1;
+ csirep1->codebookConfig->codebookType.choice.type1->codebookMode=1;*/
  csirep1->dummy = NULL;
  csirep1->groupBasedBeamReporting.present = NR_CSI_ReportConfig__groupBasedBeamReporting_PR_disabled;
  csirep1->groupBasedBeamReporting.choice.disabled=calloc(1,sizeof(*csirep1->groupBasedBeamReporting.choice.disabled));
@@ -1222,6 +1222,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  csirep1->cqi_Table = calloc(1,sizeof(*csirep1->cqi_Table));
  *csirep1->cqi_Table = NR_CSI_ReportConfig__cqi_Table_table1;
  csirep1->subbandSize = NR_CSI_ReportConfig__subbandSize_value1;
+
  csirep1->non_PMI_PortIndication = NULL;
  csirep1->ext1 = NULL;
 
