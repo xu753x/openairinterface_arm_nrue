@@ -28,6 +28,8 @@
 #include <pthread.h>
 #include <execinfo.h>
 
+#include <dlfcn.h>
+
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
@@ -6260,9 +6262,27 @@ void dft6144(int16_t *input, int16_t *output,unsigned char scale)
     tmp[2][i] = ((uint32_t *)input)[j++];
   }
 
-  dft2048((int16_t*)(tmp[0]),(int16_t*)(tmpo[0]),1);
-  dft2048((int16_t*)(tmp[1]),(int16_t*)(tmpo[1]),1);
-  dft2048((int16_t*)(tmp[2]),(int16_t*)(tmpo[2]),1);
+  //手动加载指定位置的so动态库
+  void* handle = dlopen("./cuFFT.so", RTLD_LAZY);
+
+  void (*cudft2048)(int16_t *x,int16_t *y);
+
+  //根据动态链接库操作句柄与符号，返回符号对应的地址
+  cudft2048 = dlsym(handle, "cudft2048");
+
+  cudft2048((int16_t*)(tmp[0]),(int16_t*)(tmpo[0]));
+  cudft2048((int16_t*)(tmp[1]),(int16_t*)(tmpo[1]));
+  cudft2048((int16_t*)(tmp[2]),(int16_t*)(tmpo[2]));
+  for (i = 0; i < 2048; i++)
+  {
+      printf("2048204820482048\n");
+      printf("a=%d\tb=%d\n", tmp[0][i],tmpo[0][i]);
+  }
+  dlclose(handle);
+
+  // dft2048((int16_t*)(tmp[0]),(int16_t*)(tmpo[0]),1);
+  // dft2048((int16_t*)(tmp[1]),(int16_t*)(tmpo[1]),1);
+  // dft2048((int16_t*)(tmp[2]),(int16_t*)(tmpo[2]),1);
 
   /*
   for (i=1; i<2048; i++) {
