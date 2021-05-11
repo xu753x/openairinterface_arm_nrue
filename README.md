@@ -11,7 +11,7 @@ ran
 ├── doc               : Contains an up-to-date feature set list and starting tutorials.
 ├── LICENSE           : License file.
 ├── etc               : Configuration files.
-├── src               : 3GPP NR Rel-15 DU files. 
+└── src               : 3GPP NR Rel-15 DU files. 
     ├── common        : Common files.
     ├── main          : Main function for DU.
     ├── phy           : PHY laywer files.
