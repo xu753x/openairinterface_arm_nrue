@@ -6,7 +6,7 @@ The OpenXG software is composed of the following parts:
 
 <pre>
 ran
-├── build             : Build utilities to compile (simulation, emulation and real-time platforms), and generated build files.
+├── build             : Build utilities to compile, and generated build files.
 ├── common            : Some common utilities.
 ├── doc               : Contains an up-to-date feature set list and starting tutorials.
 ├── LICENSE           : License file.
