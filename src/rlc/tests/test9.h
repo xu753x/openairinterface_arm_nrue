@@ -1,0 +1,12 @@
+
+
+TIME, 1,
+    GNB_AM, 100000, 100000, 45, 35, 0, -1, -1, 8, 18,
+    UE_AM, 100000, 100000, 45, 35, 0, -1, -1, 8, 18,
+    GNB_PDU_SIZE, 22,
+    GNB_SDU, 0, 50,
+TIME, 2,
+    UE_RECV_FAILS, 1,
+TIME, 3,
+    UE_RECV_FAILS, 0,
+TIME, -1

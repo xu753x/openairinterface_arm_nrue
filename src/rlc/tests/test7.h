@@ -1,0 +1,10 @@
+
+
+TIME, 1,
+    GNB_TM, 100000,
+    UE_TM, 100000,
+    GNB_SDU, 0, 10,
+    UE_BUFFER_STATUS,
+TIME, 10,
+    UE_SDU, 0, 5,
+TIME, -1
