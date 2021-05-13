@@ -39,6 +39,8 @@
 #include "PHY/CODING/nrLDPC_extern.h"
 #include "common/config/config_userapi.h" 
 #include "common/utils/load_module_shlib.h" 
+#include <dlfcn.h>
+
 
 
 /* function description array, to be used when loading the encoding/decoding shared lib */
@@ -73,4 +75,27 @@ int load_nrLDPClib_ref(char *libversion, nrLDPC_encoderfunc_t * nrLDPC_encoder_p
 return 0;
 }
 
+int load_cuFFT(void) {
+     //手动加载指定位置的so动态库
+     void* handle = dlopen("../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/cuFFT.so", RTLD_LAZY|RTLD_NODELETE|RTLD_GLOBAL);
+     if(!handle){
+          printf("open cuFFT.so error!\n");
+          return -1;
+     }
+     //根据动态链接库操作句柄与符号，返回符号对应的地址
+     cudft2048 = (cudft_EnTx) dlsym(handle, "_Z9cudft2048PsS_h");
+     if(!cudft2048){
+          printf("cuFFT.so error!\n");
+          dlclose(handle);
+          return -1;
+     }
+     cudft204 = (cudft_EnTx) dlsym(handle, "_Z8testtestPsS_h");
+     if(!cudft204){
+          printf("cutest.so error!\n");
+          dlclose(handle);
+          return -1;
+     }
+
+return 0;
+}
 

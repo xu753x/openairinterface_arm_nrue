@@ -262,6 +262,7 @@ void dft36864(int16_t *x,int16_t *y,uint8_t scale_flag);
 void dft49152(int16_t *x,int16_t *y,uint8_t scale_flag); 
 void dft73728(int16_t *x,int16_t *y,uint8_t scale_flag); 
 void dft98304(int16_t *x,int16_t *y,uint8_t scale_flag);
+extern void cudft2048(int16_t *x,int16_t *y,uint8_t scale_flag);
 
 
 void idft64(int16_t *x,int16_t *y,uint8_t scale_flag);
@@ -321,7 +322,7 @@ adftfunc_t dft_ftab[]={
 	dft512,   dft540,   dft576,   dft600,   dft648,  dft720,  dft768,   dft864,
 	dft900,   dft960,   dft972,   dft1024,  dft1080, dft1152, dft1200,  dft1296,
 	dft1440,  dft1500,  dft1536,  dft1620,  dft1728, dft1800, dft1920,  dft1944,
-	dft2048,  dft2160,  dft2304,  dft2400,  dft2592, dft2700, dft2880,  dft2916,
+	cudft2048,  dft2160,  dft2304,  dft2400,  dft2592, dft2700, dft2880,  dft2916,
 	dft3000,  dft3072,  dft3240,  dft4096,  dft6144, dft8192, dft9216,  dft12288,
 	dft18432, dft24576, dft36864, dft49152, dft73728, dft98304
 };

@@ -10627,6 +10627,17 @@ int dfts_autoinit(void)
 void dft(uint8_t sizeidx, int16_t *sigF,int16_t *sig,unsigned char scale_flag){
 	AssertFatal((sizeidx>=0 && sizeidx<(int)DFT_SIZE_IDXTABLESIZE),"Invalid dft size index %i\n",sizeidx);
 	dft_ftab[sizeidx](sigF,sig,scale_flag);
+  static int cu_2048 = 1;
+  if(sizeidx==DFT_2048 && cu_2048 < 5)
+  {
+    cu_2048 ++;
+    int i;
+    printf("hs111111111111111111111111111111111111111111111:\n");
+    for (i = 0; i < 1024; i++)
+    {
+      printf("a=%d + %dj\tb=%d + %dj\n", sigF[i*2],sigF[i*2+1],sig[i*2],sig[i*2+1]);
+    }
+  }
 };
 
 void idft(uint8_t sizeidx, int16_t *sigF,int16_t *sig,unsigned char scale_flag){

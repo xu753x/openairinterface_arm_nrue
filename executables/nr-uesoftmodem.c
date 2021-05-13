@@ -441,6 +441,15 @@ int main( int argc, char **argv ) {
 
   init_opt() ;
   load_nrLDPClib();
+  load_cuFFT();
+  // int16_t a[2048] = {1};
+  // int16_t *b = (int16_t *)malloc(2048 * sizeof(int16_t));
+  // int i;
+  // for (i = 0; i < 2048; i++)
+  // {
+  //   a[i]= 2048-i;
+  // }
+  // cudft2048(a,b,1);
 
   if (ouput_vcd) {
     vcd_signal_dumper_init("/tmp/openair_dump_nrUE.vcd");

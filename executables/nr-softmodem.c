@@ -724,6 +724,16 @@ int main( int argc, char **argv )
 
 
   init_opt();
+  load_cuFFT();
+  int32_t a[2048] = {1};
+  int32_t *b = (int32_t *)malloc(2048 * sizeof(int32_t));
+  int i;
+  for (i = 0; i < 2048; i++)
+  {
+    a[i]= 2048-i;
+  }
+  cudft204((int16_t*)a,(int16_t*)b,1);
+  cudft2048((int16_t*)a,(int16_t*)b,1);
 
 
 #ifdef PDCP_USE_NETLINK
