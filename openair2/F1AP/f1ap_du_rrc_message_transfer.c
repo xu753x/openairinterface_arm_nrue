@@ -1005,6 +1005,7 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
 
   uint64_t        cu_ue_f1ap_id;
   uint64_t        du_ue_f1ap_id;
+  uint64_t        old_du_ue_f1ap_id;
   uint64_t        srb_id;
   int             executeDuplication;
   sdu_size_t      rrc_dl_sdu_len;
@@ -1044,9 +1045,10 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
 
   /* optional */
   /* oldgNB_DU_UE_F1AP_ID */
-  if (0) {
-    F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_DLRRCMessageTransferIEs_t, ie, container,
-                             F1AP_ProtocolIE_ID_id_oldgNB_DU_UE_F1AP_ID, true);
+  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_DLRRCMessageTransferIEs_t, ie, container,
+                            F1AP_ProtocolIE_ID_id_oldgNB_DU_UE_F1AP_ID, false);
+  if (ie) {
+    old_du_ue_f1ap_id = ie->value.choice.GNB_DU_UE_F1AP_ID_1;
   }
 
   /* mandatory */
@@ -1288,7 +1290,12 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
         LOG_I(F1AP,"Received rrcRelease\n");
         break;  
       case NR_DL_DCCH_MessageType__c1_PR_rrcReestablishment:
+      {
         LOG_I(F1AP,"Received rrcReestablishment\n");
+        int uid = f1ap_get_du_uid(&f1ap_du_inst[instance], old_du_ue_f1ap_id);
+        f1ap_du_inst[instance].f1ap_ue[uid].rnti = ctxt.rnti;
+      }
+
         break;  
       case NR_DL_DCCH_MessageType__c1_PR_securityModeCommand:
         LOG_I(F1AP,"Received securityModeCommand\n");

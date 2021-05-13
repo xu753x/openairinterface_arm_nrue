@@ -1443,53 +1443,55 @@ rrc_gNB_generate_RRCReestablishment(
   const int             CC_id)
 //-----------------------------------------------------------------------------
 {
-    // int UE_id = -1;
-    //NR_LogicalChannelConfig_t  *SRB1_logicalChannelConfig = NULL;
-    NR_SRB_ToAddModList_t      **SRB_configList;
-    // NR_SRB_ToAddMod_t          *SRB1_config = NULL;
-    //rrc_gNB_carrier_data_t     *carrier = NULL;
-    gNB_RRC_UE_t               *ue_context = NULL;
-    module_id_t                 module_id = ctxt_pP->module_id;
-    // uint16_t                    rnti = ctxt_pP->rnti;
-    
-    SRB_configList = &(ue_context_pP->ue_context.SRB_configList);
-    //carrier = &(RC.nrrrc[ctxt_pP->module_id]->carrier);
-    ue_context = &(ue_context_pP->ue_context);
-    ue_context->Srb0.Tx_buffer.payload_size = do_RRCReestablishment(ctxt_pP,
-        ue_context_pP,
-        CC_id,
-        (uint8_t *) ue_context->Srb0.Tx_buffer.Payload,
-        //(uint8_t) carrier->p_gNB, // at this point we do not have the UE capability information, so it can only be TM1 or TM2
-        rrc_gNB_get_next_transaction_identifier(module_id),
-        SRB_configList
-        //&(ue_context->physicalConfigDedicated)
-        );
+  // int UE_id = -1;
+  //NR_LogicalChannelConfig_t  *SRB1_logicalChannelConfig = NULL;
+  NR_SRB_ToAddModList_t      **SRB_configList;
+  // NR_SRB_ToAddMod_t          *SRB1_config = NULL;
+  //rrc_gNB_carrier_data_t     *carrier = NULL;
+  gNB_RRC_UE_t               *ue_context = NULL;
+  module_id_t                 module_id = ctxt_pP->module_id;
+  // uint16_t                    rnti = ctxt_pP->rnti;
+  uint8_t                             buffer[RRC_BUF_SIZE];
+  uint16_t                            size  = 0;
+  
+  SRB_configList = &(ue_context_pP->ue_context.SRB_configList);
+  //carrier = &(RC.nrrrc[ctxt_pP->module_id]->carrier);
+  ue_context = &(ue_context_pP->ue_context);
+  memset(buffer, 0, RRC_BUF_SIZE);
+  size = do_RRCReestablishment(ctxt_pP,
+      ue_context_pP,
+      CC_id,
+      buffer,
+      //(uint8_t) carrier->p_gNB, // at this point we do not have the UE capability information, so it can only be TM1 or TM2
+      rrc_gNB_get_next_transaction_identifier(module_id),
+      SRB_configList
+      //&(ue_context->physicalConfigDedicated)
+      );
 
-    /* Configure SRB1 for UE */
-    if (*SRB_configList != NULL) {
-      for (int cnt = 0; cnt < (*SRB_configList)->list.count; cnt++) {
-        if ((*SRB_configList)->list.array[cnt]->srb_Identity == 1) {
-          // SRB1_config = (*SRB_configList)->list.array[cnt];
-        }
-
-        LOG_D(NR_RRC, PROTOCOL_NR_RRC_CTXT_UE_FMT" RRC_gNB --- MAC_CONFIG_REQ  (SRB1) ---> MAC_gNB\n",
-              PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP));
-
-        // rrc_mac_config_req_eNB
+  /* Configure SRB1 for UE */
+  if (*SRB_configList != NULL) {
+    for (int cnt = 0; cnt < (*SRB_configList)->list.count; cnt++) {
+      if ((*SRB_configList)->list.array[cnt]->srb_Identity == 1) {
+        // SRB1_config = (*SRB_configList)->list.array[cnt];
       }
-    }  // if (*SRB_configList != NULL)
+
+      LOG_D(NR_RRC, PROTOCOL_NR_RRC_CTXT_UE_FMT" RRC_gNB --- MAC_CONFIG_REQ  (SRB1) ---> MAC_gNB\n",
+            PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP));
+
+      // rrc_mac_config_req_eNB
+    }
+  }  // if (*SRB_configList != NULL)
     
-    MSC_LOG_TX_MESSAGE(MSC_RRC_GNB,
-                       MSC_RRC_UE,
-                       ue_context->Srb0.Tx_buffer.Header,
-                       ue_context->Srb0.Tx_buffer.payload_size,
-                       MSC_AS_TIME_FMT" NR_RRCReestablishment UE %x size %u",
-                       MSC_AS_TIME_ARGS(ctxt_pP),
-                       ue_context->rnti,
-                       ue_context->Srb0.Tx_buffer.payload_size);
-    LOG_I(NR_RRC, PROTOCOL_NR_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel DL-DCCH, Generating NR_RRCReestablishment (bytes %d)\n",
-          PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
-          ue_context->Srb0.Tx_buffer.payload_size);
+  MSC_LOG_TX_MESSAGE(MSC_RRC_GNB,
+                      MSC_RRC_UE,
+                      buffer,
+                      size,
+                      MSC_AS_TIME_FMT" NR_RRCReestablishment UE %x size %u",
+                      MSC_AS_TIME_ARGS(ctxt_pP),
+                      ue_context->rnti,
+                      size);
+  LOG_I(NR_RRC, PROTOCOL_NR_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel DL-DCCH, Generating NR_RRCReestablishment (bytes %d)\n",
+        PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP), size);
 #if(0)
     /* TODO : It may be needed if gNB goes into full stack working. */
     UE_id = find_nr_UE_id(module_id, rnti);
@@ -1505,17 +1507,25 @@ rrc_gNB_generate_RRCReestablishment(
     }
 #endif
 #ifdef ITTI_SIM
-        MessageDef *message_p;
-        uint8_t *message_buffer;
-        message_buffer = itti_malloc (TASK_RRC_GNB, TASK_RRC_UE_SIM, ue_context->Srb0.Tx_buffer.payload_size);
-        memcpy (message_buffer, (uint8_t *) ue_context->Srb0.Tx_buffer.Payload, ue_context->Srb0.Tx_buffer.payload_size);
-        message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, GNB_RRC_DCCH_DATA_IND);
-        GNB_RRC_DCCH_DATA_IND (message_p).rbid = DCCH;
-        GNB_RRC_DCCH_DATA_IND (message_p).sdu = message_buffer;
-        GNB_RRC_DCCH_DATA_IND (message_p).size  = ue_context->Srb0.Tx_buffer.payload_size;
-        itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
+    MessageDef *message_p;
+    uint8_t *message_buffer;
+    message_buffer = itti_malloc (TASK_RRC_GNB, TASK_RRC_UE_SIM, size);
+    memcpy (message_buffer, buffer, size);
+    message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, GNB_RRC_DCCH_DATA_IND);
+    GNB_RRC_DCCH_DATA_IND (message_p).rbid = DCCH;
+    GNB_RRC_DCCH_DATA_IND (message_p).sdu = message_buffer;
+    GNB_RRC_DCCH_DATA_IND (message_p).size  = size;
+    itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
+#else
+    nr_rrc_data_req(ctxt_pP,
+                DCCH,
+                rrc_gNB_mui++,
+                SDU_CONFIRM_NO,
+                size,
+                buffer,
+                PDCP_TRANSMISSION_MODE_CONTROL);
+    // rrc_pdcp_config_asn1_req
 #endif
-
 }
 
 //-----------------------------------------------------------------------------

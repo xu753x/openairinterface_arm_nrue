@@ -249,14 +249,14 @@ int CU_send_DL_RRC_MESSAGE_TRANSFER(instance_t                instance,
 
   /* optional */
   /* c3. oldgNB_DU_UE_F1AP_ID */
- /* if (f1ap_dl_rrc->old_gNB_DU_ue_id != 0xFFFFFFFF) {
+  if (f1ap_dl_rrc->old_gNB_DU_ue_id != 0xFFFFFFFF) {
     ie = (F1AP_DLRRCMessageTransferIEs_t *)calloc(1, sizeof(F1AP_DLRRCMessageTransferIEs_t));
     ie->id                                = F1AP_ProtocolIE_ID_id_oldgNB_DU_UE_F1AP_ID;
     ie->criticality                       = F1AP_Criticality_reject;
-    ie->value.present                     = F1AP_DLRRCMessageTransferIEs__value_PR_NOTHING;
-    ie->value.choice.oldgNB_DU_UE_F1AP_ID = f1ap_dl_rrc->old_gNB_DU_ue_id;
+    ie->value.present                     = F1AP_DLRRCMessageTransferIEs__value_PR_GNB_DU_UE_F1AP_ID_1;
+    ie->value.choice.GNB_DU_UE_F1AP_ID_1 = f1ap_dl_rrc->old_gNB_DU_ue_id;
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-  }*/ 
+  }
 
   /* mandatory */
   /* c4. SRBID */
