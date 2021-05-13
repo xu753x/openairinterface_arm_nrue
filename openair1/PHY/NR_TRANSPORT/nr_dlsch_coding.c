@@ -29,6 +29,18 @@
 * \note
 * \warning
 */
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <string.h>
+#include <sys/mman.h>
+#include <unistd.h>
+#include <hugetlbfs.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <sys/time.h>
 
 #include "PHY/defs_gNB.h"
 #include "PHY/phy_extern.h"
@@ -44,6 +56,9 @@
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "common/utils/LOG/log.h"
 #include <syscall.h>
+#include <dlfcn.h>
+#include <dev2.0/logger_wrapper.h>
+#include <dev2.0/fec_c_if.h>
 
 //#define DEBUG_DLSCH_CODING
 //#define DEBUG_DLSCH_FREE 1
@@ -262,7 +277,23 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
   uint16_t R=rel15->targetCodeRate[0];
   float Coderate = 0.0;
   uint8_t Nl = 4;
+#if 1
+  static uint32_t dl_encode_count = 0;
+  uint32_t dl_encode_count_set2 = 9; 
+  EncodeInHeaderStruct EncodeHead;
+  uint8_t *pEnDataIn = NULL;
+  uint8_t *pEnDataOut = NULL;
+  static uint32_t iLS = 0;
+  static uint32_t lsIndex = 0;
+  uint32_t *iLS_out = &iLS;
+  uint32_t *lsIndex_out = &lsIndex;
+  uint32_t dl_E0 = 0, dl_E1 = 0;
+  uint32_t *dl_e0 = &dl_E0, *dl_e1 = &dl_E1;
 
+  pEnDataIn = a;
+    //  int sum = add(7, 8);
+    //  printf("7+8 = %d\n", sum);
+#endif
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ENCODING, VCD_FUNCTION_IN);
 
   A = rel15->TBSize[0]<<3;
@@ -456,8 +487,105 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
 
     r_offset += E;
   }
-
+#if 1
+  if(dl_encode_count == dl_encode_count_set2){
+    //word 0
+    EncodeHead.pktType = 0x12;
+    EncodeHead.rsv0 = 0x00;
+    EncodeHead.chkCode = 0xFAFA;
+    //word 1
+    EncodeHead.pktLen = 32+((EncodeHead.tbSizeB+32-1)/32)*32;	 
+    //Byte，pktLen=encoder header(32byte)+ tbszie (byte)，并且32Byte对齐，是32的整数倍
+    EncodeHead.rsv1 = 0x0000;
+    //word 2
+    EncodeHead.rsv2 = 0x0;
+    EncodeHead.sectorId = 0x0;
+    //=0表示单小区
+    EncodeHead.rsv3 = 0x0;
+    //word 3
+    EncodeHead.sfn = frame;
+    EncodeHead.rsv4 = 0x0;
+    EncodeHead.subfn = EncodeHead.slotNum/2;
+    EncodeHead.slotNum = slot;
+    EncodeHead.pduIdx = 0x0;
+    //=0表示第一个码字，总共一个码字
+    EncodeHead.rev5 = 0x0;
+    //word 4
+    EncodeHead.tbSizeB = rel15->TBSize[0];
+    EncodeHead.rev6 = 0x0;
+    EncodeHead.lastTb = 0x1;
+    EncodeHead.firstTb = 0x1;
+    //=1表示本slot只有一个TB
+    EncodeHead.rev7 = 0x0;
+    EncodeHead.cbNum = harq->C;
+    //word 5
+    EncodeHead.qm = stats->current_Qm/2;	 
+    //规定是BPSK qm=0,QPSK qm=1,其他floor(调制阶数/2)；OAI的Qm为2/4/6/8
+    EncodeHead.rev8 = 0x0;
+    EncodeHead.fillbit = harq->F;
+    EncodeHead.rev9 = 0x0;
+    if( EncodeHead.cbNum == 1){
+       EncodeHead.kpInByte = ((harq->B)/ EncodeHead.cbNum)>>3;
+    }
+    else{
+       EncodeHead.kpInByte = ((harq->B+(( EncodeHead.cbNum)*24))/ EncodeHead.cbNum)>>3;
+    }
+    EncodeHead.rev10 = 0x0;
+    //word 6
+    EncodeHead.gamma = EncodeHead.cbNum - (G/(rel15->nrOfLayers*(2*EncodeHead.qm)))%EncodeHead.cbNum;
+    //=1表示本slot只有一个TB
+    EncodeHead.rev11 = 0x0;
+    EncodeHead.rvIdx = rel15->rvIndex[0];
+    EncodeHead.rev12 = 0x0;
+    //查找iLS和lfSizeIx
+    dl_find_iLS_lsIndex(Zc, iLS_out, lsIndex_out);
+    EncodeHead.iLs = *iLS_out;
+    EncodeHead.lfSizeIx = *lsIndex_out;
+    EncodeHead.rev13 = 0x0;
+    // EncodeHead.iLs = *iLS_out;
+    EncodeHead.bg = harq->BG-1; //规定选择协议base grape1 bg=0; base grape2 bg=1；OAI的BG大了1
+    if( EncodeHead.bg == 0){
+       EncodeHead.codeRate = 46;
+    }
+    else{
+       EncodeHead.codeRate = 42;
+    }
+    //word 7
+    //计算并获得e0和e1
+    nr_get_E0_E1(G, harq->C, mod_order, rel15->nrOfLayers, r, dl_e0, dl_e1);
+    EncodeHead.e0 = *dl_e0;
+    EncodeHead.e1 = *dl_e1;
+    printf("EncodeHead_fill_finished\n");
+    encoder_load( &EncodeHead, pEnDataIn, pEnDataOut );
+    LOG_M("pEnDataOut.m","pEnDataOut", pEnDataOut, G+32, 1, 9);
+  }
+  dl_encode_count++;  //count +1 after encoding
+#endif
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ENCODING, VCD_FUNCTION_OUT);
 
   return 0;
+}
+
+void dl_find_iLS_lsIndex(unsigned int *LDPC_lifting_size, uint32_t *iLS_out, uint32_t *lsIndex_out)
+{
+  unsigned int Set_of_LDPC_lifting_size[8][8] = {
+  {2,4,8,16,32,64,128,256},
+  {3,6,12,24,48,96,192,384},
+  {5,10,20,40,80,160,320},
+  {7,14,28,56,112,224},
+  {9,18,36,72,144,288},
+  {11,22,44,88,176,352},
+  {13,26,52,104,208},
+  {15,30,60,120,240}};
+
+  uint32_t iLS,lsIndex;
+
+  for(iLS = 0; iLS < 8; iLS++) {
+    for(lsIndex = 0; lsIndex < 8; lsIndex++){
+      if(*LDPC_lifting_size == Set_of_LDPC_lifting_size[iLS][lsIndex]){
+        *iLS_out = iLS;
+        *lsIndex_out = lsIndex;
+      }
+    }
+  }
 }

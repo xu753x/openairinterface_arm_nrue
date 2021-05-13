@@ -54,3 +54,26 @@ uint32_t nr_get_E(uint32_t G, uint8_t C, uint8_t Qm, uint8_t Nl, uint8_t r) {
 
   return E;
 }
+
+void nr_get_E0_E1(uint32_t G, uint8_t C, uint8_t Qm, uint8_t Nl, uint8_t r, uint32_t *E0, uint32_t *E1) {
+  uint8_t Cprime = C; //assume CBGTI not present
+
+  AssertFatal(Nl>0,"Nl is 0\n");
+  AssertFatal(Qm>0,"Qm is 0\n");
+  LOG_D(PHY,"nr_get_E_ldpc_high_speed : (G %d, C %d, Qm %d, Nl %d, r %d)\n",G, C, Qm, Nl, r);
+ 
+  // LOG_I(PHY,"nr_get_E : (G %d, C %d, Qm %d, Nl %d, r %d)\n",G, C, Qm, Nl, r);
+  // printf("E0: %d, ;E1: %d\n", Nl*Qm*(G/(Nl*Qm*Cprime)), Nl*Qm*((G+(Nl*Qm*Cprime-1))/(Nl*Qm*Cprime)));
+
+  *E0 = Nl*Qm*(G/(Nl*Qm*Cprime));
+  *E1 = Nl*Qm*((G+(Nl*Qm*Cprime-1))/(Nl*Qm*Cprime));
+  
+  // if (r <= Cprime - ((G/(Nl*Qm))%Cprime) - 1)
+  // {
+  //     *E0 = Nl*Qm*(G/(Nl*Qm*Cprime));
+  // }
+  // else
+  // {
+  //     *E1 = Nl*Qm*((G+(Nl*Qm*Cprime-1))/(Nl*Qm*Cprime));
+  // }
+}

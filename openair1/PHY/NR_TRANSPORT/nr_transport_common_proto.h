@@ -60,6 +60,8 @@ uint32_t nr_get_G(uint16_t nb_rb, uint16_t nb_symb_sch, uint8_t nb_re_dmrs, uint
 
 uint32_t nr_get_E(uint32_t G, uint8_t C, uint8_t Qm, uint8_t Nl, uint8_t r);
 
+void nr_get_E0_E1(uint32_t G, uint8_t C, uint8_t Qm, uint8_t Nl, uint8_t r, uint32_t *E0, uint32_t *E1);
+
 uint8_t nr_get_Qm_ul(uint8_t Imcs, uint8_t table_idx);
 
 uint8_t nr_get_Qm_dl(uint8_t Imcs, uint8_t table_idx);

@@ -39,6 +39,17 @@
 #include "PHY/CODING/nrLDPC_extern.h"
 #include "common/config/config_userapi.h" 
 #include "common/utils/load_module_shlib.h" 
+#include <stdio.h>
+#include <pthread.h>
+#include <string.h>
+#include <sys/mman.h>
+#include <unistd.h>
+#include <hugetlbfs.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <sys/time.h>
+#include <dlfcn.h>
 
 
 /* function description array, to be used when loading the encoding/decoding shared lib */
@@ -58,6 +69,44 @@ int load_nrLDPClib(void) {
      AssertFatal( (ret >= 0),"Error loading ldpc decoder");
      nrLDPC_decoder = (nrLDPC_decoderfunc_t)shlib_fdesc[0].fptr;
      nrLDPC_encoder = (nrLDPC_encoderfunc_t)shlib_fdesc[1].fptr;
+
+     //手动加载指定位置的so动态库
+     void *handle = dlopen("/home/witcomm/work/yihz_5gran/FecDemo/cDemo2/ldpc_fpga_encode.so", RTLD_LAZY|RTLD_NODELETE|RTLD_GLOBAL);
+     if(!handle){
+          printf("open ldpc_fpga_encode error!\n");
+          return -1;
+     }
+     // int (*add)(int aa, int bb);
+
+     //根据动态链接库操作句柄与符号，返回符号对应的地址
+     add = (LDPC_FPGA_EnTx_Test) dlsym(handle, "add");
+     if(!add){
+          printf("FPGA loading add error!\n");
+          dlclose(handle);
+          return -1;
+     }
+#if 1
+     HugePage_Init = (LDPC_FPGA_HugePage_Init) dlsym(handle, "HugePage_Init");
+     if(!HugePage_Init){
+          printf("FPGA loading HugePage_Init error!\n");
+          dlclose(handle);
+          return -1;
+     }
+     int HP = HugePage_Init(1);
+     if(HP){
+          printf("HugePage_Init error!\n");
+     }
+
+     encoder_load = (LDPC_FPGA_EnTx) dlsym(handle, "encoder_load");
+     if(!encoder_load){
+          printf("FPGA loading encoder_load error!\n");
+          dlclose(handle);
+          return -1;
+     }
+#endif
+     int sum = add(7, 8);
+     printf("7+8 = %d\n", sum);
+
 return 0;
 }
 
