@@ -5,8 +5,8 @@ idefix:
   Process : 
     Name : quectel-CM
     Cmd : /home/oaicicd/quectel-CM/quectel-CM -s oai.ipv4 -4
-  WakeupScript : ci_ctl_qtel.py /dev/ttyUSB2 wup
-  DetachScript : ci_ctl_qtel.py /dev/ttyUSB2 detach
+  WakeupScript : ci_qtel_ctl_slave.py wup /dev/ttyUSB2
+  DetachScript : ci_qtel_ctl_slave.py detach /dev/ttyUSB2
   PLMN : 22201
   UENetwork : enxb22a941dbf00 
   HostIPAddress : 192.168.18.188

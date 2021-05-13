@@ -2227,29 +2227,19 @@ class OaiCiTest():
 			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
 			cmd = 'rm iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
 			SSH.command(cmd,'\$',5)
-			
-			#cmd = 'echo $USER; nohup iperf3 -s -i 1 2>&1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
-			#SSH.command(cmd,'\$',5)
-
-			HOST=EPC.IPAddress
-			COMMAND='echo $USER; nohup iperf3 -s -i 1 2>&1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
-			logging.debug(COMMAND)
-			subprocess.Popen(["ssh", "%s" % HOST, COMMAND],shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+			cmd = 'echo $USER; nohup iperf3 -s 2>&1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
+			SSH.command(cmd,'\$',5)
 
 			#client side UE
+			#iperf3 used remotely cannot provide redirection to logfile for analysis
+			#thus we call (remotely) a local python script calling iperf3 itself
 			SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
 			cmd = 'rm iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log'
 			SSH.command(cmd,'\$',5)
-
-
-#			SSH.command('iperf3 -c ' + EPC.IPAddress + ' ' + self.iperf_args + ' 2>&1 > iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log', '\$', int(iperf_time)*5.0)
-
-			HOST=Module_UE.HostIPAddress
-			COMMAND='iperf3 -c ' + EPC.IPAddress + ' ' + self.iperf_args + ' 2>&1 > iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log'
-			logging.debug(COMMAND)
-			subprocess.Popen(["ssh", "%s" % HOST, COMMAND],shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-
-
+			args=' -c ' + EPC.IPAddress + ' ' + self.iperf_args + ' --logfile iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log'
+			cmd = 'python3 ci_qtel_ctl_slave.py iperf \"args\" '
+			SSH.command(cmd, '\$', 5)
+			time.sleep(iperf_time*1.2)
 
 			#copy the 2 resulting files locally
 			SSH.copyin(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword, 'iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log', '.')
