@@ -874,6 +874,7 @@ rrc_gNB_process_NGAP_DOWNLINK_NAS(
         {
           // rrc_mac_config_req_gNB
 #ifdef ITTI_SIM
+        MessageDef *message_p;
         uint8_t *message_buffer;
         message_buffer = itti_malloc (TASK_RRC_GNB, TASK_RRC_UE_SIM, length);
         memcpy (message_buffer, buffer, length);
