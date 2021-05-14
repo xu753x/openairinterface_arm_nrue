@@ -179,3 +179,10 @@ do_RRCReestablishmentComplete(
     uint8_t *buffer, 
     int64_t rrc_TransactionIdentifier);
 
+
+uint8_t
+do_NR_Paging(
+    uint8_t Mod_id,
+    uint8_t *buffer,
+    uint32_t tmsi);
+

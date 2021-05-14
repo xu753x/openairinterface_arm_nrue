@@ -3353,6 +3353,9 @@ void *rrc_gnb_task(void *args_p) {
       case NGAP_UE_CONTEXT_RELEASE_COMMAND:
         rrc_gNB_process_NGAP_UE_CONTEXT_RELEASE_COMMAND(msg_p, msg_name_p, instance);
         break;
+      case NGAP_PAGING_IND:
+          rrc_gNB_process_PAGING_IND(msg_p, msg_name_p, instance);
+        break;
 
       default:
         LOG_E(NR_RRC, "[gNB %ld] Received unexpected message %s\n", instance, msg_name_p);

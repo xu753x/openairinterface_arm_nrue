@@ -60,6 +60,7 @@
 #include "NGAP_Cause.h"
 #include "NGAP_CauseRadioNetwork.h"
 #include "f1ap_messages_types.h"
+#include "conversions.h"
 
 extern RAN_CONTEXT_t RC;
 
@@ -1509,5 +1510,163 @@ void nr_rrc_rx_tx(void) {
 
   //
 
+}
+
+int rrc_gNB_generate_pcch_msg(uint32_t tmsi, uint8_t paging_drx, instance_t instance, uint8_t CC_id){
+    const unsigned int Ttab[4] = {32,64,128,256};
+    uint8_t Tc;
+    uint8_t Tue;
+    uint32_t pfoffset;
+    uint32_t N;  /* N: min(T,nB). total count of PF in one DRX cycle */
+    uint32_t Ns = 0;  /* Ns: max(1,nB/T) */
+    uint8_t i_s;  /* i_s = floor(UE_ID/N) mod Ns */
+    uint32_t T;  /* DRX cycle */
+    uint32_t length;
+    uint8_t buffer[RRC_BUF_SIZE];
+    struct NR_SIB1 *sib1 = RC.nrrrc[instance]->carrier.siblock1->message.choice.c1->choice.systemInformationBlockType1;
+
+    /* get default DRX cycle from configuration */
+    Tc = sib1->servingCellConfigCommon->downlinkConfigCommon.pcch_Config.defaultPagingCycle;
+
+    Tue = paging_drx;
+    /* set T = min(Tc,Tue) */
+    T = Tc < Tue ? Ttab[Tc] : Ttab[Tue];
+    /* set N = PCCH-Config->nAndPagingFrameOffset */
+    switch (sib1->servingCellConfigCommon->downlinkConfigCommon.pcch_Config.nAndPagingFrameOffset.present) {
+      case NR_PCCH_Config__nAndPagingFrameOffset_PR_oneT:
+          N = T;
+          pfoffset = 0;
+          break;
+      case NR_PCCH_Config__nAndPagingFrameOffset_PR_halfT:
+          N = T/2;
+          pfoffset = 1;
+          break;
+      case NR_PCCH_Config__nAndPagingFrameOffset_PR_quarterT:
+          N = T/4;
+          pfoffset = 3;
+          break;
+      case NR_PCCH_Config__nAndPagingFrameOffset_PR_oneEighthT:
+          N = T/8;
+          pfoffset = 7;
+          break;
+      case NR_PCCH_Config__nAndPagingFrameOffset_PR_oneSixteenthT:
+          N = T/16;
+          pfoffset = 15;
+          break;
+      default:
+          LOG_E(RRC, "[gNB %ld] In rrc_gNB_generate_pcch_msg:  pfoffset error (pfoffset %d) \n",
+                instance, sib1->servingCellConfigCommon->downlinkConfigCommon.pcch_Config.nAndPagingFrameOffset.present);
+          return (-1);
+
+    }
+
+    switch (sib1->servingCellConfigCommon->downlinkConfigCommon.pcch_Config.ns) {
+      case NR_PCCH_Config__ns_four:
+        if(*sib1->servingCellConfigCommon->downlinkConfigCommon.initialDownlinkBWP.pdcch_ConfigCommon->choice.setup->pagingSearchSpace == 0){
+          LOG_E(RRC, "[gNB %ld] In rrc_gNB_generate_pcch_msg:  ns error only 1 or 2 is allowed when pagingSearchSpace is 0\n",
+                    instance);
+          return (-1);
+        } else {
+          Ns = 4;
+        }
+        break;
+      case NR_PCCH_Config__ns_two:
+        Ns = 2;
+        break;
+      case NR_PCCH_Config__ns_one:
+        Ns = 1;
+        break;
+      default:
+        LOG_E(RRC, "[gNB %ld] In rrc_gNB_generate_pcch_msg:  ns error (ns %ld) \n",
+                instance, sib1->servingCellConfigCommon->downlinkConfigCommon.pcch_Config.ns);
+        return (-1);
+    }
+
+    /* insert data to UE_PF_PO or update data in UE_PF_PO */
+    pthread_mutex_lock(&ue_pf_po_mutex);
+    uint8_t i = 0;
+
+    for (i = 0; i < MAX_MOBILES_PER_ENB; i++) {
+      if ((UE_PF_PO[CC_id][i].enable_flag == TRUE && UE_PF_PO[CC_id][i].ue_index_value == (uint16_t)(tmsi%1024))
+            || (UE_PF_PO[CC_id][i].enable_flag != TRUE)) {
+        /* set T = min(Tc,Tue) */
+        UE_PF_PO[CC_id][i].T = T;
+        /* set UE_ID */
+        UE_PF_PO[CC_id][i].ue_index_value = (uint16_t)(tmsi%1024);
+        /* calculate PF and PO */
+        /* set PF_min and PF_offset: (SFN + PF_offset) mod T = (T div N)*(UE_ID mod N) */
+        UE_PF_PO[CC_id][i].PF_min = (T / N) * (UE_PF_PO[CC_id][i].ue_index_value % N);
+        UE_PF_PO[CC_id][i].PF_offset = pfoffset;
+        /* set i_s */
+        /* i_s = floor(UE_ID/N) mod Ns */
+        i_s = (uint8_t)((UE_PF_PO[CC_id][i].ue_index_value / N) % Ns);
+        UE_PF_PO[CC_id][i].i_s = i_s;
+
+        // TODO,set PO
+
+        if (UE_PF_PO[CC_id][i].enable_flag == TRUE) {
+          //paging exist UE log
+          LOG_D(NR_RRC,"[gNB %ld] CC_id %d In rrc_gNB_generate_pcch_msg: Update exist UE %d, T %d, N %d, PF %d, i_s %d, PF_offset %d\n", instance, CC_id, UE_PF_PO[CC_id][i].ue_index_value,
+                  T, N, UE_PF_PO[CC_id][i].PF_min, UE_PF_PO[CC_id][i].i_s, UE_PF_PO[CC_id][i].PF_offset);
+        } else {
+          /* set enable_flag */
+          UE_PF_PO[CC_id][i].enable_flag = TRUE;
+          //paging new UE log
+          LOG_D(NR_RRC,"[gNB %ld] CC_id %d In rrc_gNB_generate_pcch_msg: Insert a new UE %d, T %d, N %d, PF %d, i_s %d, PF_offset %d\n", instance, CC_id, UE_PF_PO[CC_id][i].ue_index_value,
+                  T, N, UE_PF_PO[CC_id][i].PF_min, UE_PF_PO[CC_id][i].i_s, UE_PF_PO[CC_id][i].PF_offset);
+        }
+
+        break;
+      }
+    }
+
+    pthread_mutex_unlock(&ue_pf_po_mutex);
+
+    /* Create message for PDCP (DLInformationTransfer_t) */
+    length = do_NR_Paging (instance,
+                           buffer,
+                           tmsi);
+
+    if(length == -1) {
+      LOG_I(NR_RRC, "do_Paging error");
+      return -1;
+    }
+    // TODO, send message to pdcp
+
+    return 0;
+}
+/*------------------------------------------------------------------------------*/
+int rrc_gNB_process_PAGING_IND(MessageDef *msg_p, const char *msg_name, instance_t instance) {
+
+
+  for (uint16_t tai_size = 0; tai_size < NGAP_PAGING_IND(msg_p).tai_size; tai_size++) {
+    LOG_I(NR_RRC,"[eNB %ld] In NGAP_PAGING_IND: MCC %d, MNC %d, TAC %d\n", instance, NGAP_PAGING_IND(msg_p).plmn_identity[tai_size].mcc,
+            NGAP_PAGING_IND(msg_p).plmn_identity[tai_size].mnc, NGAP_PAGING_IND(msg_p).tac[tai_size]);
+
+    for (uint8_t j = 0; j < RC.nrrrc[instance]->configuration.num_plmn; j++) {
+      if (RC.nrrrc[instance]->configuration.mcc[j] == NGAP_PAGING_IND(msg_p).plmn_identity[tai_size].mcc
+          && RC.nrrrc[instance]->configuration.mnc[j] == NGAP_PAGING_IND(msg_p).plmn_identity[tai_size].mnc
+          && RC.nrrrc[instance]->configuration.tac == NGAP_PAGING_IND(msg_p).tac[tai_size]) {
+        for (uint8_t CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
+          if (NODE_IS_CU(RC.nrrrc[instance]->node_type)) {
+            MessageDef *m = itti_alloc_new_message(TASK_RRC_GNB, 0, F1AP_PAGING_IND);
+            F1AP_PAGING_IND (m).mcc              = RC.nrrrc[j]->configuration.mcc[0];
+            F1AP_PAGING_IND (m).mnc              = RC.nrrrc[j]->configuration.mnc[0];
+            F1AP_PAGING_IND (m).mnc_digit_length = RC.nrrrc[j]->configuration.mnc_digit_length[0];
+            F1AP_PAGING_IND (m).nr_cellid        = RC.nrrrc[j]->nr_cellid;
+            F1AP_PAGING_IND (m).ueidentityindexvalue = (uint16_t)(NGAP_PAGING_IND(msg_p).ue_paging_identity.s_tmsi.m_tmsi%1024);
+            F1AP_PAGING_IND (m).fiveg_s_tmsi = NGAP_PAGING_IND(msg_p).ue_paging_identity.s_tmsi.m_tmsi;
+            F1AP_PAGING_IND (m).paging_drx = NGAP_PAGING_IND(msg_p).paging_drx;
+            LOG_E(F1AP, "ueidentityindexvalue %u fiveg_s_tmsi %ld paging_drx %u \n", F1AP_PAGING_IND (m).ueidentityindexvalue, F1AP_PAGING_IND (m).fiveg_s_tmsi, F1AP_PAGING_IND (m).paging_drx);
+            itti_send_msg_to_task(TASK_CU_F1, instance, m);
+          } else {
+              rrc_gNB_generate_pcch_msg(NGAP_PAGING_IND(msg_p).ue_paging_identity.s_tmsi.m_tmsi,(uint8_t)NGAP_PAGING_IND(msg_p).paging_drx, instance, CC_id);
+          } // end of nodetype check
+        } // end of cc loop
+      } // end of mcc mnc check
+    } // end of num_plmn
+  } // end of tai size
+
+  return (0);
 }
 

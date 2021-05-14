@@ -947,6 +947,8 @@ typedef struct UE_PF_PO_s {
   uint8_t PF_min;  /* minimal value of Paging Frame (PF) */
   uint8_t PO;  /* Paging Occasion (PO) */
   uint32_t T;  /* DRX cycle */
+  uint8_t PF_offset;
+  uint8_t i_s;
 } UE_PF_PO_t;
 
 #include "rrc_proto.h"

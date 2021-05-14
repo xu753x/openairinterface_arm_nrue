@@ -47,5 +47,9 @@ MESSAGE_DEF(F1AP_DL_RRC_MESSAGE              , MESSAGE_PRIORITY_MED, f1ap_dl_rrc
 MESSAGE_DEF(F1AP_UE_CONTEXT_SETUP_REQ, MESSAGE_PRIORITY_MED, f1ap_ue_context_setup_req_t, f1ap_ue_context_setup_req)
 
 
+/* CU -> DU*/
+MESSAGE_DEF(F1AP_PAGING_IND          , MESSAGE_PRIORITY_MED, f1ap_paging_ind_t          , f1ap_paging_ind)
+
+
 
 
