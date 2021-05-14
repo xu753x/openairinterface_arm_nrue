@@ -26,6 +26,7 @@
 #include "PHY/LTE_ESTIMATION/lte_estimation.h"
 #include "PHY/NR_UE_ESTIMATION/nr_estimation.h"
 #include <common/utils/LOG/log.h>
+#include "PHY/CODING/nrLDPC_extern.h"
 
 //#define DEBUG_FEP
 
@@ -328,10 +329,13 @@ int nr_slot_fep_ul(NR_DL_FRAME_PARMS *frame_parms,
 
   }
 
-  dft(dftsize,
-      rxdata_ptr,
+  cudft2048(rxdata_ptr,
       (int16_t *)&rxdataF[symbol * frame_parms->ofdm_symbol_size],
       1);
+  // dft(dftsize,
+  //     rxdata_ptr,
+  //     (int16_t *)&rxdataF[symbol * frame_parms->ofdm_symbol_size],
+  //     1);
 
   // clear DC carrier from OFDM symbols
   rxdataF[symbol * frame_parms->ofdm_symbol_size] = 0;
