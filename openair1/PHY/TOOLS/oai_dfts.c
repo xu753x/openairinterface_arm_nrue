@@ -6260,7 +6260,6 @@ void dft6144(int16_t *input, int16_t *output,unsigned char scale)
     tmp[2][i] = ((uint32_t *)input)[j++];
   }
 
-
   dft2048((int16_t*)(tmp[0]),(int16_t*)(tmpo[0]),1);
   dft2048((int16_t*)(tmp[1]),(int16_t*)(tmpo[1]),1);
   dft2048((int16_t*)(tmp[2]),(int16_t*)(tmpo[2]),1);
