@@ -267,6 +267,8 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
   uint8_t Ilbrm = 1;
   uint32_t Tbslbrm = 950984; //max tbs
   uint8_t nb_re_dmrs;
+  int fileSize,ret;
+  FILE *fp;
 
   if (rel15->dmrsConfigType==NFAPI_NR_DMRS_TYPE1)
     nb_re_dmrs = 6*rel15->numDmrsCdmGrpsNoData;
@@ -283,6 +285,7 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
   EncodeInHeaderStruct EncodeHead;
   uint8_t *pEnDataIn = NULL;
   uint8_t *pEnDataOut = NULL;
+  pEnDataOut=(unsigned char *)malloc(0x400000);
   static uint32_t iLS = 0;
   static uint32_t lsIndex = 0;
   uint32_t *iLS_out = &iLS;
@@ -489,13 +492,32 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
   }
 #if 1
   if(dl_encode_count == dl_encode_count_set2){
+    // int dl_encode_i;
+    // for (dl_encode_i = 0; dl_encode_i<(rel15->TBSize[0]); dl_encode_i++){
+    //   a[dl_encode_i] = dl_encode_i;
+    // }
+    // int fileSize,ret;
+    // FILE *fp;
+#if 0
+    fp=fopen("oai_encode_data_0.bin","rb");
+    if(fp==NULL){
+        printf("This oai_encode_data_0 file is open failed.\n");
+    }
+
+    fseek(fp,0,SEEK_END);
+    fileSize=ftell(fp);
+    rewind(fp);
+    printf("fileSize=0x%x\n",fileSize);
+    ret=fread(a,1,fileSize,fp);
+    fclose(fp);
+#endif
+#if 1
     //word 0
     EncodeHead.pktType = 0x12;
     EncodeHead.rsv0 = 0x00;
     EncodeHead.chkCode = 0xFAFA;
     //word 1
-    EncodeHead.pktLen = 32+((EncodeHead.tbSizeB+32-1)/32)*32;	 
-    //Byte，pktLen=encoder header(32byte)+ tbszie (byte)，并且32Byte对齐，是32的整数倍
+ 
     EncodeHead.rsv1 = 0x0000;
     //word 2
     EncodeHead.rsv2 = 0x0;
@@ -505,13 +527,15 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
     //word 3
     EncodeHead.sfn = frame;
     EncodeHead.rsv4 = 0x0;
-    EncodeHead.subfn = EncodeHead.slotNum/2;
     EncodeHead.slotNum = slot;
+    EncodeHead.subfn = EncodeHead.slotNum/2;
     EncodeHead.pduIdx = 0x0;
     //=0表示第一个码字，总共一个码字
     EncodeHead.rev5 = 0x0;
     //word 4
     EncodeHead.tbSizeB = rel15->TBSize[0];
+    EncodeHead.pktLen = 32+((EncodeHead.tbSizeB+32-1)/32)*32;	
+    //Byte，pktLen=encoder header(32byte)+ tbszie (byte)，并且32Byte对齐，是32的整数倍
     EncodeHead.rev6 = 0x0;
     EncodeHead.lastTb = 0x1;
     EncodeHead.firstTb = 0x1;
@@ -555,9 +579,60 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
     nr_get_E0_E1(G, harq->C, mod_order, rel15->nrOfLayers, r, dl_e0, dl_e1);
     EncodeHead.e0 = *dl_e0;
     EncodeHead.e1 = *dl_e1;
+#endif
+/////////////////////////////////////////////
+#if 0
+    //word 0
+    EncodeHead.pktType=0x12;
+    EncodeHead.rsv0=0x00;
+    EncodeHead.chkCode=0xFAFA;
+    //word 1
+    EncodeHead.pktLen=0x1000;
+    EncodeHead.rsv1=0x0000;
+    //word 2
+    EncodeHead.rsv2=0x0;
+    EncodeHead.sectorId=0x0;
+    EncodeHead.rsv3=0x0;
+    //word 3
+    EncodeHead.sfn=0x13c;
+    EncodeHead.rsv4=0x0;
+    EncodeHead.subfn=0x1;
+    EncodeHead.slotNum=0x2;
+    EncodeHead.pduIdx=0x0;
+    EncodeHead.rev5=0x0;
+    //word 4
+    EncodeHead.tbSizeB=0x0fc1;
+    EncodeHead.rev6=0x0;
+    EncodeHead.lastTb=0x1;
+    EncodeHead.firstTb=0x1;
+    EncodeHead.rev7=0x0;
+    EncodeHead.cbNum=0x04;
+    //word 5
+    EncodeHead.qm=0x3;
+    EncodeHead.rev8=0x0;
+    EncodeHead.fillbit=0x160;
+    EncodeHead.rev9=0x0;
+    EncodeHead.kpInByte=0x3f4;
+    EncodeHead.rev10=0x0;
+    //word 6
+    EncodeHead.gamma=0x02;
+    EncodeHead.codeRate=0x2e;
+    EncodeHead.rev11=0x0;
+    EncodeHead.rvIdx=0x0;
+    EncodeHead.rev12=0x0;
+    EncodeHead.lfSizeIx=0x7;
+    EncodeHead.rev13=0x0;
+    EncodeHead.iLs=0x1;
+    EncodeHead.bg=0x0;
+    //word 7
+    EncodeHead.e1=0x44be;
+    EncodeHead.e0=0x44b8;
+#endif
     printf("EncodeHead_fill_finished\n");
     encoder_load( &EncodeHead, pEnDataIn, pEnDataOut );
-    LOG_M("pEnDataOut.m","pEnDataOut", pEnDataOut, G+32, 1, 9);
+    printf("encoder_load_end\n");
+    // encoder_load( &EncodeHead, pEnDataIn, pEnDataOut );
+    //LOG_M("pEnDataOut.m","pEnDataOut", pEnDataOut, G+32, 1, 9);
   }
   dl_encode_count++;  //count +1 after encoding
 #endif

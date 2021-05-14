@@ -86,17 +86,28 @@ int load_nrLDPClib(void) {
           return -1;
      }
 #if 1
-     HugePage_Init = (LDPC_FPGA_HugePage_Init) dlsym(handle, "HugePage_Init");
-     if(!HugePage_Init){
-          printf("FPGA loading HugePage_Init error!\n");
+     // HugePage_Init = (LDPC_FPGA_HugePage_Init) dlsym(handle, "HugePage_Init");
+     // if(!HugePage_Init){
+     //      printf("FPGA loading HugePage_Init error!\n");
+     //      dlclose(handle);
+     //      return -1;
+     // }
+     // int HP = HugePage_Init(1);
+     // if(HP){
+     //      printf("HugePage_Init error!\n");
+     // }
+
+     main234 = (LDPC_FPGA_HugePage_Init) dlsym(handle, "main234");
+     if(!main234){
+          printf("FPGA loading main234 error!\n");
           dlclose(handle);
           return -1;
      }
-     int HP = HugePage_Init(1);
-     if(HP){
-          printf("HugePage_Init error!\n");
+     int HP = main234(1);
+     if(HP != 0){
+          printf("main234 error!\n");
      }
-
+printf("load_nrLDPClib \n");
      encoder_load = (LDPC_FPGA_EnTx) dlsym(handle, "encoder_load");
      if(!encoder_load){
           printf("FPGA loading encoder_load error!\n");
