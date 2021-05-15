@@ -725,6 +725,7 @@ int main( int argc, char **argv )
 
   init_opt();
   load_cuFFT();
+  // test main ok
   // int32_t a[2048] = {1};
   // int32_t *b = (int32_t *)malloc(2048 * sizeof(int32_t));
   // int i;

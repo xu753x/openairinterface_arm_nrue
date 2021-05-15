@@ -42,7 +42,6 @@
 #include <dlfcn.h>
 
 
-
 /* function description array, to be used when loading the encoding/decoding shared lib */
 static loader_shlibfunc_t shlib_fdesc[2];
 
@@ -89,12 +88,12 @@ int load_cuFFT(void) {
           dlclose(handle);
           return -1;
      }
-     cudft204 = (cudft_EnTx) dlsym(handle, "_Z8testtestPsS_h");
-     if(!cudft204){
-          printf("cutest.so error!\n");
-          dlclose(handle);
-          return -1;
-     }
+     // cudft204 = (cudft_EnTx) dlsym(handle, "_Z8testtestPsS_h");
+     // if(!cudft204){
+     //      printf("cutest.so error!\n");
+     //      dlclose(handle);
+     //      return -1;
+     // }
 
 return 0;
 }

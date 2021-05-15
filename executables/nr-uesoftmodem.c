@@ -442,6 +442,7 @@ int main( int argc, char **argv ) {
   init_opt() ;
   load_nrLDPClib();
   load_cuFFT();
+  // test main ok
   // int16_t a[2048] = {1};
   // int16_t *b = (int16_t *)malloc(2048 * sizeof(int16_t));
   // int i;
