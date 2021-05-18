@@ -379,8 +379,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
                                         ps->N_PRB_DMRS * ps->N_DMRS_SLOT,
                                         0 /* N_PRB_oh, 0 for initialBWP */,
                                         0 /* tb_scaling */,
-                                        1 /* nrOfLayers */)
-                         >> 3;
+                                        1 /* nrOfLayers */) >> 3;
 
   /* get the PID of a HARQ process awaiting retransmission, or -1 otherwise */
   sched_pdsch->dl_harq_pid = sched_ctrl->retrans_dl_harq.head;
@@ -389,7 +388,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
   for (int rb = 0; rb < sched_pdsch->rbSize; rb++)
     vrb_map[rb + sched_pdsch->rbStart] = 1;
 
-    if ((frame&127) == 0) LOG_I(MAC,"phytest: %d.%d DL mcs %d, DL rbStart %d, DL rbSize %d\n", frame, slot, sched_pdsch->mcs, rbStart,rbSize);
+  if ((frame&127) == 0) LOG_I(MAC,"phytest: %d.%d DL mcs %d, DL rbStart %d, DL rbSize %d\n", frame, slot, sched_pdsch->mcs, rbStart,rbSize);
 }
 
 uint32_t target_ul_mcs = 9;

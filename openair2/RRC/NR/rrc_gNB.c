@@ -391,13 +391,14 @@ void apply_macrlc_config(gNB_RRC_INST *rrc,
                              ue_context_pP->ue_context.rnti,
                              ue_context_pP->ue_context.masterCellGroup
                              );
+
       nr_rrc_rlc_config_asn1_req(ctxt_pP,
                                  ue_context_pP->ue_context.SRB_configList,
                                  NULL,
                                  NULL,
                                  NULL,
-                                 ue_context_pP->ue_context.masterCellGroup->rlc_BearerToAddModList,
-                                 NULL);
+                                 ue_context_pP->ue_context.masterCellGroup->rlc_BearerToAddModList);
+
 }
 
 void apply_pdcp_config(rrc_gNB_ue_context_t         *const ue_context_pP,

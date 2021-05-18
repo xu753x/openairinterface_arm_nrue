@@ -1924,6 +1924,7 @@ do_NR_DLInformationTransfer(
                 "DLInformationTransfer", encoded);
     LOG_I(NR_RRC,"DLInformationTransfer Encoded %zd bytes\n", encoded);
     for (int i=0;i<encoded;i++) printf("%02x ",(*buffer)[i]);
+    printf("\n");
     return encoded;
 }
 
