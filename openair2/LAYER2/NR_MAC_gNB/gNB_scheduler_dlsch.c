@@ -390,11 +390,11 @@ void nr_store_dlsch_buffer(module_id_t module_id,
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
     sched_ctrl->num_total_bytes = 0;
-    if (loop_dcch_dtch == DL_SCH_LCID_DCCH1)
+    if ((sched_ctrl->lcid_mask&(1<<4)) > 0 && loop_dcch_dtch == DL_SCH_LCID_DCCH1)
       loop_dcch_dtch = DL_SCH_LCID_DTCH;
-    else if (loop_dcch_dtch == DL_SCH_LCID_DTCH)
+    else if ((sched_ctrl->lcid_mask&(1<<1)) > 0 && loop_dcch_dtch == DL_SCH_LCID_DTCH)
       loop_dcch_dtch = DL_SCH_LCID_DCCH;
-    else if (loop_dcch_dtch == DL_SCH_LCID_DCCH)
+    else if ((sched_ctrl->lcid_mask&(1<<2)) > 0 && loop_dcch_dtch == DL_SCH_LCID_DCCH)
       loop_dcch_dtch = DL_SCH_LCID_DCCH1;
 
     const int lcid = loop_dcch_dtch;
@@ -423,10 +423,11 @@ void nr_store_dlsch_buffer(module_id_t module_id,
       return;
 
     LOG_D(NR_MAC,
-          "[%s][%d.%d], DTCH%d->DLSCH, RLC status %d bytes TA %d\n",
+          "[%s][%d.%d], %s%d->DLSCH, RLC status %d bytes TA %d\n",
           __func__,
           frame,
           slot,
+          lcid<4?"DCCH":"DTCH",
           lcid,
           sched_ctrl->rlc_status[lcid].bytes_in_buffer,
           sched_ctrl->ta_apply);
@@ -797,6 +798,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
   NR_list_t *UE_list = &UE_info->list;
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+    if (sched_ctrl->ul_failure==1) continue;
     NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
     UE_info->mac_stats[UE_id].dlsch_current_bytes = 0;
 
@@ -866,6 +868,22 @@ void nr_schedule_ue_spec(module_id_t module_id,
           current_harq_pid,
           harq->round,
           harq->ndi);
+    if ((get_softmodem_params()->phy_test == 1) && (frame&127) == 0)
+      LOG_D(MAC,
+            "%4d.%2d RNTI %04x start %d RBs %d startSymbol %d nb_symbsol %d MCS %d TBS %d (%f Mbps) HARQ PID %d round %d NDI %d\n",
+            frame,
+            slot,
+            rnti,
+            sched_ctrl->rbStart,
+            sched_ctrl->rbSize,
+            startSymbolIndex,
+            nrOfSymbols,
+            sched_ctrl->mcs,
+            TBS,
+            ((double)TBS)*(1<<scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing)/1000,
+            current_harq_pid,
+            harq->round,
+            harq->ndi);
 
     NR_BWP_Downlink_t *bwp = sched_ctrl->active_bwp;
 

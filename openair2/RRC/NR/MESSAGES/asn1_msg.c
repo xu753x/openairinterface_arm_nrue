@@ -1393,7 +1393,6 @@ uint8_t do_RRCSetup(rrc_gNB_ue_context_t         *const ue_context_pP,
       cellGroupConfig = calloc(1, sizeof(NR_CellGroupConfig_t));
       fill_initial_cellGroupConfig(ue_context_pP->ue_context.rnti,cellGroupConfig,scc);
 
-      ue_p->masterCellGroup = cellGroupConfig;
 
       enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig,
 				       NULL,
@@ -1412,6 +1411,8 @@ uint8_t do_RRCSetup(rrc_gNB_ue_context_t         *const ue_context_pP,
         return -1;
       }
     }
+
+    ue_p->masterCellGroup = cellGroupConfig;
 
     if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
         xer_fprint(stdout, &asn_DEF_NR_DL_CCCH_Message, (void *)&dl_ccch_msg);
@@ -1663,13 +1664,14 @@ int16_t do_RRCReconfiguration(
     // *security_config->keyToUse = NR_SecurityConfig__keyToUse_master;
 
     ie = calloc(1, sizeof(NR_RRCReconfiguration_IEs_t));
-    ie->radioBearerConfig = calloc(1, sizeof(NR_RadioBearerConfig_t));
-    ie->radioBearerConfig->srb_ToAddModList  = SRB_configList;
-    ie->radioBearerConfig->drb_ToAddModList  = DRB_configList;
-    ie->radioBearerConfig->securityConfig    = security_config;
-    ie->radioBearerConfig->srb3_ToRelease    = NULL;
-    ie->radioBearerConfig->drb_ToReleaseList = DRB_releaseList;
-
+    if (SRB_configList || DRB_configList) {
+      ie->radioBearerConfig = calloc(1, sizeof(NR_RadioBearerConfig_t));
+      ie->radioBearerConfig->srb_ToAddModList  = SRB_configList;
+      ie->radioBearerConfig->drb_ToAddModList  = DRB_configList;
+      ie->radioBearerConfig->securityConfig    = security_config;
+      ie->radioBearerConfig->srb3_ToRelease    = NULL;
+      ie->radioBearerConfig->drb_ToReleaseList = DRB_releaseList;
+    }
     /******************** Secondary Cell Group ********************/
     // rrc_gNB_carrier_data_t *carrier = &(gnb_rrc_inst->carrier);
     // fill_default_secondaryCellGroup( carrier->servingcellconfigcommon,
