@@ -390,11 +390,11 @@ void nr_store_dlsch_buffer(module_id_t module_id,
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
     sched_ctrl->num_total_bytes = 0;
-    if ((sched_ctrl->lcid_mask&(1<<4)) > 0 && loop_dcch_dtch == DL_SCH_LCID_DCCH1)
+    if (loop_dcch_dtch == DL_SCH_LCID_DCCH1)
       loop_dcch_dtch = DL_SCH_LCID_DTCH;
-    else if ((sched_ctrl->lcid_mask&(1<<1)) > 0 && loop_dcch_dtch == DL_SCH_LCID_DTCH)
+    else if (loop_dcch_dtch == DL_SCH_LCID_DTCH)
       loop_dcch_dtch = DL_SCH_LCID_DCCH;
-    else if ((sched_ctrl->lcid_mask&(1<<2)) > 0 && loop_dcch_dtch == DL_SCH_LCID_DCCH)
+    else if (loop_dcch_dtch == DL_SCH_LCID_DCCH)
       loop_dcch_dtch = DL_SCH_LCID_DCCH1;
 
     const int lcid = loop_dcch_dtch;
