@@ -439,10 +439,6 @@ set(asn1_generated_dir ${OPENAIR_BIN_DIR})
 set(protoc_call "${OPENAIR_CMAKE}/tools/generate_protobuf")
 set(protobuf_generated_dir ${OPENAIR_BIN_DIR})
 
-if (${RU} STREQUAL 1)
-add_definitions(-DNO_RRC)
-endif (${RU} STREQUAL 1)
-
 # RRC
 ######
 set (RRC_ASN1_VERSION "Rel15")
@@ -454,7 +450,7 @@ set (RRC_FULL_DIR ${asn1_generated_dir}/RRC_${RRC_ASN1_VERSION})
 
 # Warning: if you modify ASN.1 source file to generate new C files, cmake should be re-run instead of make
 if (${RU} STREQUAL 0)
-  execute_process(COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "${RRC_FULL_DIR}" "${RRC_GRAMMAR}" "LTE_"
+  execute_process(COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh  "LTE_" " " "${RRC_FULL_DIR}" "${RRC_GRAMMAR}"
                   RESULT_VARIABLE ret)
 endif (${RU} STREQUAL 0)
 
@@ -464,7 +460,7 @@ endif (NOT ${ret} STREQUAL 0)
 file(GLOB rrc_source ${RRC_FULL_DIR}/*.c)
 add_custom_target (
   rrc_flag ALL
-  ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "${RRC_FULL_DIR}" "${RRC_GRAMMAR}" "LTE_"
+  ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "LTE_" " " "${RRC_FULL_DIR}" "${RRC_GRAMMAR}"
   DEPENDS ${RRC_GRAMMAR}
   )
 
@@ -485,19 +481,18 @@ add_definitions(-DNR_RRC_VERSION=${NR_RRC_VERSION})
 set (NR_RRC_FULL_DIR ${asn1_generated_dir}/RRC_${NR_RRC_ASN1_VERSION})
 
 # Warning: if you modify ASN.1 source file to generate new C files, cmake should be re-run instead of make
-if (${RU} STREQUAL 0)
-  execute_process(COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "${NR_RRC_FULL_DIR}" "${NR_RRC_GRAMMAR}" "NR_" "-findirect-choice"
-                RESULT_VARIABLE ret)
+  execute_process(
+    COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "NR_" "-findirect-choice" "${NR_RRC_FULL_DIR}" "${NR_RRC_GRAMMAR}"
+    RESULT_VARIABLE ret)
 if (NOT ${ret} STREQUAL 0)
   message(FATAL_ERROR "${ret}: error")
 endif ()
 file(GLOB nr_rrc_source ${NR_RRC_FULL_DIR}/*.c)
 file(GLOB nr_rrc_h ${NR_RRC_FULL_DIR}/*.h)
-endif (${RU} STREQUAL 0)
 
 add_custom_target (
   nr_rrc_flag ALL
-  ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "${NR_RRC_FULL_DIR}" "${NR_RRC_GRAMMAR}" "NR_" "-findirect-choice"
+  ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh  "NR_" "-findirect-choice" "${NR_RRC_FULL_DIR}" "${NR_RRC_GRAMMAR}"
   DEPENDS ${NR_RRC_GRAMMAR}
   )
 
@@ -523,19 +518,20 @@ set(S1AP_C_DIR ${asn1_generated_dir}/S1AP_${S1AP_RELEASE})
 
 # Warning: if you modify ASN.1 source file to generate new C files, cmake should be re-run instead of make
 if (${RU} STREQUAL 0)
-  execute_process(COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "${S1AP_C_DIR}" "${S1AP_ASN_DIR}/${S1AP_ASN_FILES}" "S1AP_" -fno-include-deps
-                  RESULT_VARIABLE ret)
+  execute_process(
+    COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh  "S1AP_" -fno-include-deps "${S1AP_C_DIR}" "${S1AP_ASN_DIR}/${S1AP_ASN_FILES}"
+    RESULT_VARIABLE ret)
   if (NOT ${ret} STREQUAL 0)
     message(FATAL_ERROR "${ret}: error")
   endif (NOT ${ret} STREQUAL 0)
   file(GLOB S1AP_source ${S1AP_C_DIR}/*.c)
 endif (${RU} STREQUAL 0)
 
-add_custom_target (
-  s1ap_flag ALL
-  ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "${S1AP_C_DIR}" "${S1AP_ASN_DIR}/${S1AP_ASN_FILES}" "S1AP_" -fno-include-deps
-  DEPENDS  "${S1AP_ASN_DIR}/${S1AP_ASN_FILES}"
-)
+  add_custom_target (
+    s1ap_flag ALL
+    ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh  "S1AP_" -fno-include-deps "${S1AP_C_DIR}" "${S1AP_ASN_DIR}/${S1AP_ASN_FILES}"
+    DEPENDS  "${S1AP_ASN_DIR}/${S1AP_ASN_FILES}"
+  )
 
 add_library(S1AP_LIB
   ${S1AP_source}
@@ -578,8 +574,9 @@ set(NGAP_ASN_DIR ${NGAP_DIR}/MESSAGES/ASN1/ASN1_files)
 set(NGAP_C_DIR ${asn1_generated_dir}/NGAP_${NGAP_RELEASE})
 
 # Warning: if you modify ASN.1 source file to generate new C files, cmake should be re-run instead of make
-execute_process(COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "${NGAP_C_DIR}" "${NGAP_ASN_DIR}/${NGAP_ASN_FILES}" "NGAP_" -fno-include-deps -findirect-choice
-                RESULT_VARIABLE ret)
+execute_process(
+  COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "NGAP_" "-fno-include-deps -findirect-choice" "${NGAP_C_DIR}" "${NGAP_ASN_DIR}/${NGAP_ASN_FILES}"
+  RESULT_VARIABLE ret)
 if (NOT ${ret} STREQUAL 0)
   message(FATAL_ERROR "${ret}: error")
 endif (NOT ${ret} STREQUAL 0)
@@ -587,8 +584,8 @@ file(GLOB NGAP_source ${NGAP_C_DIR}/*.c)
 
 add_custom_target (
   ngap_flag ALL
-  ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "${NGAP_C_DIR}" "${NGAP_ASN_DIR}/${NGAP_ASN_FILES}" "NGAP_" -fno-include-deps
-  DEPENDS  "${NGAP_ASN_DIR}/${NGAP_ASN_FILES}"
+  ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh  "NGAP_" "-fno-include-deps -findirect-choice" "${NGAP_C_DIR}" "${NGAP_ASN_DIR}/${NGAP_ASN_FILES}"
+  DEPENDS  "${NGAP_ASN_DIR}/${NGAP_ASN_FILES}" 
 )
 
 add_library(NGAP_LIB
@@ -645,8 +642,9 @@ set(M2AP_C_DIR ${asn1_generated_dir}/M2AP_${M2AP_RELEASE})
 
 # Warning: if you modify ASN.1 source file to generate new C files, cmake should be re-run instead of make
 if (${RU} STREQUAL 0)
-  execute_process(COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "${M2AP_C_DIR}" "${M2AP_ASN_DIR}/${M2AP_ASN_FILES}"  "M2AP_" -fno-include-deps -DEMIT_ASN_DEBUG=1
-                RESULT_VARIABLE ret)
+  execute_process(
+    COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh  "M2AP_" "-fno-include-deps -DEMIT_ASN_DEBUG=1" "${M2AP_C_DIR}" "${M2AP_ASN_DIR}/${M2AP_ASN_FILES}"
+    RESULT_VARIABLE ret)
   if (NOT ${ret} STREQUAL 0)
     message(FATAL_ERROR "${ret}: error")
   endif (NOT ${ret} STREQUAL 0)
@@ -656,7 +654,7 @@ file(GLOB M2AP_source ${M2AP_C_DIR}/*.c)
 
 add_custom_target (
   m2_flag ALL
-  COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "${M2AP_C_DIR}" "${M2AP_ASN_DIR}/${M2AP_ASN_FILES}"  "M2AP_" -fno-include-deps
+  COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh  "M2AP_" "-fno-include-deps -DEMIT_ASN_DEBUG=1" "${M2AP_C_DIR}" "${M2AP_ASN_DIR}/${M2AP_ASN_FILES}"
   DEPENDS ${M2AP_ASN_DIR}/${M2AP_ASN_FILES}
   )
 
@@ -717,8 +715,9 @@ set(M3AP_C_DIR ${asn1_generated_dir}/M3AP_${M3AP_RELEASE})
 
 # Warning: if you modify ASN.1 source file to generate new C files, cmake should be re-run instead of make
 if (${RU} STREQUAL 0)
-  execute_process(COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "${M3AP_C_DIR}" "${M3AP_ASN_DIR}/${M3AP_ASN_FILES}"  "M3AP_" -fno-include-deps
-                  RESULT_VARIABLE ret)
+  execute_process(
+    COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh  "M3AP_" -fno-include-deps "${M3AP_C_DIR}" "${M3AP_ASN_DIR}/${M3AP_ASN_FILES}"
+    RESULT_VARIABLE ret)
   if (NOT ${ret} STREQUAL 0)
     message(FATAL_ERROR "${ret}: error")
   endif (NOT ${ret} STREQUAL 0)
@@ -728,7 +727,7 @@ file(GLOB M3AP_source ${M3AP_C_DIR}/*.c)
 
 add_custom_target (
   m3_flag ALL
-  COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "${M3AP_C_DIR}" "${M3AP_ASN_DIR}/${M3AP_ASN_FILES}"  "M3AP_" -fno-include-deps
+  COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh  "M3AP_" -fno-include-deps "${M3AP_C_DIR}" "${M3AP_ASN_DIR}/${M3AP_ASN_FILES}"
   DEPENDS ${M3AP_ASN_DIR}/${M3AP_ASN_FILES}
   )
 
@@ -773,8 +772,9 @@ set(X2AP_ASN_DIR ${X2AP_DIR}/MESSAGES/ASN1/${X2AP_RELEASE})
 set(X2AP_C_DIR ${asn1_generated_dir}/X2AP_${X2AP_RELEASE})
 # Warning: if you modify ASN.1 source file to generate new C files, cmake should be re-run instead of make
 if (${RU} STREQUAL 0)
-  execute_process(COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "${X2AP_C_DIR}" "${X2AP_ASN_DIR}/${X2AP_ASN_FILES}"  "X2AP_" -fno-include-deps
-                  RESULT_VARIABLE ret)
+  execute_process(
+    COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "X2AP_" -fno-include-deps "${X2AP_C_DIR}" "${X2AP_ASN_DIR}/${X2AP_ASN_FILES}"
+    RESULT_VARIABLE ret)
   if (NOT ${ret} STREQUAL 0)
     message(FATAL_ERROR "${ret}: error")
   endif (NOT ${ret} STREQUAL 0)
@@ -784,7 +784,7 @@ file(GLOB X2AP_source ${X2AP_C_DIR}/*.c)
 
 add_custom_target (
   x2_flag ALL
-  COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "${X2AP_C_DIR}" "${X2AP_ASN_DIR}/${X2AP_ASN_FILES}"  "X2AP_" -fno-include-deps
+  COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "X2AP_" -fno-include-deps "${X2AP_C_DIR}" "${X2AP_ASN_DIR}/${X2AP_ASN_FILES}"
   DEPENDS ${X2AP_ASN_DIR}/${X2AP_ASN_FILES}
   )
 
@@ -834,20 +834,25 @@ set(F1AP_ASN_FILES
 if (${RU} STREQUAL 0)
   set(F1AP_ASN_GENERATED_C_DIR ${asn1_generated_dir}/F1AP_${ASN1RELDIR})
   message("calling ASN1C_PREFIX=F1AP_ asn1c -gen-PER -no-gen-OER -fcompound-names -no-gen-example -findirect-choice -fno-include-deps -D ${F1AP_ASN_GENERATED_C_DIR} ${F1AP_ASN_FILES}")
-  execute_process(COMMAND mkdir -p ${F1AP_ASN_GENERATED_C_DIR}
-     COMMAND env "ASN1C_PREFIX=F1AP_" asn1c -gen-PER -no-gen-OER -fcompound-names -no-gen-example -findirect-choice -fno-include-deps -D ${F1AP_ASN_GENERATED_C_DIR} ${F1AP_ASN_FILES}
-                  RESULT_VARIABLE ret
-                  OUTPUT_QUIET
-                  ERROR_QUIET)
+  execute_process(
+    COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "F1AP_" "-findirect-choice -fno-include-deps" ${F1AP_ASN_GENERATED_C_DIR} ${F1AP_ASN_FILES}
+    RESULT_VARIABLE ret
+    )
 
   if (NOT ${ret} STREQUAL 0)
     message(FATAL_ERROR "asn1c: error")
   endif (NOT ${ret} STREQUAL 0)
 
-file(GLOB F1AP_ASN_GENERATED_C_FILES ${F1AP_ASN_GENERATED_C_DIR}/*.c)
-add_library(F1AP_LIB
-  ${F1AP_ASN_GENERATED_C_FILES}
-)
+  add_custom_target (
+    f1_flag ALL
+    COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "F1AP_" "-findirect-choice -fno-include-deps" ${F1AP_ASN_GENERATED_C_DIR} ${F1AP_ASN_FILES}
+    DEPENDS ${F1AP_ASN_FILES}
+    )
+  file(GLOB F1AP_ASN_GENERATED_C_FILES ${F1AP_ASN_GENERATED_C_DIR}/*.c)
+  add_library(F1AP_LIB
+    ${F1AP_ASN_GENERATED_C_FILES}
+    )
+  add_dependencies (F1AP_LIB  f1_flag)
 
 include_directories ("${F1AP_ASN_GENERATED_C_DIR}")
 include_directories ("${F1AP_DIR}")
@@ -859,15 +864,12 @@ add_library(F1AP
 
 endif (${RU} STREQUAL 0)
 
-
 # Hardware dependant options
 ###################################
 add_list1_option(NB_ANTENNAS_RX "4" "Number of antennas in reception" "1" "2" "4")
 add_list1_option(NB_ANTENNAS_TX "4" "Number of antennas in transmission" "1" "2" "4")
 
 add_list2_option(RF_BOARD "EXMIMO" "RF head type" "None" "OAI_USRP" "OAI_BLADERF" "OAI_LMSSDR" "OAI_SIMU")
-
-
 
 add_list2_option(TRANSP_PRO "None" "Transport protocol type" "None" "ETHERNET")
 #NOKIA config enhancement
@@ -2074,14 +2076,14 @@ set(L2_SRC_UE
   ${RRC_DIR}/L2_interface_common.c
   ${RRC_DIR}/L2_interface_ue.c
   )
-
+  
 set(L2_RRC_SRC_UE
   ${RRC_DIR}/rrc_UE.c
   ${RRC_DIR}/rrc_common.c
   ${RRC_DIR}/L2_interface_common.c
   ${RRC_DIR}/L2_interface_ue.c
-  )
-
+  )  
+  
 set(NR_L2_SRC_UE
   ${NR_RLC_SRC}
   ${NR_PDCP_SRC}
@@ -2139,7 +2141,7 @@ set (MAC_SRC_UE
   ${MAC_DIR}/rar_tools_ue.c
   ${MAC_DIR}/config_ue.c
  )
-
+ 
 set (MAC_NR_SRC_UE
   ${NR_UE_PHY_INTERFACE_DIR}/NR_IF_Module.c
   ${NR_UE_MAC_DIR}/config_ue.c
@@ -2218,7 +2220,7 @@ add_library(L2_LTE_NR
   ${ENB_APP_SRC}
   ${MCE_APP_SRC}
 )
-
+  
 add_dependencies(L2_NR rrc_flag nr_rrc_flag s1ap_flag x2_flag)
 
 add_library(L2_UE
@@ -2760,7 +2762,7 @@ add_library(SIMU_COMMON
 
 # Simulation library
 ##########################
-set (SIMUSRC
+set (SIMUSRC 
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/multipath_channel.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/multipath_tv_channel.c
@@ -2823,7 +2825,7 @@ add_library(nrscope MODULE ${XFORMS_SOURCE_NR})
 target_link_libraries(nrscope ${XFORMS_LIBRARIES})
 
 
-add_library(rfsimulator MODULE
+add_library(rfsimulator MODULE 
   ${OPENAIR_TARGETS}/ARCH/rfsimulator/simulator.c
   ${OPENAIR_TARGETS}/ARCH/rfsimulator/apply_channelmod.c
   ${OPENAIR_TARGETS}/ARCH/rfsimulator/new_channel_sim.c
@@ -2831,7 +2833,7 @@ add_library(rfsimulator MODULE
 	)
 target_link_libraries(rfsimulator SIMU_COMMON ${ATLAS_LIBRARIES})
 
-add_library(oai_iqplayer MODULE
+add_library(oai_iqplayer MODULE 
 	${OPENAIR_TARGETS}/ARCH/iqplayer/iqplayer_lib.c
 	)
 set(CMAKE_MODULE_PATH "${OPENAIR_DIR}/cmake_targets/tools/MODULES" "${CMAKE_MODULE_PATH}")
@@ -2901,7 +2903,7 @@ add_executable(measurement_display
   ${OPENAIR_DIR}/common/utils/threadPool/measurement_display.c)
 target_link_libraries (measurement_display minimal_lib)
 
-add_executable(test5Gnas
+add_executable(test5Gnas 
   ${OPENAIR_DIR}/openair3/TEST/test5Gnas.c
 )
 target_link_libraries (test5Gnas LIB_5GNAS_GNB CONFIG_LIB minimal_lib )
@@ -2945,11 +2947,11 @@ add_dependencies(lte-softmodem rrc_flag s1ap_flag x2_flag oai_iqplayer)
 target_link_libraries (lte-softmodem
   -Wl,--start-group
 
-  RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB F1AP_LIB F1AP M2AP_LIB M2AP_ENB X2AP_LIB X2AP_ENB M3AP_LIB M3AP_ENB ${GTPV1U} SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT MME_APP UDP SCHED_LIB SCHED_RU_LIB
+  RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB F1AP_LIB F1AP M2AP_LIB M2AP_ENB X2AP_LIB X2AP_ENB M3AP_LIB M3AP_ENB ${GTPV1U} SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT MME_APP UDP SCHED_LIB SCHED_RU_LIB 
   PHY_COMMON PHY PHY_RU LFDS L2 L2_LTE NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB MISC_NFAPI_LTE_LIB LFDS7
   ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} ${FSPT_MSG_LIB} ${PROTO_AGENT_LIB}
   -Wl,--end-group z dl)
-
+  
 target_link_libraries (lte-softmodem ${LIBXML2_LIBRARIES})
 target_link_libraries (lte-softmodem pthread m ${CONFIG_LIB} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} sctp ${PROTOBUF_LIB}  ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES})
 target_link_libraries (lte-softmodem ${LIB_LMS_LIBRARIES})
@@ -2988,7 +2990,7 @@ add_dependencies(ocp-enb rrc_flag s1ap_flag x2_flag oai_iqplayer coding params_l
 target_link_libraries (ocp-enb
   -Wl,--start-group
 
-  RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB F1AP_LIB F1AP M2AP_LIB M2AP_ENB X2AP_LIB X2AP_ENB M3AP_LIB M3AP_ENB ${GTPV1U} SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT MME_APP UDP SCHED_LIB SCHED_RU_LIB
+  RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB F1AP_LIB F1AP M2AP_LIB M2AP_ENB X2AP_LIB X2AP_ENB M3AP_LIB M3AP_ENB ${GTPV1U} SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT MME_APP UDP SCHED_LIB SCHED_RU_LIB 
   PHY_COMMON PHY PHY_RU LFDS L2 L2_LTE NFAPI_COMMON_LIB NFAPI_LIB MISC_NFAPI_LTE_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB LFDS7 SIMU_COMMON
   ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} ${FSPT_MSG_LIB} ${PROTO_AGENT_LIB}
   -Wl,--end-group z dl)
@@ -3129,7 +3131,7 @@ add_executable(nr-softmodem
 target_link_libraries (nr-softmodem
   -Wl,--start-group
   UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB SCHED_RU_LIB SCHED_NR_LIB PHY_NR PHY PHY_COMMON PHY_NR_COMMON PHY_RU LFDS ${GTPV1U} SECU_CN SECU_OSA
-  ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} RRC_LIB NR_RRC_LIB
+  ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} RRC_LIB NR_RRC_LIB 
   NGAP_LIB NGAP_GNB S1AP_LIB S1AP_ENB L2_LTE_NR L2_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   X2AP_LIB X2AP_ENB F1AP_LIB F1AP M2AP_LIB M2AP_ENB M3AP_LIB M3AP_ENB ${PROTO_AGENT_LIB} ${FSPT_MSG_LIB}
   -Wl,--end-group z dl)
@@ -3168,7 +3170,7 @@ add_executable(ocp-gnb
 target_link_libraries (ocp-gnb
   -Wl,--start-group
   UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB SCHED_RU_LIB SCHED_NR_LIB PHY_NR PHY PHY_COMMON PHY_NR_COMMON PHY_RU LFDS ${GTPV1U} SECU_CN SECU_OSA
-  ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} RRC_LIB NR_RRC_LIB
+  ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} RRC_LIB NR_RRC_LIB 
   NGAP_LIB NGAP_GNB S1AP_LIB S1AP_ENB L2_LTE_NR L2_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   X2AP_LIB X2AP_ENB F1AP_LIB F1AP M2AP_LIB M2AP_ENB M3AP_LIB M3AP_ENB SIMU_COMMON
   -Wl,--end-group z dl)
@@ -3214,7 +3216,9 @@ target_link_libraries (nr-uesoftmodem
   RRC_LIB NR_RRC_LIB NGAP_LIB NGAP_GNB SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_RU_LIB SCHED_UE_LIB SCHED_NR_UE_LIB
   PHY_COMMON PHY_NR_COMMON PHY_UE PHY_NR_UE PHY_RU LFDS NR_L2_UE L2_UE_LTE_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB
   NFAPI_USER_LIB MISC_NFAPI_NR_LIB S1AP_LIB S1AP_ENB
-  ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7 ${ATLAS_LIBRARIES} LIB_5GNAS_GNB LIB_NAS_SIMUE
+  ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7 ${ATLAS_LIBRARIES}
+  NFAPI_USER_LIB S1AP_LIB S1AP_ENB
+  ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7 ${ATLAS_LIBRARIES} LIB_5GNAS_GNB LIB_NAS_SIMUE ${NAS_SIM_LIB}
   -Wl,--end-group z dl)
 
 target_link_libraries (nr-uesoftmodem ${LIBXML2_LIBRARIES})
@@ -3244,7 +3248,7 @@ target_link_libraries (dlsim_tm4
   pthread m rt ${CONFIG_LIB} ${ATLAS_LIBRARIES} ${T_LIB}
   )
 
-add_executable(rftest
+add_executable(rftest 
   ${OPENAIR_DIR}/openair1/PHY/TOOLS/calibration_test.c
   ${OPENAIR_DIR}/openair1/PHY/TOOLS/calibration_scope.c
   ${OPENAIR_DIR}/common/utils/system.c
@@ -3255,7 +3259,7 @@ add_executable(rftest
 )
 target_link_libraries(rftest minimal_lib PHY_NR_COMMON pthread dl m forms ${T_LIB} )
 
-add_executable(polartest
+add_executable(polartest 
   ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/polartest.c
   ${OPENAIR_DIR}/common/utils/backtrace.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
@@ -3268,7 +3272,7 @@ target_link_libraries(polartest
   m pthread ${ATLAS_LIBRARIES} dl
   )
 
-add_executable(smallblocktest
+add_executable(smallblocktest 
   ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/smallblocktest.c
   ${OPENAIR_DIR}/common/utils/backtrace.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
@@ -3286,17 +3290,17 @@ target_link_libraries(smallblocktest
 
 # temp_C_flag = CMAKE_C_FLAGS
 #set(CMAKE_C_FLAGS " ")
-set (TEMP_C_FLAG ${CMAKE_C_FLAGS})
+set (TEMP_C_FLAG ${CMAKE_C_FLAGS}) 
 set (CMAKE_C_FLAGS ${CUDA_CMAKE_C_FLAGS})
 
-set (TEMP_CXX_FLAG ${CMAKE_CXX_FLAGS})
+set (TEMP_CXX_FLAG ${CMAKE_CXX_FLAGS}) 
 set (CMAKE_CXX_FLAGS ${CUDA_CMAKE_CXX_FLAGS})
 if (CUDA_FOUND)
 ###################################################
-# For CUDA library
+# For CUDA library 
 ###################################################
-
-    CUDA_ADD_LIBRARY(LDPC_CU
+    
+    CUDA_ADD_LIBRARY(LDPC_CU 
       ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder_LYC/nrLDPC_decoder_LYC.cu
       )
     CUDA_ADD_CUFFT_TO_TARGET(LDPC_CU)
@@ -3306,14 +3310,14 @@ if (CUDA_FOUND)
       ${SHLIB_LOADER_SOURCES}
       )
     target_link_libraries(ldpctest -ldl
-      -Wl,--start-group
-      LDPC_CU UTIL SIMU PHY_NR CONFIG_LIB
+      -Wl,--start-group 
+      LDPC_CU UTIL SIMU PHY_NR CONFIG_LIB 
       -Wl,--end-group
       m pthread ${ATLAS_LIBRARIES} dl
       )
 
 else (CUDA_FOUND)
-    add_executable(ldpctest
+    add_executable(ldpctest  
        ${PHY_NR_CODINGIF}
        ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/ldpctest.c
        ${T_SOURCE}
@@ -3325,21 +3329,21 @@ set (CMAKE_C_FLAGS ${TEMP_C_FLAG})
 set (CMAKE_CXX_FLAGS ${TEMP_CXX_FLAG})
 
 
-# add_executable(ldpctest
+# add_executable(ldpctest  
   # ${PHY_NR_CODINGIF}
   # ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/ldpctest.c
   # ${T_SOURCE}
   # ${SHLIB_LOADER_SOURCES}
   # )
-add_dependencies( ldpctest ldpc_orig ldpc_optim ldpc_optim8seg ldpc )
+add_dependencies( ldpctest ldpc_orig ldpc_optim ldpc_optim8seg ldpc ) 
 
 target_link_libraries(ldpctest
   -Wl,--start-group UTIL SIMU_COMMON  SIMU PHY_NR PHY_COMMON PHY_NR_COMMON CONFIG_LIB -Wl,--end-group
   m pthread ${ATLAS_LIBRARIES} dl
   )
 
-add_executable(nr_dlschsim
-  ${OPENAIR1_DIR}/SIMULATION/NR_PHY/dlschsim.c
+add_executable(nr_dlschsim  
+  ${OPENAIR1_DIR}/SIMULATION/NR_PHY/dlschsim.c 
   ${OPENAIR_DIR}/common/utils/system.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${OPENAIR_DIR}/common/utils/utils.c
@@ -3348,13 +3352,13 @@ add_executable(nr_dlschsim
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES}
   )
-target_link_libraries(nr_dlschsim
+target_link_libraries(nr_dlschsim 
   -Wl,--start-group UTIL SIMU_COMMON SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group
   m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl
   )
 
-add_executable(nr_pbchsim
-  ${OPENAIR1_DIR}/SIMULATION/NR_PHY/pbchsim.c
+add_executable(nr_pbchsim  
+  ${OPENAIR1_DIR}/SIMULATION/NR_PHY/pbchsim.c 
   ${OPENAIR_DIR}/common/utils/system.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${OPENAIR_DIR}/common/utils/utils.c
@@ -3369,8 +3373,8 @@ target_link_libraries(nr_pbchsim
   )
 
 #PUCCH ---> Prashanth
-add_executable(nr_pucchsim
-  ${OPENAIR1_DIR}/SIMULATION/NR_PHY/pucchsim.c
+add_executable(nr_pucchsim  
+  ${OPENAIR1_DIR}/SIMULATION/NR_PHY/pucchsim.c 
   ${OPENAIR_DIR}/common/utils/backtrace.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${OPENAIR_DIR}/common/utils/system.c
@@ -3398,7 +3402,7 @@ add_executable(nr_dlsim
   ${UTIL_SRC}
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES}
-  )
+  )   
 target_link_libraries(nr_dlsim
   -Wl,--start-group UTIL SIMU_COMMON SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON RRC_LIB NR_RRC_LIB CONFIG_LIB L2_LTE_NR L2_NR HASHTABLE X2AP_ENB X2AP_LIB SECU_CN NGAP_GNB -Wl,--end-group
   m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} ${OPENSSL_LIBRARIES} dl
@@ -3406,7 +3410,7 @@ target_link_libraries(nr_dlsim
 target_compile_definitions(nr_dlsim PUBLIC -DPHYSICAL_SIMULATOR)
 
 add_executable(nr_prachsim
-  ${OPENAIR1_DIR}/SIMULATION/NR_PHY/prachsim.c
+  ${OPENAIR1_DIR}/SIMULATION/NR_PHY/prachsim.c 
   ${OPENAIR_DIR}/common/utils/utils.c
   ${OPENAIR_DIR}/common/utils/system.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
@@ -3418,7 +3422,7 @@ add_executable(nr_prachsim
   ${UTIL_SRC}
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES})
-target_link_libraries(nr_prachsim
+target_link_libraries(nr_prachsim  
   -Wl,--start-group UTIL SIMU_COMMON SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_RU PHY_NR_UE MAC_NR_COMMON SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON RRC_LIB NR_RRC_LIB CONFIG_LIB L2_LTE_NR L2_NR HASHTABLE X2AP_ENB X2AP_LIB SECU_CN NGAP_GNB -Wl,--end-group
   m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} ${OPENSSL_LIBRARIES} dl)
 
@@ -3458,7 +3462,7 @@ target_link_libraries(nr_ulsim
 target_compile_definitions(nr_ulsim PUBLIC -DPHYSICAL_SIMULATOR)
 
 foreach(myExe dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim pdcchsim pucchsim prachsim syncsim)
-
+  
   add_executable(${myExe}
     ${OPENAIR1_DIR}/SIMULATION/LTE_PHY/${myExe}.c
     ${OPENAIR_DIR}/common/utils/threadPool/thread-pool.c
@@ -3478,7 +3482,7 @@ foreach(myExe dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim pdcchsim pucchsim pr
     -Wl,--start-group SIMU_COMMON SIMU UTIL SCHED_LIB SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON PHY_NR_COMMON PHY PHY_UE PHY_RU LFDS ${ITTI_LIB} LFDS7 -Wl,--end-group
     pthread m rt ${CONFIG_LIB} ${ATLAS_LIBRARIES}  ${XFORMS_LIBRARIES} ${T_LIB} dl
     )
-
+   
 endforeach(myExe)
 
 add_executable(test_epc_generate_scenario
@@ -3541,13 +3545,13 @@ endforeach(myExe)
 if (${T_TRACER})
   foreach(i
         #all "add_executable" definitions (except tests, rb_tool, updatefw)
-        lte-softmodem lte-uesoftmodem nr-softmodem
+        lte-softmodem lte-uesoftmodem nr-softmodem 
         nr-uesoftmodem dlsim dlsim_tm4 dlsim_tm7 nr-ittisim
         ulsim pbchsim scansim mbmssim pdcchsim pucchsim prachsim
         syncsim nr_ulsim nr_dlsim nr_dlschsim nr_pbchsim nr_pucchsim
         nr_ulschsim ldpctest polartest smallblocktest cu_test du_test
         #all "add_library" definitions
-        ITTI RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB X2AP_ENB M2AP_LIB M2AP_ENB M3AP_LIB M3AP_ENB F1AP_LIB F1AP
+        ITTI RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB X2AP_ENB M2AP_LIB M2AP_ENB M3AP_LIB M3AP_ENB F1AP_LIB F1AP 
         params_libconfig oai_exmimodevif oai_usrpdevif oai_bladerfdevif oai_lmssdrdevif oai_iqplayer
         oai_eth_transpro oai_mobipass tcp_bridge tcp_bridge_oai
         coding FLPT_MSG ASYNC_IF FLEXRAN_AGENT HASHTABLE MSC UTIL OMG_SUMO
@@ -3652,6 +3656,9 @@ add_executable(nr-ittisim
   ${OPENAIR_DIR}/common/utils/system.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${OPENAIR_DIR}/common/utils/threadPool/thread-pool.c
+  ${OPENAIR_DIR}/common/utils/lte/ue_power.c
+  ${OPENAIR_DIR}/common/utils/lte/prach_utils.c
+  ${OPENAIR2_DIR}/ENB_APP/flexran_agent_ran_api_to_fix.c
   ${XFORMSINTERFACE_SOURCE}
   ${T_SOURCE}
   ${CONFIG_SOURCES}

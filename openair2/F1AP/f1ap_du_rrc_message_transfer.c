@@ -746,7 +746,7 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(instance_t instance,
 
         } else {
           LOG_I(F1AP, "Processing RRCConnectionSetupComplete UE %x\n", rnti);
-          ue_context_p->ue_context.Status = RRC_CONNECTED;
+          ue_context_p->ue_context.StatusRrc = RRC_CONNECTED;
         }
         break;
 
@@ -807,7 +807,7 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
                                             const uint8_t   *sduP,
                                             sdu_size_t      sdu_lenP,
                                             const uint8_t   *sdu2P,
-					                        sdu_size_t      sdu2_lenP) {
+					                                  sdu_size_t      sdu2_lenP) {
 
   F1AP_F1AP_PDU_t                       pdu;
   F1AP_InitialULRRCMessageTransfer_t    *out;
