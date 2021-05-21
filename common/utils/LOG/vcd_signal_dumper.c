@@ -545,7 +545,8 @@ const char* eurecomFunctionsNames[] = {
   "pss_synchro_nr",
   "pss_search_time_nr",
   "nr_initial_ue_sync",
-  "beam_switching_gpio"
+  "beam_switching_gpio",
+  "dl_encode_ldpc_fpga"
 };
 
 struct vcd_module_s vcd_modules[] = {

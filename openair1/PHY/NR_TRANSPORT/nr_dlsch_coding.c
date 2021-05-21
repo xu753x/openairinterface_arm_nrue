@@ -241,6 +241,8 @@ void clean_gNB_dlsch(NR_gNB_DLSCH_t *dlsch)
   }
 }
 
+#if 1
+// unsigned char EnDataOut[0x20000]={0};
 int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
 		      unsigned char *a,
                       int frame,
@@ -285,15 +287,14 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
   EncodeInHeaderStruct EncodeHead;
   uint8_t *pEnDataIn = NULL;
   uint8_t *pEnDataOut = NULL;
-  pEnDataOut=(unsigned char *)malloc(0x400000);
-  static uint32_t iLS = 0;
-  static uint32_t lsIndex = 0;
-  uint32_t *iLS_out = &iLS;
-  uint32_t *lsIndex_out = &lsIndex;
+  // pEnDataOut=(unsigned char *)malloc(0x20000);
+//  uint8_t *pEnDataOut = EnDataOut;
+  uint32_t iLS = 0;
+  uint32_t lsIndex = 0;
   uint32_t dl_E0 = 0, dl_E1 = 0;
-  uint32_t *dl_e0 = &dl_E0, *dl_e1 = &dl_E1;
 
   pEnDataIn = a;
+  pEnDataOut = harq->f;
     //  int sum = add(7, 8);
     //  printf("7+8 = %d\n", sum);
 #endif
@@ -322,7 +323,7 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
   }
   G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs,mod_order,rel15->nrOfLayers);
 
-  LOG_D(PHY,"dlsch coding A %d G %d (nb_rb %d, nb_symb_sch %d, nb_re_dmrs %d, length_dmrs %d, mod_order %d)\n", A,G, nb_rb,nb_symb_sch,nb_re_dmrs,length_dmrs,mod_order);
+  LOG_I(PHY,"dlsch coding A %d G %d (nb_rb %d, nb_symb_sch %d, nb_re_dmrs %d, length_dmrs %d, mod_order %d)\n", A,G, nb_rb,nb_symb_sch,nb_re_dmrs,length_dmrs,mod_order);
 
   if (A > 3824) {
     // Add 24-bit crc (polynomial A) to payload
@@ -491,7 +492,11 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
     r_offset += E;
   }
 #if 1
-  if(dl_encode_count == dl_encode_count_set2){
+  LOG_I(PHY, "dl_encode_count = %d\n", dl_encode_count);
+  // if(dl_encode_count == dl_encode_count_set2)
+{
+  // LOG_M("harq->f.m","harq->f", harq->f, G+32, 1, 9);
+    //使输入参数固定，测试使用
     // int dl_encode_i;
     // for (dl_encode_i = 0; dl_encode_i<(rel15->TBSize[0]); dl_encode_i++){
     //   a[dl_encode_i] = dl_encode_i;
@@ -499,6 +504,293 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
     // int fileSize,ret;
     // FILE *fp;
 #if 0
+    //demo中从文件里读取固定的数据，测试使用
+    fp=fopen("oai_encode_data_0.bin","rb");
+    if(fp==NULL){
+        printf("This oai_encode_data_0 file is open failed.\n");
+    }
+
+    fseek(fp,0,SEEK_END);
+    fileSize=ftell(fp);
+    rewind(fp);
+    printf("fileSize=0x%x\n",fileSize);
+    ret=fread(a,1,fileSize,fp);
+    fclose(fp);
+#endif
+#if 1
+  //FPGA加速的头部
+    //word 0
+    EncodeHead.pktType = 0x12;
+    EncodeHead.rsv0 = 0x00;
+    EncodeHead.chkCode = 0xFAFA;
+    //word 1
+ 
+    EncodeHead.rsv1 = 0x0000;
+    //word 2
+    EncodeHead.rsv2 = 0x0;
+    EncodeHead.sectorId = 0x0;
+    //=0表示单小区
+    EncodeHead.rsv3 = 0x0;
+    //word 3
+    EncodeHead.sfn = frame;
+    EncodeHead.rsv4 = 0x0;
+    EncodeHead.slotNum = slot;
+    EncodeHead.subfn = EncodeHead.slotNum/2;
+    EncodeHead.pduIdx = 0x0;
+    //=0表示第一个码字，总共一个码字
+    EncodeHead.rev5 = 0x0;
+    //word 4
+    EncodeHead.tbSizeB = rel15->TBSize[0];
+    EncodeHead.pktLen = 32+((EncodeHead.tbSizeB+32-1)/32)*32;	
+    //Byte，pktLen=encoder header(32byte)+ tbszie (byte)，并且32Byte对齐，是32的整数倍
+    EncodeHead.rev6 = 0x0;
+    EncodeHead.lastTb = 0x1;
+    EncodeHead.firstTb = 0x1;
+    //=1表示本slot只有一个TB
+    EncodeHead.rev7 = 0x0;
+    EncodeHead.cbNum = harq->C;
+    //word 5
+    EncodeHead.qm = stats->current_Qm/2;	 
+    //规定是BPSK qm=0,QPSK qm=1,其他floor(调制阶数/2)；OAI的Qm为2/4/6/8
+    EncodeHead.rev8 = 0x0;
+    EncodeHead.fillbit = harq->F;
+    EncodeHead.rev9 = 0x0;
+    if( EncodeHead.cbNum == 1){
+       EncodeHead.kpInByte = ((harq->B)/ EncodeHead.cbNum)>>3;
+    }
+    else{
+       EncodeHead.kpInByte = ((harq->B+(( EncodeHead.cbNum)*24))/ EncodeHead.cbNum)>>3;
+    }
+    EncodeHead.rev10 = 0x0;
+    //word 6
+    EncodeHead.gamma = EncodeHead.cbNum - (G/(rel15->nrOfLayers*(2*EncodeHead.qm)))%EncodeHead.cbNum;
+    //=1表示本slot只有一个TB
+    EncodeHead.rev11 = 0x0;
+    EncodeHead.rvIdx = rel15->rvIndex[0];
+    EncodeHead.rev12 = 0x0;
+    //查找iLS和lfSizeIx
+    dl_find_iLS_lsIndex(Zc, &iLS, &lsIndex);
+    EncodeHead.iLs = iLS;
+    EncodeHead.lfSizeIx = lsIndex;
+    EncodeHead.rev13 = 0x0;
+    // EncodeHead.iLs = *iLS_out;
+    EncodeHead.bg = harq->BG-1; //规定选择协议base grape1 bg=0; base grape2 bg=1；OAI的BG大了1
+    if( EncodeHead.bg == 0){
+       EncodeHead.codeRate = 46;
+    }
+    else{
+       EncodeHead.codeRate = 42;
+    }
+    //word 7
+    //计算并获得e0和e1
+    nr_get_E0_E1(G, harq->C, mod_order, rel15->nrOfLayers, r, &dl_E0, &dl_E1);
+    EncodeHead.e0 = dl_E0;
+    EncodeHead.e1 = dl_E1;
+#endif
+/////////////////////////////////////////////
+#if 0
+    //demo中固定的头部参数
+    //word 0
+    EncodeHead.pktType=0x12;
+    EncodeHead.rsv0=0x00;
+    EncodeHead.chkCode=0xFAFA;
+    //word 1
+    EncodeHead.pktLen=0x1000;
+    EncodeHead.rsv1=0x0000;
+    //word 2
+    EncodeHead.rsv2=0x0;
+    EncodeHead.sectorId=0x0;
+    EncodeHead.rsv3=0x0;
+    //word 3
+    EncodeHead.sfn=0x13c;
+    EncodeHead.rsv4=0x0;
+    EncodeHead.subfn=0x1;
+    EncodeHead.slotNum=0x2;
+    EncodeHead.pduIdx=0x0;
+    EncodeHead.rev5=0x0;
+    //word 4
+    EncodeHead.tbSizeB=0x0fc1;
+    EncodeHead.rev6=0x0;
+    EncodeHead.lastTb=0x1;
+    EncodeHead.firstTb=0x1;
+    EncodeHead.rev7=0x0;
+    EncodeHead.cbNum=0x04;
+    //word 5
+    EncodeHead.qm=0x3;
+    EncodeHead.rev8=0x0;
+    EncodeHead.fillbit=0x160;
+    EncodeHead.rev9=0x0;
+    EncodeHead.kpInByte=0x3f4;
+    EncodeHead.rev10=0x0;
+    //word 6
+    EncodeHead.gamma=0x02;
+    EncodeHead.codeRate=0x2e;
+    EncodeHead.rev11=0x0;
+    EncodeHead.rvIdx=0x0;
+    EncodeHead.rev12=0x0;
+    EncodeHead.lfSizeIx=0x7;
+    EncodeHead.rev13=0x0;
+    EncodeHead.iLs=0x1;
+    EncodeHead.bg=0x0;
+    //word 7
+    EncodeHead.e1=0x44be;
+    EncodeHead.e0=0x44b8;
+#endif
+#if 1
+//调用FPGA的.so中的编码函数
+    LOG_I(PHY, "encoder_load_start\n");
+    // printf("EncodeHead_fill_finished\n");
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DL_Encode_LPDC_FPGA, 1);
+    encoder_load( &EncodeHead, pEnDataIn, pEnDataOut );
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DL_Encode_LPDC_FPGA, 0);
+    LOG_I(PHY, "encoder_load_end\n");
+    // encoder_load( &EncodeHead, pEnDataIn, pEnDataOut );
+    //LOG_M("pEnDataOut.m","pEnDataOut", pEnDataOut, G+32, 1, 9);
+#endif
+  }
+  dl_encode_count++;  //count +1 after encoding
+  // free(pEnDataOut);
+#endif
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ENCODING, VCD_FUNCTION_OUT);
+
+  return 0;
+}
+#endif
+#if 0
+//把OAI中的编码部分去掉后的新函数，但好像还有问题
+int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
+		      unsigned char *a,
+                      int frame,
+                      uint8_t slot,
+                      NR_gNB_DLSCH_t *dlsch,
+                      NR_DL_FRAME_PARMS* frame_parms,
+		      time_stats_t *tinput,time_stats_t *tprep,time_stats_t *tparity,time_stats_t *toutput,
+		      time_stats_t *dlsch_rate_matching_stats,time_stats_t *dlsch_interleaving_stats,
+		      time_stats_t *dlsch_segmentation_stats)
+{
+
+  unsigned int G;
+  unsigned int crc=1;
+  NR_DL_gNB_HARQ_t *harq = &dlsch->harq_process;
+  nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &harq->pdsch_pdu.pdsch_pdu_rel15;
+  uint16_t nb_rb = rel15->rbSize;
+  uint8_t nb_symb_sch = rel15->NrOfSymbols;
+  uint32_t A, Kb, F=0;
+  uint32_t *Zc = &dlsch->harq_process.Z;
+  uint8_t mod_order = rel15->qamModOrder[0];
+  uint16_t Kr=0,r;
+  uint32_t r_offset=0;
+    uint8_t Ilbrm = 1;
+  uint32_t Tbslbrm = 950984; //max tbs
+  uint8_t nb_re_dmrs;
+  int fileSize,ret;
+  FILE *fp;
+
+  if (rel15->dmrsConfigType==NFAPI_NR_DMRS_TYPE1)
+    nb_re_dmrs = 6*rel15->numDmrsCdmGrpsNoData;
+  else
+    nb_re_dmrs = 4*rel15->numDmrsCdmGrpsNoData;
+
+  uint16_t length_dmrs = get_num_dmrs(rel15->dlDmrsSymbPos);
+  uint16_t R=rel15->targetCodeRate[0];
+  float Coderate = 0.0;
+  uint8_t Nl = 4;
+#if 1
+  static uint32_t dl_encode_count = 0;
+  uint32_t dl_encode_count_set2 = 9; 
+  EncodeInHeaderStruct EncodeHead;
+  uint8_t *pEnDataIn = NULL;
+  uint8_t *pEnDataOut = NULL;
+  // pEnDataOut=(unsigned char *)malloc(0x20000);
+//  uint8_t *pEnDataOut = EnDataOut;
+  uint32_t iLS = 0;
+  uint32_t lsIndex = 0;
+  uint32_t dl_E0 = 0, dl_E1 = 0;
+
+  pEnDataIn = a;
+  pEnDataOut = harq->f;
+    //  int sum = add(7, 8);
+    //  printf("7+8 = %d\n", sum);
+#endif
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ENCODING, VCD_FUNCTION_IN);
+
+  A = rel15->TBSize[0]<<3;
+
+  harq->B = A+24;
+
+  NR_gNB_SCH_STATS_t *stats=NULL;
+  int first_free=-1;
+  for (int i=0;i<NUMBER_OF_NR_SCH_STATS_MAX;i++) {
+    if (gNB->dlsch_stats[i].rnti == 0 && first_free == -1) {
+      first_free = i;
+      stats=&gNB->dlsch_stats[i];
+    }
+    if (gNB->dlsch_stats[i].rnti == dlsch->rnti) {
+      stats=&gNB->dlsch_stats[i];
+      break;
+    }
+  }
+
+  if (stats) {
+    stats->rnti = dlsch->rnti;
+    stats->total_bytes_tx += rel15->TBSize[0];
+    stats->current_RI   = rel15->nrOfLayers;
+    stats->current_Qm   = rel15->qamModOrder[0];
+  }
+  G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs,mod_order,rel15->nrOfLayers);
+
+  LOG_I(PHY,"dlsch coding A %d G %d (nb_rb %d, nb_symb_sch %d, nb_re_dmrs %d, length_dmrs %d, mod_order %d)\n", A,G, nb_rb,nb_symb_sch,nb_re_dmrs,length_dmrs,mod_order);
+
+  
+  
+  if (R<1000)
+    Coderate = (float) R /(float) 1024;
+  else  // to scale for mcs 20 and 26 in table 5.1.3.1-2 which are decimal and input 2* in nr_tbs_tools
+    Coderate = (float) R /(float) 2048;
+
+  if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25)
+    harq->BG = 2;
+  else
+    harq->BG = 1;
+
+  start_meas(dlsch_segmentation_stats);
+  Kb = nr_segmentation(NULL, NULL, harq->B, &harq->C, &harq->K, Zc, &harq->F, harq->BG);
+  stop_meas(dlsch_segmentation_stats);
+  F = harq->F;
+
+  Kr = harq->K;
+#ifdef DEBUG_DLSCH_CODING
+  uint16_t Kr_bytes;
+  Kr_bytes = Kr>>3;
+#endif
+
+  //printf("segment Z %d k %d Kr %d BG %d C %d\n", *Zc,harq->K,Kr,BG,harq->C);
+
+
+
+#ifdef DEBUG_DLSCH_CODING
+  write_output("enc_input0.m","enc_in0",&harq->c[0][0],Kr_bytes,1,4);
+  write_output("enc_output0.m","enc0",&harq->d[0][0],(3*8*Kr_bytes)+12,1,4);
+#endif
+
+  F = harq->F;
+
+  Kr = harq->K;
+  if (rel15->nrOfLayers < Nl)
+      Nl = rel15->nrOfLayers;
+  
+#if 1
+  LOG_I(PHY, "dl_encode_count = %d\n", dl_encode_count);
+//  if(dl_encode_count == dl_encode_count_set2)
+{
+    // int dl_encode_i;
+    // for (dl_encode_i = 0; dl_encode_i<(rel15->TBSize[0]); dl_encode_i++){
+    //   a[dl_encode_i] = dl_encode_i;
+    // }
+    // int fileSize,ret;
+    // FILE *fp;
+#if 0
+    //demo中从文件里读取固定的数据
     fp=fopen("oai_encode_data_0.bin","rb");
     if(fp==NULL){
         printf("This oai_encode_data_0 file is open failed.\n");
@@ -556,15 +848,15 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
     }
     EncodeHead.rev10 = 0x0;
     //word 6
-    EncodeHead.gamma = EncodeHead.cbNum - (G/(rel15->nrOfLayers*(2*EncodeHead.qm)))%EncodeHead.cbNum;
+    EncodeHead.gamma = EncodeHead.cbNum - (G/(Nl*(2*EncodeHead.qm)))%EncodeHead.cbNum;
     //=1表示本slot只有一个TB
     EncodeHead.rev11 = 0x0;
     EncodeHead.rvIdx = rel15->rvIndex[0];
     EncodeHead.rev12 = 0x0;
     //查找iLS和lfSizeIx
-    dl_find_iLS_lsIndex(Zc, iLS_out, lsIndex_out);
-    EncodeHead.iLs = *iLS_out;
-    EncodeHead.lfSizeIx = *lsIndex_out;
+    dl_find_iLS_lsIndex(Zc, &iLS, &lsIndex);
+    EncodeHead.iLs = iLS;
+    EncodeHead.lfSizeIx = lsIndex;
     EncodeHead.rev13 = 0x0;
     // EncodeHead.iLs = *iLS_out;
     EncodeHead.bg = harq->BG-1; //规定选择协议base grape1 bg=0; base grape2 bg=1；OAI的BG大了1
@@ -576,12 +868,13 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
     }
     //word 7
     //计算并获得e0和e1
-    nr_get_E0_E1(G, harq->C, mod_order, rel15->nrOfLayers, r, dl_e0, dl_e1);
-    EncodeHead.e0 = *dl_e0;
-    EncodeHead.e1 = *dl_e1;
+    nr_get_E0_E1(G, harq->C, mod_order, rel15->nrOfLayers, r, &dl_E0, &dl_E1);
+    EncodeHead.e0 = dl_E0;
+    EncodeHead.e1 = dl_E1;
 #endif
 /////////////////////////////////////////////
 #if 0
+    //demo中固定的头部参数
     //word 0
     EncodeHead.pktType=0x12;
     EncodeHead.rsv0=0x00;
@@ -628,19 +921,23 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
     EncodeHead.e1=0x44be;
     EncodeHead.e0=0x44b8;
 #endif
-    printf("EncodeHead_fill_finished\n");
+    LOG_I(PHY, "encoder_load_start\n");
+    // printf("EncodeHead_fill_finished\n");
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DL_Encode_LPDC_FPGA, 1);
     encoder_load( &EncodeHead, pEnDataIn, pEnDataOut );
-    printf("encoder_load_end\n");
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DL_Encode_LPDC_FPGA, 0);
+    LOG_I(PHY, "encoder_load_end\n");
     // encoder_load( &EncodeHead, pEnDataIn, pEnDataOut );
     //LOG_M("pEnDataOut.m","pEnDataOut", pEnDataOut, G+32, 1, 9);
   }
   dl_encode_count++;  //count +1 after encoding
+  // free(pEnDataOut);
 #endif
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ENCODING, VCD_FUNCTION_OUT);
 
   return 0;
 }
-
+#endif
 void dl_find_iLS_lsIndex(unsigned int *LDPC_lifting_size, uint32_t *iLS_out, uint32_t *lsIndex_out)
 {
   unsigned int Set_of_LDPC_lifting_size[8][8] = {

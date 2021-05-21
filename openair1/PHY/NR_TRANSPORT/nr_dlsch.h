@@ -104,4 +104,8 @@ void clear_pdsch_stats(PHY_VARS_gNB *gNB);
 
 void  dl_find_iLS_lsIndex(unsigned int *LDPC_lifting_size, uint32_t *iLS_out, uint32_t *lsIndex_out);
 
+unsigned char Reverse8U(unsigned char x);
+
+void Byte_Reverse_11(unsigned char *Src, unsigned char *Dest, int Length);
+
 #endif

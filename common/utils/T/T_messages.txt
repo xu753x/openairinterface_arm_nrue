@@ -3560,4 +3560,8 @@ ID = VCD_FUNCTION_BEAM_SWITCHING_GPIO
     GROUP = ALL:VCD:ENB:VCD_FUNCTION
     FORMAT = int,value
     VCD_NAME = beam_switching_gpio
-
+ID = VCD_FUNCTION_gNB_DL_Encode_LPDC_FPGA
+    DESC = VCD function gNB_DL_Encode_LPDC_FPGA
+    GROUP = ALL:VCD:ENB:VCD_FUNCTION
+    FORMAT = int,value
+    VCD_NAME = dl_encode_ldpc_fpga

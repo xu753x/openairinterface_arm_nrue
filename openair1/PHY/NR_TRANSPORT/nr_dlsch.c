@@ -77,6 +77,11 @@ void nr_pdsch_codeword_scrambling_optim(uint8_t *in,
 					uint32_t* out) {
   
   uint32_t x1, x2, s=0,in32;
+  static uint32_t count_data = 0; 
+   uint8_t *u8data;
+  uint32_t *pin32;
+  uint32_t byteSize = size/8;
+  // AssertFatal(size%8==0,"ByteSize is not 8\n");
 
   x2 = (n_RNTI<<15) + (q<<14) + Nid;
 
@@ -84,12 +89,45 @@ void nr_pdsch_codeword_scrambling_optim(uint8_t *in,
 
 
 #if defined(__AVX2__)
+#if 0  //OAI自己的加扰代码
   for (int i=0; i<((size>>5)+((size&0x1f) > 0 ? 1 : 0)); i++) {
     in32=_mm256_movemask_epi8(_mm256_slli_epi16(((__m256i*)in)[i],7));
     out[i]=(in32^s);
+    // u8data = (uint8_t *)&in32;
+    // if(i < 10)
+    // {
+    //   LOG_I(PHY, "in32 = %x,    %02x, %02x, %02x, %02x\n",in32, u8data[0],u8data[1],u8data[2],u8data[3]);
+    // }
     //printf("in[%d] %x => %x\n",i,in32,out[i]);
     s=lte_gold_generic(&x1, &x2, 0);
   }
+  if(count_data == 9)
+  {
+    LOG_M("out1.m","out1", out, (byteSize+3)/4, 1, 9);
+  }
+   count_data++;
+#endif
+#if 1
+  //让FPGA输出的每个BYTE中的高低位bit翻转
+  //LOG_I(PHY, "in = %02x, %02x, %02x, %02x, %02x, %02x, %02x, %02x\n",in[0],in[1],in[2],in[3],in[4],in[5],in[6],in[7]);
+  Byte_Reverse_11(in, in, byteSize);
+  pin32 = (uint32_t *)in;
+  // if(count_data == 9)
+  // {
+  //   LOG_M("pin32.m","pin32", pin32, byteSize, 1, 9);
+  // }
+  //LOG_I(PHY, "in32 = %x, %x, %x, %x,      %02x, %02x, %02x, %02x\n",pin32[0],pin32[1],pin32[2],pin32[3],in[0],in[1],in[2],in[3]);
+  for(int j = 0; j < (byteSize+3)/4; j++)
+  {
+     out[j]=(pin32[j]^s);
+     s=lte_gold_generic(&x1, &x2, 0);
+  }
+  // if(count_data == 9)
+  // {
+  //   LOG_M("out.m","out", out, (byteSize+3)/4, 1, 9);
+  // }
+  // count_data++;
+#endif
 #elif defined(__SSE4__)
   _m128i *in128;
   for (int i=0; i<((size>>5)+((size&0x1f) > 0 ? 1 : 0)); i++) {
@@ -99,6 +137,7 @@ void nr_pdsch_codeword_scrambling_optim(uint8_t *in,
     out[i]=(in32^s);
     s=lte_gold_generic(&x1, &x2, 0);
   }
+  log_dump(PHY, out, 32, LOG_DUMP_CHAR,"__SSE4__out[] = \n");
   //#elsif defined(__arm__) || defined(__aarch64)
   
 #else 
@@ -108,6 +147,7 @@ void nr_pdsch_codeword_scrambling_optim(uint8_t *in,
 			       Nid,
 			       n_RNTI,
 			       out);
+  LOG_I(PHY,"nr_pdsch_codeword_scrambling\n");           
 #endif
 }
 
@@ -547,4 +587,29 @@ void clear_pdsch_stats(PHY_VARS_gNB *gNB) {
 
   for (int i=0;i<NUMBER_OF_NR_DLSCH_MAX;i++)
     memset((void*)&gNB->dlsch_stats[i],0,sizeof(gNB->dlsch_stats[i]));
+}
+
+unsigned char Reverse8U(unsigned char x)
+{
+    x = (x & 0xaa) >> 1 | (x & 0x55) << 1;
+    x = (x & 0xcc) >> 2 | (x & 0x33) << 2;
+    x = (x & 0xf0) >> 4 | (x & 0x0f) << 4;
+    return x;
+}
+
+void Byte_Reverse_11(unsigned char *Src, unsigned char *Dest, int Length)
+{
+    int BlockSize = 16, Block = Length / BlockSize;
+    for (int Y = 0; Y < Block * BlockSize; Y += BlockSize)
+    {
+        __m128i V = _mm_loadu_si128((__m128i *)(Src + Y));
+        V = _mm_or_si128(_mm_srli_epi16(_mm_and_si128(V, _mm_set1_epi8(0xaa)), 1), _mm_slli_epi16(_mm_and_si128(V, _mm_set1_epi8(0x55)), 1));
+        V = _mm_or_si128(_mm_srli_epi16(_mm_and_si128(V, _mm_set1_epi8(0xcc)), 2), _mm_slli_epi16(_mm_and_si128(V, _mm_set1_epi8(0x33)), 2));
+        V = _mm_or_si128(_mm_srli_epi16(_mm_and_si128(V, _mm_set1_epi8(0xf0)), 4), _mm_slli_epi16(_mm_and_si128(V, _mm_set1_epi8(0x0f)), 4));
+        _mm_storeu_si128((__m128i *)(Dest + Y), V);
+    }
+    for (int Y = Block * BlockSize; Y < Length; Y++)
+    {
+        Dest[Y] = Reverse8U(Src[Y]);
+    }
 }
