@@ -741,44 +741,52 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
 
   LOG_I(PHY,"dlsch coding A %d G %d (nb_rb %d, nb_symb_sch %d, nb_re_dmrs %d, length_dmrs %d, mod_order %d)\n", A,G, nb_rb,nb_symb_sch,nb_re_dmrs,length_dmrs,mod_order);
 
-  if (A > 3824) {
-    // Add 24-bit crc (polynomial A) to payload
-    crc = crc24a(a,A)>>8;
-    a[A>>3] = ((uint8_t*)&crc)[2];
-    a[1+(A>>3)] = ((uint8_t*)&crc)[1];
-    a[2+(A>>3)] = ((uint8_t*)&crc)[0];
-    //printf("CRC %x (A %d)\n",crc,A);
-    //printf("a0 %d a1 %d a2 %d\n", a[A>>3], a[1+(A>>3)], a[2+(A>>3)]);
+  // if (A > 3824) {
+  //   // Add 24-bit crc (polynomial A) to payload
+  //   crc = crc24a(a,A)>>8;
+  //   a[A>>3] = ((uint8_t*)&crc)[2];
+  //   a[1+(A>>3)] = ((uint8_t*)&crc)[1];
+  //   a[2+(A>>3)] = ((uint8_t*)&crc)[0];
+  //   //printf("CRC %x (A %d)\n",crc,A);
+  //   //printf("a0 %d a1 %d a2 %d\n", a[A>>3], a[1+(A>>3)], a[2+(A>>3)]);
 
+  //   harq->B = A+24;
+  //   //    harq->b = a;
+
+  //   AssertFatal((A / 8) + 4 <= MAX_NR_DLSCH_PAYLOAD_BYTES,
+  //               "A %d is too big (A/8+4 = %d > %d)\n",
+  //               A,
+  //               (A / 8) + 4,
+  //               MAX_NR_DLSCH_PAYLOAD_BYTES);
+
+  //   memcpy(harq->b, a, (A / 8) + 4); // why is this +4 if the CRC is only 3 bytes?
+  // }
+  // else {
+  //   // Add 16-bit crc (polynomial A) to payload
+  //   crc = crc16(a,A)>>16;
+  //   a[A>>3] = ((uint8_t*)&crc)[1];
+  //   a[1+(A>>3)] = ((uint8_t*)&crc)[0];
+  //   //printf("CRC %x (A %d)\n",crc,A);
+  //   //printf("a0 %d a1 %d \n", a[A>>3], a[1+(A>>3)]);
+
+  //   harq->B = A+16;
+  //   //    harq->b = a;
+
+  //   AssertFatal((A / 8) + 3 <= MAX_NR_DLSCH_PAYLOAD_BYTES,
+  //               "A %d is too big (A/8+3 = %d > %d)\n",
+  //               A,
+  //               (A / 8) + 3,
+  //               MAX_NR_DLSCH_PAYLOAD_BYTES);
+
+  //   memcpy(harq->b, a, (A / 8) + 3); // using 3 bytes to mimic the case of 24 bit crc
+  // }
+  if (A > 3824) 
+  {
     harq->B = A+24;
-    //    harq->b = a;
-
-    AssertFatal((A / 8) + 4 <= MAX_NR_DLSCH_PAYLOAD_BYTES,
-                "A %d is too big (A/8+4 = %d > %d)\n",
-                A,
-                (A / 8) + 4,
-                MAX_NR_DLSCH_PAYLOAD_BYTES);
-
-    memcpy(harq->b, a, (A / 8) + 4); // why is this +4 if the CRC is only 3 bytes?
   }
-  else {
-    // Add 16-bit crc (polynomial A) to payload
-    crc = crc16(a,A)>>16;
-    a[A>>3] = ((uint8_t*)&crc)[1];
-    a[1+(A>>3)] = ((uint8_t*)&crc)[0];
-    //printf("CRC %x (A %d)\n",crc,A);
-    //printf("a0 %d a1 %d \n", a[A>>3], a[1+(A>>3)]);
-
+  else
+  {
     harq->B = A+16;
-    //    harq->b = a;
-
-    AssertFatal((A / 8) + 3 <= MAX_NR_DLSCH_PAYLOAD_BYTES,
-                "A %d is too big (A/8+3 = %d > %d)\n",
-                A,
-                (A / 8) + 3,
-                MAX_NR_DLSCH_PAYLOAD_BYTES);
-
-    memcpy(harq->b, a, (A / 8) + 3); // using 3 bytes to mimic the case of 24 bit crc
   }
   if (R<1000)
     Coderate = (float) R /(float) 1024;
@@ -791,7 +799,7 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
     harq->BG = 1;
 
   start_meas(dlsch_segmentation_stats);
-  Kb = nr_segmentation(harq->b, harq->c, harq->B, &harq->C, &harq->K, Zc, &harq->F, harq->BG);
+  Kb = nr_segmentation(NULL, NULL, harq->B, &harq->C, &harq->K, Zc, &harq->F, harq->BG);
   stop_meas(dlsch_segmentation_stats);
   F = harq->F;
 
@@ -819,12 +827,12 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
     //ldpc_encoder_orig((unsigned char*)harq->c[r],harq->d[r],*Zc,Kb,Kr,BG,0);
     //ldpc_encoder_optim((unsigned char*)harq->c[r],(unsigned char*)&harq->d[r][0],*Zc,Kb,Kr,BG,NULL,NULL,NULL,NULL);
   }
-  encoder_implemparams_t impp;
-  impp.n_segments=harq->C;
-  impp.tprep = tprep;
-  impp.tinput = tinput;
-  impp.tparity = tparity;
-  impp.toutput = toutput;
+  // encoder_implemparams_t impp;
+  // impp.n_segments=harq->C;
+  // impp.tprep = tprep;
+  // impp.tinput = tinput;
+  // impp.tparity = tparity;
+  // impp.toutput = toutput;
 
   // for(int j=0;j<(harq->C/8+1);j++) {
   //   impp.macro_num=j;
@@ -867,10 +875,10 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
 	  mod_order,nb_rb);
 
     // for tbslbrm calculation according to 5.4.2.1 of 38.212
-    if (rel15->nrOfLayers < Nl)
-      Nl = rel15->nrOfLayers;
+    // if (rel15->nrOfLayers < Nl)
+    //   Nl = rel15->nrOfLayers;
 
-    Tbslbrm = nr_compute_tbslbrm(rel15->mcsTable[0],nb_rb,Nl);
+    // Tbslbrm = nr_compute_tbslbrm(rel15->mcsTable[0],nb_rb,Nl);
 
     // start_meas(dlsch_rate_matching_stats);
     // nr_rate_matching_ldpc(Ilbrm,
