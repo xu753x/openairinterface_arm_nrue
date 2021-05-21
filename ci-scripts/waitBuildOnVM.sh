@@ -52,8 +52,9 @@ function wait_on_vm_build {
         echo "This VM type is no longer supported in the pipeline framework"
         return
     fi
-
+    echo "uvt-kvm list 0000000000000000000000"
     IS_VM_ALIVE=`uvt-kvm list | grep -c $VM_NAME`
+    echo "uvt-kvm list 1111111111111111111111"
 
     if [ $IS_VM_ALIVE -eq 0 ]
     then

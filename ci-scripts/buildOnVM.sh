@@ -53,7 +53,7 @@ function build_on_vm {
     fi
 
     echo "############################################################"
-    echo "OAI CI VM script"
+    echo "OAI CI VM script    build_on_vm"
     echo "############################################################"
 
     echo "VM_NAME             = $VM_NAME"
@@ -67,8 +67,10 @@ function build_on_vm {
         echo "This VM type is no longer supported in the pipeline framework"
         return
     fi
-
+    echo "uvt-kvm list 0000000000000000000"
+    whoami
     IS_VM_ALIVE=`uvt-kvm list | grep -c $VM_NAME`
+    echo "uvt-kvm list 0000000000000000000111111111111111111111"
 
     if [ $IS_VM_ALIVE -eq 0 ]
     then
@@ -231,6 +233,9 @@ function build_on_vm {
             echo "sudo -E daemon --inherit --unsafe --name=build_daemon --chdir=/home/ubuntu/tmp/cmake_targets -o /home/ubuntu/tmp/cmake_targets/log/install-build.txt ./my-vm-build.sh" >> $VM_CMDS
         fi
     fi
+    echo "finish $VM_CMDS"
     ssh -T -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS
-    rm -f $VM_CMDS
+    echo "finish ssh $VM_CMDS"
+   # rm -f $VM_CMDS
+
 }

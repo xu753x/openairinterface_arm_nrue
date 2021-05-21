@@ -807,6 +807,7 @@ VM_CMDS=${VM_NAME}_cmds.txt
 ARCHIVES_LOC=${JENKINS_WKSP}/archives/${ARCHIVES_LOC}
 
 STATUS=0
+        echo "00000000000000000000000000000000000000000"
 if [ ${COMMAND[${COMMANDS_NAME[$CREATE_CMD]}]} -eq 1 ]
 then
     if [[ "$BUILD_OPTIONS" = "" ]]
@@ -814,9 +815,11 @@ then
         echo "$VM_NAME is not a build variant"
         exit 0
     else
+        echo "$VM_NAME create_vm 00000000000000000000000000000000000000000"
         create_vm
     fi
 fi
+        echo "11111111111111111111111111111111111111111111111"
 if [ ${COMMAND[${COMMANDS_NAME[$BUILD_CMD]}]} -eq 1 ]
 then
     if [[  "$BUILD_OPTIONS" = "" ]]
@@ -824,6 +827,7 @@ then
         echo " $VM_NAME is not a build variant"
         exit 0
     else
+        echo "build_on_vm 11111111111111111111111111111111111111111111111"
         build_on_vm
     fi
     if [ $DAEMON -eq 0 ] && [ $STATUS -eq 0 ]
@@ -838,10 +842,12 @@ then
         echo "$VM_NAME is not a build variant"
         exit 0
     else
+        echo "wait_on_vm_build 2222222222222222222222222222222222222222222"
         wait_on_vm_build
     fi
     if [ $STATUS -eq 0 ]
     then
+        echo "check_on_vm_build 3333333333333333333333333333333333333333333"
         check_on_vm_build
     fi
 fi
@@ -859,6 +865,7 @@ then
     fi
 
     ARCHIVES_LOC=${ARCHIVES_LOC}/test
+        echo "run_test_on_vm 44444444444444444444444444444444444444444444444"
     run_test_on_vm
 fi
 if [ ${COMMAND[${COMMANDS_NAME[$DESTROY_CMD]}]} -eq 1 ]

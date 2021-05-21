@@ -822,8 +822,8 @@ check_install_oai_software() {
   fi
 
     install_asn1c_from_source $1
-    $SUDO rm -fr /opt/ssh
-    $SUDO git clone https://gist.github.com/2190472.git /opt/ssh
+#    $SUDO rm -fr /opt/ssh
+#    $SUDO git clone https://gist.github.com/2190472.git /opt/ssh
 }
 
 install_asn1c_from_source(){
@@ -832,7 +832,8 @@ install_asn1c_from_source(){
     (
     $SUDO rm -rf /tmp/asn1c
     # GIT_SSL_NO_VERIFY=true git clone https://gitlab.eurecom.fr/oai/asn1c.git /tmp/asn1c
-    git clone https://gitlab.eurecom.fr/oai/asn1c.git /tmp/asn1c
+    #git clone https://gitlab.eurecom.fr/oai/asn1c.git /tmp/asn1c
+    git clone http://git.opensource5g.org/openxg/asn1c.git  /tmp/asn1c
     cd /tmp/asn1c
     # better to use a given commit than a branch in case the branch
     # is updated and requires modifications in the source of OAI
