@@ -76,9 +76,10 @@ void nr_pdsch_codeword_scrambling_optim(uint8_t *in,
 					uint32_t n_RNTI,
 					uint32_t* out) {
   
-  uint32_t x1, x2, s=0,in32;
-  static uint32_t count_data = 0; 
-   uint8_t *u8data;
+  uint32_t x1, x2, s=0;
+  // uint32_t in32 = 0;
+  // static uint32_t count_data = 0; 
+  //  uint8_t *u8data;
   uint32_t *pin32;
   uint32_t byteSize = size/8;
   // AssertFatal(size%8==0,"ByteSize is not 8\n");
@@ -137,7 +138,6 @@ void nr_pdsch_codeword_scrambling_optim(uint8_t *in,
     out[i]=(in32^s);
     s=lte_gold_generic(&x1, &x2, 0);
   }
-  log_dump(PHY, out, 32, LOG_DUMP_CHAR,"__SSE4__out[] = \n");
   //#elsif defined(__arm__) || defined(__aarch64)
   
 #else 
@@ -146,8 +146,7 @@ void nr_pdsch_codeword_scrambling_optim(uint8_t *in,
 			       q,
 			       Nid,
 			       n_RNTI,
-			       out);
-  LOG_I(PHY,"nr_pdsch_codeword_scrambling\n");           
+			       out);       
 #endif
 }
 
@@ -223,7 +222,12 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
     /// CRC, coding, interleaving and rate matching
     AssertFatal(harq->pdu!=NULL,"harq->pdu is null\n");
     start_meas(dlsch_encoding_stats);
-    nr_dlsch_encoding(gNB,
+    // nr_dlsch_encoding(gNB,
+		//       harq->pdu, frame, slot, dlsch, frame_parms,tinput,tprep,tparity,toutput,
+		//       dlsch_rate_matching_stats,
+		//       dlsch_interleaving_stats,
+		//       dlsch_segmentation_stats);
+    nr_dlsch_encoding_fpga_ldpc(gNB,
 		      harq->pdu, frame, slot, dlsch, frame_parms,tinput,tprep,tparity,toutput,
 		      dlsch_rate_matching_stats,
 		      dlsch_interleaving_stats,
@@ -251,6 +255,7 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
     start_meas(dlsch_scrambling_stats);
     for (int q=0; q<rel15->NrOfCodewords; q++)
       memset((void*)scrambled_output[q], 0, (encoded_length>>5)*sizeof(uint32_t));
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DL_Encode_scrambling_optim, 1);
     for (int q=0; q<rel15->NrOfCodewords; q++)
       nr_pdsch_codeword_scrambling_optim(harq->f,
 					 encoded_length,
@@ -258,7 +263,7 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
 					 rel15->dlDmrsScramblingId,
 					 rel15->rnti,
 					 scrambled_output[q]);
-    
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DL_Encode_scrambling_optim, 0);
     stop_meas(dlsch_scrambling_stats);
 #ifdef DEBUG_DLSCH
     printf("PDSCH scrambling:\n");

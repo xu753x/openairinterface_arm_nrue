@@ -659,7 +659,7 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
 
 #if 1
 //FPGA加速，删除了部分OAI中的encode函数
-int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
+int nr_dlsch_encoding_fpga_ldpc(PHY_VARS_gNB *gNB,
 		      unsigned char *a,
                       int frame,
                       uint8_t slot,
@@ -671,22 +671,15 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
 {
 
   unsigned int G;
-  unsigned int crc=1;
   NR_DL_gNB_HARQ_t *harq = &dlsch->harq_process;
   nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &harq->pdsch_pdu.pdsch_pdu_rel15;
   uint16_t nb_rb = rel15->rbSize;
   uint8_t nb_symb_sch = rel15->NrOfSymbols;
-  uint32_t A, Kb, F=0;
+  uint32_t A = 0;
   uint32_t *Zc = &dlsch->harq_process.Z;
   uint8_t mod_order = rel15->qamModOrder[0];
-  uint16_t Kr=0,r;
-  uint32_t r_offset=0;
-  uint32_t E;
-  uint8_t Ilbrm = 1;
-  uint32_t Tbslbrm = 950984; //max tbs
-  uint8_t nb_re_dmrs;
-  int fileSize,ret;
-  FILE *fp;
+  uint16_t r = 0;
+  uint8_t nb_re_dmrs = 0;
 
   if (rel15->dmrsConfigType==NFAPI_NR_DMRS_TYPE1)
     nb_re_dmrs = 6*rel15->numDmrsCdmGrpsNoData;
@@ -696,23 +689,19 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
   uint16_t length_dmrs = get_num_dmrs(rel15->dlDmrsSymbPos);
   uint16_t R=rel15->targetCodeRate[0];
   float Coderate = 0.0;
-  uint8_t Nl = 4;
 #if 1
-  static uint32_t dl_encode_count = 0;
-  uint32_t dl_encode_count_set2 = 9; 
+  // static uint32_t dl_encode_count = 0;
+  // uint32_t dl_encode_count_set2 = 9; 
   EncodeInHeaderStruct EncodeHead;
   uint8_t *pEnDataIn = NULL;
   uint8_t *pEnDataOut = NULL;
-  // pEnDataOut=(unsigned char *)malloc(0x20000);
-//  uint8_t *pEnDataOut = EnDataOut;
   uint32_t iLS = 0;
   uint32_t lsIndex = 0;
   uint32_t dl_E0 = 0, dl_E1 = 0;
 
   pEnDataIn = a;
   pEnDataOut = harq->f;
-    //  int sum = add(7, 8);
-    //  printf("7+8 = %d\n", sum);
+
 #endif
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ENCODING, VCD_FUNCTION_IN);
 
@@ -739,47 +728,8 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
   }
   G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs,mod_order,rel15->nrOfLayers);
 
-  LOG_I(PHY,"dlsch coding A %d G %d (nb_rb %d, nb_symb_sch %d, nb_re_dmrs %d, length_dmrs %d, mod_order %d)\n", A,G, nb_rb,nb_symb_sch,nb_re_dmrs,length_dmrs,mod_order);
+  LOG_D(PHY,"dlsch coding A %d G %d (nb_rb %d, nb_symb_sch %d, nb_re_dmrs %d, length_dmrs %d, mod_order %d)\n", A,G, nb_rb,nb_symb_sch,nb_re_dmrs,length_dmrs,mod_order);
 
-  // if (A > 3824) {
-  //   // Add 24-bit crc (polynomial A) to payload
-  //   crc = crc24a(a,A)>>8;
-  //   a[A>>3] = ((uint8_t*)&crc)[2];
-  //   a[1+(A>>3)] = ((uint8_t*)&crc)[1];
-  //   a[2+(A>>3)] = ((uint8_t*)&crc)[0];
-  //   //printf("CRC %x (A %d)\n",crc,A);
-  //   //printf("a0 %d a1 %d a2 %d\n", a[A>>3], a[1+(A>>3)], a[2+(A>>3)]);
-
-  //   harq->B = A+24;
-  //   //    harq->b = a;
-
-  //   AssertFatal((A / 8) + 4 <= MAX_NR_DLSCH_PAYLOAD_BYTES,
-  //               "A %d is too big (A/8+4 = %d > %d)\n",
-  //               A,
-  //               (A / 8) + 4,
-  //               MAX_NR_DLSCH_PAYLOAD_BYTES);
-
-  //   memcpy(harq->b, a, (A / 8) + 4); // why is this +4 if the CRC is only 3 bytes?
-  // }
-  // else {
-  //   // Add 16-bit crc (polynomial A) to payload
-  //   crc = crc16(a,A)>>16;
-  //   a[A>>3] = ((uint8_t*)&crc)[1];
-  //   a[1+(A>>3)] = ((uint8_t*)&crc)[0];
-  //   //printf("CRC %x (A %d)\n",crc,A);
-  //   //printf("a0 %d a1 %d \n", a[A>>3], a[1+(A>>3)]);
-
-  //   harq->B = A+16;
-  //   //    harq->b = a;
-
-  //   AssertFatal((A / 8) + 3 <= MAX_NR_DLSCH_PAYLOAD_BYTES,
-  //               "A %d is too big (A/8+3 = %d > %d)\n",
-  //               A,
-  //               (A / 8) + 3,
-  //               MAX_NR_DLSCH_PAYLOAD_BYTES);
-
-  //   memcpy(harq->b, a, (A / 8) + 3); // using 3 bytes to mimic the case of 24 bit crc
-  // }
   if (A > 3824) 
   {
     harq->B = A+24;
@@ -799,124 +749,11 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
     harq->BG = 1;
 
   start_meas(dlsch_segmentation_stats);
-  Kb = nr_segmentation(NULL, NULL, harq->B, &harq->C, &harq->K, Zc, &harq->F, harq->BG);
+  nr_segmentation(NULL, NULL, harq->B, &harq->C, &harq->K, Zc, &harq->F, harq->BG);
   stop_meas(dlsch_segmentation_stats);
-  F = harq->F;
 
-  Kr = harq->K;
-#ifdef DEBUG_DLSCH_CODING
-  uint16_t Kr_bytes;
-  Kr_bytes = Kr>>3;
-#endif
-
-  //printf("segment Z %d k %d Kr %d BG %d C %d\n", *Zc,harq->K,Kr,BG,harq->C);
-
-  for (r=0; r<harq->C; r++) {
-    //d_tmp[r] = &harq->d[r][0];
-    //channel_input[r] = &harq->d[r][0];
-#ifdef DEBUG_DLSCH_CODING
-    LOG_D(PHY,"Encoder: B %d F %d \n",harq->B, harq->F);
-    LOG_D(PHY,"start ldpc encoder segment %d/%d\n",r,harq->C);
-    LOG_D(PHY,"input %d %d %d %d %d \n", harq->c[r][0], harq->c[r][1], harq->c[r][2],harq->c[r][3], harq->c[r][4]);
-    for (int cnt =0 ; cnt < 22*(*Zc)/8; cnt ++){
-      LOG_D(PHY,"%d ", harq->c[r][cnt]);
-    }
-    LOG_D(PHY,"\n");
-
-#endif
-    //ldpc_encoder_orig((unsigned char*)harq->c[r],harq->d[r],*Zc,Kb,Kr,BG,0);
-    //ldpc_encoder_optim((unsigned char*)harq->c[r],(unsigned char*)&harq->d[r][0],*Zc,Kb,Kr,BG,NULL,NULL,NULL,NULL);
-  }
-  // encoder_implemparams_t impp;
-  // impp.n_segments=harq->C;
-  // impp.tprep = tprep;
-  // impp.tinput = tinput;
-  // impp.tparity = tparity;
-  // impp.toutput = toutput;
-
-  // for(int j=0;j<(harq->C/8+1);j++) {
-  //   impp.macro_num=j;
-  //   nrLDPC_encoder(harq->c,harq->d,*Zc,Kb,Kr,harq->BG,&impp);
-  // }
-
-#ifdef DEBUG_DLSCH_CODING
-  write_output("enc_input0.m","enc_in0",&harq->c[0][0],Kr_bytes,1,4);
-  write_output("enc_output0.m","enc0",&harq->d[0][0],(3*8*Kr_bytes)+12,1,4);
-#endif
-
-  F = harq->F;
-
-  Kr = harq->K;
-  for (r=0; r<harq->C; r++) {
-
-    if (F>0) {
-      for (int k=(Kr-F-2*(*Zc)); k<Kr-2*(*Zc); k++) {
-	// writing into positions d[r][k-2Zc] as in clause 5.3.2 step 2) in 38.212
-        harq->d[r][k] = NR_NULL;
-	//if (k<(Kr-F+8))
-	//printf("r %d filler bits [%d] = %d \n", r,k, harq->d[r][k]);
-      }
-    }
-
-#ifdef DEBUG_DLSCH_CODING
-    LOG_D(PHY,"rvidx in encoding = %d\n", rel15->rvIndex[0]);
-#endif
-
-    E = nr_get_E(G, harq->C, mod_order, rel15->nrOfLayers, r);
-
-    //#ifdef DEBUG_DLSCH_CODING
-    LOG_D(PHY,"Rate Matching, Code segment %d/%d (coded bits (G) %u, E %d, Filler bits %d, Filler offset %d mod_order %d, nb_rb %d)...\n",
-	  r,
-	  harq->C,
-	  G,
-	  E,
-	  F,
-	  Kr-F-2*(*Zc),
-	  mod_order,nb_rb);
-
-    // for tbslbrm calculation according to 5.4.2.1 of 38.212
-    // if (rel15->nrOfLayers < Nl)
-    //   Nl = rel15->nrOfLayers;
-
-    // Tbslbrm = nr_compute_tbslbrm(rel15->mcsTable[0],nb_rb,Nl);
-
-    // start_meas(dlsch_rate_matching_stats);
-    // nr_rate_matching_ldpc(Ilbrm,
-    //                       Tbslbrm,
-    //                       harq->BG,
-    //                       *Zc,
-    //                       harq->d[r],
-    //                       harq->e+r_offset,
-    //                       harq->C,
-    //                       F,
-    //                       Kr-F-2*(*Zc),
-    //                       rel15->rvIndex[0],
-    //                       E);
-    // stop_meas(dlsch_rate_matching_stats);
-#ifdef DEBUG_DLSCH_CODING
-    for (int i =0; i<16; i++)
-      printf("output ratematching e[%d]= %d r_offset %u\n", i,harq->e[i+r_offset], r_offset);
-#endif
-
-    // start_meas(dlsch_interleaving_stats);
-    // nr_interleaving_ldpc(E,
-		// 	 mod_order,
-		// 	 harq->e+r_offset,
-		// 	 harq->f+r_offset);
-    // stop_meas(dlsch_interleaving_stats);
-
-#ifdef DEBUG_DLSCH_CODING
-    for (int i =0; i<16; i++)
-      printf("output interleaving f[%d]= %d r_offset %u\n", i,harq->f[i+r_offset], r_offset);
-
-    if (r==harq->C-1)
-      write_output("enc_output.m","enc",harq->f,G,1,4);
-#endif
-
-    r_offset += E;
-  }
 #if 1
-  LOG_I(PHY, "dl_encode_count = %d\n", dl_encode_count);
+  // LOG_D(PHY, "dl_encode_count = %d\n", dl_encode_count);
   // if(dl_encode_count == dl_encode_count_set2)
 {
   // LOG_M("harq->f.m","harq->f", harq->f, G+32, 1, 9);
@@ -974,7 +811,7 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
     EncodeHead.rev7 = 0x0;
     EncodeHead.cbNum = harq->C;
     //word 5
-    EncodeHead.qm = stats->current_Qm/2;	 
+    EncodeHead.qm = rel15->qamModOrder[0]/2;	 
     //规定是BPSK qm=0,QPSK qm=1,其他floor(调制阶数/2)；OAI的Qm为2/4/6/8
     EncodeHead.rev8 = 0x0;
     EncodeHead.fillbit = harq->F;
@@ -1062,17 +899,17 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
 #endif
 #if 1
 //调用FPGA的.so中的编码函数
-    LOG_I(PHY, "encoder_load_start\n");
+    LOG_D(PHY, "encoder_load_start\n");
     // printf("EncodeHead_fill_finished\n");
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DL_Encode_LPDC_FPGA, 1);
     encoder_load( &EncodeHead, pEnDataIn, pEnDataOut );
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DL_Encode_LPDC_FPGA, 0);
-    LOG_I(PHY, "encoder_load_end\n");
+    LOG_D(PHY, "encoder_load_end\n");
     // encoder_load( &EncodeHead, pEnDataIn, pEnDataOut );
     //LOG_M("pEnDataOut.m","pEnDataOut", pEnDataOut, G+32, 1, 9);
 #endif
   }
-  dl_encode_count++;  //count +1 after encoding
+  // dl_encode_count++;  //count +1 after encoding
   // free(pEnDataOut);
 #endif
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ENCODING, VCD_FUNCTION_OUT);

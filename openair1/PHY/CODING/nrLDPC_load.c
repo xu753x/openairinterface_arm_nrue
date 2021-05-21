@@ -76,38 +76,26 @@ int load_nrLDPClib(void) {
           printf("open ldpc_fpga_encode error!\n");
           return -1;
      }
-     // int (*add)(int aa, int bb);
-
+     
      //根据动态链接库操作句柄与符号，返回符号对应的地址
-     add = (LDPC_FPGA_EnTx_Test) dlsym(handle, "add");
-     if(!add){
-          printf("FPGA loading add error!\n");
-          dlclose(handle);
-          return -1;
-     }
-#if 1
-     // HugePage_Init = (LDPC_FPGA_HugePage_Init) dlsym(handle, "HugePage_Init");
-     // if(!HugePage_Init){
-     //      printf("FPGA loading HugePage_Init error!\n");
+     // add = (LDPC_FPGA_EnTx_Test) dlsym(handle, "add");
+     // if(!add){
+     //      printf("FPGA loading add error!\n");
      //      dlclose(handle);
      //      return -1;
      // }
-     // int HP = HugePage_Init(1);
-     // if(HP){
-     //      printf("HugePage_Init error!\n");
-     // }
-
-     main234 = (LDPC_FPGA_HugePage_Init) dlsym(handle, "main234");
-     if(!main234){
-          printf("FPGA loading main234 error!\n");
+#if 1
+     HugePage_Init = (LDPC_FPGA_HugePage_Init) dlsym(handle, "HugePage_Init");
+     if(!HugePage_Init){
+          printf("FPGA loading HugePage_Init error!\n");
           dlclose(handle);
           return -1;
      }
-     int HP = main234(1);
+     int HP = HugePage_Init(1);
      if(HP != 0){
-          printf("main234 error!\n");
+          printf("HugePage_Init error!\n");
      }
-printf("load_nrLDPClib \n");
+     LOG_D(PHY,"load_nrLDPClib \n");
      encoder_load = (LDPC_FPGA_EnTx) dlsym(handle, "encoder_load");
      if(!encoder_load){
           printf("FPGA loading encoder_load error!\n");
@@ -115,8 +103,8 @@ printf("load_nrLDPClib \n");
           return -1;
      }
 #endif
-     int sum = add(7, 8);
-     printf("7+8 = %d\n", sum);
+     // int sum = add(7, 8);
+     // printf("7+8 = %d\n", sum);
 
 return 0;
 }

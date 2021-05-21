@@ -47,7 +47,7 @@ typedef struct {
 }encoder_implemparams_t;
 #define INIT0_LDPCIMPLEMPARAMS {0,0,0,NULL,NULL,NULL,NULL}
 typedef int(*nrLDPC_encoderfunc_t)(unsigned char **,unsigned char **,int,int,short, short, encoder_implemparams_t*);
-typedef int(*LDPC_FPGA_EnTx_Test)(int , int);
+// typedef int(*LDPC_FPGA_EnTx_Test)(int , int);
 typedef int(*LDPC_FPGA_HugePage_Init)(int);
 typedef int(*LDPC_FPGA_EnTx)( EncodeInHeaderStruct *pHeader, unsigned char * pSrc, unsigned char * pDst );
 //============================================================================================================================

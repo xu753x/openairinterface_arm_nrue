@@ -23,9 +23,8 @@
 #ifdef LDPC_LOADER
 nrLDPC_decoderfunc_t nrLDPC_decoder;
 nrLDPC_encoderfunc_t nrLDPC_encoder;
-LDPC_FPGA_EnTx_Test add;
+// LDPC_FPGA_EnTx_Test add;
 LDPC_FPGA_HugePage_Init HugePage_Init;
-LDPC_FPGA_HugePage_Init main234;
 LDPC_FPGA_EnTx encoder_load;
 #else
 /* functions to load the LDPC shared lib, implemented in openair1/PHY/CODING/nrLDPC_load.c */
@@ -34,9 +33,8 @@ extern int load_nrLDPClib_ref(char *libversion, nrLDPC_encoderfunc_t * nrLDPC_en
 /* ldpc coder/decoder functions, as loaded by load_nrLDPClib(). */
 extern nrLDPC_decoderfunc_t nrLDPC_decoder;
 extern nrLDPC_encoderfunc_t nrLDPC_encoder;
-extern LDPC_FPGA_EnTx_Test add;
+// extern LDPC_FPGA_EnTx_Test add;
 extern LDPC_FPGA_HugePage_Init HugePage_Init;
-extern LDPC_FPGA_HugePage_Init main234;
 extern LDPC_FPGA_EnTx encoder_load;
 // inline functions:
 #include "openair1/PHY/CODING/nrLDPC_decoder/nrLDPC_init_mem.h"
