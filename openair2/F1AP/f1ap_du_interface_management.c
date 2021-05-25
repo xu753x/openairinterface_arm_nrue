@@ -43,8 +43,12 @@ extern RAN_CONTEXT_t RC;
 int nrb_lut[29] = {11, 18, 24, 25, 31, 32, 38, 51, 52, 65, 66, 78, 79, 93, 106, 107, 121, 132, 133, 135, 160, 162, 189, 216, 217, 245, 264, 270, 273};
 
 int to_NRNRB(int nrb) {
-  for (int i=0;i<29;i++) if (nrb_lut[i] == nrb) return i;
-  AssertFatal(1==0,"nrb %d is not in the list of possible NRNRB\n",nrb);
+  if (RC.nrrrc) {
+    for (int i=0;i<29;i++) if (nrb_lut[i] == nrb) return i;
+    AssertFatal(1==0,"nrb %d is not in the list of possible NRNRB\n",nrb);
+  } else {
+    return nrb;
+  }
 }
 
 int DU_handle_RESET(instance_t instance,
@@ -600,7 +604,7 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
   0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
   assoc_id);
 
-  if (RC.nrrrc[0]->node_type == ngran_gNB_DU) {
+  if (RC.nrrrc && RC.nrrrc[0]->node_type == ngran_gNB_DU) {
     LOG_D(F1AP, "Sending F1AP_SETUP_RESP ITTI message to GNB_APP with assoc_id (%d->%d)\n",
          assoc_id,ENB_MODULE_ID_TO_INSTANCE(assoc_id));
     itti_send_msg_to_task(TASK_GNB_APP, GNB_MODULE_ID_TO_INSTANCE(assoc_id), msg_p);
@@ -1212,7 +1216,7 @@ int DU_handle_gNB_CU_CONFIGURATION_UPDATE(instance_t instance,
   0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
   assoc_id);
 
-  if (RC.nrrrc[0]->node_type == ngran_gNB_DU) {
+  if (RC.nrrrc && RC.nrrrc[0]->node_type == ngran_gNB_DU) {
     LOG_D(F1AP, "Sending F1AP_GNB_CU_CONFIGURATION_UPDATE ITTI message to GNB_APP with assoc_id (%d->%d)\n",
          assoc_id,ENB_MODULE_ID_TO_INSTANCE(assoc_id));
     itti_send_msg_to_task(TASK_GNB_APP, GNB_MODULE_ID_TO_INSTANCE(assoc_id), msg_p);
