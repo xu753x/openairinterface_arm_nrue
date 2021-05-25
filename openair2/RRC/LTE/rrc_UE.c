@@ -500,7 +500,7 @@ rrc_t310_expiration(
                           UE_rrc_inst[ctxt_pP->module_id].Srb2[eNB_index].Srb_info.Srb_id,
                           Rlc_info_um);
       UE_rrc_inst[ctxt_pP->module_id].Srb2[eNB_index].Active = 0;
-      UE_rrc_inst[ctxt_pP->module_id].Srb2[eNB_index].Status = IDLE;
+      UE_rrc_inst[ctxt_pP->module_id].Srb2[eNB_index].StatusSrb = IDLE;
       UE_rrc_inst[ctxt_pP->module_id].Srb2[eNB_index].Next_check_frame = 0;
     }
   } else { // Restablishment procedure
@@ -679,7 +679,7 @@ rrc_ue_establish_srb1(
 {
   // add descriptor from RRC PDU
   UE_rrc_inst[ue_mod_idP].Srb1[eNB_index].Active = 1;
-  UE_rrc_inst[ue_mod_idP].Srb1[eNB_index].Status = RADIO_CONFIG_OK;//RADIO CFG
+  UE_rrc_inst[ue_mod_idP].Srb1[eNB_index].StatusSrb = RADIO_CONFIG_OK;//RADIO CFG
   UE_rrc_inst[ue_mod_idP].Srb1[eNB_index].Srb_info.Srb_id = 1;
   // copy default configuration for now
   //  memcpy(&UE_rrc_inst[ue_mod_idP].Srb1[eNB_index].Srb_info.Lchan_desc[0],&DCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
@@ -703,7 +703,7 @@ rrc_ue_establish_srb2(
 {
   // add descriptor from RRC PDU
   UE_rrc_inst[ue_mod_idP].Srb2[eNB_index].Active = 1;
-  UE_rrc_inst[ue_mod_idP].Srb2[eNB_index].Status = RADIO_CONFIG_OK;//RADIO CFG
+  UE_rrc_inst[ue_mod_idP].Srb2[eNB_index].StatusSrb = RADIO_CONFIG_OK;//RADIO CFG
   UE_rrc_inst[ue_mod_idP].Srb2[eNB_index].Srb_info.Srb_id = 2;
   // copy default configuration for now
   //  memcpy(&UE_rrc_inst[ue_mod_idP].Srb2[eNB_index].Srb_info.Lchan_desc[0],&DCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
