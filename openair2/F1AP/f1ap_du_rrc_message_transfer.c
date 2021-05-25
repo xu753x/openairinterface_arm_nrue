@@ -720,8 +720,8 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(instance_t instance,
           LOG_E(F1AP, "Did not find the UE context associated with UE RNTOI %x, ue_context_p is NULL\n", rnti);
 
         } else {
-          LOG_A(F1AP, "Processing RRCConnectionSetupComplete UE %x\n", rnti);
-          ue_context_p->ue_context.Status = RRC_CONNECTED;
+          LOG_I(F1AP, "Processing RRCConnectionSetupComplete UE %x\n", rnti);
+          ue_context_p->ue_context.StatusRrc = RRC_CONNECTED;
         }
         break;
 
