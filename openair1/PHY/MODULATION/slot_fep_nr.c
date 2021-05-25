@@ -139,6 +139,16 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
         (int16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
         1);
 
+    static int cu_2048 = 1;
+    if(cu_2048==1)
+    {
+      LOG_M("FFT0.m","input",rxdata_ptr,2048,1,3);
+      LOG_M("FFT1.m","output",(int16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],2048,1,1);
+      cudft2048(rxdata_ptr,(int16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
+      LOG_M("cuFFT0.m","input",rxdata_ptr,2048,1,3);
+      LOG_M("cuFFT1.m","output",(int16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],2048,1,1);
+      cu_2048++;
+    }   
 #if UE_TIMING_TRACE
     stop_meas(&ue->rx_dft_stats);
 #endif
