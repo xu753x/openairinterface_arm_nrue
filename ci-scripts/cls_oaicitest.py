@@ -391,6 +391,7 @@ class OaiCiTest():
 			#make sure it is detached
 			Module_UE.Command("detach")
 			#kill CM process
+			SSH=sshconnection.SSHConnection()
 			SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
 			SSH.command('echo ' + Module_UE.HostPassword + ' | sudo -S killall --signal SIGKILL *'+Module_UE.Process['Name']+'*', '\$', 5)
 			SSH.close()
@@ -1089,6 +1090,7 @@ class OaiCiTest():
 		else:#if an ID is specified, it is a module from the yaml infrastructure file
 			Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra[self.ue_id])
 			Module_UE.Command("detach")
+			SSH=sshconnection.SSHConnection()
 			SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
 			SSH.command('echo ' + Module_UE.HostPassword + ' | sudo -S killall --signal SIGKILL *'+Module_UE.Process['Name']+'*', '\$', 5)
 			SSH.close()
