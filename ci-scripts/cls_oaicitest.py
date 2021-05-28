@@ -2235,7 +2235,7 @@ class OaiCiTest():
 			filename='iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
 			self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, self.iperf_args,filename,1)	
 
-		elif self.iperf_direction=="UL":#does not work at the moment
+		elif self.iperf_direction=="UL":
 			logging.debug("Iperf for Module in UL mode detected")
 			#server side EPC
 			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
