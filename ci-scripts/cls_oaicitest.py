@@ -386,6 +386,16 @@ class OaiCiTest():
 		else: #if an ID is specified, it is a module from the yaml infrastructure file
 			#RH
 			Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra[self.ue_id])
+
+			#clean module and processes environement
+			#make sure it is detached
+			Module_UE.Command("detach")
+			#kill CM process
+			SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
+			SSH.command('echo ' + Module_UE.HostPassword + ' | sudo -S killall --signal SIGKILL *'+Module_UE.Process['Name']+'*', '\$', 5)
+			SSH.close()
+
+			#then start cleanly
 			is_module=Module_UE.CheckCMProcess()
 			if is_module:
 				Module_UE.Command("wup")
@@ -1079,6 +1089,9 @@ class OaiCiTest():
 		else:#if an ID is specified, it is a module from the yaml infrastructure file
 			Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra[self.ue_id])
 			Module_UE.Command("detach")
+			SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
+			SSH.command('echo ' + Module_UE.HostPassword + ' | sudo -S killall --signal SIGKILL *'+Module_UE.Process['Name']+'*', '\$', 5)
+			SSH.close()
 			HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)	
 				
 							
@@ -2205,13 +2218,15 @@ class OaiCiTest():
 			SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
 			cmd = 'rm iperf_server_' +  self.testCase_id + '_' + self.ue_id + '.log'
 			SSH.command(cmd,'\$',5)
-			cmd = 'echo $USER; nohup /opt/iperf-2.0.10/iperf -s -B ' + UE_IPAddress + ' -u  2>&1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log' 
+			#iperf3
+			cmd = 'echo $USER; nohup iperf3 -s  2>&1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log' 
 			SSH.command(cmd,'\$',5)
 			#client side EPC
 			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
 			cmd = 'rm iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log'
 			SSH.command(cmd,'\$',5)
-			cmd = 'iperf -c ' + UE_IPAddress + ' ' + self.iperf_args + ' 2>&1 > iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log' 
+			#iperf3
+			cmd = 'iperf3 -c ' + UE_IPAddress + ' ' + self.iperf_args + ' 2>&1 > iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log' 
 			SSH.command(cmd,'\$',int(iperf_time)*5.0)
 			#copy the 2 resulting files locally
 			SSH.copyin(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword, 'iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log', '.')
@@ -2226,14 +2241,14 @@ class OaiCiTest():
 			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
 			cmd = 'rm iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
 			SSH.command(cmd,'\$',5)
-			cmd = 'echo $USER; nohup iperf -s -i 1 -u 2>&1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
+			cmd = 'echo $USER; nohup iperf3 -s 2>&1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
 			SSH.command(cmd,'\$',5)
 
 			#client side UE
 			SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
 			cmd = 'rm iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log'
 			SSH.command(cmd,'\$',5)
-			SSH.command('/opt/iperf-2.0.10/iperf -c 192.172.0.1 ' + self.iperf_args + ' 2>&1 > iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log', '\$', int(iperf_time)*5.0)
+			SSH.command('iperf3 -c 192.172.0.1 ' + self.iperf_args + ' 2>&1 > iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log', '\$', int(iperf_time)*5.0)
 
 			#copy the 2 resulting files locally
 			SSH.copyin(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword, 'iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log', '.')
