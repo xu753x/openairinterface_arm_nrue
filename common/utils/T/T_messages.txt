@@ -3513,6 +3513,11 @@ ID = VCD_FUNCTION_gNB_DLSCH_ULSCH_SCHEDULER
     GROUP = ALL:VCD:ENB:VCD_FUNCTION
     FORMAT = int,value
     VCD_NAME = macxface_gNB_dlsch_ulsch_scheduler
+ID = VCD_FUNCTION_CUFFT_WAIT
+    DESC = VCD function CUFFT_WAIT
+    GROUP = ALL:VCD:ENB:VCD_FUNCTION
+    FORMAT = int,value
+    VCD_NAME = cufft_wait
 
   #function for nrUE
 ID = VCD_FUNCTION_NR_UE_ULSCH_ENCODING

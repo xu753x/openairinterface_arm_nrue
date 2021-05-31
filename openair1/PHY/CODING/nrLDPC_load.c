@@ -84,17 +84,17 @@ int load_cuFFT(void) {
      //根据动态链接库操作句柄与符号，返回符号对应的地址
      cudft2048 = (cudft_EnTx) dlsym(handle, "_Z9cudft2048PsS_h");
      if(!cudft2048){
-          printf("cuFFT.so error!\n");
+          printf("cuFFT.so cudft2048 error!\n");
           dlclose(handle);
           return -1;
      }
-     // cudft204 = (cudft_EnTx) dlsym(handle, "_Z8testtestPsS_h");
-     // if(!cudft204){
-     //      printf("cutest.so error!\n");
-     //      dlclose(handle);
-     //      return -1;
-     // }
-
+     load_cudft = (cudft_load) dlsym(handle, "_Z10load_cuFFTv");
+     if(!load_cudft){
+          printf("cutest.so load_cudft error!\n");
+          dlclose(handle);
+          return -1;
+     }
+     load_cudft();
 return 0;
 }
 

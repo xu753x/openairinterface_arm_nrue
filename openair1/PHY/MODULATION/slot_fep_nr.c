@@ -27,6 +27,8 @@
 #include "PHY/NR_UE_ESTIMATION/nr_estimation.h"
 #include <common/utils/LOG/log.h>
 #include "PHY/CODING/nrLDPC_extern.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/log.h"
 
 //#define DEBUG_FEP
 
@@ -139,16 +141,6 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
         (int16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
         1);
 
-    static int cu_2048 = 1;
-    if(cu_2048==1)
-    {
-      LOG_M("FFT0.m","input",rxdata_ptr,2048,1,3);
-      LOG_M("FFT1.m","output",(int16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],2048,1,1);
-      cudft2048(rxdata_ptr,(int16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
-      LOG_M("cuFFT0.m","input",rxdata_ptr,2048,1,3);
-      LOG_M("cuFFT1.m","output",(int16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],2048,1,1);
-      cu_2048++;
-    }   
 #if UE_TIMING_TRACE
     stop_meas(&ue->rx_dft_stats);
 #endif
@@ -339,13 +331,15 @@ int nr_slot_fep_ul(NR_DL_FRAME_PARMS *frame_parms,
 
   }
 
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_CUFFT_WAIT, 1 );
   cudft2048(rxdata_ptr,
       (int16_t *)&rxdataF[symbol * frame_parms->ofdm_symbol_size],
-      1);
+      0);
   // dft(dftsize,
   //     rxdata_ptr,
   //     (int16_t *)&rxdataF[symbol * frame_parms->ofdm_symbol_size],
   //     1);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_CUFFT_WAIT, 0 );
 
   // clear DC carrier from OFDM symbols
   rxdataF[symbol * frame_parms->ofdm_symbol_size] = 0;
