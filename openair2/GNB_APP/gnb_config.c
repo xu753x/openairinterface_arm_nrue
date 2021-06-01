@@ -2062,7 +2062,7 @@ void nr_read_config_and_init(void) {
 
   RCconfig_NR_L1();
   set_node_type();
-  RCconfig_nr_macrlc();
+  /* RCconfig_nr_macrlc();
 
   LOG_I(PHY, "%s() RC.nb_nr_L1_inst:%d\n", __FUNCTION__, RC.nb_nr_L1_inst);
 
@@ -2083,9 +2083,9 @@ void nr_read_config_and_init(void) {
     memset((void *)RC.nrrrc[gnb_id],0,sizeof(gNB_RRC_INST));
     msg_p = itti_alloc_new_message (TASK_GNB_APP, 0, NRRRC_CONFIGURATION_REQ);
     RCconfig_NRRRC(msg_p,gnb_id, RC.nrrrc[gnb_id]);
-  }
+  }*/
 
-  if (NODE_IS_CU(RC.nrrrc[0]->node_type)) {
+  if (NODE_IS_CU(node_type)) {
     pdcp_layer_init();
 //    nr_DRB_preconfiguration(0x1234);
     rrc_init_nr_global_param();

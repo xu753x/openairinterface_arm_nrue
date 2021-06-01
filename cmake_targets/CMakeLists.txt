@@ -3577,6 +3577,7 @@ add_executable(nr-ittisim
   ${T_SOURCE}
   ${CONFIG_SOURCES}
   ${SHLIB_LOADER_SOURCES}
+  ${OPENAIR2_DIR}/ENB_APP/flexran_agent_ran_api_to_fix.c
   )
 target_compile_definitions(nr-ittisim PUBLIC NEW_GTPU)
 

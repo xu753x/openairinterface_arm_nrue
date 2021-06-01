@@ -1339,6 +1339,7 @@ static void rrc_ue_generate_RRCSetupComplete(
   uint8_t size;
   const char *nas_msg;
   int   nas_msg_length;
+#ifndef ITTI_SIM
   NR_UE_MAC_INST_t *mac = get_mac_inst(0);
 
   if (mac->cg &&
@@ -1346,7 +1347,7 @@ static void rrc_ue_generate_RRCSetupComplete(
       mac->cg->spCellConfig->spCellConfigDedicated &&
       mac->cg->spCellConfig->spCellConfigDedicated->csi_MeasConfig)
     AssertFatal(1==0,"2 > csi_MeasConfig is not null\n");
-
+#endif
  if (AMF_MODE_ENABLED) {
 #if defined(ITTI_SIM)
     as_nas_info_t initialNasMsg;
@@ -1453,10 +1454,12 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
 	 // Release T300 timer
 	 NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].T300_active = 0;
 
+#ifndef ITTI_SIM
 	 nr_rrc_ue_process_masterCellGroup(
 					   ctxt_pP,
 					   gNB_index,
 					   &dl_ccch_msg->message.choice.c1->choice.rrcSetup->criticalExtensions.choice.rrcSetup->masterCellGroup);
+#endif
 	 nr_sa_rrc_ue_process_radioBearerConfig(
 						ctxt_pP,
 						gNB_index,
@@ -1803,6 +1806,7 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
   }
 }
 
+
 //-----------------------------------------------------------------------------
 int32_t
 nr_rrc_ue_establish_srb1(
@@ -1820,7 +1824,6 @@ nr_rrc_ue_establish_srb1(
   LOG_I(NR_RRC, "[UE %d], CONFIG_SRB1 %d corresponding to gNB_index %d\n", ue_mod_idP, DCCH, gNB_index);
   return(0);
 }
-
 //-----------------------------------------------------------------------------
 int32_t
 nr_rrc_ue_establish_srb2(
@@ -2043,6 +2046,7 @@ nr_rrc_ue_establish_srb2(
 		     NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &kRRCenc);
      derive_key_rrc_int(NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm,
 		     NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &kRRCint);
+#ifndef ITTI_SIM
      // Refresh SRBs
       nr_rrc_pdcp_config_asn1_req(ctxt_pP,
                                   radioBearerConfig->srb_ToAddModList,
@@ -2065,7 +2069,7 @@ nr_rrc_ue_establish_srb2(
                                   NULL,
                                   NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->rlc_BearerToAddModList
                                   );
-
+#endif
      for (cnt = 0; cnt < radioBearerConfig->srb_ToAddModList->list.count; cnt++) {
        SRB_id = radioBearerConfig->srb_ToAddModList->list.array[cnt]->srb_Identity;
        LOG_D(NR_RRC,"[UE %d]: Frame %d SRB config cnt %d (SRB%ld)\n", ctxt_pP->module_id, ctxt_pP->frame, cnt, SRB_id);

@@ -86,6 +86,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 #if ITTI_SIM
 #include "nr_nas_msg_sim.h"
 #endif
+#include <openair3/ocp-gtpu/gtp_itf.h>
 
 pthread_cond_t nfapi_sync_cond;
 pthread_mutex_t nfapi_sync_mutex;
@@ -93,6 +94,7 @@ int nfapi_sync_var=-1; //!< protected by mutex \ref nfapi_sync_mutex
 
 uint32_t timing_advance = 0;
 uint64_t num_missed_slots=0;
+uint32_t       N_RB_DL=106;
 
 int split73=0;
 void sendFs6Ul(PHY_VARS_eNB *eNB, int UE_id, int harq_pid, int segmentID, int16_t *data, int dataLen, int r_offset) {
@@ -171,6 +173,7 @@ char uecap_xer_in=0;
  * this is very hackish - find a proper solution
  */
 uint8_t abstraction_flag=0;
+THREAD_STRUCT thread_struct;
 
 /* forward declarations */
 void set_default_frame_parms(nfapi_nr_config_request_scf_t *config[MAX_NUM_CCs], NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]);
@@ -591,11 +594,6 @@ int main( int argc, char **argv )
     nr_read_config_and_init();
     // don't create if node doesn't connect to RRC/S1/GTP
     AssertFatal(create_gNB_tasks(1) == 0,"cannot create ITTI tasks\n");
-    for (int gnb_id = 0; gnb_id < RC.nb_nr_inst; gnb_id++) {
-      MessageDef *msg_p = itti_alloc_new_message (TASK_GNB_APP, 0, NRRRC_CONFIGURATION_REQ);
-      NRRRC_CONFIGURATION_REQ(msg_p) = RC.nrrrc[gnb_id]->configuration;
-      itti_send_msg_to_task (TASK_RRC_GNB, GNB_MODULE_ID_TO_INSTANCE(gnb_id), msg_p);
-    }
   } else {
     printf("No ITTI, Initializing L1\n");
     return 0;
