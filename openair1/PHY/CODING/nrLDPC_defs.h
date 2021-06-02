@@ -50,6 +50,7 @@ typedef int(*nrLDPC_encoderfunc_t)(unsigned char **,unsigned char **,int,int,sho
 // typedef int(*LDPC_FPGA_EnTx_Test)(int , int);
 typedef int(*LDPC_FPGA_HugePage_Init)(int);
 typedef int(*LDPC_FPGA_EnTx)( EncodeInHeaderStruct *pHeader, unsigned char * pSrc, unsigned char * pDst );
+typedef int(*LDPC_FPGA_DeTx)( DecodeInHeaderStruct *pHeader, unsigned char * pSrc, unsigned char * pDst );
 //============================================================================================================================
 // decoder interface
 /**

@@ -102,6 +102,12 @@ int load_nrLDPClib(void) {
           dlclose(handle);
           return -1;
      }
+     decoder_load = (LDPC_FPGA_DeTx) dlsym(handle, "decoder_load");
+     if(!decoder_load){
+          printf("FPGA loading decoder_load error!\n");
+          dlclose(handle);
+          return -1;
+     }
 #endif
      // int sum = add(7, 8);
      // printf("7+8 = %d\n", sum);

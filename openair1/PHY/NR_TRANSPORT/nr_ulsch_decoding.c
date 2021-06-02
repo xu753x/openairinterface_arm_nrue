@@ -499,6 +499,14 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   uint8_t n_layers        = pusch_pdu->nrOfLayers;
   // ------------------------------------------------------------------
 
+  static uint32_t ul_decode_count = 0;
+  uint32_t ul_decode_count_set2 = 8; 
+  uint32_t iLS, lsIndex = 0;
+  uint32_t E0, E1 = 0;
+  DecodeInHeaderStruct DecodeHead;
+  // uint8_t *pEnDataIn = NULL;
+  // uint8_t *pEnDataOut = NULL;
+
    if (!ulsch_llr) {
     LOG_E(PHY,"ulsch_decoding.c: NULL ulsch_llr pointer\n");
     return 1;
@@ -650,5 +658,79 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     offset += (Kr_bytes - (harq_process->F>>3) - ((harq_process->C>1)?3:0));
     //////////////////////////////////////////////////////////////////////////////////////////
   }
+  if(ul_decode_count == ul_decode_count_set2){
+    DecodeHead.cbNum = harq_process->C;
+    DecodeHead.tbSizeB = A>>3;
+    DecodeHead.pktLen = 32+(DecodeHead.cbNum-1)*32+((DecodeHead.tbSizeB+32-1)/32)*32;//Byte，pktLen=decoder header(32byte)+ DDR Header + tbszie (byte)，并且32Byte对齐，是32的整数倍
+    DecodeHead.pduSize = DecodeHead.pktLen/4; //word
+    DecodeHead.qm = Qm/2;//规定是BPSK qm=0,QPSK qm=1,其他floor(调制阶数/2)；OAI的Qm为2/4/6/8
+    DecodeHead.sfn = frame;
+    DecodeHead.slotNum = nr_tti_rx;
+    DecodeHead.subfn = DecodeHead.slotNum/2;
+    DecodeHead.fillbit = harq_process->F;
+    DecodeHead.bg = p_decParams->BG-1;  //规定选择协议base grape1 bg=0; base grape2 bg=1；OAI的BG大了1
+    ul_find_iLS_lsIndex(&harq_process->Z, &iLS, &lsIndex);
+    DecodeHead.iLs = iLS;
+    DecodeHead.lfSizeIx = lsIndex;
+    if(DecodeHead.bg == 0){
+      DecodeHead.maxRowNm = 46;
+    }
+    else{
+      DecodeHead.maxRowNm = 42;
+    }
+
+    if(DecodeHead.cbNum == 1){
+      DecodeHead.kpInByte = ((harq_process->B)/DecodeHead.cbNum);   //decode的kpInByte应该用bit，encode用的Byte
+    }
+    else{
+      DecodeHead.kpInByte = ((harq_process->B+((DecodeHead.cbNum)*24))/DecodeHead.cbNum);
+    }
+    nr_get_E0_E1(G, harq_process->C, Qm, n_layers, r, &E0, &E1);
+    DecodeHead.e0 = E0;
+    DecodeHead.e1 = E1;
+    DecodeHead.rvIdx = pusch_pdu->pusch_data.rv_index;
+    DecodeHead.ndi = 1;        //1表示新传，0表示重传
+    DecodeHead.flush = 0;
+    DecodeHead.maxIter = 4;     //最大迭代次数
+    DecodeHead.maxRvIdx = 0;
+
+    DecodeHead.pktType = 0x10;
+    DecodeHead.chkCode = 0xFAFA;
+    DecodeHead.pktTpTmp = 0;
+    DecodeHead.sectorId = 0;     //=0表示单小区
+    DecodeHead.pduIdx = 0;       //=0表示第一个码字，总共一个码字
+    DecodeHead.lastTb = 1;
+    DecodeHead.firstTb = 1;      //=1表示本slot只有一个TB
+    DecodeHead.gamma = DecodeHead.cbNum - (G/(n_layers*(2*DecodeHead.qm)))%DecodeHead.cbNum;        //=1表示本slot只有一个TB
+
+    // LOG_M("ul_decode_before.m","before", ulsch_llr, G, 1, 4);
+  }
+  ul_decode_count++;  //count +1 after encoding
+  LOG_I(PHY,"ul_decode_count = %d\n", ul_decode_count);
+
   return 1;
+}
+
+void  ul_find_iLS_lsIndex(unsigned int *LDPC_lifting_size, uint32_t *iLS_out, uint32_t *lsIndex_out)
+{
+  unsigned int Set_of_LDPC_lifting_size[8][8] = {
+  {2,4,8,16,32,64,128,256},
+  {3,6,12,24,48,96,192,384},
+  {5,10,20,40,80,160,320},
+  {7,14,28,56,112,224},
+  {9,18,36,72,144,288},
+  {11,22,44,88,176,352},
+  {13,26,52,104,208},
+  {15,30,60,120,240}};
+
+  uint32_t iLS,lsIndex;
+
+  for(iLS = 0; iLS < 8; iLS++) {
+    for(lsIndex = 0; lsIndex < 8; lsIndex++){
+      if(*LDPC_lifting_size == Set_of_LDPC_lifting_size[iLS][lsIndex]){
+        *iLS_out = iLS;
+        *lsIndex_out = lsIndex;
+      }
+    }
+  }
 }

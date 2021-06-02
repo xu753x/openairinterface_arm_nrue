@@ -241,7 +241,7 @@ void clean_gNB_dlsch(NR_gNB_DLSCH_t *dlsch)
   }
 }
 
-#if 0
+#if 1
 // unsigned char EnDataOut[0x20000]={0};
 int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
 		      unsigned char *a,
@@ -323,7 +323,7 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
   }
   G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs,mod_order,rel15->nrOfLayers);
 
-  LOG_I(PHY,"dlsch coding A %d G %d (nb_rb %d, nb_symb_sch %d, nb_re_dmrs %d, length_dmrs %d, mod_order %d)\n", A,G, nb_rb,nb_symb_sch,nb_re_dmrs,length_dmrs,mod_order);
+  LOG_D(PHY,"dlsch coding A %d G %d (nb_rb %d, nb_symb_sch %d, nb_re_dmrs %d, length_dmrs %d, mod_order %d)\n", A,G, nb_rb,nb_symb_sch,nb_re_dmrs,length_dmrs,mod_order);
 
   if (A > 3824) {
     // Add 24-bit crc (polynomial A) to payload
@@ -491,7 +491,7 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
 
     r_offset += E;
   }
-#if 1
+#if 0
   LOG_I(PHY, "dl_encode_count = %d\n", dl_encode_count);
   // if(dl_encode_count == dl_encode_count_set2)
 {
@@ -657,7 +657,7 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
 }
 #endif
 
-#if 1
+#if 0
 //FPGA加速，删除了部分OAI中的encode函数
 int nr_dlsch_encoding_fpga_ldpc(PHY_VARS_gNB *gNB,
 		      unsigned char *a,

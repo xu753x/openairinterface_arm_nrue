@@ -82,20 +82,7 @@ int16_t find_nr_dlsch(uint16_t rnti, PHY_VARS_gNB *gNB,find_type_t type);
 
 NR_gNB_SCH_STATS_t *find_nr_dlsch_stats(uint16_t rnti, PHY_VARS_gNB *gNB,find_type_t type);
 
-// int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
-// 		      unsigned char *a,int frame,
-// 		      uint8_t slot,
-// 		      NR_gNB_DLSCH_t *dlsch,
-// 		      NR_DL_FRAME_PARMS* frame_parms,
-// 		      time_stats_t *tinput,
-// 		      time_stats_t *tprep,
-// 		      time_stats_t *tparity,
-// 		      time_stats_t *toutput,
-// 		      time_stats_t *dlsch_rate_matching_stats,
-// 		      time_stats_t *dlsch_interleaving_stats,
-// 		      time_stats_t *dlsch_segmentation_stats);
-
-int nr_dlsch_encoding_fpga_ldpc(PHY_VARS_gNB *gNB,
+int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
 		      unsigned char *a,int frame,
 		      uint8_t slot,
 		      NR_gNB_DLSCH_t *dlsch,
@@ -106,7 +93,20 @@ int nr_dlsch_encoding_fpga_ldpc(PHY_VARS_gNB *gNB,
 		      time_stats_t *toutput,
 		      time_stats_t *dlsch_rate_matching_stats,
 		      time_stats_t *dlsch_interleaving_stats,
-		      time_stats_t *dlsch_segmentation_stats);			  	  
+		      time_stats_t *dlsch_segmentation_stats);
+
+// int nr_dlsch_encoding_fpga_ldpc(PHY_VARS_gNB *gNB,
+// 		      unsigned char *a,int frame,
+// 		      uint8_t slot,
+// 		      NR_gNB_DLSCH_t *dlsch,
+// 		      NR_DL_FRAME_PARMS* frame_parms,
+// 		      time_stats_t *tinput,
+// 		      time_stats_t *tprep,
+// 		      time_stats_t *tparity,
+// 		      time_stats_t *toutput,
+// 		      time_stats_t *dlsch_rate_matching_stats,
+// 		      time_stats_t *dlsch_interleaving_stats,
+// 		      time_stats_t *dlsch_segmentation_stats);			  	  
 
 void init_dlsch_tpool(uint8_t nun_dlsch_threads);
 void nr_emulate_dlsch_payload(uint8_t* payload, uint16_t size);

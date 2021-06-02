@@ -358,6 +358,7 @@ void nr_store_dlsch_buffer(module_id_t module_id,
                                                       0,
                                                       0);
     sched_ctrl->num_total_bytes += sched_ctrl->rlc_status[lcid].bytes_in_buffer;
+    // sched_ctrl->num_total_bytes = 8000;
     LOG_D(NR_MAC,
         "%d.%d, LCID%d:->DLSCH, RLC status %d bytes. \n",
         frame,
@@ -519,6 +520,7 @@ void pf_dl(module_id_t module_id,
       sched_ctrl->time_domain_allocation = 2;
       sched_ctrl->mcsTableIdx = 0;
       sched_ctrl->mcs = 9;
+      // sched_ctrl->mcs = 22;
       sched_ctrl->numDmrsCdmGrpsNoData = sched_ctrl->active_bwp ? 2 : 1;
       uint8_t N_PRB_DMRS =
 	getN_PRB_DMRS(sched_ctrl->active_bwp, sched_ctrl->numDmrsCdmGrpsNoData);
@@ -611,6 +613,7 @@ void pf_dl(module_id_t module_id,
     // modulation scheme
     sched_ctrl->mcsTableIdx = 0;
     sched_ctrl->mcs = 9;
+    // sched_ctrl->mcs = 22;
     sched_ctrl->numDmrsCdmGrpsNoData = sched_ctrl->active_bwp ? 1 : 2;
 
     // Freq-demain allocation
@@ -650,6 +653,8 @@ void pf_dl(module_id_t module_id,
     sched_ctrl->rbSize = rbSize;
     sched_ctrl->rbStart = rbStart;
 
+    // LOG_I(MAC,"dlsch  :  rbSize %d, TBS %d, slot %d, symbols %d, frame %d, ta_frame %d, mcs %d sched_dl bytes %d\n",
+    //  rbSize, TBS, slot, nrOfSymbols, frame , sched_ctrl->ta_frame, sched_ctrl->mcs, sched_ctrl->num_total_bytes);
     /* transmissions: directly allocate */
     n_rb_sched -= sched_ctrl->rbSize;
     for (int rb = 0; rb < sched_ctrl->rbSize; rb++)

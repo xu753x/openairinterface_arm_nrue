@@ -77,7 +77,7 @@ void nr_pdsch_codeword_scrambling_optim(uint8_t *in,
 					uint32_t* out) {
   
   uint32_t x1, x2, s=0;
-  // uint32_t in32 = 0;
+  uint32_t in32 = 0;
   // static uint32_t count_data = 0; 
   //  uint8_t *u8data;
   uint32_t *pin32;
@@ -90,7 +90,7 @@ void nr_pdsch_codeword_scrambling_optim(uint8_t *in,
 
 
 #if defined(__AVX2__)
-#if 0  //OAI自己的加扰代码
+#if 1  //OAI自己的加扰代码
   for (int i=0; i<((size>>5)+((size&0x1f) > 0 ? 1 : 0)); i++) {
     in32=_mm256_movemask_epi8(_mm256_slli_epi16(((__m256i*)in)[i],7));
     out[i]=(in32^s);
@@ -102,13 +102,13 @@ void nr_pdsch_codeword_scrambling_optim(uint8_t *in,
     //printf("in[%d] %x => %x\n",i,in32,out[i]);
     s=lte_gold_generic(&x1, &x2, 0);
   }
-  if(count_data == 9)
-  {
-    LOG_M("out1.m","out1", out, (byteSize+3)/4, 1, 9);
-  }
-   count_data++;
+  // if(count_data == 9)
+  // {
+  //   LOG_M("out1.m","out1", out, (byteSize+3)/4, 1, 9);
+  // }
+  //  count_data++;
 #endif
-#if 1
+#if 0
   //让FPGA输出的每个BYTE中的高低位bit翻转
   //LOG_I(PHY, "in = %02x, %02x, %02x, %02x, %02x, %02x, %02x, %02x\n",in[0],in[1],in[2],in[3],in[4],in[5],in[6],in[7]);
   Byte_Reverse_11(in, in, byteSize);
@@ -222,16 +222,16 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
     /// CRC, coding, interleaving and rate matching
     AssertFatal(harq->pdu!=NULL,"harq->pdu is null\n");
     start_meas(dlsch_encoding_stats);
-    // nr_dlsch_encoding(gNB,
-		//       harq->pdu, frame, slot, dlsch, frame_parms,tinput,tprep,tparity,toutput,
-		//       dlsch_rate_matching_stats,
-		//       dlsch_interleaving_stats,
-		//       dlsch_segmentation_stats);
-    nr_dlsch_encoding_fpga_ldpc(gNB,
+    nr_dlsch_encoding(gNB,
 		      harq->pdu, frame, slot, dlsch, frame_parms,tinput,tprep,tparity,toutput,
 		      dlsch_rate_matching_stats,
 		      dlsch_interleaving_stats,
 		      dlsch_segmentation_stats);
+    // nr_dlsch_encoding_fpga_ldpc(gNB,
+		//       harq->pdu, frame, slot, dlsch, frame_parms,tinput,tprep,tparity,toutput,
+		//       dlsch_rate_matching_stats,
+		//       dlsch_interleaving_stats,
+		//       dlsch_segmentation_stats);
     stop_meas(dlsch_encoding_stats);
 #ifdef DEBUG_DLSCH
     printf("PDSCH encoding:\nPayload:\n");

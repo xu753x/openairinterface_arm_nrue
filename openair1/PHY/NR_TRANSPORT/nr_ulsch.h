@@ -94,3 +94,5 @@ void dump_pusch_stats(FILE *fd,PHY_VARS_gNB *gNB);
 void clear_pusch_stats(PHY_VARS_gNB *gNB);
 
 NR_gNB_SCH_STATS_t *get_ulsch_stats(PHY_VARS_gNB *gNB,NR_gNB_ULSCH_t *ulsch);
+
+void  ul_find_iLS_lsIndex(unsigned int *LDPC_lifting_size, uint32_t *iLS_out, uint32_t *lsIndex_out);

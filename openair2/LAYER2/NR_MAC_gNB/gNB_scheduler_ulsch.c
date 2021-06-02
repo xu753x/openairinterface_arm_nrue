@@ -661,6 +661,7 @@ void pf_ul(module_id_t module_id,
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels[CC_id].ServingCellConfigCommon;
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
   const int min_rb = 5;
+  // const int min_rb = 100;
   float coeff_ue[MAX_MOBILES_PER_GNB];
   // UEs that could be scheduled
   int ue_array[MAX_MOBILES_PER_GNB];
@@ -765,6 +766,7 @@ void pf_ul(module_id_t module_id,
     /* Calculate TBS from MCS */
     NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
     const int mcs = 9;
+    // const int mcs = 16;
     sched_pusch->mcs = mcs;
     sched_pusch->R = nr_get_code_rate_ul(mcs, ps->mcs_table);
     sched_pusch->Qm = nr_get_Qm_ul(mcs, ps->mcs_table);
@@ -808,6 +810,8 @@ void pf_ul(module_id_t module_id,
                                             0,
                                             1 /* NrOfLayers */)
                              >> 3;
+          // LOG_I(NR_MAC,"rbSize %d, TBS %d, est buf %d, sched_ul %d, frame %d, slot %d, nrOfSymbols %d, num_dmrs_symb %d\n",
+          // sched_pusch->rbSize, sched_pusch->tb_size, sched_ctrl->estimated_ul_buffer, sched_ctrl->sched_ul_bytes, frame, slot, ps->nrOfSymbols, ps->num_dmrs_symb);
 
       /* Mark the corresponding RBs as used */
       n_rb_sched -= sched_pusch->rbSize;
@@ -898,8 +902,8 @@ void pf_ul(module_id_t module_id,
                              >> 3;
     } while (rbStart + rbSize < bwpSize && rballoc_mask[rbStart+rbSize] &&
              sched_pusch->tb_size < B);
-    LOG_D(NR_MAC,"rbSize %d, TBS %d, est buf %d, sched_ul %d, B %d\n",
-          rbSize, sched_pusch->tb_size, sched_ctrl->estimated_ul_buffer, sched_ctrl->sched_ul_bytes, B);
+    // LOG_I(NR_MAC,"rbSize %d, TBS %d, est buf %d, sched_ul %d, B %d, frame %d, slot %d\n",
+    //       rbSize, sched_pusch->tb_size, sched_ctrl->estimated_ul_buffer, sched_ctrl->sched_ul_bytes, B, frame, slot);
 
     /* Mark the corresponding RBs as used */
     n_rb_sched -= sched_pusch->rbSize;
