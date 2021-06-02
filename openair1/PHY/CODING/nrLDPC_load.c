@@ -71,7 +71,7 @@ int load_nrLDPClib(void) {
      nrLDPC_encoder = (nrLDPC_encoderfunc_t)shlib_fdesc[1].fptr;
 
      //手动加载指定位置的so动态库
-     void *handle = dlopen("/home/witcomm/work/yihz_5gran/FecDemo/cDemo2/ldpc_fpga_encode.so", RTLD_LAZY|RTLD_NODELETE|RTLD_GLOBAL);
+     void *handle = dlopen("/home/witcomm/work/yihz_5gran/ran/yihz/FecDemo/cDemo2/ldpc_fpga_encode.so", RTLD_LAZY|RTLD_NODELETE|RTLD_GLOBAL);
      if(!handle){
           printf("open ldpc_fpga_encode error!\n");
           return -1;
