@@ -1472,7 +1472,13 @@ void vnf_handle_nr_rx_data_indication(void *pRecvMsg, int recvMsgLen, vnf_p7_t* 
 		{
 			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: Failed to unpack message\n", __FUNCTION__);
 		}
-
+		else
+		{
+			if(vnf_p7->_public.nr_rx_data_indication)
+			{
+				(vnf_p7->_public.nr_rx_data_indication)(&ind);
+			}
+		}
 	}
 }
 
@@ -1491,7 +1497,15 @@ void vnf_handle_nr_crc_indication(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_
 		{
 			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: Failed to unpack message\n", __FUNCTION__);
 		}
-		
+		else
+		{
+			if(vnf_p7->_public.nr_crc_indication)
+			{	
+				//nfapi_nr_crc_indication_t temp = {};
+				//memset(&temp,1,sizeof(temp)); memset(temp.crc_list,1,sizeof(temp.crc_list[0]));
+				(vnf_p7->_public.nr_crc_indication)(&ind);
+			}
+		}
 	}
 }
 
@@ -1510,7 +1524,13 @@ void vnf_handle_nr_srs_indication(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_
 		{
 			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: Failed to unpack message\n", __FUNCTION__);
 		}
-		
+		else
+		{
+			if(vnf_p7->_public.nr_srs_indication)
+			{
+				(vnf_p7->_public.nr_srs_indication)(&ind);
+			}
+		}
 	}
 }
 
@@ -1528,6 +1548,13 @@ void vnf_handle_nr_uci_indication(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_
 		if(nfapi_nr_p7_message_unpack(pRecvMsg, recvMsgLen, &ind, sizeof(ind), &vnf_p7->_public.codec_config) < 0)
 		{
 			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: Failed to unpack message\n", __FUNCTION__);
+		}
+		else
+		{
+			if(vnf_p7->_public.nr_uci_indication)
+			{
+				(vnf_p7->_public.nr_uci_indication)(&ind);
+			}
 		}
 	}
 }
@@ -1547,7 +1574,13 @@ void vnf_handle_nr_rach_indication(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf
 		{
 			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: Failed to unpack message\n", __FUNCTION__);
 		}
-		
+		else
+		{
+			if(vnf_p7->_public.nr_rach_indication)
+			{
+				(vnf_p7->_public.nr_rach_indication)(&ind);
+			}
+		}
 	}
 }
 

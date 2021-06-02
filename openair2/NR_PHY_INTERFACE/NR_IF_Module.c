@@ -90,7 +90,7 @@ void handle_nr_uci(NR_UL_IND_t *UL_info)
   if(NFAPI_MODE == NFAPI_MODE_PNF) {
     if (UL_info->uci_ind.num_ucis>0) {
       //LOG_D(PHY,"UL_info->crc_ind.crc_indication_body.number_of_crcs:%d CRC_IND:SFN/SF:%d\n", UL_info->crc_ind.crc_indication_body.number_of_crcs, NFAPI_SFNSF2DEC(UL_info->crc_ind.sfn_sf));
-      //oai_nfapi_nr_uci_indication(&UL_info->uci_ind);
+      oai_nfapi_nr_uci_indication(&UL_info->uci_ind);
       UL_info->uci_ind.num_ucis = 0;
     }
   }
