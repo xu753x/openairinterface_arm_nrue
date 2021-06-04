@@ -37,6 +37,7 @@
 #include "PHY/sse_intrin.h"
 
 //#define DEBUG_LLR_SIC
+// #define DEBUG_AVX_LLR
 
 
 int16_t nr_zeros[8] __attribute__ ((aligned(16))) = {0,0,0,0,0,0,0,0};
@@ -682,9 +683,17 @@ void nr_dlsch_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
 {
 
 #if defined(__x86_64__) || defined(__i386__)
+#ifdef __AVX2__
+  printf("DLSCH 16QAM AVX\n");
+  __m256i *rxF = (__m256i *)&rxdataF_comp[0][(symbol * nb_rb * 12)];
+  __m256i *ch_mag;
+  __m256i llr256[2];
+  register __m256i ymm0;
+#else
   __m128i *rxF = (__m128i*)&rxdataF_comp[0][(symbol*nb_rb*12)];
   __m128i *ch_mag;
   __m128i llr128[2];
+#endif
   uint32_t *llr32;
 #elif defined(__arm__)
   int16x8_t *rxF = (int16x8_t*)&rxdataF_comp[0][(symbol*nb_rb*12)];
@@ -713,7 +722,11 @@ void nr_dlsch_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
 #endif
 
 #if defined(__x86_64__) || defined(__i386__)
+#ifdef __AVX2__
+  ch_mag = (__m256i *)&dl_ch_mag[0][(symbol * nb_rb * 12)];
+#else
   ch_mag = (__m128i*)&dl_ch_mag[0][(symbol*nb_rb*12)];
+#endif
 #elif defined(__arm__)
   ch_mag = (int16x8_t*)&dl_ch_mag[0][(symbol*nb_rb*12)];
 #endif
@@ -724,6 +737,12 @@ void nr_dlsch_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
   else
     *llr32p += (len<<2);
 
+#ifdef __AVX2__
+  unsigned char len_mod8 = len&7;
+  printf("length = %d, len_mod8 = %d\n", len, len_mod4);
+  len >>= 3;  // length in quad words (4 REs)
+  len += (len_mod8 == 0 ? 0 : 1);
+#else
  // printf("len=%d\n", len);
   len_mod4 = len&3;
  // printf("len_mod4=%d\n", len_mod4);
@@ -731,9 +750,99 @@ void nr_dlsch_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
  // printf("len>>=2=%d\n", len);
   len+=(len_mod4==0 ? 0 : 1);
  // printf("len+=%d\n", len);
+ #endif
   for (i=0; i<len; i++) {
 
 #if defined(__x86_64__) || defined(__i386)
+#ifdef __AVX2__
+    ymm0 = _mm256_abs_epi16(rxF[i]);
+    ymm0 = _mm256_subs_epi16(ch_mag[i], ymm0);
+
+    llr256[0] = _mm256_unpacklo_epi32(rxF[i], ymm0);
+    llr256[1] = _mm256_unpackhi_epi32(rxF[i], ymm0);
+
+    // Extract LLR of 1st symbol
+    llr32[0] = _mm256_extract_epi32(llr256[0], 0);
+    llr32[1] = _mm256_extract_epi32(llr256[0], 1);
+#ifdef DEBUG_AVX_LLR
+      int16_t *llr16avx0 = (int16_t *)&llr32[0];
+      int16_t *llr16avx1 = (int16_t *)&llr32[1];
+      printf("llr of symbol (%d, %d) = [%d, %d, %d, %d] \n",
+             (short)_mm256_extract_epi16(rxF[i], 0), (short)_mm256_extract_epi16(rxF[i], 1),
+             llr16avx0[0], llr16avx0[1], llr16avx1[0], llr16avx1[1]);
+#endif
+    // Extract LLR of 2nd symbol
+    llr32[2] = _mm256_extract_epi32(llr256[0], 2);
+    llr32[3] = _mm256_extract_epi32(llr256[0], 3);
+#ifdef DEBUG_AVX_LLR
+      int16_t *llr16avx2 = (int16_t *)&llr32[2];
+      int16_t *llr16avx3 = (int16_t *)&llr32[3];
+      printf("llr of symbol (%d, %d) = [%d, %d, %d, %d] \n",
+             (short)_mm256_extract_epi16(rxF[i], 2), (short)_mm256_extract_epi16(rxF[i], 3),
+             llr16avx2[0], llr16avx2[1], llr16avx3[0], llr16avx3[1]);
+#endif
+    // Extract LLR of 3rd symbol
+    llr32[4] = _mm256_extract_epi32(llr256[1], 0);
+    llr32[5] = _mm256_extract_epi32(llr256[1], 1);
+#ifdef DEBUG_AVX_LLR
+      int16_t *llr16avx4 = (int16_t *)&llr32[4];
+      int16_t *llr16avx5 = (int16_t *)&llr32[5];
+      printf("llr of symbol (%d, %d) = [%d, %d, %d, %d] \n",
+             (short)_mm256_extract_epi16(rxF[i], 4), (short)_mm256_extract_epi16(rxF[i], 5),
+             llr16avx4[0], llr16avx4[1], llr16avx5[0], llr16avx5[1]);
+#endif
+    // Extract LLR of 4th symbol
+    llr32[6] = _mm256_extract_epi32(llr256[1], 2);
+    llr32[7] = _mm256_extract_epi32(llr256[1], 3);
+#ifdef DEBUG_AVX_LLR
+      int16_t *llr16avx6 = (int16_t *)&llr32[6];
+      int16_t *llr16avx7 = (int16_t *)&llr32[7];
+      printf("llr of symbol (%d, %d) = [%d, %d, %d, %d] \n",
+             (short)_mm256_extract_epi16(rxF[i], 6), (short)_mm256_extract_epi16(rxF[i], 7),
+             llr16avx6[0], llr16avx6[1], llr16avx7[0], llr16avx7[1]);
+#endif
+    // Extract LLR of 5th symbol
+    llr32[8] = _mm256_extract_epi32(llr256[0], 4);
+    llr32[9] = _mm256_extract_epi32(llr256[0], 5);
+#ifdef DEBUG_AVX_LLR
+      int16_t *llr16avx8 = (int16_t *)&llr32[8];
+      int16_t *llr16avx9 = (int16_t *)&llr32[9];
+      printf("llr of symbol (%d, %d) = [%d, %d, %d, %d] \n",
+             (short)_mm256_extract_epi16(rxF[i], 8), (short)_mm256_extract_epi16(rxF[i], 9),
+             llr16avx8[0], llr16avx8[1], llr16avx9[0], llr16avx9[1]);
+#endif
+    // Extract LLR of 6th symbol
+    llr32[10] = _mm256_extract_epi32(llr256[0], 6);
+    llr32[11] = _mm256_extract_epi32(llr256[0], 7);
+#ifdef DEBUG_AVX_LLR
+      int16_t *llr16avx10 = (int16_t *)&llr32[10];
+      int16_t *llr16avx11 = (int16_t *)&llr32[11];
+      printf("llr of symbol (%d, %d) = [%d, %d, %d, %d] \n",
+             (short)_mm256_extract_epi16(rxF[i], 10), (short)_mm256_extract_epi16(rxF[i], 11),
+             llr16avx10[0], llr16avx10[1], llr16avx11[0], llr16avx11[1]);
+#endif
+    // Extract LLR of 7th symbol
+    llr32[12] = _mm256_extract_epi32(llr256[1], 4);
+    llr32[13] = _mm256_extract_epi32(llr256[1], 5);
+#ifdef DEBUG_AVX_LLR
+      int16_t *llr16avx12 = (int16_t *)&llr32[12];
+      int16_t *llr16avx13 = (int16_t *)&llr32[13];
+      printf("llr of symbol (%d, %d) = [%d, %d, %d, %d] \n",
+             (short)_mm256_extract_epi16(rxF[i], 12), (short)_mm256_extract_epi16(rxF[i], 13),
+             llr16avx12[0], llr16avx12[1], llr16avx13[0], llr16avx13[1]);
+#endif
+    // Extract LLR of 8th symbol
+    llr32[14] = _mm256_extract_epi32(llr256[1], 6);
+    llr32[15] = _mm256_extract_epi32(llr256[1], 7);
+#ifdef DEBUG_AVX_LLR
+      int16_t *llr16avx14 = (int16_t *)&llr32[14];
+      int16_t *llr16avx15 = (int16_t *)&llr32[15];
+      printf("llr of symbol (%d, %d) = [%d, %d, %d, %d] \n",
+             (short)_mm256_extract_epi16(rxF[i], 14), (short)_mm256_extract_epi16(rxF[i], 15),
+             llr16avx14[0], llr16avx14[1], llr16avx15[0], llr16avx15[1]);
+#endif
+    llr32 += 16;
+#else
     xmm0 = _mm_abs_epi16(rxF[i]);
     xmm0 = _mm_subs_epi16(ch_mag[i],xmm0);
 
@@ -749,6 +858,7 @@ void nr_dlsch_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
     llr32[6] = _mm_extract_epi32(llr128[1],2); //((uint32_t *)&llr128[1])[2];
     llr32[7] = _mm_extract_epi32(llr128[1],3); //((uint32_t *)&llr128[1])[3];
     llr32+=8;
+#endif
 #elif defined(__arm__)
     xmm0 = vabsq_s16(rxF[i]);
     xmm0 = vqsubq_s16(ch_mag[i],xmm0);
@@ -798,14 +908,20 @@ void nr_dlsch_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
 			uint8_t beamforming_mode)
 {
 #if defined(__x86_64__) || defined(__i386__)
+#ifdef __AVX2__
+  printf("DLSCH 64QAM AVX\n");
+  __m256i *rxF = (__m256i *)&rxdataF_comp[0][(symbol*nb_rb*12)];
+  __m256i *ch_mag,*ch_magb;
+  register __m256i ymm1,ymm2;
+#else
   __m128i *rxF = (__m128i*)&rxdataF_comp[0][(symbol*nb_rb*12)];
   __m128i *ch_mag,*ch_magb;
+#endif
 #elif defined(__arm__)
   int16x8_t *rxF = (int16x8_t*)&rxdataF_comp[0][(symbol*nb_rb*12)];
   int16x8_t *ch_mag,*ch_magb,xmm1,xmm2;
 #endif
   int i,len2;
-  unsigned char len_mod4;
   short *llr;
   int16_t *llr2;
   int8_t *pllr_symbol;
@@ -822,8 +938,13 @@ void nr_dlsch_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
   pllr_symbol += llr_offset;
 
 #if defined(__x86_64__) || defined(__i386__)
+#ifdef __AVX2__
+  ch_mag = (__m256i*)&dl_ch_mag[0][(symbol*nb_rb*12)];
+  ch_magb = (__m256i*)&dl_ch_magb[0][(symbol*nb_rb*12)];
+#else
   ch_mag = (__m128i*)&dl_ch_mag[0][(symbol*nb_rb*12)];
   ch_magb = (__m128i*)&dl_ch_magb[0][(symbol*nb_rb*12)];
+#endif
 #elif defined(__arm__)
   ch_mag = (int16x8_t*)&dl_ch_mag[0][(symbol*nb_rb*12)];
   ch_magb = (int16x8_t*)&dl_ch_magb[0][(symbol*nb_rb*12)];
@@ -840,18 +961,30 @@ void nr_dlsch_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
 
   llr2 = llr;
   llr += (len*6);
-
-  len_mod4 =len&3;
+#ifdef __AVX2__
+  unsigned char len_mod8 = len&7;
+  len2 = len>>3;  // length in quad words (4 REs)
+  len2 += (len_mod8 == 0 ? 0 : 1);
+#else
+  unsigned char len_mod4 =len&3;
   len2=len>>2;  // length in quad words (4 REs)
   len2+=((len_mod4==0)?0:1);
+#endif
 
   for (i=0; i<len2; i++) {
 
 #if defined(__x86_64__) || defined(__i386__)
+#ifdef __AVX2__
+    ymm1 = _mm256_abs_epi16(rxF[i]);
+    ymm1 = _mm256_subs_epi16(ch_mag[i], ymm1);
+    ymm2 = _mm256_abs_epi16(ymm1);
+    ymm2 = _mm256_subs_epi16(ch_magb[i], ymm2);
+#else
     xmm1 = _mm_abs_epi16(rxF[i]);
     xmm1 = _mm_subs_epi16(ch_mag[i],xmm1);
     xmm2 = _mm_abs_epi16(xmm1);
     xmm2 = _mm_subs_epi16(ch_magb[i],xmm2);
+#endif
 #elif defined(__arm__)
     xmm1 = vabsq_s16(rxF[i]);
     xmm1 = vsubq_s16(ch_mag[i],xmm1);
@@ -871,13 +1004,28 @@ void nr_dlsch_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
      llr2+=6;
       }
     */
+    // Extract LLR of 1st symbol
     llr2[0] = ((short *)&rxF[i])[0];
     llr2[1] = ((short *)&rxF[i])[1];
 #if defined(__x86_64__) || defined(__i386__)
+#ifdef __AVX2__
+    llr2[2] = _mm256_extract_epi16(ymm1, 0);
+    llr2[3] = _mm256_extract_epi16(ymm1, 1);
+    llr2[4] = _mm256_extract_epi16(ymm2, 0);
+    llr2[5] = _mm256_extract_epi16(ymm2, 1);
+#ifdef DEBUG_AVX_LLR
+    printf("llr of symbol (%d, %d) = [%d, %d, %d, %d, %d, %d]\n",
+           (short)_mm256_extract_epi16(rxF[i], 0),
+           (short)_mm256_extract_epi16(rxF[i], 1),
+           llr2[0], llr2[1], llr2[2],
+           llr2[3], llr2[4], llr2[5]);
+#endif
+#else
     llr2[2] = _mm_extract_epi16(xmm1,0);
     llr2[3] = _mm_extract_epi16(xmm1,1);//((short *)&xmm1)[j+1];
     llr2[4] = _mm_extract_epi16(xmm2,0);//((short *)&xmm2)[j];
     llr2[5] = _mm_extract_epi16(xmm2,1);//((short *)&xmm2)[j+1];
+#endif
 #elif defined(__arm__)
     llr2[2] = vgetq_lane_s16(xmm1,0);
     llr2[3] = vgetq_lane_s16(xmm1,1);//((short *)&xmm1)[j+1];
@@ -886,13 +1034,28 @@ void nr_dlsch_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
 #endif
 
     llr2+=6;
+    // Extract LLR of 2nd symbol
     llr2[0] = ((short *)&rxF[i])[2];
     llr2[1] = ((short *)&rxF[i])[3];
 #if defined(__x86_64__) || defined(__i386__)
+#ifdef __AVX2__
+    llr2[2] = _mm256_extract_epi16(ymm1, 2);
+    llr2[3] = _mm256_extract_epi16(ymm1, 3);
+    llr2[4] = _mm256_extract_epi16(ymm2, 2);
+    llr2[5] = _mm256_extract_epi16(ymm2, 3);
+#ifdef DEBUG_AVX_LLR
+    printf("llr of symbol (%d, %d) = [%d, %d, %d, %d, %d, %d]\n",
+           (short)_mm256_extract_epi16(rxF[i], 2), 
+           (short)_mm256_extract_epi16(rxF[i], 3),
+           llr2[0], llr2[1], llr2[2],
+           llr2[3], llr2[4], llr2[5]);
+#endif
+#else
     llr2[2] = _mm_extract_epi16(xmm1,2);
     llr2[3] = _mm_extract_epi16(xmm1,3);//((short *)&xmm1)[j+1];
     llr2[4] = _mm_extract_epi16(xmm2,2);//((short *)&xmm2)[j];
     llr2[5] = _mm_extract_epi16(xmm2,3);//((short *)&xmm2)[j+1];
+#endif
 #elif defined(__arm__)
     llr2[2] = vgetq_lane_s16(xmm1,2);
     llr2[3] = vgetq_lane_s16(xmm1,3);//((short *)&xmm1)[j+1];
@@ -901,13 +1064,28 @@ void nr_dlsch_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
 #endif
 
     llr2+=6;
+    // Extract LLR of 3rd symbol
     llr2[0] = ((short *)&rxF[i])[4];
     llr2[1] = ((short *)&rxF[i])[5];
 #if defined(__x86_64__) || defined(__i386__)
+#ifdef __AVX2__
+    llr2[2] = _mm256_extract_epi16(ymm1, 4);
+    llr2[3] = _mm256_extract_epi16(ymm1, 5);
+    llr2[4] = _mm256_extract_epi16(ymm2, 4);
+    llr2[5] = _mm256_extract_epi16(ymm2, 5);
+#ifdef DEBUG_AVX_LLR
+    printf("llr of symbol (%d, %d) = [%d, %d, %d, %d, %d, %d]\n",
+           (short)_mm256_extract_epi16(rxF[i], 4), 
+           (short)_mm256_extract_epi16(rxF[i], 5),
+           llr2[0], llr2[1], llr2[2],
+           llr2[3], llr2[4], llr2[5]);
+#endif
+#else
     llr2[2] = _mm_extract_epi16(xmm1,4);
     llr2[3] = _mm_extract_epi16(xmm1,5);//((short *)&xmm1)[j+1];
     llr2[4] = _mm_extract_epi16(xmm2,4);//((short *)&xmm2)[j];
     llr2[5] = _mm_extract_epi16(xmm2,5);//((short *)&xmm2)[j+1];
+#endif
 #elif defined(__arm__)
     llr2[2] = vgetq_lane_s16(xmm1,4);
     llr2[3] = vgetq_lane_s16(xmm1,5);//((short *)&xmm1)[j+1];
@@ -915,13 +1093,28 @@ void nr_dlsch_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
     llr2[5] = vgetq_lane_s16(xmm2,5);//((short *)&xmm2)[j+1];
 #endif
     llr2+=6;
+    // Extract LLR of 4th symbol
     llr2[0] = ((short *)&rxF[i])[6];
     llr2[1] = ((short *)&rxF[i])[7];
 #if defined(__x86_64__) || defined(__i386__)
+#ifdef __AVX2__
+    llr2[2] = _mm256_extract_epi16(ymm1, 6);
+    llr2[3] = _mm256_extract_epi16(ymm1, 7);
+    llr2[4] = _mm256_extract_epi16(ymm2, 6);
+    llr2[5] = _mm256_extract_epi16(ymm2, 7);
+#ifdef DEBUG_AVX_LLR
+    printf("llr of symbol (%d, %d) = [%d, %d, %d, %d, %d, %d]\n",
+           (short)_mm256_extract_epi16(rxF[i], 6), 
+           (short)_mm256_extract_epi16(rxF[i], 7),
+           llr2[0], llr2[1], llr2[2],
+           llr2[3], llr2[4], llr2[5]);
+#endif
+#else
     llr2[2] = _mm_extract_epi16(xmm1,6);
     llr2[3] = _mm_extract_epi16(xmm1,7);//((short *)&xmm1)[j+1];
     llr2[4] = _mm_extract_epi16(xmm2,6);//((short *)&xmm2)[j];
     llr2[5] = _mm_extract_epi16(xmm2,7);//((short *)&xmm2)[j+1];
+#endif
 #elif defined(__arm__)
     llr2[2] = vgetq_lane_s16(xmm1,6);
     llr2[3] = vgetq_lane_s16(xmm1,7);//((short *)&xmm1)[j+1];
@@ -930,6 +1123,64 @@ void nr_dlsch_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
 #endif
     llr2+=6;
 
+#ifdef __AVX__
+    // Extract LLR of 5th symbol
+    llr2[0] = ((short *)&rxF[i])[8];
+    llr2[1] = ((short *)&rxF[i])[9];
+    llr2[2] = _mm256_extract_epi16(ymm1, 8);
+    llr2[3] = _mm256_extract_epi16(ymm1, 9);
+    llr2[4] = _mm256_extract_epi16(ymm2, 8);
+    llr2[5] = _mm256_extract_epi16(ymm2, 9);
+#ifdef DEBUG_AVX_LLR
+    printf("llr of symbol (%d, %d) = [%d, %d, %d, %d, %d, %d]\n",
+           (short)_mm256_extract_epi16(rxF[i], 8), (short)_mm256_extract_epi16(rxF[i], 9),
+           llr2[0], llr2[1], llr2[2],
+           llr2[3], llr2[4], llr2[5]);
+#endif
+    llr2 += 6;
+    // Extract LLR of 6th symbol
+    llr2[0] = ((short *)&rxF[i])[10];
+    llr2[1] = ((short *)&rxF[i])[11];
+    llr2[2] = _mm256_extract_epi16(ymm1, 10);
+    llr2[3] = _mm256_extract_epi16(ymm1, 11);
+    llr2[4] = _mm256_extract_epi16(ymm2, 10);
+    llr2[5] = _mm256_extract_epi16(ymm2, 11);
+#ifdef DEBUG_AVX_LLR
+    printf("llr of symbol (%d, %d) = [%d, %d, %d, %d, %d, %d]\n",
+           (short)_mm256_extract_epi16(rxF[i], 10), (short)_mm256_extract_epi16(rxF[i], 11),
+           llr2[0], llr2[1], llr2[2],
+           llr2[3], llr2[4], llr2[5]);
+#endif
+    llr2 += 6;
+    // Extract LLR of 7th symbol
+    llr2[0] = ((short *)&rxF[i])[12];
+    llr2[1] = ((short *)&rxF[i])[13];
+    llr2[2] = _mm256_extract_epi16(ymm1, 12);
+    llr2[3] = _mm256_extract_epi16(ymm1, 13);
+    llr2[4] = _mm256_extract_epi16(ymm2, 12);
+    llr2[5] = _mm256_extract_epi16(ymm2, 13);
+#ifdef DEBUG_AVX_LLR
+    printf("llr of symbol (%d, %d) = [%d, %d, %d, %d, %d, %d]\n",
+           (short)_mm256_extract_epi16(rxF[i], 12), (short)_mm256_extract_epi16(rxF[i], 13),
+           llr2[0], llr2[1], llr2[2],
+           llr2[3], llr2[4], llr2[5]);
+#endif
+    llr2 += 6;
+    // Extract LLR of 8th symbol
+    llr2[0] = ((short *)&rxF[i])[14];
+    llr2[1] = ((short *)&rxF[i])[15];
+    llr2[2] = _mm256_extract_epi16(ymm1, 14);
+    llr2[3] = _mm256_extract_epi16(ymm1, 15);
+    llr2[4] = _mm256_extract_epi16(ymm2, 14);
+    llr2[5] = _mm256_extract_epi16(ymm2, 15);
+#ifdef DEBUG_AVX_LLR
+    printf("llr of symbol (%d, %d) = [%d, %d, %d, %d, %d, %d]\n",
+           (short)_mm256_extract_epi16(rxF[i], 14), (short)_mm256_extract_epi16(rxF[i], 15),
+           llr2[0], llr2[1], llr2[2],
+           llr2[3], llr2[4], llr2[5]);
+#endif
+    llr2 += 6;
+#endif
   }
 
 #if defined(__x86_64__) || defined(__i386__)
