@@ -47,7 +47,7 @@
 #include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
 #include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
 #include "openair1/PHY/MODULATION/nr_modulation.h"
-
+#include <executables/softmodem-common.h>
 //#define DEBUG_NR_PBCHSIM
 
 PHY_VARS_gNB *gNB;
@@ -66,6 +66,7 @@ uint8_t const nr_rv_round_map[4] = {0, 2, 1, 3};
 uint8_t const nr_rv_round_map_ue[4] = {0, 2, 1, 3};
 
 uint64_t get_softmodem_optmask(void) {return 0;}
+softmodem_params_t *get_softmodem_params(void) {return 0;}
 
 void init_downlink_harq_status(NR_DL_UE_HARQ_t *dl_harq) {}
 
@@ -414,7 +415,7 @@ int main(int argc, char **argv)
   frame_parms->ssb_type = nr_ssb_type_C;
 
   nr_phy_config_request_sim_pbchsim(gNB,N_RB_DL,N_RB_DL,mu,Nid_cell,SSB_positions);
-  phy_init_nr_gNB(gNB,0,0);
+  phy_init_nr_gNB(gNB,0,1);
   nr_set_ssb_first_subcarrier(&gNB->gNB_config,frame_parms);
 
   uint8_t n_hf = 0;
