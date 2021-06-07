@@ -275,16 +275,16 @@ static int trx_usrp_start(openair0_device *device) {
 
   // setup GPIO for TDD, GPIO(4) = ATR_RX
   //set data direction register (DDR) to output
-//  s->usrp->set_gpio_attr("FP0", "DDR", 0xfff, 0xfff);
-//  //set lower 7 bits to be controlled automatically by ATR (the rest 5 bits are controlled manually)
-//  s->usrp->set_gpio_attr("FP0", "CTRL", 0x7f,0xfff);
-//  //set pins 4 (RX_TX_Switch) and 6 (Shutdown PA) to 1 when the radio is only receiving (ATR_RX)
-//  s->usrp->set_gpio_attr("FP0", "ATR_RX", (1<<4)|(1<<6), 0x7f);
-//  // set pin 5 (Shutdown LNA) to 1 when the radio is transmitting and receiveing (ATR_XX)
-//  // (we use full duplex here, because our RX is on all the time - this might need to change later)
-//  s->usrp->set_gpio_attr("FP0", "ATR_XX", (1<<5), 0x7f);
-//  // set the output pins to 1
-  s->usrp->set_gpio_attr("FP0", "OUT", 0xfff, 0xfff);
+  s->usrp->set_gpio_attr("FP0", "DDR", 0xfff, 0xfff);
+  //set lower 7 bits to be controlled automatically by ATR (the rest 5 bits are controlled manually)
+  s->usrp->set_gpio_attr("FP0", "CTRL", 0x7f,0xfff);
+  //set pins 4 (RX_TX_Switch) and 6 (Shutdown PA) to 1 when the radio is only receiving (ATR_RX)
+  s->usrp->set_gpio_attr("FP0", "ATR_RX", (1<<4)|(1<<6), 0x7f);
+  // set pin 5 (Shutdown LNA) to 1 when the radio is transmitting and receiveing (ATR_XX)
+  // (we use full duplex here, because our RX is on all the time - this might need to change later)
+  s->usrp->set_gpio_attr("FP0", "ATR_XX", (1<<5), 0x7f);
+  // set the output pins to 1
+  s->usrp->set_gpio_attr("FP0", "OUT", 7<<7, 0xf80);
 
   s->wait_for_first_pps = 1;
   s->rx_count = 0;
