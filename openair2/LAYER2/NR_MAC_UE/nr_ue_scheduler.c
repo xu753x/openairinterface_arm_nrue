@@ -509,7 +509,7 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
   int                N_PRB_oh  = 0;
 
   int rnti_type = get_rnti_type(mac, rnti);
-
+  int mappingtype;
   // Common configuration
   pusch_config_pdu->dmrs_config_type = pusch_dmrs_type1;
   pusch_config_pdu->pdu_bit_map      = PUSCH_PDU_BITMAP_PUSCH_DATA;
@@ -527,7 +527,7 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     // Note: for Msg3 or MsgA PUSCH transmission the N_PRB_oh is always set to 0
     NR_BWP_Uplink_t *ubwp = mac->ULbwp[0];
     NR_BWP_UplinkDedicated_t *ibwp;
-    int scs,abwp_start,abwp_size,startSymbolAndLength,mappingtype;
+    int scs,abwp_start,abwp_size,startSymbolAndLength;
     NR_PUSCH_Config_t *pusch_Config=NULL;
     if (mac->cg && ubwp &&
         mac->cg->spCellConfig &&
@@ -830,7 +830,14 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     pusch_config_pdu->nr_of_symbols,
     rnti_types[rnti_type]);
 
-  pusch_config_pdu->ul_dmrs_symb_pos = l_prime_mask;
+//  pusch_config_pdu->ul_dmrs_symb_pos = l_prime_mask;
+  pusch_config_pdu->ul_dmrs_symb_pos = fill_dmrs_mask(NULL,
+							 mac->mib->dmrs_TypeA_Position,
+							 pusch_config_pdu->nr_of_symbols,
+							 pusch_config_pdu->start_symbol_index,
+               mappingtype);
+
+
   pusch_config_pdu->target_code_rate = nr_get_code_rate_ul(pusch_config_pdu->mcs_index, pusch_config_pdu->mcs_table);
   pusch_config_pdu->qam_mod_order = nr_get_Qm_ul(pusch_config_pdu->mcs_index, pusch_config_pdu->mcs_table);
 
