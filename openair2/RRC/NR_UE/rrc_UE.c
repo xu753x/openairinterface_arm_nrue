@@ -1325,11 +1325,13 @@ static void rrc_ue_generate_RRCSetupComplete(
   int   nas_msg_length;
   NR_UE_MAC_INST_t *mac = get_mac_inst(0);
 
+#if 0
   if (mac->cg &&
       mac->cg->spCellConfig &&
       mac->cg->spCellConfig->spCellConfigDedicated &&
       mac->cg->spCellConfig->spCellConfigDedicated->csi_MeasConfig)
     AssertFatal(1==0,"2 > csi_MeasConfig is not null\n");
+#endif
 
  if (AMF_MODE_ENABLED) {
 #if defined(ITTI_SIM) || defined(RFSIM_NAS)
@@ -1389,7 +1391,7 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
 			  &asn_DEF_NR_DL_CCCH_Message,
 			  (void **)&dl_ccch_msg,
 			  (uint8_t *)Srb_info->Rx_buffer.Payload,
-			  100,0,0);
+			  1000,0,0);
 
 	 if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
      xer_fprint(stdout,&asn_DEF_NR_DL_CCCH_Message,(void *)dl_ccch_msg);
