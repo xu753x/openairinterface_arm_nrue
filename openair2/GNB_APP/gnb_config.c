@@ -130,7 +130,7 @@ void prepare_scc(NR_ServingCellConfigCommon_t *scc) {
   coreset0->controlResourceSetId = 0;
   // frequencyDomainResources '11111111 00000000 00000000 00000000 00000000 00000'B,
   if(coreset0->frequencyDomainResources.buf == NULL) coreset0->frequencyDomainResources.buf = calloc(1,6);
-  coreset0->frequencyDomainResources.buf[0] = 0xff;
+  coreset0->frequencyDomainResources.buf[0] = 0xf0;
   coreset0->frequencyDomainResources.buf[1] = 0;
   coreset0->frequencyDomainResources.buf[2] = 0;
   coreset0->frequencyDomainResources.buf[3] = 0;
