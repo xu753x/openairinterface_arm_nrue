@@ -278,7 +278,7 @@ function check_set_variant {
             ARCHIVES_LOC=${VARIANTS_LONG[$i]//"-"/"_"}  
             VM_MEMORY=2048
             VM_CPU=4
-            VM_DISK=10
+            VM_DISK=12
             EXPERIMENTAL=""
             NBARGS=$[$NBARGS+$VARIANT_OPTID]   
             variant__${VARIANTS_SHORT[$i]}__${VARIANTS_LONG[$i]//"-"/"_"}
@@ -490,7 +490,7 @@ AUTHORIZED_VAR=("VM_OSREL RUN_EXPERIMENTAL OPTIONAL_APTCACHER TESTPLATFORM_OWNER
 #    VM_ARCHI=`uname -m`	
 #else
     VM_OS="ubuntu"
-    VM_OSREL="xenial"
+    VM_OSREL="bionic"
     VM_ARCHI="x86_64"		
 #fi
 

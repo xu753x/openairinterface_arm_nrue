@@ -120,7 +120,7 @@ function start_basic_sim_ue {
     rm $1
 
     local i="0"
-    echo "ifconfig oaitun_ue1 | egrep -c \"inet addr\"" > $1
+    echo "ifconfig oaitun_ue1 | egrep -c 'inet '" > $1
     while [ $i -lt 10 ]
     do
         sleep 5
@@ -169,7 +169,12 @@ function start_basic_sim_ue {
 
 function get_ue_ip_addr {
     local LOC_IF_ID=$3
-    echo "ifconfig oaitun_ue${LOC_IF_ID} | egrep \"inet addr\" | sed -e 's#^.*inet addr:##' -e 's#  P-t-P:.*\$##'" > $1
+    if [[ $VM_OSREL =~ .*bionic.* ]]
+    then
+        echo "ifconfig oaitun_ue${LOC_IF_ID} | egrep 'inet ' | sed -e 's#^.*inet addr:##' -e 's#  netmask.*\$##'" > $1
+    else
+        echo "ifconfig oaitun_ue${LOC_IF_ID} | egrep 'inet addr' | sed -e 's#^.*inet addr:##' -e 's#  P-t-P:.*\$##'" > $1
+    fi
     UE_IP_ADDR=`ssh -T -o StrictHostKeyChecking=no ubuntu@$2 < $1`
     echo "Test UE${LOC_IF_ID} IP Address is : $UE_IP_ADDR"
     rm $1
@@ -508,13 +513,25 @@ function install_epc_on_vm {
 
     if [ -d /opt/ltebox-archives/ ]
     then
-        # Checking if all ltebox archives are available to run ltebx epc on a brand new VM
-        if [ -f /opt/ltebox-archives/ltebox_2.2.70_16_04_amd64.deb ] && [ -f /opt/ltebox-archives/etc-conf.zip ] && [ -f /opt/ltebox-archives/hss-sim-develop.zip ]
+        if [[ $VM_OSREL =~ .*bionic.* ]]
         then
-            echo "############################################################"
-            echo "Test EPC on VM ($EPC_VM_NAME) will be using ltebox"
-            echo "############################################################"
-            LTEBOX=1
+            # Checking if all ltebox archives are available to run ltebx epc on a brand new VM
+            if [ -f /opt/ltebox-archives/ltebox_3.5.39_ubuntu18_optimized_amd64.deb ] && [ -f /opt/ltebox-archives/etc-conf-sabox.zip ] && [ -f /opt/ltebox-archives/hss-sim-develop.zip ]
+            then
+                echo "############################################################"
+                echo "Test EPC on VM ($EPC_VM_NAME) will be using ltebox"
+                echo "############################################################"
+                LTEBOX=1
+            fi
+        else
+            # Checking if all ltebox archives are available to run ltebx epc on a brand new VM
+            if [ -f /opt/ltebox-archives/ltebox_2.2.70_16_04_amd64.deb ] && [ -f /opt/ltebox-archives/etc-conf.zip ] && [ -f /opt/ltebox-archives/hss-sim-develop.zip ]
+            then
+                echo "############################################################"
+                echo "Test EPC on VM ($EPC_VM_NAME) will be using ltebox"
+                echo "############################################################"
+                LTEBOX=1
+            fi
         fi
     fi
     # Here we could have other types of EPC detection
@@ -557,8 +574,14 @@ function install_epc_on_vm {
         echo "############################################################"
         echo "Copying ltebox archives into EPC VM ($LOC_EPC_VM_NAME)" 
         echo "############################################################"
-        scp -o StrictHostKeyChecking=no /opt/ltebox-archives/ltebox_2.2.70_16_04_amd64.deb ubuntu@$LOC_EPC_VM_IP_ADDR:/home/ubuntu
-        scp -o StrictHostKeyChecking=no /opt/ltebox-archives/etc-conf.zip ubuntu@$LOC_EPC_VM_IP_ADDR:/home/ubuntu
+        if [[ $VM_OSREL =~ .*bionic.* ]]
+        then
+            scp -o StrictHostKeyChecking=no /opt/ltebox-archives/ltebox_3.5.39_ubuntu18_optimized_amd64.deb ubuntu@$LOC_EPC_VM_IP_ADDR:/home/ubuntu
+            scp -o StrictHostKeyChecking=no /opt/ltebox-archives/etc-conf-sabox.zip ubuntu@$LOC_EPC_VM_IP_ADDR:/home/ubuntu/etc-conf.zip
+        else
+            scp -o StrictHostKeyChecking=no /opt/ltebox-archives/ltebox_2.2.70_16_04_amd64.deb ubuntu@$LOC_EPC_VM_IP_ADDR:/home/ubuntu
+            scp -o StrictHostKeyChecking=no /opt/ltebox-archives/etc-conf.zip ubuntu@$LOC_EPC_VM_IP_ADDR:/home/ubuntu
+        fi
         scp -o StrictHostKeyChecking=no /opt/ltebox-archives/hss-sim-develop.zip ubuntu@$LOC_EPC_VM_IP_ADDR:/home/ubuntu
 
         echo "############################################################"
@@ -569,6 +592,10 @@ function install_epc_on_vm {
         echo "echo \"sudo apt-get --yes --quiet install zip openjdk-8-jre libconfuse-dev libreadline-dev liblog4c-dev libgcrypt-dev libsctp-dev python2.7 python2.7-dev iperf\"" >> $LOC_EPC_VM_CMDS
         echo "sudo apt-get update > zip-install.txt 2>&1" >> $LOC_EPC_VM_CMDS
         echo "sudo apt-get --yes install zip openjdk-8-jre libconfuse-dev libreadline-dev liblog4c-dev libgcrypt-dev libsctp-dev python2.7 python2.7-dev iperf >> zip-install.txt 2>&1" >> $LOC_EPC_VM_CMDS
+        if [[ $VM_OSREL =~ .*bionic.* ]]
+        then
+            echo "sudo apt-get --yes install libxmlrpc-core-c3-dev libxmlrpc-c++8-dev >> zip-install.txt 2>&1" >> $LOC_EPC_VM_CMDS
+        fi
 
         # Installing HSS
         echo "echo \"cd /opt\"" >> $LOC_EPC_VM_CMDS
@@ -581,8 +608,14 @@ function install_epc_on_vm {
         # Installing ltebox
         echo "echo \"cd /home/ubuntu\"" >> $LOC_EPC_VM_CMDS
         echo "cd /home/ubuntu" >> $LOC_EPC_VM_CMDS
-        echo "echo \"sudo dpkg -i ltebox_2.2.70_16_04_amd64.deb \"" >> $LOC_EPC_VM_CMDS
-        echo "sudo dpkg -i ltebox_2.2.70_16_04_amd64.deb >> zip-install.txt 2>&1" >> $LOC_EPC_VM_CMDS
+        if [[ $VM_OSREL =~ .*bionic.* ]]
+        then
+            echo "echo \"sudo dpkg -i ltebox_3.5.39_ubuntu18_optimized_amd64.deb \"" >> $LOC_EPC_VM_CMDS
+            echo "sudo dpkg -i ltebox_3.5.39_ubuntu18_optimized_amd64.deb >> zip-install.txt 2>&1" >> $LOC_EPC_VM_CMDS
+        else
+            echo "echo \"sudo dpkg -i ltebox_2.2.70_16_04_amd64.deb \"" >> $LOC_EPC_VM_CMDS
+            echo "sudo dpkg -i ltebox_2.2.70_16_04_amd64.deb >> zip-install.txt 2>&1" >> $LOC_EPC_VM_CMDS
+        fi
 
         echo "echo \"cd /opt/ltebox/etc/\"" >> $LOC_EPC_VM_CMDS
         echo "cd /opt/ltebox/etc/" >> $LOC_EPC_VM_CMDS
@@ -590,6 +623,10 @@ function install_epc_on_vm {
         echo "sudo unzip -qq -o /home/ubuntu/etc-conf.zip" >> $LOC_EPC_VM_CMDS
         echo "sudo sed -i  -e 's#EPC_VM_IP_ADDRESS#$LOC_EPC_VM_IP_ADDR#' gw.conf" >> $LOC_EPC_VM_CMDS
         echo "sudo sed -i  -e 's#EPC_VM_IP_ADDRESS#$LOC_EPC_VM_IP_ADDR#' mme.conf" >> $LOC_EPC_VM_CMDS
+        if [[ $VM_OSREL =~ .*bionic.* ]]
+        then
+            echo "sudo sed -i  -e 's#EPC_VM_IP_ADDRESS#$LOC_EPC_VM_IP_ADDR#' amf.conf" >> $LOC_EPC_VM_CMDS
+        fi
 
         ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_EPC_VM_IP_ADDR < $LOC_EPC_VM_CMDS
         rm -f $LOC_EPC_VM_CMDS
@@ -637,7 +674,12 @@ function start_epc {
         echo "echo \"cd /opt/ltebox/tools/\"" >> $LOC_EPC_VM_CMDS
         echo "cd /opt/ltebox/tools/" >> $LOC_EPC_VM_CMDS
         echo "echo \"sudo ./start_ltebox\"" >> $LOC_EPC_VM_CMDS
-        echo "nohup sudo ./start_ltebox > /home/ubuntu/ltebox.txt" >> $LOC_EPC_VM_CMDS
+        if [[ $VM_OSREL =~ .*bionic.* ]]
+        then
+            echo "sudo ./start_ltebox > /home/ubuntu/ltebox.txt" >> $LOC_EPC_VM_CMDS
+        else
+            echo "nohup sudo ./start_ltebox > /home/ubuntu/ltebox.txt" >> $LOC_EPC_VM_CMDS
+        fi
         echo "touch /home/ubuntu/try.txt" >> $LOC_EPC_VM_CMDS
         echo "sudo rm -f /home/ubuntu/*.txt" >> $LOC_EPC_VM_CMDS
 
@@ -645,7 +687,7 @@ function start_epc {
         rm -f $LOC_EPC_VM_CMDS
 
         i="0"
-        echo "ifconfig tun5 | egrep -c \"inet addr\"" > $LOC_EPC_VM_CMDS
+        echo "ifconfig tun5 | egrep -c 'inet '" > $LOC_EPC_VM_CMDS
         while [ $i -lt 10 ]
         do
             sleep 2
@@ -696,9 +738,9 @@ function terminate_epc {
         echo "echo \"cd /opt/ltebox/tools\"" > $1
         echo "cd /opt/ltebox/tools" >> $1
         echo "echo \"sudo ./stop_ltebox\"" >> $1
-        echo "sudo ./stop_ltebox" >> $1
+        echo "sudo ./stop_ltebox || true" >> $1
         echo "echo \"sudo killall --signal SIGKILL hss_sim\"" >> $1
-        echo "sudo killall --signal SIGKILL hss_sim" >> $1
+        echo "sudo killall --signal SIGKILL hss_sim || true" >> $1
         ssh -T -o StrictHostKeyChecking=no ubuntu@$2 < $1
         rm $1
     fi
@@ -817,7 +859,7 @@ function start_l2_sim_enb {
     fi
     if [ $LOC_S1_CONFIGURATION -eq 0 ]
     then
-        echo "ifconfig oaitun_enb1 | egrep -c \"inet addr\"" > $1
+        echo "ifconfig oaitun_enb1 | egrep -c 'inet '" > $1
         # Checking oaitun_enb1 interface has now an IP address
         i="0"
         while [ $i -lt 10 ]
@@ -933,7 +975,7 @@ function start_l2_sim_ue {
     local j="1"
     while [ $j -le $max_interfaces_to_check ]
     do
-        echo "ifconfig oaitun_ue${j} | egrep -c \"inet addr\"" > $1
+        echo "ifconfig oaitun_ue${j} | egrep -c 'inet '" > $1
         # Checking oaitun_ue1 interface has now an IP address
         i="0"
         while [ $i -lt 10 ]
@@ -1150,7 +1192,7 @@ function start_rf_sim_ue {
     fi
     # Checking oaitun_ue1 interface has now an IP address
     i="0"
-    echo "ifconfig oaitun_ue1 | egrep -c \"inet addr\"" > $1
+    echo "ifconfig oaitun_ue1 | egrep -c 'inet '" > $1
     while [ $i -lt 10 ]
     do
         sleep 5
