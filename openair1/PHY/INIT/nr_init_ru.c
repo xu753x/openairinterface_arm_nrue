@@ -121,7 +121,7 @@ int nr_phy_init_RU(RU_t *ru) {
     AssertFatal(ru->num_gNB <= NUMBER_OF_gNB_MAX,"gNB instances %d > %d\n",
 		ru->num_gNB,NUMBER_OF_gNB_MAX);
 
-    LOG_I(PHY,"[INIT] %s() RC.nb_nr_L1_inst:%d \n", __FUNCTION__, RC.nb_nr_L1_inst);
+    LOG_I(PHY,"[INIT] %s() ru->num_gNB:%d \n", __FUNCTION__, ru->num_gNB);
 
     if (ru->do_precoding == 1) {
       int beam_count = 0;

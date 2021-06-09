@@ -3028,10 +3028,11 @@ int get_dl_mimo_layers(gNB_RRC_INST *rrc,NR_UE_NR_Capability_t *cap) {
   return(1);
 }
 void nr_rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
+
   MessageDef *msg;
-  int id;
   rrc_gNB_ue_context_t *ue_context_p = NULL;
   FILE *fd=fopen("nrRRCstats.log","w");
+
   RB_FOREACH(ue_context_p, rrc_nr_ue_tree_s, &(RC.nrrrc[ctxt_pP->module_id]->rrc_ue_head)) {
     ctxt_pP->rnti = ue_context_p->ue_id_rnti;
 
@@ -3065,7 +3066,7 @@ void nr_rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
         // remove UE after 20 seconds after MAC (or else) has indicated UL failure
         LOG_I(RRC, "Removing UE %x instance, because of uplink failure timer timeout\n",
               ue_context_p->ue_context.rnti);
-        if(ue_context_p->ue_context.Status >= NR_RRC_CONNECTED){
+        if(ue_context_p->ue_context.StatusRrc >= NR_RRC_CONNECTED){
           rrc_gNB_send_NGAP_UE_CONTEXT_RELEASE_REQ(
                    ctxt_pP->module_id,
                    ue_context_p,

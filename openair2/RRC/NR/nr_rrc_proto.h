@@ -189,6 +189,12 @@ int8_t nr_mac_rrc_data_ind(
     const boolean_t   brOption
 );
 
+void nr_mac_eNB_rrc_ul_failure(const module_id_t Mod_instP,
+                               const int CC_idP,
+                               const frame_t frameP,
+                               const sub_frame_t subframeP,
+                               const rnti_t rntiP);
+
 int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
                            const uint8_t      *buffer,
                            int                buffer_length,
