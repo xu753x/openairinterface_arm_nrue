@@ -369,25 +369,12 @@ void pdcp_layer_init(void)
   if (pthread_mutex_unlock(&m) != 0) abort();
 
   nr_pdcp_ue_manager = new_nr_pdcp_ue_manager(1);
-  init_nr_rlc_data_req_queue();
+
+  if ((RC.nrrrc == NULL) || (!NODE_IS_CU(RC.nrrrc[0]->node_type))) {
+    init_nr_rlc_data_req_queue();
+  }
 
   nr_pdcp_init_timer_thread(nr_pdcp_ue_manager);
-}
-
-void pdcp_layer_init_for_CU(void)
-{
-  /* hack: be sure to initialize only once */
-  static pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER;
-  static int initialized = 0;
-  if (pthread_mutex_lock(&m) != 0) abort();
-  if (initialized) {
-    if (pthread_mutex_unlock(&m) != 0) abort();
-    return;
-  }
-  initialized = 1;
-  if (pthread_mutex_unlock(&m) != 0) abort();
-
-  nr_pdcp_ue_manager = new_nr_pdcp_ue_manager(1);
 }
 
 #include "nfapi/oai_integration/vendor_ext.h"
@@ -535,7 +522,7 @@ rb_found:
   memblock = get_free_mem_block(size, __FUNCTION__);
   memcpy(memblock->data, buf, size);
 
-  LOG_I(PDCP, "%s(): (srb %d) calling rlc_data_req size %d\n", __func__, rb_id, size);
+  LOG_D(PDCP, "%s(): (srb %d) calling rlc_data_req size %d\n", __func__, rb_id, size);
   //for (i = 0; i < size; i++) printf(" %2.2x", (unsigned char)memblock->data[i]);
   //printf("\n");
   enqueue_rlc_data_req(&ctxt, 0, MBMS_FLAG_NO, rb_id, sdu_id, 0, size, memblock, NULL, NULL);
@@ -608,7 +595,7 @@ srb_found:
   LOG_D(PDCP, "%s(): (srb %d) calling rlc_data_req size %d\n", __func__, srb_id, size);
   //for (i = 0; i < size; i++) printf(" %2.2x", (unsigned char)memblock->data[i]);
   //printf("\n");
-  if (!NODE_IS_CU(RC.nrrrc[0]->node_type)) {
+  if ((RC.nrrrc == NULL) || (!NODE_IS_CU(RC.nrrrc[0]->node_type))) {
     ctxt.module_id = 0;
     ctxt.enb_flag = 1;
     ctxt.instance = 0;
@@ -719,7 +706,7 @@ void pdcp_run(const protocol_ctxt_t *const  ctxt_pP)
     }
     switch (ITTI_MSG_ID(msg_p)) {
     case RRC_DCCH_DATA_REQ:
-      LOG_I(PDCP, "Received RRC_DCCH_DATA_REQ type at PDCP task \n");
+      LOG_D(PDCP, "Received RRC_DCCH_DATA_REQ type at PDCP task \n");
       PROTOCOL_CTXT_SET_BY_MODULE_ID(
           &ctxt,
           RRC_DCCH_DATA_REQ(msg_p).module_id,

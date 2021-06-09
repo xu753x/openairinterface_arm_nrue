@@ -491,26 +491,26 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     /* Part - II */
     /* if payload is empty or only negative SR -> no pucch transmission */
 
-    if(O_ACK == 0) {
-      N_UCI = O_SR + O_CSI;
-      if ((N_UCI == 0) || ((O_CSI == 0) && (sr_payload == 0))) {   /* TS 38.213 9.2.4 UE procedure for reporting SR */
-        NR_TST_PHY_PRINTF("PUCCH No feedback AbsSubframe %d.%d \n", frame_tx%1024, nr_slot_tx);
-        LOG_D(PHY,"PUCCH No feedback AbsSubframe %d.%d \n", frame_tx%1024, nr_slot_tx);
-        return (FALSE);
+  if(O_ACK == 0) {
+    N_UCI = O_SR + O_CSI;
+    if ((N_UCI == 0) || ((O_CSI == 0) && (sr_payload == 0))) {   /* TS 38.213 9.2.4 UE procedure for reporting SR */
+      NR_TST_PHY_PRINTF("PUCCH No feedback AbsSubframe %d.%d \n", frame_tx%1024, nr_slot_tx);
+      LOG_D(PHY,"PUCCH No feedback AbsSubframe %d.%d \n", frame_tx%1024, nr_slot_tx);
+      return (FALSE);
+    }
+    else {
+      /* a resource set and a resource should be find according to payload size */
+      pucch_resource_set = find_pucch_resource_set( mac, gNB_id, N_UCI);
+      if (pucch_resource_set != MAX_NB_OF_PUCCH_RESOURCE_SETS) {
+        pucch_resource_indicator = 0;
+        /* get the first resource of the set */
+        pucch_resource_id = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.array[pucch_resource_set]->resourceList.list.array[pucch_resource_indicator][0];
       }
       else {
-	/* a resource set and a resource should be find according to payload size */
-	pucch_resource_set = find_pucch_resource_set( mac, gNB_id, N_UCI);
-	if (pucch_resource_set != MAX_NB_OF_PUCCH_RESOURCE_SETS) {
-	  pucch_resource_indicator = 0;
-    /* get the first resource of the set */
-	  pucch_resource_id = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.array[pucch_resource_set]->resourceList.list.array[pucch_resource_indicator][0]; /* get the first resource of the set */
-	}
-	else {
-	  LOG_W(PHY,"PUCCH no resource set found for CSI at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
-	  O_CSI = 0;
-	  csi_payload = 0;
-	}
+        LOG_W(PHY,"PUCCH no resource set found for CSI at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
+        O_CSI = 0;
+        csi_payload = 0;
+      }
 
 	if (O_CSI == 0) {
 	  /* only SR has to be send */
@@ -558,7 +558,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     /* use of initial pucch configuration provided by system information 1 */
     /***********************************************************************/
     if (initial_pucch_id != NB_INITIAL_PUCCH_RESOURCE) {
-      LOG_I(MAC,"Selecting INITIAL PUCCH Resource\n");
+      LOG_D(MAC,"Selecting INITIAL PUCCH Resource\n");
       format = initial_pucch_resource[initial_pucch_id].format;
       starting_symbol_index = initial_pucch_resource[initial_pucch_id].startingSymbolIndex;
       nb_symbols_total = initial_pucch_resource[initial_pucch_id].nrofSymbols;
@@ -988,8 +988,6 @@ uint8_t get_downlink_ack(PHY_VARS_NR_UE *ue, uint8_t gNB_id,  UE_nr_rxtx_proc_t 
   int N_m_c_rx = 0;
   int V_DAI_m_DL = 0;
   NR_UE_MAC_INST_t *mac = get_mac_inst(0);
-
-
 
   if (mac->DLbwp[0] &&
       mac->DLbwp[0]->bwp_Dedicated &&

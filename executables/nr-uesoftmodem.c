@@ -153,8 +153,9 @@ int     transmission_mode = 1;
 int            numerology = 0;
 int           oaisim_flag = 0;
 int            emulate_rf = 0;
-uint32_t       N_RB_DL=106;
-char uecap_xer[1024],uecap_xer_in=0;
+uint32_t       N_RB_DL    = 106;
+char         uecap_xer_in = 0;
+char         uecap_xer[1024];
 
 /* see file openair2/LAYER2/MAC/main.c for why abstraction_flag is needed
  * this is very hackish - find a proper solution
@@ -335,8 +336,9 @@ void set_options(int CC_id, PHY_VARS_NR_UE *UE){
     LOG_I(PHY, "Set UE frame_type %d\n", fp->frame_type);
   }
 
-  LOG_I(PHY, "Set UE N_RB_DL %d\n", N_RB_DL);
   fp->N_RB_DL = N_RB_DL;
+
+  LOG_I(PHY, "Set UE N_RB_DL %d\n", N_RB_DL);
   LOG_I(PHY, "Set UE nb_rx_antenna %d, nb_tx_antenna %d, threequarter_fs %d\n", fp->nb_antennas_rx, fp->nb_antennas_tx, fp->threequarter_fs);
 
 }
@@ -451,10 +453,6 @@ int main( int argc, char **argv ) {
 #  define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"
 #endif
   LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
-
-  RC.nrrrc = (gNB_RRC_INST **)malloc(1*sizeof(gNB_RRC_INST *));
-  RC.nrrrc[0] = (gNB_RRC_INST*)malloc(sizeof(gNB_RRC_INST));
-  RC.nrrrc[0]->node_type = ngran_gNB;
 
   init_NR_UE(1,rrc_config_path);
   if(IS_SOFTMODEM_NOS1 || get_softmodem_params()->sa)

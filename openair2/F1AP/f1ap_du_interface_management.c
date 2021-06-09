@@ -199,14 +199,19 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
         served_cell_information.nRPCI = f1ap_du_data->nr_pci[i];  // int 0..1007
 
         /* - fiveGS_TAC */
-        uint8_t fiveGS_TAC[3];
-        served_cell_information.fiveGS_TAC=calloc(1,sizeof(*served_cell_information.fiveGS_TAC));
-        fiveGS_TAC[0] = ((uint8_t*)&f1ap_du_data->tac[i])[2];
-        fiveGS_TAC[1] = ((uint8_t*)&f1ap_du_data->tac[i])[1];
-        fiveGS_TAC[2] = ((uint8_t*)&f1ap_du_data->tac[i])[0];
-        OCTET_STRING_fromBuf(served_cell_information.fiveGS_TAC,
-                             (const char *)fiveGS_TAC,
-                             3);
+        if (RC.nrrrc) {
+          uint8_t fiveGS_TAC[3];
+          fiveGS_TAC[0] = ((uint8_t*)&f1ap_du_data->tac[i])[2];
+          fiveGS_TAC[1] = ((uint8_t*)&f1ap_du_data->tac[i])[1];
+          fiveGS_TAC[2] = ((uint8_t*)&f1ap_du_data->tac[i])[0];
+          OCTET_STRING_fromBuf(served_cell_information.fiveGS_TAC,
+                               (const char *)fiveGS_TAC,
+                               3);
+        } else {
+          OCTET_STRING_fromBuf(served_cell_information.fiveGS_TAC,
+                               (const char*)&f1ap_du_data->tac[i],
+                               3);
+        }
 
         /* - Configured_EPS_TAC */
         if(0){
@@ -392,7 +397,7 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
                              (const char*)f1ap_du_data->mib[i],//f1ap_du_data->mib,
                              f1ap_du_data->mib_length[i]);
 
-        LOG_I(F1AP,"Filling SIB1_message for cell %d, length %d\n",i,f1ap_du_data->sib1_length[i]);
+        LOG_D(F1AP,"Filling SIB1_message for cell %d, length %d\n",i,f1ap_du_data->sib1_length[i]);
         OCTET_STRING_fromBuf(&gNB_DU_System_Information->sIB1_message,  // sept. 2018
                              (const char*)f1ap_du_data->sib1[i],
                              f1ap_du_data->sib1_length[i]);
@@ -410,15 +415,17 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
 
   /* mandatory */
   /* c5. RRC VERSION */
-  ie = (F1AP_F1SetupRequestIEs_t *)calloc(1, sizeof(F1AP_F1SetupRequestIEs_t));
-  ie->id                        = F1AP_ProtocolIE_ID_id_GNB_DU_RRC_Version;
-  ie->criticality               = F1AP_Criticality_reject;
-  ie->value.present             = F1AP_F1SetupRequestIEs__value_PR_RRC_Version;
-  ie->value.choice.RRC_Version.latest_RRC_Version.buf=calloc(1,sizeof(char));
-  ie->value.choice.RRC_Version.latest_RRC_Version.buf[0] = 0xe0;
-  ie->value.choice.RRC_Version.latest_RRC_Version.size = 1;
-  ie->value.choice.RRC_Version.latest_RRC_Version.bits_unused = 5;
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  if(RC.nrrrc) {
+    ie = (F1AP_F1SetupRequestIEs_t *) calloc(1, sizeof(F1AP_F1SetupRequestIEs_t));
+    ie->id = F1AP_ProtocolIE_ID_id_GNB_DU_RRC_Version;
+    ie->criticality = F1AP_Criticality_reject;
+    ie->value.present = F1AP_F1SetupRequestIEs__value_PR_RRC_Version;
+    ie->value.choice.RRC_Version.latest_RRC_Version.buf = calloc(1, sizeof(char));
+    ie->value.choice.RRC_Version.latest_RRC_Version.buf[0] = 0xe0;
+    ie->value.choice.RRC_Version.latest_RRC_Version.size = 1;
+    ie->value.choice.RRC_Version.latest_RRC_Version.bits_unused = 5;
+    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  }
 
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
@@ -725,13 +732,19 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
         served_cell_information.nRPCI = f1ap_setup_req->nr_pci[i];  // int 0..1007
 
         /* - fiveGS_TAC */
-        uint8_t fiveGS_TAC[3];
-        fiveGS_TAC[0] = ((uint8_t*)&f1ap_setup_req->tac[i])[2];
-        fiveGS_TAC[1] = ((uint8_t*)&f1ap_setup_req->tac[i])[1];
-        fiveGS_TAC[2] = ((uint8_t*)&f1ap_setup_req->tac[i])[0];
-        OCTET_STRING_fromBuf(served_cell_information.fiveGS_TAC,
-                             (const char *)fiveGS_TAC,
-                             3);
+        if (RC.nrrrc) {
+          uint8_t fiveGS_TAC[3];
+          fiveGS_TAC[0] = ((uint8_t*)&f1ap_setup_req->tac[i])[2];
+          fiveGS_TAC[1] = ((uint8_t*)&f1ap_setup_req->tac[i])[1];
+          fiveGS_TAC[2] = ((uint8_t*)&f1ap_setup_req->tac[i])[0];
+          OCTET_STRING_fromBuf(served_cell_information.fiveGS_TAC,
+                               (const char *)fiveGS_TAC,
+                               3);
+        } else {
+          OCTET_STRING_fromBuf(served_cell_information.fiveGS_TAC,
+                               (const char *) &f1ap_setup_req->tac[i],
+                               3);
+        }
 
         /* - Configured_EPS_TAC */
         if(1){
@@ -890,7 +903,6 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
         served_cell_information.nRPCI = f1ap_setup_req->nr_pci[i];  // int 0..1007
 
         /* - fiveGS_TAC */
-	      served_cell_information.fiveGS_TAC=calloc(1,sizeof(*served_cell_information.fiveGS_TAC));
         OCTET_STRING_fromBuf(served_cell_information.fiveGS_TAC,
                              (const char *) &f1ap_setup_req->tac[i],
                              3);
@@ -1075,6 +1087,10 @@ int DU_handle_gNB_CU_CONFIGURATION_UPDATE(instance_t instance,
                                 uint32_t stream,
                                 F1AP_F1AP_PDU_t *pdu) {
 
+  if(!RC.nrrrc) {
+    return 0;
+  }
+
   LOG_D(F1AP, "DU_handle_gNB_CU_CONFIGURATION_UPDATE\n");
 
   AssertFatal(pdu->present == F1AP_F1AP_PDU_PR_initiatingMessage,
@@ -1237,6 +1253,10 @@ int DU_send_gNB_CU_CONFIGURATION_UPDATE_FAILURE(instance_t instance,
 
 int DU_send_gNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
 						    f1ap_gnb_cu_configuration_update_acknowledge_t *GNBCUConfigurationUpdateAcknowledge) {
+
+  if(!RC.nrrrc) {
+    return 0;
+  }
 
   AssertFatal(GNBCUConfigurationUpdateAcknowledge->num_cells_failed_to_be_activated == 0,
 	      "%d cells failed to activate\n",
