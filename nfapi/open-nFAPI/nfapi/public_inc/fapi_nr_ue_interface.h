@@ -463,6 +463,9 @@ typedef struct {
   double scaling_factor_S;
   int8_t accumulated_delta_PUCCH;
   uint8_t pucch_resource_id;
+  uint8_t n_CCE;
+  uint8_t N_CCE;
+
   uint8_t pdsch_to_harq_feedback_time_ind;
   uint8_t n_dmrs_cdm_groups;
   uint8_t dmrs_ports[10];

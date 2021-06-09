@@ -440,7 +440,8 @@ void nr_generate_pucch1(PHY_VARS_NR_UE *ue,
       }
     }
 
-    if ((intraSlotFrequencyHopping == 1) && (l<floor(nrofSymbols/2))) { // intra-slot hopping enabled, we need to calculate new offset PRB
+    //if ((intraSlotFrequencyHopping == 1) && (l<floor(nrofSymbols/2))) { // intra-slot hopping enabled, we need to calculate new offset PRB
+    if ((intraSlotFrequencyHopping == 1) && (l>=floor(nrofSymbols/2))) { // intra-slot hopping enabled, we need to calculate new offset PRB
       startingPRB = startingPRB + startingPRB_intraSlotHopping;
     }
 

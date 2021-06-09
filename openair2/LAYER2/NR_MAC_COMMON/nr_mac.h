@@ -268,6 +268,8 @@ typedef struct {
   uint8_t     short_messages_indicator; //2 bits
   uint8_t     short_messages; //8 bits
   uint8_t     tb_scaling; //2 bits
+  uint8_t     n_CCE;
+  uint8_t     N_CCE;
   uint8_t     pucch_resource_indicator; //3 bits
   uint8_t     system_info_indicator; //1 bit
   uint8_t     ulsch_indicator;

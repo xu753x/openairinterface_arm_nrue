@@ -44,7 +44,7 @@
 #include <common/utils/nr/nr_common.h>
 
 #ifndef NO_RAT_NR
-
+#include "PHY/phy_extern_nr_ue.h"
 #include "SCHED_NR_UE/defs.h"
 #include "SCHED_NR_UE/harq_nr.h"
 #include "SCHED_NR_UE/pucch_power_control_ue_nr.h"
@@ -419,6 +419,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(0);
   NR_PUCCH_Resource_t *pucch_resource = NULL;
+  NR_PUCCH_Config_t *pucch_Config;
   uint16_t crnti = mac->crnti;
   NR_BWP_Id_t bwp_id = mac->UL_BWP_Id;
 
@@ -529,6 +530,12 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     }
   }
 
+  if (O_ACK > 0)
+  LOG_I(PHY, "frame %d %d (%d %d), pucch bits O_SR %d, O_ACK %d, O_CSI %d, pucch_resource_set %d, pucch_resource_id %d, bwp id %d\n", frame_tx, nr_slot_tx,
+  global_frame_rx, global_slot_rx,
+  O_SR, O_ACK, O_CSI, pucch_resource_set, pucch_resource_id, mac->UL_BWP_Id);
+
+
   N_UCI = O_SR + O_ACK + O_CSI;
   if (N_UCI ==0) return(TRUE);
 
@@ -594,6 +601,14 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
       NR_TST_PHY_PRINTF("PUCCH common configuration with index %d \n", initial_pucch_id);
       startingPRB += BWPstart;
       secondHopPRB += BWPstart;
+
+      LOG_I(PHY, "came here: pucch_resource_id %d, format %d, nb_symbols_total %d, starting_symbol_index %d, startingPRB %d, secondHopPRB %d, nCCE %d, NCCE %d, pucch ind %d, m_0 %d\n",
+      pucch_resource_id, format, nb_symbols_total, starting_symbol_index, startingPRB, secondHopPRB, harq_status->n_CCE, harq_status->N_CCE, harq_status->pucch_resource_indicator, m_0);
+
+      startingPRB = 0;
+      secondHopPRB = 105;
+      m_0 = 0;
+
     }
     /* use dedicated pucch resource configuration */
     /**********************************************/
@@ -614,7 +629,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
         LOG_E(PHY,"PUCCH Unsupported code block group for serving cell config : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
         return(FALSE);
       }
-      NR_PUCCH_Config_t *pucch_Config;
+      //NR_PUCCH_Config_t *pucch_Config;
       if (bwp_id>0 &&
           mac->ULbwp[bwp_id-1] &&
           mac->ULbwp[bwp_id-1]->bwp_Dedicated &&
@@ -730,6 +745,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   /* drop CSI report if simultaneous HARQ-ACK/SR and periodic/semi-periodic CSI cannot be transmitted at the same time */
   if (format !=  pucch_format0_nr) {
 
+#if 0
     if (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format1 != NULL) {
       //max_code_rate = code_rate_r_time_100[mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format1->choice.setup->maxCodeRate[0]]; /* it is code rate * 10 */
 
@@ -739,7 +755,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
         csi_payload = 0; /* csi should be dropped in this case */
       }
     }
-
+#endif
     /* TS 38.212 6.3.1.2  Code block segmentation and CRC attachment */
     /* crc attachment can be done depending of payload size */
 //    if (N_UCI < 11) {

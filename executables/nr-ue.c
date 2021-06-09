@@ -497,6 +497,10 @@ static inline int get_readBlockSize(uint16_t slot, NR_DL_FRAME_PARMS *fp) {
   return rem_samples + next_slot_first_symbol;
 }
 
+int global_slot_rx = 0;
+int global_frame_rx = 0;
+
+
 void *UE_thread(void *arg) {
   //this thread should be over the processing thread to keep in real time
   PHY_VARS_NR_UE *UE = (PHY_VARS_NR_UE *) arg;
@@ -619,6 +623,9 @@ void *UE_thread(void *arg) {
     curMsg->proc.frame_rx    = (absolute_slot/nb_slot_frame) % MAX_FRAME_NUMBER;
     curMsg->proc.frame_tx    = ((absolute_slot+DURATION_RX_TO_TX)/nb_slot_frame) % MAX_FRAME_NUMBER;
     curMsg->proc.decoded_frame_rx=-1;
+    global_slot_rx = curMsg->proc.nr_slot_rx;
+    global_frame_rx = curMsg->proc.frame_rx;
+
     //LOG_I(PHY,"Process slot %d thread Idx %d total gain %d\n", slot_nr, thread_idx, UE->rx_total_gain_dB);
 
 #ifdef OAI_ADRV9371_ZC706

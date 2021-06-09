@@ -56,6 +56,11 @@ extern int16_t *primary_synch0_time; //!< index: [0..ofdm_symbol_size*2[
 extern int16_t *primary_synch1_time; //!< index: [0..ofdm_symbol_size*2[
 extern int16_t *primary_synch2_time; //!< index: [0..ofdm_symbol_size*2[
 
+extern int global_slot_rx;
+extern int global_frame_rx;
+
+
+
 extern int flagMag;
 //extern short **txdataF_rep_tmp;
 

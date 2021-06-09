@@ -745,6 +745,9 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     //if (dci->pucch_resource_indicator == 6) dlsch_config_pdu_1_0->pucch_resource_id = 7; //pucch-ResourceId obtained from the 7th value of resourceList FIXME!!
     //if (dci->pucch_resource_indicator == 7) dlsch_config_pdu_1_0->pucch_resource_id = 8; //pucch-ResourceId obtained from the 8th value of resourceList FIXME!!
     dlsch_config_pdu_1_0->pucch_resource_id = dci->pucch_resource_indicator;
+    dlsch_config_pdu_1_0->n_CCE = dci->n_CCE;
+    dlsch_config_pdu_1_0->N_CCE = dci->N_CCE;
+
     // Sanity check for pucch_resource_indicator value received to check for false DCI.
     valid = 0;
     if (mac->ULbwp[0] &&
