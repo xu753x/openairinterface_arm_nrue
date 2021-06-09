@@ -1225,11 +1225,25 @@ rrc_gNB_process_NGAP_UE_CONTEXT_RELEASE_COMMAND(
     return -1;
   } else {
     ue_context_p->ue_context.ue_release_timer_ng = 0;
+    ue_context_p->ue_context.ue_release_timer_thres_rrc = 1000;
     PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, GNB_FLAG_YES, ue_context_p->ue_context.rnti, 0, 0);
+    ctxt.eNB_index = 0;
     rrc_gNB_generate_RRCRelease(&ctxt, ue_context_p);
     return 0;
   }
 }
+
+void rrc_gNB_send_NGAP_UE_CONTEXT_RELEASE_COMPLETE(
+  instance_t instance,
+  uint32_t   gNB_ue_ngap_id) {
+  MSC_LOG_TX_MESSAGE(MSC_RRC_GNB, MSC_NGAP_GNB, NULL, 0,
+                     "0 NGAP_UE_CONTEXT_RELEASE_COMPLETE gNB_ue_ngap_id 0x%06"PRIX32" ",
+                     gNB_ue_ngap_id);
+  MessageDef *msg = itti_alloc_new_message(TASK_RRC_GNB, 0, NGAP_UE_CONTEXT_RELEASE_COMPLETE);
+  NGAP_UE_CONTEXT_RELEASE_COMPLETE(msg).gNB_ue_ngap_id = gNB_ue_ngap_id;
+  itti_send_msg_to_task(TASK_NGAP, instance, msg);
+}
+
 //------------------------------------------------------------------------------
 /*
 * Remove UE ids (ue_initial_id and ng_id) from hashtables.

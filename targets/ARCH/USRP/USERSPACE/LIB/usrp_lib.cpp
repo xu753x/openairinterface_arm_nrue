@@ -385,14 +385,14 @@ static int trx_usrp_write(openair0_device *device,
 #if defined(__x86_64) || defined(__i386__)
   #ifdef __AVX2__
       nsamps2 = (nsamps+7)>>3;
-      __m256i buff_tx[8][nsamps2];
+      __m256i buff_tx[cc<2?2:cc][nsamps2];
   #else
     nsamps2 = (nsamps+3)>>2;
-    __m128i buff_tx[8][nsamps2];
+    __m128i buff_tx[cc<2?2:cc][nsamps2];
   #endif
 #elif defined(__arm__)
     nsamps2 = (nsamps+3)>>2;
-    int16x8_t buff_tx[8][nsamps2];
+    int16x8_t buff_tx[cc<2?2:cc][nsamps2];
 #else
 #error Unsupported CPU architecture, USRP device cannot be built
 #endif
@@ -523,14 +523,14 @@ void *trx_usrp_write_thread(void * arg){
     #if defined(__x86_64) || defined(__i386__)
       #ifdef __AVX2__
         nsamps2 = (nsamps+7)>>3;
-        __m256i buff_tx[8][nsamps2];
+        __m256i buff_tx[cc<2?2:cc][nsamps2];
       #else
         nsamps2 = (nsamps+3)>>2;
-        __m128i buff_tx[8][nsamps2];
+        __m128i buff_tx[cc<2?2:cc][nsamps2];
       #endif
     #elif defined(__arm__)
       nsamps2 = (nsamps+3)>>2;
-      int16x8_t buff_tx[8][nsamps2];
+      int16x8_t buff_tx[cc<2?2:cc][nsamps2];
     #else
     #error Unsupported CPU architecture, USRP device cannot be built
     #endif
@@ -624,64 +624,54 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
 #if defined(__x86_64) || defined(__i386__)
 #ifdef __AVX2__
   nsamps2 = (nsamps+7)>>3;
-  __m256i buff_tmp[4][nsamps2];
+  __m256i buff_tmp[cc<2 ? 2 : cc][nsamps2];
 #else
   nsamps2 = (nsamps+3)>>2;
-  __m128i buff_tmp[4][nsamps2];
+  __m128i buff_tmp[cc<2 ? 2 : cc][nsamps2];
 #endif
 #elif defined(__arm__)
   nsamps2 = (nsamps+3)>>2;
-  int16x8_t buff_tmp[4][nsamps2];
+  int16x8_t buff_tmp[cc<2 ? 2 : cc][nsamps2];
 #endif
 
   int rxshift;
   switch (device->type) {
-     case USRP_B200_DEV:
-        rxshift=4;
-        break;
-     case USRP_X300_DEV:
-     case USRP_N300_DEV:
-        rxshift=2;
-        break;
-     default:
-	AssertFatal(1==0,"Shouldn't be here\n");
-  }	
+    case USRP_B200_DEV:
+      rxshift=4;
+      break;
+    case USRP_X300_DEV:
+    case USRP_N300_DEV:
+      rxshift=2;
+      break;
+    default:
+      AssertFatal(1==0,"Shouldn't be here\n");
+  }
+
   if (cc>1) {
+    samples_received=0;
+    while (samples_received != nsamps) {
+
+      if (cc>1) {
       // receive multiple channels (e.g. RF A and RF B)
-      std::vector<void *> buff_ptrs;
+        std::vector<void *> buff_ptrs;
 
-     samples_received=0;
-
-      while (samples_received != nsamps) {
         for (int i=0; i<cc; i++) buff_ptrs.push_back(buff_tmp[i]+samples_received);
-        samples_received += s->rx_stream->recv(buff_ptrs,nsamps-samples_received, s->rx_md);
 
-
-         if  ((s->wait_for_first_pps == 0) && (s->rx_md.error_code!=uhd::rx_metadata_t::ERROR_CODE_NONE))
-          break;
-
-        if ((s->wait_for_first_pps == 1) && (samples_received != nsamps)) {
-          printf("sleep...\n"); //usleep(100);
-        }
-      }
-      if (samples_received == nsamps) s->wait_for_first_pps=0;
-   } else {
+        samples_received += s->rx_stream->recv(buff_ptrs, nsamps, s->rx_md);
+      } else {
       // receive a single channel (e.g. from connector RF A)
-      samples_received=0;
 
-      while (samples_received != nsamps) {
         samples_received += s->rx_stream->recv((void*)((int32_t*)buff_tmp[0]+samples_received),
                                                nsamps-samples_received, s->rx_md);
-
-        if  ((s->wait_for_first_pps == 0) && (s->rx_md.error_code!=uhd::rx_metadata_t::ERROR_CODE_NONE))
-          break;
-
-        if ((s->wait_for_first_pps == 1) && (samples_received != nsamps)) {
-          printf("sleep...\n"); //usleep(100);
-        }
       }
-      if (samples_received == nsamps) s->wait_for_first_pps=0;
+      if  ((s->wait_for_first_pps == 0) && (s->rx_md.error_code!=uhd::rx_metadata_t::ERROR_CODE_NONE))
+        break;
+
+      if ((s->wait_for_first_pps == 1) && (samples_received != nsamps)) {
+        printf("sleep...\n"); //usleep(100);
+      }
     }
+    if (samples_received == nsamps) s->wait_for_first_pps=0;
 
     // bring RX data into 12 LSBs for softmodem RX
     for (int i=0; i<cc; i++) {
@@ -1270,7 +1260,7 @@ extern "C" {
                    gain - gain_range.stop());
                gain=gain_range.stop();
       }
-          
+
       s->usrp->set_rx_gain(gain,i);
       LOG_I(HW,"RX Gain %d %f (%f) => %f (max %f)\n",i,
             openair0_cfg[0].rx_gain[i],openair0_cfg[0].rx_gain_offset[i],
@@ -1312,12 +1302,12 @@ extern "C" {
 
   LOG_I(HW,"rx_max_num_samps %zu\n",
         s->usrp->get_rx_stream(stream_args_rx)->get_max_num_samps());
-  
+
   for (int i = 0; i<openair0_cfg[0].rx_num_channels; i++) {
     LOG_I(HW,"setting rx channel %d\n",i);
     stream_args_rx.channels.push_back(i);
   }
-  
+
   s->rx_stream = s->usrp->get_rx_stream(stream_args_rx);
   uhd::stream_args_t stream_args_tx("sc16", "sc16");
 
