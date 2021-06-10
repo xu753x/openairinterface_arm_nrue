@@ -121,7 +121,7 @@ boolean_t check_pucch_format(NR_UE_MAC_INST_t *mac, uint8_t gNB_id, pucch_format
     @param slots for rx and tx
     @returns TRUE  a scheduling request is triggered */
                              
-int trigger_periodic_scheduling_request(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_t *proc);
+int trigger_periodic_scheduling_request(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_t *proc, int *pucch_resource_id);
 
 /** \brief This function reads current CSI
     @param ue context

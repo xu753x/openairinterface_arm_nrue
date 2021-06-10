@@ -1132,6 +1132,25 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
 
 int8_t nr_ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP, uint8_t eNB_id, uint16_t rnti, sub_frame_t subframe){
 
+
+  //unsigned short post_padding = 0;
+  NR_UE_MAC_INST_t *mac = get_mac_inst(module_idP);
+
+  rlc_buffer_occupancy_t lcid_buffer_occupancy_old = 0;
+  
+  AssertFatal(CC_id == 0,
+              "Transmission on secondary CCs is not supported yet\n");
+
+  // Check for DCCH first
+  // TO DO: Multiplex in the order defined by the logical channel prioritization
+  for (int lcid = UL_SCH_LCID_SRB1;
+       lcid < NR_MAX_NUM_LCID; lcid++) {
+
+      lcid_buffer_occupancy_old = mac_rlc_get_buffer_occupancy_ind(module_idP, mac->crnti, eNB_id, frameP, subframe, ENB_FLAG_NO, lcid);
+      if (lcid_buffer_occupancy_old > 0)
+        return 1;
+      }
+
   return 0;
 }
 

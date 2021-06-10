@@ -412,6 +412,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   int       initial_pucch_id = NB_INITIAL_PUCCH_RESOURCE;
   int       pucch_resource_set = MAX_NB_OF_PUCCH_RESOURCE_SETS;
   int       pucch_resource_id = MAX_NB_OF_PUCCH_RESOURCES;
+  int       pucch_resource_id_sr = MAX_NB_OF_PUCCH_RESOURCES;
   int       pucch_resource_indicator = MAX_PUCCH_RESOURCE_INDICATOR;
   int       n_HARQ_ACK;
 
@@ -444,7 +445,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
 
   sr_payload = 0;
 
-  if (trigger_periodic_scheduling_request( ue, gNB_id, proc ) == 1) {
+  if (trigger_periodic_scheduling_request( ue, gNB_id, proc, &pucch_resource_id_sr ) == 1) {
     O_SR = 1; /* sr should be transmitted */
     if (ue->mac_enabled == 1) {
 
@@ -455,6 +456,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
                                 gNB_id,
                                 0,//ue->pdcch_vars[proc->thread_id][gNB_id]->crnti,
                                 nr_slot_tx); // nr_slot_rx used for meas gap
+      LOG_D(PHY, "sr: frame %d %d, sr payload %d\n", frame_tx, nr_slot_tx, sr_payload);
     }
     else {
       sr_payload = 1;
@@ -501,6 +503,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
       }
       else {
 	/* a resource set and a resource should be find according to payload size */
+  #if 0
 	pucch_resource_set = find_pucch_resource_set( mac, gNB_id, N_UCI);
 	if (pucch_resource_set != MAX_NB_OF_PUCCH_RESOURCE_SETS) {
 	  pucch_resource_indicator = 0;
@@ -512,25 +515,27 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
 	  O_CSI = 0;
 	  csi_payload = 0;
 	}
+#endif
 
 	if (O_CSI == 0) {
 	  /* only SR has to be send */
 	  /* in this case there is no DCI related to PUCCH parameters so pucch resource should be get from sr configuration */
 	  /* TS 38.213 9.2.4 UE procedure for reporting SR */
-	  pucch_resource_set = 0; /* force it to a valid value */
-	  if (ue->scheduling_request_config_nr[gNB_id].sr_ResourceConfig[ue->scheduling_request_config_nr[gNB_id].active_sr_id] != NULL) {
-	    pucch_resource_id = ue->scheduling_request_config_nr[gNB_id].sr_ResourceConfig[ue->scheduling_request_config_nr[gNB_id].active_sr_id]->resource;
+	  pucch_resource_set = 1; /* force it to a valid value */
+    pucch_resource_id = pucch_resource_id_sr;
+	  //if (ue->scheduling_request_config_nr[gNB_id].sr_ResourceConfig[ue->scheduling_request_config_nr[gNB_id].active_sr_id] != NULL) {
+	  //  pucch_resource_id = ue->scheduling_request_config_nr[gNB_id].sr_ResourceConfig[ue->scheduling_request_config_nr[gNB_id].active_sr_id]->resource;
+	  //}
+	  //else {
+	  //  LOG_E(PHY,"PUCCH No scheduling request configuration : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
+	  //  return(FALSE);
 	  }
-	  else {
-	    LOG_E(PHY,"PUCCH No scheduling request configuration : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
-	    return(FALSE);
-	  }
-	}
+
       }
     }
   }
 
-  if (O_ACK > 0)
+  if (N_UCI > 0)
   LOG_I(PHY, "frame %d %d (%d %d), pucch bits O_SR %d, O_ACK %d, O_CSI %d, pucch_resource_set %d, pucch_resource_id %d, bwp id %d\n", frame_tx, nr_slot_tx,
   global_frame_rx, global_slot_rx,
   O_SR, O_ACK, O_CSI, pucch_resource_set, pucch_resource_id, mac->UL_BWP_Id);
@@ -664,6 +669,9 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
       }
 
       m_0 = get_ics_pucch(pucch_resource, format);
+      LOG_D(PHY, "came here4: pucch_resource_id %d, format %d, nb_symbols_total %d, starting_symbol_index %d, startingPRB %d, secondHopPRB %d, nCCE %d, NCCE %d, pucch ind %d, m_0 %d\n",
+      pucch_resource_id, format, nb_symbols_total, starting_symbol_index, startingPRB, secondHopPRB, harq_status->n_CCE, harq_status->N_CCE, harq_status->pucch_resource_indicator, m_0);
+
       AssertFatal(m_0 >= 0, "Invalid m_0\n");
       if (format == pucch_format3_nr) {
         if (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format3->choice.setup->additionalDMRS[0] == 1) {
@@ -899,6 +907,17 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     }
     case pucch_format1_nr:
     {
+      LOG_D(PHY, "pucch1: slot %d, m0 %d, symbols %d, %d, prb %d, %d, occ %d, NUCI %d, payload %d\n",
+      nr_slot_tx,
+                         (uint8_t)m_0,
+                         nb_symbols_total,
+                         starting_symbol_index,
+                         startingPRB,
+                         secondHopPRB,
+                         (uint8_t)time_domain_occ,
+                         (uint8_t)N_UCI,
+                         pucch_payload      
+      );
       nr_generate_pucch1(ue,ue->common_vars.txdataF,
                          &ue->frame_parms,
                          &ue->pucch_config_dedicated[gNB_id],
@@ -1201,6 +1220,9 @@ boolean_t select_pucch_resource(PHY_VARS_NR_UE *ue, NR_UE_MAC_INST_t *mac, uint8
   //*resource_set_id = MAX_NB_OF_PUCCH_RESOURCE_SETS;
   //*resource_id = MAX_NB_OF_PUCCH_RESOURCES;
 
+  if ((*resource_id != MAX_NB_OF_PUCCH_RESOURCES) && (*resource_set_id != MAX_NB_OF_PUCCH_RESOURCE_SETS))
+     return TRUE;
+  
   if ((bwp_id ==0 &&
        mac->cg == NULL) ||
       (bwp_id == 0 &&
@@ -1546,45 +1568,115 @@ boolean_t check_pucch_format(NR_UE_MAC_INST_t *mac, uint8_t gNB_id, pucch_format
 *
 *********************************************************************/
 
-int trigger_periodic_scheduling_request(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_t *proc)
+void periodicity__SRR (NR_SchedulingRequestResourceConfig_t *SchedulingReqRec, int *period, int *offset)
 {
-  const int max_sr_periodicity[NB_NUMEROLOGIES_NR] = { 80, 160, 320, 640, 640 };
+  NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR P_O = SchedulingReqRec->periodicityAndOffset->present;
 
-  int active_scheduling_request = ue->scheduling_request_config_nr[gNB_id].active_sr_id;
+   switch (P_O){
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl1:
+      *period = 1;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl1;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl2:
+      *period = 2;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl2;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl4:
+      *period = 4;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl4;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl5:
+      *period = 5;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl5;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl8:
+      *period = 8;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl8;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl10:
+      *period = 10;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl10;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl16:
+      *period = 16;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl16;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl20:
+      *period = 20;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl20;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl40:
+      *period = 40;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl40;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl80:
+      *period = 80;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl80;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl160:
+      *period = 160;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl160;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl320:
+      *period = 320;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl320;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl640:
+      *period = 640;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl640;
+      break;
+    default:
+      AssertFatal(1==0,"No periodicityAndOffset resources found in schedulingrequestresourceconfig");
+  }
+   LOG_D(PHY, "P_O %d, period %d offset %d\n", P_O, *period, *offset);
 
-  /* is there any valid scheduling request configuration */
-  if (ue->scheduling_request_config_nr[gNB_id].sr_ResourceConfig[active_scheduling_request] == NULL) {
-    return (0);
-  }
+}
 
-  if (ue->scheduling_request_config_nr[gNB_id].sr_ResourceConfig[active_scheduling_request]->periodicity < 2) {
-    LOG_W(PHY,"PUCCH Not supported scheduling request period smaller than 1 slot : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
-    return (0);
-  }
 
-  int16_t SR_periodicity = scheduling_request_periodicity[ue->scheduling_request_config_nr[gNB_id].sr_ResourceConfig[active_scheduling_request]->periodicity];
-  uint16_t SR_offset = ue->scheduling_request_config_nr[gNB_id].sr_ResourceConfig[active_scheduling_request]->offset;
 
-  if (SR_periodicity > max_sr_periodicity[ue->frame_parms.numerology_index]) {
-    LOG_W(PHY,"PUCCH Invalid scheduling request period : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
-    return (0);
-  }
+int trigger_periodic_scheduling_request(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_t *proc, int *pucch_resource_id)
+{    
+  NR_PUCCH_Config_t *pucch_Config = NULL;
+  int SR_period; int SR_offset;
+  int bwp_id = 0;
+  NR_UE_MAC_INST_t *mac = get_mac_inst(0);
+  if (bwp_id>0 &&
+          mac->ULbwp[bwp_id-1] &&
+          mac->ULbwp[bwp_id-1]->bwp_Dedicated &&
+          mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config &&
+          mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup)
+          pucch_Config =  mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup;
+      else if (bwp_id==0 &&
+               mac->cg &&
+               mac->cg->spCellConfig &&
+               mac->cg->spCellConfig->spCellConfigDedicated &&
+               mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig &&
+               mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP &&
+               mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config &&
+               mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup) {
+        pucch_Config = mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup;
+   AssertFatal(pucch_Config->schedulingRequestResourceToAddModList->list.count>0,"NO SR configuration available");
+        LOG_D(PHY,"pucch rs frame %d %d, rs num %d\n", proc->frame_tx, proc->nr_slot_tx, pucch_Config->schedulingRequestResourceToAddModList->list.count);
+        }
+    if (pucch_Config == NULL)
+       return (0);
+  
+     NR_SchedulingRequestResourceConfig_t *SchedulingReqRec = pucch_Config->schedulingRequestResourceToAddModList->list.array[0];
+      periodicity__SRR(SchedulingReqRec, &SR_period,&SR_offset);
+      // convert to int to avoid underflow of uint
+      int sfn_sf = proc->frame_tx * 20 + proc->nr_slot_tx;
+      if ((sfn_sf - SR_offset) % SR_period == 0)
+      { 
+         NR_PUCCH_ResourceId_t PucchResourceId = *(SchedulingReqRec->resource);
 
-  if (SR_offset > SR_periodicity) {
-    LOG_E(PHY,"PUCCH SR offset %d is greater than SR periodicity %d : at line %d in function %s of file %s \n", SR_offset, SR_periodicity, LINE_FILE , __func__, FILE_NAME);
-    return (0);
-  }
-  else if (SR_periodicity == 1) {
-    return (1); /* period is slot */
-  }
+            *pucch_resource_id = PucchResourceId;
 
-  int16_t N_slot_frame = ue->frame_parms.slots_per_frame;
-  if (((proc->frame_tx * N_slot_frame) + proc->nr_slot_tx - SR_offset)%SR_periodicity == 0) {
-    return (1);
-  }
-  else {
-    return (0);
-  }
+          return (1);
+
+      }
+      else {
+         return (0);
+      }
 }
 
 /*******************************************************************
