@@ -97,14 +97,14 @@ void fill_default_coresetZero(NR_ControlResourceSet_t *coreset0, NR_ServingCellC
   coreset0->cce_REG_MappingType.choice.interleaved->shiftIndex = servingcellconfigcommon->physCellId;
   coreset0->precoderGranularity = NR_ControlResourceSet__precoderGranularity_sameAsREG_bundle;
 
-  if(coreset0->tci_StatesPDCCH_ToAddList == NULL) coreset0->tci_StatesPDCCH_ToAddList = calloc(1,sizeof(*coreset0->tci_StatesPDCCH_ToAddList));
+  //if(coreset0->tci_StatesPDCCH_ToAddList == NULL) coreset0->tci_StatesPDCCH_ToAddList = calloc(1,sizeof(*coreset0->tci_StatesPDCCH_ToAddList));
 
-  NR_TCI_StateId_t *tci[8];
-  for (int i=0;i<8;i++) {
-    tci[i]=calloc(1,sizeof(*tci[i]));
-    *tci[i] = i;
-    ASN_SEQUENCE_ADD(&coreset0->tci_StatesPDCCH_ToAddList->list,tci[i]);
-  }
+  //NR_TCI_StateId_t *tci[8];
+  //for (int i=0;i<8;i++) {
+  //  tci[i]=calloc(1,sizeof(*tci[i]));
+  //  *tci[i] = i;
+  //  ASN_SEQUENCE_ADD(&coreset0->tci_StatesPDCCH_ToAddList->list,tci[i]);
+  //}
   coreset0->tci_StatesPDCCH_ToReleaseList = NULL;
   coreset0->tci_PresentInDCI = NULL;
   coreset0->pdcch_DMRS_ScramblingID = NULL;
@@ -308,24 +308,24 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  *secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0;
 
 
- secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList=calloc(1,sizeof(*secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList));
+ //secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList=calloc(1,sizeof(*secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList));
 
- int n_ssb = 0;
- NR_TCI_State_t *tcic[64];
- for (int i=0;i<64;i++) {
-   if ((bitmap>>(63-i))&0x01){
-     tcic[i]=calloc(1,sizeof(*tcic[i]));
-     tcic[i]->tci_StateId=n_ssb;
-     tcic[i]->qcl_Type1.cell=NULL;
-     tcic[i]->qcl_Type1.bwp_Id=calloc(1,sizeof(*tcic[i]->qcl_Type1.bwp_Id));
-     *tcic[i]->qcl_Type1.bwp_Id=1;
-     tcic[i]->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_ssb;
-     tcic[i]->qcl_Type1.referenceSignal.choice.ssb = i;
-     tcic[i]->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeC;
-     ASN_SEQUENCE_ADD(&secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tcic[i]);
-     n_ssb++;
-   }
- }
+ //int n_ssb = 0;
+ //NR_TCI_State_t *tcic[64];
+ //for (int i=0;i<64;i++) {
+ //  if ((bitmap>>(63-i))&0x01){
+ //    tcic[i]=calloc(1,sizeof(*tcic[i]));
+ //    tcic[i]->tci_StateId=n_ssb;
+ //    tcic[i]->qcl_Type1.cell=NULL;
+ //    tcic[i]->qcl_Type1.bwp_Id=calloc(1,sizeof(*tcic[i]->qcl_Type1.bwp_Id));
+ //    *tcic[i]->qcl_Type1.bwp_Id=1;
+ //    tcic[i]->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_ssb;
+ //    tcic[i]->qcl_Type1.referenceSignal.choice.ssb = i;
+ //    tcic[i]->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeC;
+ //    ASN_SEQUENCE_ADD(&secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tcic[i]);
+ //    n_ssb++;
+ //  }
+ //}
 
 
 #if 0
@@ -508,15 +508,15 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  coreset->cce_REG_MappingType.present = NR_ControlResourceSet__cce_REG_MappingType_PR_nonInterleaved;
  coreset->precoderGranularity = NR_ControlResourceSet__precoderGranularity_sameAsREG_bundle;
 
- coreset->tci_StatesPDCCH_ToAddList=calloc(1,sizeof(*coreset->tci_StatesPDCCH_ToAddList));
- NR_TCI_StateId_t *tci[64];
- for (int i=0;i<64;i++) {
-   if ((bitmap>>(63-i))&0x01){
-     tci[i]=calloc(1,sizeof(*tci[i]));
-     *tci[i] = i;
-     ASN_SEQUENCE_ADD(&coreset->tci_StatesPDCCH_ToAddList->list,tci[i]);
-   }
- }
+ //coreset->tci_StatesPDCCH_ToAddList=calloc(1,sizeof(*coreset->tci_StatesPDCCH_ToAddList));
+ //NR_TCI_StateId_t *tci[64];
+ //for (int i=0;i<64;i++) {
+ //  if ((bitmap>>(63-i))&0x01){
+ //    tci[i]=calloc(1,sizeof(*tci[i]));
+ //    *tci[i] = i;
+ //    ASN_SEQUENCE_ADD(&coreset->tci_StatesPDCCH_ToAddList->list,tci[i]);
+ //  }
+ //}
  coreset->tci_StatesPDCCH_ToReleaseList = NULL;
  coreset->tci_PresentInDCI = NULL;
  coreset->pdcch_DMRS_ScramblingID = NULL;
@@ -654,24 +654,24 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition));
  *bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0;
 
- bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList=calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList));
+ //bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList=calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList));
 
- n_ssb = 0;
- NR_TCI_State_t *tcid[64];
- for (int i=0;i<64;i++) {
-   if ((bitmap>>(63-i))&0x01){
-     tcid[i]=calloc(1,sizeof(*tcid[i]));
-     tcid[i]->tci_StateId=n_ssb;
-     tcid[i]->qcl_Type1.cell=NULL;
-     tcid[i]->qcl_Type1.bwp_Id=calloc(1,sizeof(*tcid[i]->qcl_Type1.bwp_Id));
-     *tcid[i]->qcl_Type1.bwp_Id=1;
-     tcid[i]->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_ssb;
-     tcid[i]->qcl_Type1.referenceSignal.choice.ssb = i;
-     tcid[i]->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeC;
-     ASN_SEQUENCE_ADD(&bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tcid[i]);
-     n_ssb++;
-   }
- }
+ //n_ssb = 0;
+ //NR_TCI_State_t *tcid[64];
+ //for (int i=0;i<64;i++) {
+ //  if ((bitmap>>(63-i))&0x01){
+ //    tcid[i]=calloc(1,sizeof(*tcid[i]));
+ //    tcid[i]->tci_StateId=n_ssb;
+ //    tcid[i]->qcl_Type1.cell=NULL;
+ //    tcid[i]->qcl_Type1.bwp_Id=calloc(1,sizeof(*tcid[i]->qcl_Type1.bwp_Id));
+ //    *tcid[i]->qcl_Type1.bwp_Id=1;
+ //    tcid[i]->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_ssb;
+ //    tcid[i]->qcl_Type1.referenceSignal.choice.ssb = i;
+ //    tcid[i]->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeC;
+ //    ASN_SEQUENCE_ADD(&bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tcid[i]);
+ //    n_ssb++;
+ //  }
+ //}
 
 
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToReleaseList=NULL;

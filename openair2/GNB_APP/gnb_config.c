@@ -145,13 +145,13 @@ void prepare_scc(NR_ServingCellConfigCommon_t *scc) {
   coreset0->cce_REG_MappingType.choice.interleaved->interleaverSize = NR_ControlResourceSet__cce_REG_MappingType__interleaved__interleaverSize_n2;
   coreset0->cce_REG_MappingType.choice.interleaved->shiftIndex = scc->physCellId;
   coreset0->precoderGranularity = NR_ControlResourceSet__precoderGranularity_sameAsREG_bundle;
-  if(coreset0->tci_StatesPDCCH_ToAddList == NULL) coreset0->tci_StatesPDCCH_ToAddList = calloc(1,sizeof(*coreset0->tci_StatesPDCCH_ToAddList));
-  NR_TCI_StateId_t *tci[8];
-  for (int i=0;i<8;i++) {
-    tci[i]=calloc(1,sizeof(*tci[i]));
-    *tci[i] = i;
-    ASN_SEQUENCE_ADD(&coreset0->tci_StatesPDCCH_ToAddList->list,tci[i]);
-  }
+  //if(coreset0->tci_StatesPDCCH_ToAddList == NULL) coreset0->tci_StatesPDCCH_ToAddList = calloc(1,sizeof(*coreset0->tci_StatesPDCCH_ToAddList));
+  //NR_TCI_StateId_t *tci[8];
+  //for (int i=0;i<8;i++) {
+  //  tci[i]=calloc(1,sizeof(*tci[i]));
+  //  *tci[i] = i;
+  //  ASN_SEQUENCE_ADD(&coreset0->tci_StatesPDCCH_ToAddList->list,tci[i]);
+  //}
   coreset0->tci_StatesPDCCH_ToReleaseList = NULL;
   coreset0->tci_PresentInDCI = NULL;
   coreset0->pdcch_DMRS_ScramblingID = NULL;
@@ -176,6 +176,7 @@ void prepare_scc(NR_ServingCellConfigCommon_t *scc) {
   }
 
   ul_frequencyBandList              = CALLOC(1,sizeof(NR_FreqBandIndicatorNR_t));
+  scc->uplinkConfigCommon->dummy = NR_TimeAlignmentTimer_infinity;
   scc->uplinkConfigCommon->frequencyInfoUL->frequencyBandList          = CALLOC(1,sizeof(struct NR_MultiFrequencyBandListNR));
   ASN_SEQUENCE_ADD(&scc->uplinkConfigCommon->frequencyInfoUL->frequencyBandList->list,ul_frequencyBandList);
 
