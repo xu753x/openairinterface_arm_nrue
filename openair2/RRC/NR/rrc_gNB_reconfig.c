@@ -97,14 +97,14 @@ void fill_default_coresetZero(NR_ControlResourceSet_t *coreset0, NR_ServingCellC
   coreset0->cce_REG_MappingType.choice.interleaved->shiftIndex = servingcellconfigcommon->physCellId;
   coreset0->precoderGranularity = NR_ControlResourceSet__precoderGranularity_sameAsREG_bundle;
 
-  //if(coreset0->tci_StatesPDCCH_ToAddList == NULL) coreset0->tci_StatesPDCCH_ToAddList = calloc(1,sizeof(*coreset0->tci_StatesPDCCH_ToAddList));
+  if(coreset0->tci_StatesPDCCH_ToAddList == NULL) coreset0->tci_StatesPDCCH_ToAddList = calloc(1,sizeof(*coreset0->tci_StatesPDCCH_ToAddList));
 
-  //NR_TCI_StateId_t *tci[8];
-  //for (int i=0;i<8;i++) {
-  //  tci[i]=calloc(1,sizeof(*tci[i]));
-  //  *tci[i] = i;
-  //  ASN_SEQUENCE_ADD(&coreset0->tci_StatesPDCCH_ToAddList->list,tci[i]);
-  //}
+  NR_TCI_StateId_t *tci[8];
+  for (int i=0;i<8;i++) {
+    tci[i]=calloc(1,sizeof(*tci[i]));
+    *tci[i] = i;
+    ASN_SEQUENCE_ADD(&coreset0->tci_StatesPDCCH_ToAddList->list,tci[i]);
+  }
   coreset0->tci_StatesPDCCH_ToReleaseList = NULL;
   coreset0->tci_PresentInDCI = NULL;
   coreset0->pdcch_DMRS_ScramblingID = NULL;
@@ -508,15 +508,15 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  coreset->cce_REG_MappingType.present = NR_ControlResourceSet__cce_REG_MappingType_PR_nonInterleaved;
  coreset->precoderGranularity = NR_ControlResourceSet__precoderGranularity_sameAsREG_bundle;
 
- //coreset->tci_StatesPDCCH_ToAddList=calloc(1,sizeof(*coreset->tci_StatesPDCCH_ToAddList));
- //NR_TCI_StateId_t *tci[64];
- //for (int i=0;i<64;i++) {
- //  if ((bitmap>>(63-i))&0x01){
- //    tci[i]=calloc(1,sizeof(*tci[i]));
- //    *tci[i] = i;
- //    ASN_SEQUENCE_ADD(&coreset->tci_StatesPDCCH_ToAddList->list,tci[i]);
- //  }
- //}
+ coreset->tci_StatesPDCCH_ToAddList=calloc(1,sizeof(*coreset->tci_StatesPDCCH_ToAddList));
+ NR_TCI_StateId_t *tci[64];
+ for (int i=0;i<64;i++) {
+   if ((bitmap>>(63-i))&0x01){
+     tci[i]=calloc(1,sizeof(*tci[i]));
+     *tci[i] = i;
+     ASN_SEQUENCE_ADD(&coreset->tci_StatesPDCCH_ToAddList->list,tci[i]);
+   }
+ }
  coreset->tci_StatesPDCCH_ToReleaseList = NULL;
  coreset->tci_PresentInDCI = NULL;
  coreset->pdcch_DMRS_ScramblingID = NULL;
