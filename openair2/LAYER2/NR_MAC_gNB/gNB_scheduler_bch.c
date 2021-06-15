@@ -142,6 +142,7 @@ void schedule_ssb(frame_t frame, sub_frame_t slot,
 void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
 {
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
+  nfapi_nr_config_request_scf_t *cfg = &gNB->config[0];
   NR_COMMON_channels_t *cc;
   nfapi_nr_dl_tti_request_t      *dl_tti_request;
   nfapi_nr_dl_tti_request_body_t *dl_req;
@@ -264,7 +265,7 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
                 const int nr_mix_slots = tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0;
                 const int nr_slots_period = tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + nr_mix_slots;
                 num_tdd_period = rel_slot/nr_slots_period;
-                gNB->tdd_beam_association[num_tdd_period]=i_ssb;
+                gNB->tdd_beam_association[num_tdd_period]=cfg->ssb_table.ssb_beam_id_list[i_ssb].beam_id.value;
                 num_ssb++;
                 AssertFatal(num_ssb<2,"beamforming currently not supported for more than one SSB per slot\n");
                 if (get_softmodem_params()->sa == 1) {
