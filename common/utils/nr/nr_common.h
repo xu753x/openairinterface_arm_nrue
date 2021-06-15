@@ -62,8 +62,9 @@ uint8_t nr_get_Qm(uint8_t Imcs, uint8_t table_idx);
 uint32_t nr_get_code_rate(uint8_t Imcs, uint8_t table_idx);
 int get_subband_size(int NPRB,int size);
 void SLIV2SL(int SLIV,int *S,int *L);
+int get_tdd_period_in_slots(int tdd_period, int slots_per_frame);
 
-
+#define NR_FRAME_DURATION 10000
 #define CEILIDIV(a,b) ((a+b-1)/b)
 #define ROUNDIDIV(a,b) (((a<<1)+b)/(b<<1))
 

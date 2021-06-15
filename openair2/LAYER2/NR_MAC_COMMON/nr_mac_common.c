@@ -3668,3 +3668,7 @@ bool set_ul_ptrs_values(NR_PTRS_UplinkConfig_t *ul_ptrs_config,
   return valid;
 }
 
+int get_tdd_period_in_slots(int tdd_period, int slots_per_frame) {
+  int tdd_periods_per_frame = NR_FRAME_DURATION / tdd_period_to_num[tdd_period];
+  return (slots_per_frame/tdd_periods_per_frame);
+}
