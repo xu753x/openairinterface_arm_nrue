@@ -720,9 +720,13 @@ void nr_get_Msg3alloc(module_id_t module_id,
     if ((scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols > 0) || (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols > 0))
       tdd_period_slot++;
     int num_tdd_period = ra->Msg3_slot/tdd_period_slot;
-    if((tdd_beam_association[num_tdd_period]!=-1)&&(tdd_beam_association[num_tdd_period]!=ra->beam_id))
-      AssertFatal(1==0,"Cannot schedule MSG3\n");
-    else
+
+    while((tdd_beam_association[num_tdd_period]!=-1)&&(tdd_beam_association[num_tdd_period]!=ra->beam_id)) {
+      ra->Msg3_slot = (ra->Msg3_slot+tdd_period_slot)%nr_slots_per_frame[mu];
+      ra->Msg3_frame = ((ra->Msg3_slot>(ra->Msg2_slot))? ra->Msg2_frame : (ra->Msg2_frame+1))%1024;
+      num_tdd_period = ra->Msg3_slot/tdd_period_slot;
+    }
+    if(tdd_beam_association[num_tdd_period] == -1)
       tdd_beam_association[num_tdd_period] = ra->beam_id;
   }
 
