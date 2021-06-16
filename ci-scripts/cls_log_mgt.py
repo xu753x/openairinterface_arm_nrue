@@ -24,17 +24,24 @@
 #
 #---------------------------------------------------------------------
 
-#import sys
+#USAGE: 
+#	log=Log_Mgt(IPAddress,Password,Path)
+#	log.LogRotation()
+
+
+
+
 import re
 import subprocess
+import logging
+import math
 
 class Log_Mgt:
 
-	def __init__(self,IPAddress,Password,path,filesize):
+	def __init__(self,IPAddress,Password,Path):
 		self.IPAddress=IPAddress
-		self.Password="oaicicd"
-		self.path=path
-		self.filesize=filesize
+		self.Password=Password
+		self.path=Path
 
 #-----------------$
 #PRIVATE# Methods$
@@ -46,42 +53,49 @@ class Log_Mgt:
 		COMMAND="df "+ self.path
 		ssh = subprocess.Popen(["ssh", "%s" % HOST, COMMAND],shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 		result = ssh.stdout.readlines()
-		s=result[1].decode('utf-8').rstrip()
+		s=result[1].decode('utf-8').rstrip()#result[1] is the second line with the results we are looking for
 		tmp=s.split()
-		return tmp[3]
+		return tmp[3] #return avail space from the line
 
 	def __GetOldestFile(self):
 		HOST=self.IPAddress
-		COMMAND="ls -rtl "+ self.path
+		COMMAND="ls -rtl "+ self.path #-rtl will bring oldest file on top
 		ssh = subprocess.Popen(["ssh", "%s" % HOST, COMMAND],shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 		result = ssh.stdout.readlines()
 		s=result[1].decode('utf-8').rstrip()
 		tmp=s.split()
-		return tmp[8]
+		return tmp[8]#return filename from the line
 
 #-----------------$
 #PUBLIC Methods$
 #-----------------$
 
+	def AvgSize(self):
+		HOST=self.IPAddress
+		COMMAND="ls -rtl "+ self.path
+		ssh = subprocess.Popen(["ssh", "%s" % HOST, COMMAND],shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+		result = ssh.stdout.readlines()
+		total_size=0
+		for i in range(1,len(result)):
+			s=result[i].decode('utf-8').rstrip()
+			tmp=s.split()
+			total_size+=int(tmp[4]) #get filesize
+		return math.floor(total_size/(len(result)-1)) #compute average file/artifact size
 
 
 	def LogRotation(self):
-		avail_space = self.__CheckAvailSpace()
-		print("Avail Space : " + avail_space + " / Artifact Size : " + self.filesize)
-		if filesize > avail_space:
+		avail_space =int(self.__CheckAvailSpace())*1000 #avail space in target folder, initially displayed in Gb
+		avg_size=self.AvgSize() #average size of artifacts in the target folder
+		logging.debug("Avail Space : " + str(avail_space) + " / Artifact Avg Size : " + str(avg_size))
+		if avail_space < 2*avg_size: #reserved space is 2x artifact file ; oldest file will be deleted
 			oldestfile=self.__GetOldestFile()
 			HOST=self.IPAddress
 			COMMAND="echo " + self.Password + " | sudo -S rm "+ self.path + "/" + oldestfile
-			print(COMMAND)
+			logging.debug(COMMAND)
 			ssh = subprocess.Popen(["ssh", "%s" % HOST, COMMAND],shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 		else:
-			print("Still some space left for artifacts storage")
+			logging.debug("Still some space left for artifacts storage")
 			
 
-#if __name__ == "__main__":
-#	IPAddress=sys.argv[1]
-#	Password=sys.argv[2]
-#	path=sys.argv[3]
-#	filesize=sys.argv[4]
-#	log=Log_Mgt(IPAddress,Password,path,filesize)
-#	log.LogRotation()
+
+
