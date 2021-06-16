@@ -66,11 +66,8 @@ class Log_Mgt:
 		tmp=s.split()
 		return tmp[8]#return filename from the line
 
-#-----------------$
-#PUBLIC Methods$
-#-----------------$
 
-	def AvgSize(self):
+	def __AvgSize(self):
 		HOST=self.IPAddress
 		COMMAND="ls -rtl "+ self.path
 		ssh = subprocess.Popen(["ssh", "%s" % HOST, COMMAND],shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
@@ -83,9 +80,14 @@ class Log_Mgt:
 		return math.floor(total_size/(len(result)-1)) #compute average file/artifact size
 
 
+#-----------------$
+#PUBLIC Methods$
+#-----------------$
+
+
 	def LogRotation(self):
 		avail_space =int(self.__CheckAvailSpace())*1000 #avail space in target folder, initially displayed in Gb
-		avg_size=self.AvgSize() #average size of artifacts in the target folder
+		avg_size=self.__AvgSize() #average size of artifacts in the target folder
 		logging.debug("Avail Space : " + str(avail_space) + " / Artifact Avg Size : " + str(avg_size))
 		if avail_space < 2*avg_size: #reserved space is 2x artifact file ; oldest file will be deleted
 			oldestfile=self.__GetOldestFile()
