@@ -1309,14 +1309,14 @@ rrc_gNB_process_RRCReconfigurationComplete(
                               SRB_configList, // NULL,
                               DRB_configList,
                               DRB_Release_configList2,
-                              0, // already configured during the securitymodecommand
+                              0xff, // already configured during the securitymodecommand
                               kRRCenc,
                               kRRCint,
                               kUPenc,
                               NULL,
                               NULL,
                               NULL,
-                              ue_context_pP->ue_context.masterCellGroup->rlc_BearerToAddModList);
+                              get_softmodem_params()->sa ? ue_context_pP->ue_context.masterCellGroup->rlc_BearerToAddModList : NULL);
   /* Refresh SRBs/DRBs */
   if (!NODE_IS_CU(RC.nrrrc[ctxt_pP->module_id]->node_type)) {
     rrc_mac_config_req_gNB(rrc->module_id,
@@ -1328,13 +1328,13 @@ rrc_gNB_process_RRCReconfigurationComplete(
                            ue_context_pP->ue_context.rnti,
                            ue_context_pP->ue_context.masterCellGroup
                            );
-    LOG_I(NR_RRC,"Configuring RLC DRBs/SRBs for UE %x\n",ue_context_pP->ue_context.rnti);
+    LOG_D(NR_RRC,"Configuring RLC DRBs/SRBs for UE %x\n",ue_context_pP->ue_context.rnti);
     nr_rrc_rlc_config_asn1_req(ctxt_pP,
-                          SRB_configList, // NULL,
-                          DRB_configList,
-                          DRB_Release_configList2,
-                          NULL,
-                          ue_context_pP->ue_context.masterCellGroup->rlc_BearerToAddModList);
+                               SRB_configList, // NULL,
+                               DRB_configList,
+                               DRB_Release_configList2,
+                               NULL,
+                               get_softmodem_params()->sa ? ue_context_pP->ue_context.masterCellGroup->rlc_BearerToAddModList : NULL);
   }
 #endif
 
@@ -1940,9 +1940,6 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
                                     du_to_cu_rrc_container,
                                     gnb_rrc_inst->carrier.servingcellconfigcommon,
                                     CC_id);
-
-          // FIXME: Check the best place to perform this DRB configuration
-          nr_DRB_preconfiguration(ctxt_pP->rnti);
         }
         break;
 
@@ -2836,14 +2833,14 @@ unsigned int get_dl_bw_mask(gNB_RRC_INST *rrc,NR_UE_NR_Capability_t *cap) {
 
 
   int common_band = *rrc->carrier.servingcellconfigcommon->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
-  int common_scs  = rrc->carrier.servingcellconfigcommon->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing; 
+  int common_scs  = rrc->carrier.servingcellconfigcommon->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
   for (int i=0;i<cap->rf_Parameters.supportedBandListNR.list.count;i++) {
      NR_BandNR_t *bandNRinfo = cap->rf_Parameters.supportedBandListNR.list.array[i];
      if (bandNRinfo->bandNR == common_band) {
        if (common_band < 257) { // FR1
           switch (common_scs) {
             case NR_SubcarrierSpacing_kHz15 :
-               if (bandNRinfo->channelBWs_DL && 
+               if (bandNRinfo->channelBWs_DL &&
                    bandNRinfo->channelBWs_DL->choice.fr1 &&
                    bandNRinfo->channelBWs_DL->choice.fr1->scs_15kHz)
                      return(mask_flip((unsigned int)*(uint16_t*)bandNRinfo->channelBWs_DL->choice.fr1->scs_15kHz->buf));
@@ -2865,7 +2862,7 @@ unsigned int get_dl_bw_mask(gNB_RRC_INST *rrc,NR_UE_NR_Capability_t *cap) {
        else {
           switch (common_scs) {
             case NR_SubcarrierSpacing_kHz60 :
-               if (bandNRinfo->channelBWs_DL && 
+               if (bandNRinfo->channelBWs_DL &&
                    bandNRinfo->channelBWs_DL->choice.fr2 &&
                    bandNRinfo->channelBWs_DL->choice.fr2->scs_60kHz)
                      return(mask_flip((unsigned int)*(uint16_t*)bandNRinfo->channelBWs_DL->choice.fr2->scs_60kHz->buf));
@@ -2887,14 +2884,14 @@ unsigned int get_ul_bw_mask(gNB_RRC_INST *rrc,NR_UE_NR_Capability_t *cap) {
 
 
   int common_band = *rrc->carrier.servingcellconfigcommon->uplinkConfigCommon->frequencyInfoUL->frequencyBandList->list.array[0];
-  int common_scs  = rrc->carrier.servingcellconfigcommon->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing; 
+  int common_scs  = rrc->carrier.servingcellconfigcommon->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
   for (int i=0;i<cap->rf_Parameters.supportedBandListNR.list.count;i++) {
      NR_BandNR_t *bandNRinfo = cap->rf_Parameters.supportedBandListNR.list.array[i];
      if (bandNRinfo->bandNR == common_band) {
        if (common_band < 257) { // FR1
           switch (common_scs) {
             case NR_SubcarrierSpacing_kHz15 :
-               if (bandNRinfo->channelBWs_UL && 
+               if (bandNRinfo->channelBWs_UL &&
                    bandNRinfo->channelBWs_UL->choice.fr1 &&
                    bandNRinfo->channelBWs_UL->choice.fr1->scs_15kHz)
                      return(mask_flip((unsigned int)*(uint16_t*)bandNRinfo->channelBWs_UL->choice.fr1->scs_15kHz->buf));
@@ -2916,7 +2913,7 @@ unsigned int get_ul_bw_mask(gNB_RRC_INST *rrc,NR_UE_NR_Capability_t *cap) {
        else {
           switch (common_scs) {
             case NR_SubcarrierSpacing_kHz60 :
-               if (bandNRinfo->channelBWs_UL && 
+               if (bandNRinfo->channelBWs_UL &&
                    bandNRinfo->channelBWs_UL->choice.fr2 &&
                    bandNRinfo->channelBWs_UL->choice.fr2->scs_60kHz)
                      return(mask_flip((unsigned int)*(uint16_t*)bandNRinfo->channelBWs_UL->choice.fr2->scs_60kHz->buf));
@@ -2944,7 +2941,7 @@ int is_dl_256QAM_supported(gNB_RRC_INST *rrc,NR_UE_NR_Capability_t *cap) {
     }
   }
   else if (cap->phy_Parameters.phy_ParametersFR1 && !cap->phy_Parameters.phy_ParametersFR1->pdsch_256QAM_FR1) return(0);
-    
+
   // check featureSet
   NR_FeatureSets_t *fs=cap->featureSets;
   if (fs) {
@@ -2965,7 +2962,7 @@ int is_ul_256QAM_supported(gNB_RRC_INST *rrc,NR_UE_NR_Capability_t *cap) {
        NR_BandNR_t *bandNRinfo = cap->rf_Parameters.supportedBandListNR.list.array[i];
        if (bandNRinfo->bandNR == common_band && !bandNRinfo->pusch_256QAM) return (0);
   }
-    
+
   // check featureSet
   NR_FeatureSets_t *fs=cap->featureSets;
   if (fs) {
@@ -2981,7 +2978,7 @@ int is_ul_256QAM_supported(gNB_RRC_INST *rrc,NR_UE_NR_Capability_t *cap) {
 
 int get_ul_mimo_layersCB(gNB_RRC_INST *rrc,NR_UE_NR_Capability_t *cap) {
   int common_scs  = rrc->carrier.servingcellconfigcommon->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
-    
+
   // check featureSet
   NR_FeatureSets_t *fs=cap->featureSets;
   if (fs) {
@@ -2998,7 +2995,7 @@ int get_ul_mimo_layersCB(gNB_RRC_INST *rrc,NR_UE_NR_Capability_t *cap) {
 
 int get_ul_mimo_layers(gNB_RRC_INST *rrc,NR_UE_NR_Capability_t *cap) {
   int common_scs  = rrc->carrier.servingcellconfigcommon->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
-    
+
   // check featureSet
   NR_FeatureSets_t *fs=cap->featureSets;
   if (fs) {
@@ -3014,7 +3011,7 @@ int get_ul_mimo_layers(gNB_RRC_INST *rrc,NR_UE_NR_Capability_t *cap) {
 
 int get_dl_mimo_layers(gNB_RRC_INST *rrc,NR_UE_NR_Capability_t *cap) {
   int common_scs  = rrc->carrier.servingcellconfigcommon->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
-    
+
   // check featureSet
   NR_FeatureSets_t *fs=cap->featureSets;
   if (fs) {
