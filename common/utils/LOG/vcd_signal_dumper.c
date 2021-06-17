@@ -535,6 +535,7 @@ const char* eurecomFunctionsNames[] = {
   "nr_rx_pusch",
   "nr_ulsch_procedures_rx",
   "macxface_gNB_dlsch_ulsch_scheduler",
+  "cufft_wait",
 
   /*NR ue-softmodem signal*/
   "nr_ue_ulsch_encoding",

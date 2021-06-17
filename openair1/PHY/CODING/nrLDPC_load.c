@@ -39,6 +39,7 @@
 #include "PHY/CODING/nrLDPC_extern.h"
 #include "common/config/config_userapi.h" 
 #include "common/utils/load_module_shlib.h" 
+#include <dlfcn.h>
 
 
 /* function description array, to be used when loading the encoding/decoding shared lib */
@@ -73,4 +74,51 @@ int load_nrLDPClib_ref(char *libversion, nrLDPC_encoderfunc_t * nrLDPC_encoder_p
 return 0;
 }
 
+int load_cuFFT(void) {
+     //手动加载指定位置的so动态库
+     void* handle = dlopen("../../../hs/cuFFT.so", RTLD_LAZY|RTLD_NODELETE|RTLD_GLOBAL);
+     if(!handle){
+          printf("open cuFFT.so error!\n");
+          return -1;
+     }
+     //根据动态链接库操作句柄与符号，返回符号对应的地址
+     cudft2048 = (cudft_EnTx) dlsym(handle, "_Z9cudft2048PsS_h");
+     if(!cudft2048){
+          printf("cuFFT.so cudft2048 error!\n");
+          dlclose(handle);
+          return -1;
+     }
+     load_cudft = (cudft_load) dlsym(handle, "_Z10load_cuFFTv");
+     if(!load_cudft){
+          printf("cuFFT.so load_cudft error!\n");
+          dlclose(handle);
+          return -1;
+     }
+     load_cudft();
+return 0;
+}
+
+int load_cuFFT1(void) {
+     //手动加载指定位置的so动态库
+     void* handle1 = dlopen("../../../hs/cuFFT1.so", RTLD_LAZY|RTLD_NODELETE|RTLD_GLOBAL);
+     if(!handle1){
+          printf("open cuFFT1.so error!\n");
+          return -1;
+     }
+     //根据动态链接库操作句柄与符号，返回符号对应的地址
+     cudft20481 = (cudft_EnTx) dlsym(handle1, "_Z9cudft2048PsS_h");
+     if(!cudft20481){
+          printf("cuFFT1.so cudft2048 error!\n");
+          dlclose(handle1);
+          return -1;
+     }
+     load_cudft1 = (cudft_load) dlsym(handle1, "_Z10load_cuFFTv");
+     if(!load_cudft1){
+          printf("cuFFT1.so load_cudft error!\n");
+          dlclose(handle1);
+          return -1;
+     }
+     load_cudft1();
+return 0;
+}
 

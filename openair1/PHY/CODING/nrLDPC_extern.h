@@ -23,13 +23,23 @@
 #ifdef LDPC_LOADER
 nrLDPC_decoderfunc_t nrLDPC_decoder;
 nrLDPC_encoderfunc_t nrLDPC_encoder;
+cudft_EnTx cudft2048;
+cudft_load load_cudft;
+cudft_EnTx cudft20481;
+cudft_load load_cudft1;
 #else
 /* functions to load the LDPC shared lib, implemented in openair1/PHY/CODING/nrLDPC_load.c */
 extern int load_nrLDPClib(void) ;
 extern int load_nrLDPClib_ref(char *libversion, nrLDPC_encoderfunc_t * nrLDPC_encoder_ptr); // for ldpctest
+extern int load_cuFFT(void) ;
+extern int load_cuFFT1(void) ;
 /* ldpc coder/decoder functions, as loaded by load_nrLDPClib(). */
 extern nrLDPC_decoderfunc_t nrLDPC_decoder;
 extern nrLDPC_encoderfunc_t nrLDPC_encoder;
+extern cudft_EnTx cudft2048;
+extern cudft_load load_cudft;
+extern cudft_EnTx cudft20481;
+extern cudft_load load_cudft1;
 // inline functions:
 #include "openair1/PHY/CODING/nrLDPC_decoder/nrLDPC_init_mem.h"
 #endif

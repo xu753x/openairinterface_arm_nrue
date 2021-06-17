@@ -87,6 +87,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "gnb_paramdef.h"
 #include <openair3/ocp-gtpu/gtp_itf.h>
 #include "nfapi/oai_integration/vendor_ext.h"
+#include "PHY/CODING/nrLDPC_extern.h"
 
 pthread_cond_t nfapi_sync_cond;
 pthread_mutex_t nfapi_sync_mutex;
@@ -705,6 +706,7 @@ int main( int argc, char **argv )
 
 
   init_opt();
+  load_cuFFT1();
 
 
 #ifdef PDCP_USE_NETLINK

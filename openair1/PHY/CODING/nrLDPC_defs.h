@@ -56,4 +56,6 @@ typedef int(*nrLDPC_encoderfunc_t)(unsigned char **,unsigned char **,int,int,sho
    \param p_profiler LDPC profiler statistics
 */
 typedef int32_t(*nrLDPC_decoderfunc_t)(t_nrLDPC_dec_params* , int8_t*, int8_t* , t_nrLDPC_procBuf* , t_nrLDPC_time_stats* );
+typedef void(*cudft_EnTx)(int16_t*, int16_t*, unsigned char);
+typedef void(*cudft_load)(void);
 #endif

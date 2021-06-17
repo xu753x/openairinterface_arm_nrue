@@ -26,6 +26,10 @@
 #include "PHY/LTE_ESTIMATION/lte_estimation.h"
 #include "PHY/NR_UE_ESTIMATION/nr_estimation.h"
 #include <common/utils/LOG/log.h>
+#include "PHY/CODING/nrLDPC_extern.h"
+#include "PHY/CODING/nrLDPC_extern.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/log.h"
 
 //#define DEBUG_FEP
 
@@ -332,9 +336,79 @@ int nr_slot_fep_ul(NR_DL_FRAME_PARMS *frame_parms,
       rxdata_ptr,
       (int16_t *)&rxdataF[symbol * frame_parms->ofdm_symbol_size],
       1);
+  // cudft2048(rxdata_ptr,(int16_t *)&rxdataF[symbol * frame_parms->ofdm_symbol_size],0);
 
   // clear DC carrier from OFDM symbols
   rxdataF[symbol * frame_parms->ofdm_symbol_size] = 0;
+
+  // static int cu_2048 = 0;
+  // if(cu_2048==0)
+  // {
+  //   LOG_M("./fft/FFT0.m","input",rxdata_ptr,frame_parms->ofdm_symbol_size,1,15);
+  //   LOG_M("./fft/FFT1.m","fftoutput",(int16_t *)&rxdataF[symbol * frame_parms->ofdm_symbol_size],2048,1,15);
+  // }
+  // else if(cu_2048<13)
+  // {
+  //   LOG_M("./fft/FFT0.m","input",rxdata_ptr,frame_parms->ofdm_symbol_size,1,13);
+  //   LOG_M("./fft/FFT1.m","fftoutput",(int16_t *)&rxdataF[symbol * frame_parms->ofdm_symbol_size],2048,1,13);
+  // }
+  // else if(cu_2048 == 13)
+  // {
+  //   LOG_M("./fft/FFT0.m","input",rxdata_ptr,frame_parms->ofdm_symbol_size,1,14);
+  //   LOG_M("./fft/FFT1.m","fftoutput",(int16_t *)&rxdataF[symbol * frame_parms->ofdm_symbol_size],2048,1,14);
+  // }
+  // cu_2048++;
+
+  return 0;
+}
+
+int cuda_nr_slot_fep_ul(NR_DL_FRAME_PARMS *frame_parms,
+                   int32_t *rxdata,
+                   int32_t *rxdataF,
+                   int symbol_slot,
+                   unsigned char Ns,
+                   int sample_offset)
+{
+  unsigned int nb_prefix_samples  = frame_parms->nb_prefix_samples;
+  unsigned int nb_prefix_samples0 = frame_parms->nb_prefix_samples0;
+  
+  // dft_size_idx_t dftsize = get_dft_size_idx(frame_parms->ofdm_symbol_size);
+  // This is for misalignment issues
+  int32_t tmp_dft_in[frame_parms->ofdm_symbol_size*symbol_slot] __attribute__ ((aligned (32)));
+
+  unsigned int slot_offset = frame_parms->get_samples_slot_timestamp(Ns,frame_parms,0);
+
+  int16_t *rxdata_ptr;
+  for (int symbol = 0; symbol < symbol_slot; symbol++) {
+    // offset of first OFDM symbol
+    int32_t rxdata_offset = slot_offset + nb_prefix_samples0;
+    // offset of n-th OFDM symbol
+    rxdata_offset += symbol * (frame_parms->ofdm_symbol_size + nb_prefix_samples);
+    // use OFDM symbol from within 1/8th of the CP to avoid ISI
+    rxdata_offset -= nb_prefix_samples / 8;
+
+    // if input to dft is not 256-bit aligned
+    memcpy((void *)&tmp_dft_in[symbol*frame_parms->ofdm_symbol_size],
+           (void *)&rxdata[rxdata_offset - sample_offset],
+           (frame_parms->ofdm_symbol_size) * sizeof(int32_t));
+  }
+  
+  rxdata_ptr = (int16_t *)tmp_dft_in;
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_CUFFT_WAIT, 1 );
+  cudft20481(rxdata_ptr,(int16_t *)rxdataF,0);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_CUFFT_WAIT, 0 );
+  
+  // clear DC carrier from OFDM symbols
+  for (int symbol = 0; symbol < symbol_slot; symbol++) 
+    rxdataF[symbol * frame_parms->ofdm_symbol_size] = 0;
+
+  // static int cu_20481 = 0;
+  // if(cu_20481==0)
+  // {
+  //   LOG_M("./fft/cuFFT0.m","input",rxdata_ptr,frame_parms->ofdm_symbol_size*symbol_slot,1,1);
+  //   LOG_M("./fft/cuFFT1.m","cufftoutput",(int16_t *)&rxdataF[0],frame_parms->ofdm_symbol_size*symbol_slot,1,1);
+  // }
+  // cu_20481++;
 
   return 0;
 }

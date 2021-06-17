@@ -89,6 +89,13 @@ int nr_slot_fep_ul(NR_DL_FRAME_PARMS *frame_parms,
                    unsigned char Ns,
                    int sample_offset);
 
+int cuda_nr_slot_fep_ul(NR_DL_FRAME_PARMS *frame_parms,
+                   int32_t *rxdata,
+                   int32_t *rxdataF,
+                   int symbol_slot,
+                   unsigned char Ns,
+                   int sample_offset);
+
 /*!
 \brief This function implements the dft transform precoding in PUSCH
 \param z Pointer to output in frequnecy domain

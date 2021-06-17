@@ -65,6 +65,7 @@
 
 #include <executables/softmodem-common.h>
 #include "PHY/NR_REFSIG/ul_ref_seq_nr.h"
+#include "PHY/CODING/nrLDPC_extern.h"
 //#define DEBUG_ULSIM
 
 LCHAN_DESC DCCH_LCHAN_DESC,DTCH_DL_LCHAN_DESC,DTCH_UL_LCHAN_DESC;
@@ -323,6 +324,8 @@ int main(int argc, char **argv)
   int ul_proc_error = 0; // uplink processing checking status flag
   //logInit();
   randominit(0);
+  // load_cuFFT();
+  // load_cuFFT1();
 
   /* initialize the sin-cos table */
    InitSinLUT();
