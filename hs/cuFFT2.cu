@@ -5,7 +5,7 @@
 #define LEN 2048
 #define SQRT2048_real 45.2876
 #define SQRT2048_imag 45.3065
-#define SYMBOLS_PER_SLOT 64
+#define SYMBOLS_PER_SLOT 14
 
 __global__ void int_cufftComplex(int16_t *a, cufftComplex *b, int length)
 {
