@@ -512,12 +512,15 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
     // handle beamforming ID
     // each antenna port is assigned a beam_index
     // since PHY can only handle BF on slot basis we set the whole slot
-
     // first check if this slot has not already been allocated to another beam
+
+    // Comment by SV: analog beam switching in FR2 is done once per tdd period.
+    // so the beam has to be switched much earlier than the actual Tx slot
+    // for this reason we copy the beam id to phy in nr_schedule_response()
+    /*
     if ((gNB->common_vars.beam_id[0][slot*frame_parms->symbols_per_slot] == 255) ||
         (gNB->common_vars.beam_id[0][slot*frame_parms->symbols_per_slot] ==
         rel15->precodingAndBeamforming.prgs_list[0].dig_bf_interface_list[0].beam_idx)) {
-      printf("pdsch beam %d\n",rel15->precodingAndBeamforming.prgs_list[0].dig_bf_interface_list[0].beam_idx);
       memset(&gNB->common_vars.beam_id[0][slot*frame_parms->symbols_per_slot],
              rel15->precodingAndBeamforming.prgs_list[0].dig_bf_interface_list[0].beam_idx,
              frame_parms->symbols_per_slot*get_tdd_period_in_slots(
@@ -527,6 +530,7 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
     else {
       LOG_W(PHY,"beam index for PDSCH allocation already taken\n");
     }
+    */
   }// dlsch loop
 
   

@@ -311,7 +311,6 @@ static void *nr_feptx_thread(void *param) {
 	       (fp->symbols_per_slot)*sizeof(uint8_t));
       }
 
-
       if (ru->nb_tx == 1 && ru->nb_log_antennas == 1) {
 	memcpy((void*)&ru->common.txdataF_BF[0][l*fp->ofdm_symbol_size],
 	       (void*)&ru->gNB_list[0]->common_vars.txdataF[0][txdataF_offset + l*fp->ofdm_symbol_size],

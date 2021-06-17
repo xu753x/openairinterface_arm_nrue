@@ -331,17 +331,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   NR_COMMON_channels_t *cc = gNB->common_channels;
   NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
 
-  if (slot==0 && (*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0]>=257)) {
-    const NR_TDD_UL_DL_Pattern_t *tdd = &scc->tdd_UL_DL_ConfigurationCommon->pattern1;
-    const int n = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
-    const int nr_mix_slots = tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0;
-    const int nr_slots_period = tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + nr_mix_slots;
-    const int nb_periods_per_frame = n / nr_slots_period;
-    // re-initialization of tdd_beam_association at beginning of frame (only for FR2)
-    for (int i=0; i<nb_periods_per_frame; i++)
-      gNB->tdd_beam_association[i] = -1;
-  }
-
   start_meas(&RC.nrmac[module_idP]->eNB_scheduler);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ULSCH_SCHEDULER,VCD_FUNCTION_IN);
 
