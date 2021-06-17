@@ -535,7 +535,7 @@ static void deliver_sdu_srb(void *_ue, nr_pdcp_entity_t *entity,
   int srb_id;
   int i;
 
-  for (i = 0; i < 2; i++) {
+  for (i = 0; i < sizeofArray(ue->srb) ; i++) {
     if (entity == ue->srb[i]) {
       srb_id = i+1;
       goto srb_found;
@@ -578,7 +578,7 @@ static void deliver_pdu_srb(void *_ue, nr_pdcp_entity_t *entity,
   int i;
   mem_block_t *memblock;
 
-  for (i = 0; i < 2; i++) {
+  for (i = 0; i < sizeofArray(ue->srb) ; i++) {
     if (entity == ue->srb[i]) {
       srb_id = i+1;
       goto srb_found;
