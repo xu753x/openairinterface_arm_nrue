@@ -186,10 +186,10 @@ void nr_csi_meas_reporting(int Mod_idP,
                            frame_t frameP,
                            sub_frame_t slotP);
 
-bool nr_acknack_scheduling(int Mod_idP,
-                           int UE_id,
-                           frame_t frameP,
-                           sub_frame_t slotP);
+int nr_acknack_scheduling(int Mod_idP,
+                          int UE_id,
+                          frame_t frameP,
+                          sub_frame_t slotP);
 
 void get_pdsch_to_harq_feedback(int Mod_idP,
                                 int UE_id,
@@ -413,5 +413,11 @@ bool nr_find_nb_rb(uint16_t Qm,
                    uint16_t nb_rb_max,
                    uint32_t *tbs,
                    uint16_t *nb_rb);
+
+void nr_sr_reporting(int Mod_idP, frame_t frameP, sub_frame_t slotP);
+
+void periodicity__SRR (NR_SchedulingRequestResourceConfig_t *SchedulingReqRecconf,
+                       int *period,
+                       int *offset);
 
 #endif /*__LAYER2_NR_MAC_PROTO_H__*/
