@@ -24,6 +24,7 @@
 nrLDPC_decoderfunc_t nrLDPC_decoder;
 nrLDPC_encoderfunc_t nrLDPC_encoder;
 nrLDPC_decoffloadfunc_t nrLDPC_decoder_offload;
+nrLDPC_dectopfunc_t top_testsuite;
 #else
 /* functions to load the LDPC shared lib, implemented in openair1/PHY/CODING/nrLDPC_load.c */
 
@@ -34,6 +35,9 @@ extern int load_nrLDPClib_ref(char *libversion, nrLDPC_encoderfunc_t * nrLDPC_en
 extern nrLDPC_decoderfunc_t nrLDPC_decoder;
 extern nrLDPC_encoderfunc_t nrLDPC_encoder;
 extern nrLDPC_decoffloadfunc_t nrLDPC_decoder_offload;
+
+extern nrLDPC_dectopfunc_t top_testsuite;
+
 // inline functions:
 #include "openair1/PHY/CODING/nrLDPC_decoder/nrLDPC_init_mem.h"
 #endif
