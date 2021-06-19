@@ -1702,7 +1702,8 @@ rrc_ue_process_ueCapabilityEnquiry(
         xer_fprint(stdout, &asn_DEF_LTE_UL_DCCH_Message, (void *)&ul_dcch_msg);
       }
 
-      LOG_A(RRC,"UECapabilityInformation Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+      LOG_A(RRC, "%s: UECapabilityInformation Encoded %zd bits (%zd bytes)\n",
+            __FUNCTION__, enc_rval.encoded,(enc_rval.encoded+7)/8);
       rrc_data_req_ue (
         ctxt_pP,
         DCCH,
