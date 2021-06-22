@@ -32,6 +32,8 @@
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "executables/softmodem-common.h"
 #include "common/utils/nr/nr_common.h"
+#include <openair2/UTIL/OPT/opt.h>
+
 
 //38.321 Table 6.1.3.1-1
 const uint32_t NR_SHORT_BSR_TABLE[32] = {
@@ -371,16 +373,16 @@ void nr_process_mac_pdu(module_id_t module_idP,
           }
           LOG_D(NR_MAC, "[UE %d] Frame %d : ULSCH -> UL-DCCH %d (gNB %d, %d bytes), rnti: %d \n", module_idP, frameP, rx_lcid, module_idP, mac_sdu_len, *UE_info->rnti);
           mac_rlc_data_ind(module_idP,
-              *UE_info->rnti,
-              module_idP,
-              frameP,
-              ENB_FLAG_YES,
-              MBMS_FLAG_NO,
-              rx_lcid,
-              (char *) (pdu_ptr + mac_subheader_len),
-              mac_sdu_len,
-              1,
-              NULL);
+                           UE_info->rnti[UE_id],
+                           module_idP,
+                           frameP,
+                           ENB_FLAG_YES,
+                           MBMS_FLAG_NO,
+                           rx_lcid,
+                           (char *) (pdu_ptr + mac_subheader_len),
+                           mac_sdu_len,
+                           1,
+                           NULL);
           break;
         case UL_SCH_LCID_SRB3:
               // todo
@@ -1310,7 +1312,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
   const NR_list_t *UE_list = &UE_info->list;
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-    if (sched_ctrl->ul_failure == 1) continue;
+    if (sched_ctrl->ul_failure == 1 && get_softmodem_params()->phy_test==0) continue;
     UE_info->mac_stats[UE_id].ulsch_current_bytes = 0;
 
     /* dynamic PUSCH values (RB alloc, MCS, hence R, Qm, TBS) that change in

@@ -806,7 +806,7 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
                                             rnti_t          rntiP,
                                             const uint8_t   *sduP,
                                             sdu_size_t      sdu_lenP,
-                                            const uint8_t   *sdu2P,
+                                            const int8_t   *sdu2P,
 					                                  sdu_size_t      sdu2_lenP) {
 
   F1AP_F1AP_PDU_t                       pdu;
@@ -1169,8 +1169,14 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
 
         apply_macrlc_config(rrc,ue_context_p,&ctxt);
 
-        gNB_RRC_UE_t *ue_p = &ue_context_p->ue_context;
-        AssertFatal(ue_p->Srb0.Active == 1,"SRB0 is not active\n");
+      // This should be somewhere in the f1ap_cudu_ue_inst_t
+      /*int macrlc_instance = 0;
+
+      rnti_t rnti = f1ap_get_rnti_by_du_id(&f1ap_du_inst[0], du_ue_f1ap_id);
+      struct rrc_gNB_ue_context_s *ue_context_p = rrc_gNB_get_ue_context(RC.nrrrc[macrlc_instance],rnti);
+      */
+      gNB_RRC_UE_t *ue_p = &ue_context_p->ue_context;
+      AssertFatal(ue_p->Srb0.Active == 1,"SRB0 is not active\n");
 
         memcpy((void*)ue_p->Srb0.Tx_buffer.Payload,
                (void*)ie->value.choice.RRCContainer.buf,

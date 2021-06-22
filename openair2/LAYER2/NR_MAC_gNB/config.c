@@ -420,9 +420,9 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                            int pdsch_AntennaPorts,
                            int pusch_AntennaPorts,
                            NR_ServingCellConfigCommon_t *scc,
-                           int add_ue,
+	                         int add_ue,
                            uint32_t rnti,
-                           NR_CellGroupConfig_t *CellGroup){
+	                         NR_CellGroupConfig_t *CellGroup) {
 
   if (scc != NULL ) {
     AssertFatal((scc->ssb_PositionsInBurst->present > 0) && (scc->ssb_PositionsInBurst->present < 4), "SSB Bitmap type %d is not valid\n",scc->ssb_PositionsInBurst->present);
@@ -508,12 +508,12 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
     if (get_softmodem_params()->sa > 0) {
       NR_COMMON_channels_t *cc = &RC.nrmac[Mod_idP]->common_channels[0];
       for (int n=0;n<NR_NB_RA_PROC_MAX;n++ ) {
-        cc->ra[n].cfra = false;
-        cc->ra[n].rnti = 0;
-        cc->ra[n].preambles.num_preambles = MAX_NUM_NR_PRACH_PREAMBLES;
-        cc->ra[n].preambles.preamble_list = (uint8_t *) malloc(MAX_NUM_NR_PRACH_PREAMBLES*sizeof(uint8_t));
-        for (int i = 0; i < MAX_NUM_NR_PRACH_PREAMBLES; i++)
-          cc->ra[n].preambles.preamble_list[i] = i;
+	       cc->ra[n].cfra = false;
+	       cc->ra[n].rnti = 0;
+	       cc->ra[n].preambles.num_preambles = MAX_NUM_NR_PRACH_PREAMBLES;
+	       cc->ra[n].preambles.preamble_list = (uint8_t *) malloc(MAX_NUM_NR_PRACH_PREAMBLES*sizeof(uint8_t));
+	       for (int i = 0; i < MAX_NUM_NR_PRACH_PREAMBLES; i++)
+	          cc->ra[n].preambles.preamble_list[i] = i;
       }
     }
   }
