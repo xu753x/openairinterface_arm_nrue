@@ -459,6 +459,8 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
   int rb_id;
   int i;
 
+  log_dump(PDCP, buf, 40 , LOG_DUMP_CHAR,"   deliver_sdu_drb Received bytes:\n" );
+
   if(UE_NAS_USE_TUN){
     LOG_D(PDCP, "IP packet received, to be sent to UE TUN interface"); 
     len = write(nas_sock_fd[0], buf, size);
@@ -475,7 +477,7 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
       }
 
       LOG_E(PDCP, "%s:%d:%s: fatal, no RB found for ue %d\n",
-            __FILE__, __LINE__, __FUNCTION__, ue->rnti);
+            __FILE__, __LINE__, __FUNCTION__, ue->rnti);               
       exit(1);
 
     rb_found:
@@ -495,7 +497,7 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
       GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).rnti                = ue->rnti;
       GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).pdusession_id       = entity->pdusession_id;
       if (offset==1) LOG_I(PDCP, "%s() (drb %d) SDAP header %2x\n",__func__, rb_id, buf[0]);
-      LOG_D(PDCP, "%s() (drb %d) sending message to gtp size %d\n", __func__, rb_id, size-offset);
+      LOG_I(PDCP, "%s() (drb %d) sending message to gtp size %d\n", __func__, rb_id, size-offset);
       itti_send_msg_to_task(TASK_VARIABLE, INSTANCE_DEFAULT, message_p);
    }
   }
@@ -536,7 +538,7 @@ rb_found:
   memblock = get_free_mem_block(size, __FUNCTION__);
   memcpy(memblock->data, buf, size);
 
-  LOG_I(PDCP, "%s(): (srb %d) calling rlc_data_req size %d\n", __func__, rb_id, size);
+  LOG_I(PDCP, "%s(): (drb %d) calling rlc_data_req size %d\n", __func__, rb_id, size);
   //for (i = 0; i < size; i++) printf(" %2.2x", (unsigned char)memblock->data[i]);
   //printf("\n");
   enqueue_rlc_data_req(&ctxt, 0, MBMS_FLAG_NO, rb_id, sdu_id, 0, size, memblock, NULL, NULL);
@@ -1198,10 +1200,13 @@ static boolean_t pdcp_data_req_drb(
 
   ue = nr_pdcp_manager_get_ue(nr_pdcp_ue_manager, rnti);
 
-  if (rb_id < 1 || rb_id > 5)
-    rb = NULL;
-  else
-    rb = ue->drb[rb_id - 1];
+  // if (rb_id < 1 || rb_id > 5)
+  //   rb = NULL;
+  // else
+    rb = ue->drb[0];
+    
+  LOG_I(PDCP, "%s:%d:%s: (rnti %d, rb_id %ld)\n",
+          __FILE__, __LINE__, __FUNCTION__, rnti, rb_id);
 
   if (rb == NULL) {
     LOG_E(PDCP, "%s:%d:%s: no DRB found (rnti %d, rb_id %ld)\n",
