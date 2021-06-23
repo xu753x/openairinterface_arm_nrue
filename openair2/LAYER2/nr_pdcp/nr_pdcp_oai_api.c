@@ -313,6 +313,7 @@ static void *ue_tun_read_thread(void *_)
     ctxt.brOption = 0;
 
     ctxt.rnti = rnti;
+    log_dump(PDCP, rx_buf, len , LOG_DUMP_CHAR,"   ue_tun_read_thread Received bytes(%d):\n", len );
 
     pdcp_data_req(&ctxt, SRB_FLAG_NO, rb_id, RLC_MUI_UNDEFINED,
                   RLC_SDU_CONFIRM_NO, len, (unsigned char *)rx_buf,
@@ -444,6 +445,8 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
   uint8_t     *gtpu_buffer_p;
   int rb_id;
   int i;
+
+  log_dump(PDCP, buf, 100 , LOG_DUMP_CHAR,"   deliver_sdu_drb Received bytes:\n" );
 
   if(UE_NAS_USE_TUN){
     LOG_D(PDCP, "IP packet received, to be sent to UE TUN interface"); 
@@ -839,7 +842,8 @@ static void add_drb_am(int is_gnb, int rnti, struct NR_DRB_ToAddMod *s,
                                   ciphering_key, integrity_key);
     nr_pdcp_ue_add_drb_pdcp_entity(ue, drb_id, pdcp_drb);
 
-    LOG_D(PDCP, "%s:%d:%s: added drb %d to ue rnti %x\n", __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
+    LOG_D(PDCP, "%s:%d:%s: added drb %d to ue rnti %x. ciphering_algorithm 0x%02X, integrity_algorithm 0x%02X.\n", __FILE__, __LINE__, __FUNCTION__, drb_id, rnti,
+    ciphering_algorithm, integrity_algorithm);
   }
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
 }
@@ -1198,7 +1202,7 @@ static boolean_t pdcp_data_req_drb(
     nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
     return 0;
   }
-
+  log_dump(PDCP, sdu_buffer, sdu_buffer_size , LOG_DUMP_CHAR,"   recv_sdu Received bytes(%d):\n",sdu_buffer_size );
   rb->recv_sdu(rb, (char *)sdu_buffer, sdu_buffer_size, muiP);
 
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);

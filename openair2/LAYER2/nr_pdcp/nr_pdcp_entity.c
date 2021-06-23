@@ -72,6 +72,12 @@ static void nr_pdcp_entity_recv_pdu(nr_pdcp_entity_t *entity,
     integrity_size = 0;
   }
 
+  if (entity->type != NR_PDCP_SRB)
+  {
+    LOG_I(PDCP, "rb_id %d, entity->type %d, old integrity_size =%d, new integrity_size = 0. \n",entity->rb_id, entity->type, integrity_size);
+    integrity_size = 0;
+  }
+
   if (size < header_size + integrity_size + 1) {
     LOG_E(PDCP, "bad PDU received (size = %d)\n", size);
     return;
@@ -184,6 +190,12 @@ static void nr_pdcp_entity_recv_sdu(nr_pdcp_entity_t *entity,
   if (entity->has_integrity || entity->type == NR_PDCP_SRB) {
     integrity_size = 4;
   } else {
+    integrity_size = 0;
+  }
+
+  if (entity->type != NR_PDCP_SRB)
+  {
+    LOG_I(PDCP, "rb_id %d, entity->type %d, old integrity_size =%d, new integrity_size = 0. \n",entity->rb_id, entity->type, integrity_size);
     integrity_size = 0;
   }
 

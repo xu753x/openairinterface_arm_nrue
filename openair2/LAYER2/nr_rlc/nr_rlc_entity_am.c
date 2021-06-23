@@ -837,6 +837,8 @@ static int serialize_sdu(nr_rlc_entity_am_t *entity,
   if (p)
     include_poll(entity, buffer);
 
+  LOG_I(RLC, "serialize_sdu encoder.byte %d, sdu->size %d. ",encoder.byte,sdu->size);
+
   return encoder.byte + sdu->size;
 }
 
@@ -1516,6 +1518,7 @@ static int generate_tx_pdu(nr_rlc_entity_am_t *entity, char *buffer, int size)
     p = 1;
     entity->force_poll = 0;
   }
+  LOG_I(RLC, "generate_tx_pdu buffer buffer %p, size %d, sdu->size %d. ",buffer,size,sdu->size);
 
   return serialize_sdu(entity, sdu, buffer, size, p);
 }
@@ -1566,12 +1569,14 @@ int nr_rlc_entity_am_generate_pdu(nr_rlc_entity_t *_entity,
     if (ret != 0)
       return ret;
   }
+  LOG_I(RLC, "nr_rlc_entity_am_generate_pdu status_to_report bufer %p, ret %d, size %d",buffer,ret,size);
 
   if (entity->retransmit_list != NULL) {
     ret = generate_retx_pdu(entity, buffer, size);
     if (ret != 0)
       return ret;
   }
+  LOG_I(RLC, "nr_rlc_entity_am_generate_pdu generate_retx_pdu bufer %p, ret %d, size %d",buffer,ret,size);
 
   return generate_tx_pdu(entity, buffer, size);
 }

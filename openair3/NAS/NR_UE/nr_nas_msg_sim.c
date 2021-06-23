@@ -639,8 +639,9 @@ void generatePduSessionEstablishRequest(as_nas_info_t *initialNasMsg){
   MM_msg *mm_msg;
   nas_stream_cipher_t stream_cipher;
   uint8_t             mac[4];
-  uint8_t             nssai[]={1,0,0,1}; //Corresponding to SST:1, SD:1
-  uint8_t            dnn[4]={0x4,0x6f,0x61,0x69}; //Corresponding to dnn:"oai"
+  uint8_t             nssai[]={1,0,0,0}; //Corresponding to SST:1, SD:1
+//  uint8_t            dnn[4]={0x4,0x6f,0x61,0x69}; //Corresponding to dnn:"oai"
+  uint8_t            dnn[9]={0x08, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x65, 0x74}; //Corresponding to dnn:"oai"
   nas_msg.header.protocol_discriminator = FGS_MOBILITY_MANAGEMENT_MESSAGE;
   nas_msg.header.security_header_type = INTEGRITY_PROTECTED_AND_CIPHERED_WITH_NEW_SECU_CTX;
   size += 7;
@@ -672,7 +673,7 @@ void generatePduSessionEstablishRequest(as_nas_info_t *initialNasMsg){
   mm_msg->uplink_nas_transport.snssai.length = 4;
   mm_msg->uplink_nas_transport.snssai.value = nssai;
   size += (1+1+4);
-  mm_msg->uplink_nas_transport.dnn.length = 4;
+  mm_msg->uplink_nas_transport.dnn.length = 9;
   mm_msg->uplink_nas_transport.dnn.value = dnn;
   size += (1+1+4);
 

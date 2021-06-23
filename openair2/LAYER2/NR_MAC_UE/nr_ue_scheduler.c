@@ -2022,6 +2022,8 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
         AssertFatal(buflen_remain >= sdu_lengths[num_sdus],
                     "LCID=%d RLC has segmented %d bytes but MAC has max=%d\n",
                     lcid, sdu_lengths[num_sdus], buflen_remain);
+        LOG_I(MAC,"LCID=%d RLC has segmented %d bytes, MAC has max=%d, num_sdus %d. \n",
+                    lcid, sdu_lengths[num_sdus], buflen_remain, num_sdus);
 
         if (sdu_lengths[num_sdus]) {
           sdu_length_total += sdu_lengths[num_sdus];
@@ -2066,13 +2068,16 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
   else
           return 0;
 
+        LOG_I(MAC,"nr_generate_ulsch_pdu  num_sdus=%d sdu_lengths[0] %d, sdu_lcids[0]  %d, buflen=%d\n",
+                    num_sdus, sdu_lengths[0], sdu_lcids[0],buflen);
+
   // Padding: fill remainder of ULSCH with 0
   if (buflen - payload_offset > 0){
           for (int j = payload_offset; j < buflen; j++)
                   ulsch_buffer[j] = 0;
   }
 
-#if defined(ENABLE_MAC_PAYLOAD_DEBUG)
+//#if defined(ENABLE_MAC_PAYLOAD_DEBUG)
   LOG_I(NR_MAC, "Printing UL MAC payload UE side, payload_offset: %d \n", payload_offset);
   for (int i = 0; i < buflen ; i++) {
           //harq_process_ul_ue->a[i] = (unsigned char) rand();
@@ -2080,7 +2085,7 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
           printf("%02x ",(unsigned char)ulsch_buffer[i]);
   }
   printf("\n");
-#endif
+//#endif
 
   return 1;
 }
