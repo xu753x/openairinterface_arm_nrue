@@ -1382,7 +1382,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     sched_ctrl->last_ul_frame = sched_pusch->frame;
     sched_ctrl->last_ul_slot = sched_pusch->slot;
 
-    LOG_D(NR_MAC,
+    LOG_I(NR_MAC,
           "%4d.%2d RNTI %04x UL sched %4d.%2d start %2d RBS %3d startSymbol %2d nb_symbol %2d MCS %2d TBS %4d HARQ PID %2d round %d NDI %d est %6d sched %6d est BSR %6d\n",
           frame,
           slot,
