@@ -2463,7 +2463,6 @@ set (libnas_utils_OBJS
   ${NAS_SRC}COMMON/UTIL/OctetString.c
 )
 
-if(ITTI_SIM OR RFSIM_NAS)
   set(libnas_ue_api_OBJS
     ${NAS_SRC}UE/API/USER/at_command.c
     ${NAS_SRC}UE/API/USER/at_error.c
@@ -2610,7 +2609,6 @@ if(ITTI_SIM OR RFSIM_NAS)
   include_directories(${NAS_SRC}UE/EMM/SAP)
   include_directories(${NAS_SRC}UE/ESM)
   include_directories(${NAS_SRC}UE/ESM/SAP)
-endif()
 
 # nbiot
 add_definitions("-DNUMBER_OF_UE_MAX_NB_IoT=16")
