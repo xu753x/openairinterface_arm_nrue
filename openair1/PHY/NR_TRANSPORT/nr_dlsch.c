@@ -280,9 +280,9 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
 	   start_sc, rel15->StartSymbolIndex, rel15->rbSize, nb_re,rel15->nrOfLayers);
 #endif
 
-    for (int nl=0; nl<rel15->nrOfLayers; nl++) {
+    for (int ap=0; ap<rel15->nrOfLayers; ap++) {
 
-      int dmrs_port = get_dmrs_port(nl,rel15->dmrsPorts);
+      int dmrs_port = get_dmrs_port(ap,rel15->dmrsPorts);
       // DMRS params for this ap
       get_Wt(Wt, dmrs_port, dmrs_Type);
       get_Wf(Wf, dmrs_port, dmrs_Type);
