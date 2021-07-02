@@ -946,7 +946,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
         i = 0;
       }
     }
-
+    LOG_I(MAC, "rar: frame %d, %d, bwpstart %d, bwpsize %d\n", frameP, slotP, BWPStart, BWPSize );
     if (rbStart > (BWPSize - rbSize)) {
       LOG_E(NR_MAC, "%s(): cannot find free vrb_map for RA RNTI %04x!\n", __func__, ra->RA_rnti);
       return;
@@ -1621,7 +1621,7 @@ void nr_fill_rar(uint8_t Mod_idP,
   bwp_size = pusch_pdu->bwp_size;
   prb_alloc = PRBalloc_to_locationandbandwidth0(ra->msg3_nb_rb, ra->msg3_first_rb, bwp_size);
   if (bwp_size>180) {
-    AssertFatal(1==0,"Initial UBWP larger than 180 currently not supported");
+  //  AssertFatal(1==0,"Initial UBWP larger than 180 currently not supported");
   }
   else {
     valid_bits = (uint8_t)ceil(log2(bwp_size*(bwp_size+1)>>1));

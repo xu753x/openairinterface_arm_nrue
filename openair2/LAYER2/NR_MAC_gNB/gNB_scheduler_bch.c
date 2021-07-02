@@ -353,7 +353,7 @@ void schedule_control_sib1(module_id_t module_id,
 
   const uint16_t bwpSize = type0_PDCCH_CSS_config->num_rbs;
   int rbStart = 0; //type0_PDCCH_CSS_config->cset_start_rb;
-  LOG_D(PHY, "cset_start_rb is %d\n", type0_PDCCH_CSS_config->cset_start_rb);
+  LOG_I(PHY, "cset_start_rb is %d, ccdindex %d\n", type0_PDCCH_CSS_config->cset_start_rb, gNB_mac->sched_ctrlCommon->cce_index);
   int startSymbolIndex = 0;
   int nrOfSymbols = 0;
 
@@ -585,7 +585,7 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
        (type0_PDCCH_CSS_config->num_rbs > 0) &&
        (type0_PDCCH_CSS_config->active == true)) {
 
-      LOG_D(NR_MAC,"(%d.%d) SIB1 transmission: ssb_index %d\n", frameP, slotP, type0_PDCCH_CSS_config->ssb_index);
+      LOG_I(NR_MAC,"(%d.%d) SIB1 transmission: ssb_index %d\n", frameP, slotP, type0_PDCCH_CSS_config->ssb_index);
 
       // Get SIB1
       uint8_t sib1_payload[NR_MAX_SIB_LENGTH/8];
