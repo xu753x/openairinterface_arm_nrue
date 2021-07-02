@@ -160,7 +160,7 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
     uint8_t scs_ssb = get_softmodem_params()->numerology;
     uint32_t band   = get_softmodem_params()->band;
     uint16_t ssb_start_symbol = get_ssb_start_symbol(band,scs_ssb,ssb_index);
-    uint16_t ssb_offset_point_a = (ssb_start_subcarrier - ssb_subcarrier_offset)/12;
+    uint16_t ssb_offset_point_a = (ssb_start_subcarrier - ssb_subcarrier_offset / 2)/12;
 
     get_type0_PDCCH_CSS_config_parameters(&mac->type0_PDCCH_CSS_config,
                                           frame,
@@ -173,7 +173,8 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
                                           ssb_index,
                                           ssb_offset_point_a);
 
-
+    LOG_I(MAC,"ssb_start_subcarrier %d, ssb_subcarrier_offset %d, ssb_offset_point_a %d\n", 
+          ssb_start_subcarrier, ssb_subcarrier_offset, ssb_offset_point_a );
     mac->type0_pdcch_ss_mux_pattern = mac->type0_PDCCH_CSS_config.type0_pdcch_ss_mux_pattern;
     mac->type0_pdcch_ss_sfn_c = mac->type0_PDCCH_CSS_config.sfn_c;
     mac->type0_pdcch_ss_n_c = mac->type0_PDCCH_CSS_config.n_c;

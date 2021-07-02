@@ -231,7 +231,9 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
     uint32_t absolute_diff = (*scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB - scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA);
     cfg->ssb_table.ssb_offset_point_a = absolute_diff/(12*scs_scaling) - 10;
     cfg->ssb_table.ssb_period = *scc->ssb_periodicityServingCell;
-    cfg->ssb_table.ssb_subcarrier_offset = 0; // TODO currently not in RRC?
+    cfg->ssb_table.ssb_subcarrier_offset =( absolute_diff % (12*scs_scaling) )* scs_scaling; // TODO currently not in RRC?
+     
+    LOG_I(PHY, "in config ue scc, point A %d,  ssb_subcarrier_offset is %d\n", cfg->ssb_table.ssb_offset_point_a, cfg->ssb_table.ssb_subcarrier_offset);
 
     switch (scc->ssb_PositionsInBurst->present) {
     case 1 :
