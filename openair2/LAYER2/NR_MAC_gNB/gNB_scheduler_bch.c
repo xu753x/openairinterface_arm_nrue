@@ -353,7 +353,7 @@ void schedule_control_sib1(module_id_t module_id,
 
   const uint16_t bwpSize = type0_PDCCH_CSS_config->num_rbs;
   int rbStart = 0; //type0_PDCCH_CSS_config->cset_start_rb;
-  LOG_I(PHY, "cset_start_rb is %d\n", type0_PDCCH_CSS_config->cset_start_rb);
+  LOG_D(PHY, "cset_start_rb is %d\n", type0_PDCCH_CSS_config->cset_start_rb);
   int startSymbolIndex = 0;
   int nrOfSymbols = 0;
 

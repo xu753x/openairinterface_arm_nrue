@@ -94,12 +94,12 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
      * in time: by its first slot and its first symbol*/
     const nfapi_nr_dl_dci_pdu_t *dci_pdu = &pdcch_pdu_rel15->dci_pdu[d];
 
-    LOG_D(PHY,"DCI pdu %d, rnti %x, aggregation %d CCE %d Scrambling_Id %x ScramblingRNTI %x PayloadSizeBits %d\n",d,dci_pdu->RNTI,dci_pdu->AggregationLevel,dci_pdu->CceIndex,dci_pdu->ScramblingId,dci_pdu->ScramblingRNTI,dci_pdu->PayloadSizeBits);
+    LOG_I(PHY,"DCI pdu %d, rnti %x, aggregation %d CCE %d Scrambling_Id %x ScramblingRNTI %x PayloadSizeBits %d\n",d,dci_pdu->RNTI,dci_pdu->AggregationLevel,dci_pdu->CceIndex,dci_pdu->ScramblingId,dci_pdu->ScramblingRNTI,dci_pdu->PayloadSizeBits);
     cset_start_symb = pdcch_pdu_rel15->StartSymbolIndex;
     cset_nsymb = pdcch_pdu_rel15->DurationSymbols;
     dci_idx = 0;
-    LOG_D(PHY, "Coreset rb_offset %d, nb_rb %d BWP Start %d\n",rb_offset,n_rb,pdcch_pdu_rel15->BWPStart);
-    LOG_D(PHY, "Coreset starting subcarrier %d on symbol %d (%d symbols)\n", cset_start_sc, cset_start_symb, cset_nsymb);
+    LOG_I(PHY, "Coreset rb_offset %d, nb_rb %d BWP Start %d\n",rb_offset,n_rb,pdcch_pdu_rel15->BWPStart);
+    LOG_I(PHY, "Coreset starting subcarrier %d on symbol %d (%d symbols)\n", cset_start_sc, cset_start_symb, cset_nsymb);
     // DMRS length is per OFDM symbol
     uint32_t dmrs_length = n_rb*6; //2(QPSK)*3(per RB)*6(REG per CCE)
     uint32_t encoded_length = dci_pdu->AggregationLevel*108; //2(QPSK)*9(per RB)*6(REG per CCE)
