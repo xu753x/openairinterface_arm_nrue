@@ -88,7 +88,6 @@
 
 extern int ue_id_g;
 
-msc_interface_t msc_interface;
 /* temporary compilation wokaround (UE/eNB split */
 
 

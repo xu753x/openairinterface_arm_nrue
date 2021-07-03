@@ -87,6 +87,7 @@ int split73;
 uint16_t ue_idx_standalone = 0xFFFF;
 AGENT_RRC_xface *agent_rrc_xface[NUM_MAX_ENB]= {0};
 AGENT_MAC_xface *agent_mac_xface[NUM_MAX_ENB]= {0};
+uint8_t proto_agent_flag = 0;
 void flexran_agent_slice_update(mid_t module_idP) {
 }
 int proto_agent_start(mod_id_t mod_id, const cudu_params_t *p){

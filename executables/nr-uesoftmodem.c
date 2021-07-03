@@ -86,8 +86,11 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "executables/softmodem-common.h"
 #include "executables/thread-common.h"
 
+#if defined(ITTI_SIM) || defined(RFSIM_NAS)
+#include "nr_nas_msg_sim.h"
+#endif
+
 extern const char *duplex_mode[];
-msc_interface_t msc_interface;
 THREAD_STRUCT thread_struct;
 nrUE_params_t nrUE_params;
 
@@ -150,10 +153,10 @@ int     transmission_mode = 1;
 int            numerology = 0;
 int           oaisim_flag = 0;
 int            emulate_rf = 0;
-
 uint16_t ue_idx_standalone = 0xFFFF;
-
-char uecap_xer[1024],uecap_xer_in=0;
+uint32_t       N_RB_DL    = 106;
+char         uecap_xer_in = 0;
+char         uecap_xer[1024];
 
 /* see file openair2/LAYER2/MAC/main.c for why abstraction_flag is needed
  * this is very hackish - find a proper solution
@@ -193,7 +196,12 @@ int create_tasks_nrue(uint32_t ue_nb) {
       LOG_E(NR_RRC, "Create task for RRC UE failed\n");
       return -1;
     }
-
+#if defined(ITTI_SIM) || defined(RFSIM_NAS)
+  if (itti_create_task (TASK_NAS_NRUE, nas_nrue_task, NULL) < 0) {
+    LOG_E(NR_RRC, "Create task for NAS UE failed\n");
+    return -1;
+  }
+#endif
   }
 
   itti_wait_ready(0);
@@ -232,7 +240,7 @@ uint64_t set_nrUE_optmask(uint64_t bitmask) {
 nrUE_params_t *get_nrUE_params(void) {
   return &nrUE_params;
 }
-/* initialie thread pools used for NRUE processing paralleliation */ 
+/* initialie thread pools used for NRUE processing paralleliation */
 void init_tpools(uint8_t nun_dlsch_threads) {
   char *params = NULL;
   if (IS_SOFTMODEM_RFSIM) {
@@ -281,18 +289,18 @@ void set_options(int CC_id, PHY_VARS_NR_UE *UE){
 
   int pindex = config_paramidx_fromname(cmdline_params,numparams, CALIBRX_OPT);
   if ( (cmdline_params[pindex].paramflags &  PARAMFLAG_PARAMSET) != 0) UE->mode = rx_calib_ue;
-  
+
   pindex = config_paramidx_fromname(cmdline_params,numparams, CALIBRXMED_OPT);
   if ( (cmdline_params[pindex].paramflags &  PARAMFLAG_PARAMSET) != 0) UE->mode = rx_calib_ue_med;
 
-  pindex = config_paramidx_fromname(cmdline_params,numparams, CALIBRXBYP_OPT);              
+  pindex = config_paramidx_fromname(cmdline_params,numparams, CALIBRXBYP_OPT);
   if ( (cmdline_params[pindex].paramflags &  PARAMFLAG_PARAMSET) != 0) UE->mode = rx_calib_ue_byp;
 
-  pindex = config_paramidx_fromname(cmdline_params,numparams, DBGPRACH_OPT); 
+  pindex = config_paramidx_fromname(cmdline_params,numparams, DBGPRACH_OPT);
   if (cmdline_params[pindex].uptr)
     if ( *(cmdline_params[pindex].uptr) > 0) UE->mode = debug_prach;
 
-  pindex = config_paramidx_fromname(cmdline_params,numparams,NOL2CONNECT_OPT ); 
+  pindex = config_paramidx_fromname(cmdline_params,numparams,NOL2CONNECT_OPT );
   if (cmdline_params[pindex].uptr)
     if ( *(cmdline_params[pindex].uptr) > 0)  UE->mode = no_L2_connect;
 
@@ -317,20 +325,21 @@ void set_options(int CC_id, PHY_VARS_NR_UE *UE){
   UE->rf_map.chain         = CC_id + chain_offset;
 
 
-  LOG_I(PHY,"Set UE mode %d, UE_fo_compensation %d, UE_scan_carrier %d, UE_no_timing_correction %d \n", 
+  LOG_I(PHY,"Set UE mode %d, UE_fo_compensation %d, UE_scan_carrier %d, UE_no_timing_correction %d \n",
   	   UE->mode, UE->UE_fo_compensation, UE->UE_scan_carrier, UE->no_timing_correction);
 
   // Set FP variables
 
 
-  
+
   if (tddflag){
     fp->frame_type = TDD;
     LOG_I(PHY, "Set UE frame_type %d\n", fp->frame_type);
   }
 
-  LOG_I(PHY, "Set UE N_RB_DL %d\n", fp->N_RB_DL);
+  fp->N_RB_DL = N_RB_DL;
 
+  LOG_I(PHY, "Set UE N_RB_DL %d\n", N_RB_DL);
   LOG_I(PHY, "Set UE nb_rx_antenna %d, nb_tx_antenna %d, threequarter_fs %d\n", fp->nb_antennas_rx, fp->nb_antennas_tx, fp->threequarter_fs);
 
 }
@@ -392,10 +401,10 @@ void init_pdcp(void) {
   }
   pdcp_layer_init();
   nr_DRB_preconfiguration();*/
+  pdcp_layer_init();
   pdcp_module_init(pdcp_initmask, 0);
   pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
   pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
-  LOG_I(PDCP, "Before getting out from init_pdcp() \n");
 }
 
 // Stupid function addition because UE itti messages queues definition is common with eNB
@@ -447,7 +456,7 @@ int main( int argc, char **argv ) {
   LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
 
   init_NR_UE(1,rrc_config_path);
-  if(IS_SOFTMODEM_NOS1)
+  if(IS_SOFTMODEM_NOS1 || get_softmodem_params()->sa)
 	  init_pdcp();
 
   NB_UE_INST=1;
@@ -475,8 +484,22 @@ int main( int argc, char **argv ) {
       mac->if_module->phy_config_request(&mac->phy_config);
 
     fapi_nr_config_request_t *nrUE_config = &UE[CC_id]->nrUE_config;
+    if (get_softmodem_params()->sa) { // set frame config to initial values from command line and assume that the SSB is centered on the grid
+      nrUE_config->ssb_config.scs_common = get_softmodem_params()->numerology;
+      nrUE_config->carrier_config.dl_grid_size[nrUE_config->ssb_config.scs_common] = UE[CC_id]->frame_parms.N_RB_DL;
+      nrUE_config->carrier_config.ul_grid_size[nrUE_config->ssb_config.scs_common] = UE[CC_id]->frame_parms.N_RB_DL;
+      nrUE_config->carrier_config.dl_frequency =  (downlink_frequency[0][0] -(6*UE[CC_id]->frame_parms.N_RB_DL*(15000<<nrUE_config->ssb_config.scs_common)))/1000;
+      nrUE_config->carrier_config.uplink_frequency =  (downlink_frequency[0][0] -(6*UE[CC_id]->frame_parms.N_RB_DL*(15000<<nrUE_config->ssb_config.scs_common)))/1000;
+      nrUE_config->ssb_table.ssb_offset_point_a = (UE[CC_id]->frame_parms.N_RB_DL - 20)>>1;
 
-    nr_init_frame_parms_ue(&UE[CC_id]->frame_parms, nrUE_config, *mac->scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0]);
+      // Initialize values, will be updated upon SIB1 reception
+      nrUE_config->cell_config.frame_duplex_type = TDD;
+      nrUE_config->ssb_table.ssb_mask_list[0].ssb_mask = 0xFFFFFFFF;
+      nrUE_config->ssb_table.ssb_period = 1;
+    }
+
+    nr_init_frame_parms_ue(&UE[CC_id]->frame_parms, nrUE_config,
+			   mac->scc == NULL ? 78 : *mac->scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0]);
 
     init_symbol_rotation(&UE[CC_id]->frame_parms);
     init_nr_ue_vars(UE[CC_id], 0, abstraction_flag);
@@ -497,15 +520,15 @@ int main( int argc, char **argv ) {
   memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*NUMBER_OF_UE_MAX*MAX_NUM_CCs);
   configure_linux();
   mlockall(MCL_CURRENT | MCL_FUTURE);
- 
-  if(IS_SOFTMODEM_DOSCOPE) { 
-    load_softscope("nr",PHY_vars_UE_g[0][0]);
-  }     
 
-  
+  if(IS_SOFTMODEM_DOSCOPE) {
+    load_softscope("nr",PHY_vars_UE_g[0][0]);
+  }
+
+
   init_NR_UE_threads(1);
   printf("UE threads created by %ld\n", gettid());
-  
+
   // wait for end of program
   printf("TYPE <CTRL-C> TO TERMINATE\n");
 
