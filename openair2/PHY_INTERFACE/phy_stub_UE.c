@@ -1187,7 +1187,7 @@ void ue_init_standalone_socket(int tx_port, int rx_port)
 
     if (inet_pton(server_address.sin_family, stub_eth_params.remote_addr, &server_address.sin_addr) <= 0)
     {
-      LOG_E(MAC, "Invalid standalone PNF Address\n");
+      LOG_E(MAC, "Invalid standalone PNF Address '%s'\n", stub_eth_params.remote_addr);
       close(sd);
       return;
     }

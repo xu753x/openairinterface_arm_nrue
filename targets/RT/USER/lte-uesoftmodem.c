@@ -86,8 +86,6 @@
 
 #include "lte-softmodem.h"
 
-extern int ue_id_g;
-
 /* temporary compilation wokaround (UE/eNB split */
 
 
