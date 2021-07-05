@@ -1,0 +1,33 @@
+config:
+    filename : testinfra-as-code.yaml
+    RAN : 
+      key : RAN_1 
+      RAN : 
+        eNB_0 : 
+          Deploy : Bare
+        gNB_0 : 
+          Deploy : Container
+    UE :
+      key : myUEs
+      UE :
+        idefix_0:
+          Deploy : None
+        oppo:
+          Deploy : None
+        oaiue:
+          Deploy : Bare
+    CN :
+      key : CN_0
+      CN :
+        LTEBox_0:
+          Deploy : Bare
+        OAICN5G:
+          Deploy : Compose
+
+
+#list needed for iteration
+Tests :
+  - t1.xml
+  - t2.xml
+  - t3.xml
+  - t4.xml

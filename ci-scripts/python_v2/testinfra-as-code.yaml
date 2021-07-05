@@ -1,0 +1,169 @@
+
+
+
+RAN_1:
+    eNB_0 :
+      ID : eNB_0
+      Name : toto
+      Type : eNB
+      Deploy :
+        Bare :
+          Kind : bare
+          IPAddress : 192.168.18.193 #on Obelix
+          Username : oaicicd
+          SourceCodePath : /tmp/my-CI-NSA-eNB
+        Container :        
+          Kind : docker
+          Args :  
+        Cluster :
+          Kind : openshift
+          Args :
+    gNB_0 :
+      ID : gNB_0
+      Name : titi
+      Type : eNB
+      Deploy :
+        Bare :
+          Kind : Bare
+          IPAddress : 192.168.18.194 #on Obelix
+          Username : oaicicd
+          SourceCodePath : /tmp/my-CI-NSA-gNB
+        Container :        
+          Kind : docker
+          Args :  
+        Cluster :
+          Kind : openshift
+          Args :
+                   
+    eNB_1 :
+      ID : eNB_0
+      Name : tata
+      Type : eNB
+      Deploy :
+        Bare :
+          Kind : Bare
+          IPAddress : 192.168.18.195 #on Obelix
+          Username : oaicicd
+          SourceCodePath : /tmp/my-CI-NSA-eNB
+        Container :        
+          Kind : docker
+          Args :  
+        Cluster :
+          Kind : openshift
+          Args :
+
+
+
+
+CN_0:
+    LTEBox_0 :
+      ID : LTEBox_0
+      Name : LTE_box_on_nikaia
+      Type : LTEBOX
+      Deploy :
+        bare :
+          Kind : bare
+          IPAddress : 192.168.18.99 #on Nikaia
+          Username : oaicicd
+          SourceCodePath : /tmp/
+    SABox_0 :
+      ID : SABox_0
+      Name : SA_box_on_newserver
+      Type : SABOX
+      Deploy :
+        Bare :
+          Kind : Bare
+          IPAddress : 192.168.18.999 #on
+          Username : oaicicd
+          SourceCodePath : /tmp/
+    OAICN5G :
+      ID : OAICN5G
+      Name : 
+      Type : 
+      Deploy :
+        Compose :
+          Kind : Compose
+          IPAddress : 192.168.18.999 #on
+          Username : oaicicd
+          SourceCodePath : /tmp/
+
+
+
+
+myUEs:
+  oaiue : 
+    Deploy : 
+      bare :
+      Kind : bare
+      IPAddress : 192.168.18.99 #on Nikaia
+      Username : oaicicd
+      SourceCodePath : /tmp/  
+
+  idefix_0:
+    Name : idefix0
+    State : enabled
+    Kind : module
+    Type : quectel
+    Process : 
+      Name : quectel-CM
+      Cmd : /home/oaicicd/quectel-CM/quectel-CM -s oai.ipv4 -4
+    WakeupScript : ci_ctl_qtel.py /dev/ttyUSB2 wup
+    DetachScript : ci_ctl_qtel.py /dev/ttyUSB2 detach
+    PLMN : 22201
+    UENetwork : wwan0 
+    HostIPAddress : 192.168.18.188
+    HostUsername : oaicicd
+    HostPassword : oaicicd
+    HostSourceCodePath : none
+
+  porcepix_0:
+    Name : porcepix0
+    State : enabled
+    Kind : module
+    Type : quectel
+    Process : 
+      Name : quectel-CM
+      Cmd : /home/oaicicd/quectel-CM/quectel-CM -s oai.ipv4 -4
+    WakeupScript : ci_ctl_qtel.py /dev/ttyUSB2 wup
+    DetachScript : ci_ctl_qtel.py /dev/ttyUSB2 detach
+    PLMN : 22201
+    UENetwork : wwan0 
+    HostIPAddress : 192.168.18.188
+    HostUsername : oaicicd
+    HostPassword : oaicicd
+    HostSourceCodePath : none
+
+  porcepix_1:
+    Name : porcepix1
+    State : enabled
+    Kind : module
+    Type : quectel
+    Process : 
+      Name : quectel-CM
+      Cmd : /home/oaicicd/quectel-CM/quectel-CM -s oai.ipv4 -4
+    WakeupScript : ci_ctl_qtel.py /dev/ttyUSB2 wup
+    DetachScript : ci_ctl_qtel.py /dev/ttyUSB2 detach
+    PLMN : 22201
+    UENetwork : wwan0 
+    HostIPAddress : 192.168.18.188
+    HostUsername : oaicicd
+    HostPassword : oaicicd
+    HostSourceCodePath : none
+
+  oppo:
+    Name : opporeno5g
+    State : enabled
+    Kind : mobile
+    ADBIPAddress : 192.168.18.196
+    ADBUsername : oaici
+    ADBPassword : KkexF6CErOi1fNuebCPsuIVK    
+    ADBIdentifier :  9d690a12
+    Sequences :
+      Airplane : 
+        - adb shell input keyevent KEYCODE_POWER
+        - adb shell input swipe 300 700 300 0
+        - adb shell am start -a android.settings.AIRPLANE_MODE_SETTINGS
+        - adb shell input keyevent 20
+        - adb shell input tap 968 324
+
+
