@@ -545,5 +545,7 @@ extern notifiedFIFO_t         pdcp_sdu_list;
 
 extern hash_table_t  *pdcp_coll_p;
 
+extern uint16_t ue_id_g;
+
 #endif
 /*@}*/

@@ -106,9 +106,6 @@ pthread_cond_t nfapi_sync_cond;
 pthread_mutex_t nfapi_sync_mutex;
 int nfapi_sync_var=-1; //!< protected by mutex \ref nfapi_sync_mutex
 
-msc_interface_t msc_interface;
-
-
 uint16_t sf_ahead=4;
 
 pthread_cond_t sync_cond;
@@ -191,6 +188,7 @@ double cpuf;
 
 int oaisim_flag=0;
 uint16_t ue_idx_standalone = 0xFFFF;
+uint8_t proto_agent_flag = 0;
 
 
 /* forward declarations */
@@ -620,11 +618,11 @@ int main ( int argc, char **argv )
       if(NFAPI_MODE != NFAPI_MODE_PNF)
       flexran_agent_start(i);
     }
-    
+
     /* initializes PDCP and sets correct RLC Request/PDCP Indication callbacks
      * for monolithic/F1 modes */
    init_pdcp();
-    
+
     if (create_tasks(1) < 0) {
       printf("cannot create ITTI tasks\n");
       exit(-1);
@@ -682,7 +680,7 @@ int main ( int argc, char **argv )
       printf("Initializing eNB threads single_thread_flag:%d wait_for_sync:%d\n", get_softmodem_params()->single_thread_flag,get_softmodem_params()->wait_for_sync);
       init_eNB(get_softmodem_params()->single_thread_flag,get_softmodem_params()->wait_for_sync);
     }
-    for (int x=0; x < RC.nb_L1_inst; x++) 
+    for (int x=0; x < RC.nb_L1_inst; x++)
       for (int CC_id=0; CC_id<RC.nb_L1_CC[x]; CC_id++) {
         L1_rxtx_proc_t *L1proc= &RC.eNB[x][CC_id]->proc.L1_proc;
         L1_rxtx_proc_t *L1proctx= &RC.eNB[x][CC_id]->proc.L1_proc_tx;
@@ -706,14 +704,14 @@ int main ( int argc, char **argv )
   printf("wait_eNBs()\n");
   wait_eNBs();
   printf("About to Init RU threads RC.nb_RU:%d\n", RC.nb_RU);
-  
+
   // RU thread and some L1 procedure aren't necessary in VNF or L2 FAPI simulator.
   // but RU thread deals with pre_scd and this is necessary in VNF and simulator.
   // some initialization is necessary and init_ru_vnf do this.
   if (RC.nb_RU >0 && NFAPI_MODE!=NFAPI_MODE_VNF) {
     printf("Initializing RU threads\n");
     init_RU(RC.ru,RC.nb_RU,RC.eNB,RC.nb_L1_inst,RC.nb_L1_CC,get_softmodem_params()->rf_config_file,get_softmodem_params()->send_dmrs_sync);
-    
+
     for (ru_id=0; ru_id<RC.nb_RU; ru_id++) {
       RC.ru[ru_id]->rf_map.card=0;
       RC.ru[ru_id]->rf_map.chain=CC_id+(get_softmodem_params()->chain_offset);
@@ -734,7 +732,7 @@ int main ( int argc, char **argv )
     LOG_I(ENB_APP,"RC.nb_RU:%d\n", RC.nb_RU);
     // once all RUs are ready intiailize the rest of the eNBs ((dependence on final RU parameters after configuration)
     printf("ALL RUs ready - init eNBs\n");
-    
+
     if (NFAPI_MODE!=NFAPI_MODE_PNF && NFAPI_MODE!=NFAPI_MODE_VNF) {
       LOG_I(ENB_APP,"Not NFAPI mode - call init_eNB_afterRU()\n");
       init_eNB_afterRU();
