@@ -363,6 +363,8 @@ void nr_ue_pbch_procedures(uint8_t gNB_id,
 
   if (ret==0) {
 
+    LOG_I(PHY,"[UE %d] frame %d, nr_slot_rx %d, OK decoding PBCH!\n",
+	  ue->Mod_id,frame_rx, nr_slot_rx);
     ue->pbch_vars[gNB_id]->pdu_errors_conseq = 0;
 
     // Switch to PRACH state if it is first PBCH after initial synch and no timing correction is performed

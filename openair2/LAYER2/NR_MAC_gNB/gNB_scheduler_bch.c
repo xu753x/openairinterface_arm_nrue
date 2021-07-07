@@ -387,15 +387,15 @@ void schedule_control_sib1(module_id_t module_id,
     TBS = nr_compute_tbs(nr_get_Qm_dl(gNB_mac->sched_ctrlCommon->sched_pdsch.mcs, gNB_mac->sched_ctrlCommon->pdsch_semi_static.mcsTableIdx),
                          nr_get_code_rate_dl(gNB_mac->sched_ctrlCommon->sched_pdsch.mcs, gNB_mac->sched_ctrlCommon->pdsch_semi_static.mcsTableIdx),
                          rbSize, nrOfSymbols, N_PRB_DMRS * dmrs_length,0, 0,1) >> 3;
-  } while (rbStart + rbSize <  bwpSize && !vrb_map[rbStart + rbSize + type0_PDCCH_CSS_config->cset_start_rb] && TBS < gNB_mac->sched_ctrlCommon->num_total_bytes);
+  } while (rbSize <  bwpSize && !vrb_map[rbStart + rbSize + type0_PDCCH_CSS_config->cset_start_rb] && TBS < gNB_mac->sched_ctrlCommon->num_total_bytes);
 
   gNB_mac->sched_ctrlCommon->sched_pdsch.rbSize = rbSize;
   gNB_mac->sched_ctrlCommon->sched_pdsch.rbStart = rbStart;
 
   LOG_D(MAC,"startSymbolIndex = %i\n", startSymbolIndex);
   LOG_D(MAC,"nrOfSymbols = %i\n", nrOfSymbols);
-  LOG_D(MAC, "rbSize = %i\n", gNB_mac->sched_ctrlCommon->sched_pdsch.rbSize);
-  LOG_D(MAC,"TBS = %i\n", TBS);
+  LOG_I(MAC, "rbSize = %i, %d, bwp %d %d\n", rbStart, gNB_mac->sched_ctrlCommon->sched_pdsch.rbSize, type0_PDCCH_CSS_config->cset_start_rb, bwpSize);
+  LOG_I(MAC,"TBS = %i, totalbyte %d\n", TBS,  gNB_mac->sched_ctrlCommon->num_total_bytes);
   LOG_D(MAC,"dmrs_length %d\n",dmrs_length);
   LOG_D(MAC,"N_PRB_DMRS = %d\n",N_PRB_DMRS);
   LOG_D(MAC,"mappingtype = %d\n", mappingtype);
@@ -537,7 +537,7 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
   LOG_D(MAC,"CyclicPrefix: %i\n", pdcch_pdu_rel15->CyclicPrefix);
   LOG_D(MAC,"StartSymbolIndex: %i\n", pdcch_pdu_rel15->StartSymbolIndex);
   LOG_D(MAC,"DurationSymbols: %i\n", pdcch_pdu_rel15->DurationSymbols);
-  for(int n=0;n<6;n++) LOG_D(MAC,"FreqDomainResource[%i]: %x\n",n, pdcch_pdu_rel15->FreqDomainResource[n]);
+  for(int n=0;n<6;n++) LOG_I(MAC,"FreqDomainResource[%i]: %x\n",n, pdcch_pdu_rel15->FreqDomainResource[n]);
   LOG_D(MAC,"CceRegMappingType: %i\n", pdcch_pdu_rel15->CceRegMappingType);
   LOG_D(MAC,"RegBundleSize: %i\n", pdcch_pdu_rel15->RegBundleSize);
   LOG_D(MAC,"InterleaverSize: %i\n", pdcch_pdu_rel15->InterleaverSize);

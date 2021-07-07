@@ -318,7 +318,7 @@ int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,
 
   fp->ssb_start_subcarrier = (12 * config->ssb_table.ssb_offset_point_a + sco/2);
 
-LOG_I(PHY, "sco %d, ssb_subcarrier_offset %d, ssb_offset_point_a %d, ssb_start_subcarrier %d, ofdmsize %d\n",
+LOG_I(PHY, "ue init sco %d, ssb_subcarrier_offset %d, ssb_offset_point_a %d, ssb_start_subcarrier %d, ofdmsize %d\n",
        sco, // sco is 15khz
        config->ssb_table.ssb_subcarrier_offset,
        config->ssb_table.ssb_offset_point_a,

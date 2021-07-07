@@ -1159,9 +1159,9 @@ int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(
   }
 
   if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
-    LOG_E( NR_RRC, "[UE %"PRIu8"] Failed to decode BCCH_DLSCH_MESSAGE (%zu bits)\n",
+    LOG_E( NR_RRC, "[UE %"PRIu8"] Failed to decode BCCH_DLSCH_MESSAGE (%zu bits) %d\n",
            module_id,
-           dec_rval.consumed );
+           dec_rval.consumed, Sdu_len );
     log_dump(NR_RRC, Sdu, Sdu_len, LOG_DUMP_CHAR,"   Received bytes:\n" );
     // free the memory
     SEQUENCE_free( &asn_DEF_LTE_BCCH_DL_SCH_Message, (void *)bcch_message, 1 );

@@ -392,8 +392,9 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
 
   cfg->ssb_table.ssb_offset_point_a = scc_SIB->downlinkConfigCommon.frequencyInfoDL.offsetToPointA;
   cfg->ssb_table.ssb_period = scc_SIB->ssb_PeriodicityServingCell;
-  cfg->ssb_table.ssb_subcarrier_offset = 0; // TODO currently not in RRC?
+  //cfg->ssb_table.ssb_subcarrier_offset = 0; // TODO currently not in RRC?
 
+  LOG_I(PHY, "in SIB, ssb_offset_point_a %d, ssb_subcarrier_offset %d\n", cfg->ssb_table.ssb_offset_point_a, cfg->ssb_table.ssb_subcarrier_offset);
   AssertFatal(scc_SIB->ssb_PositionsInBurst.groupPresence==NULL, "Cannot handle more than 8 SSBs for now (%x.%x.%x.%x.%x.%x.%x.%x)\n",
 	      scc_SIB->ssb_PositionsInBurst.groupPresence->buf[0],
 	      scc_SIB->ssb_PositionsInBurst.groupPresence->buf[1],
