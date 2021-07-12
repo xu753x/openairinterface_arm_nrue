@@ -32,6 +32,8 @@
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "executables/softmodem-common.h"
 #include "common/utils/nr/nr_common.h"
+#include <openair2/UTIL/OPT/opt.h>
+
 
 //38.321 Table 6.1.3.1-1
 const uint32_t NR_SHORT_BSR_TABLE[32] = {
@@ -190,6 +192,10 @@ void nr_process_mac_pdu(module_id_t module_idP,
 
     NR_UE_info_t *UE_info = &RC.nrmac[module_idP]->UE_info;
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+
+    if ( pduP[0] != UL_SCH_LCID_PADDING )
+      trace_NRpdu(DIRECTION_UPLINK, pduP, mac_pdu_len ,UE_id, WS_C_RNTI, UE_info->rnti[UE_id], frameP, 0, 0, 0);
+
     //  For both DL/UL-SCH
     //  Except:
     //   - UL/DL-SCH: fixed-size MAC CE(known by LCID)
@@ -369,18 +375,18 @@ void nr_process_mac_pdu(module_id_t module_idP,
             mac_sdu_len = (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->L;
             mac_subheader_len = 2;
           }
-          LOG_D(NR_MAC, "[UE %d] Frame %d : ULSCH -> UL-DCCH %d (gNB %d, %d bytes), rnti: %d \n", module_idP, frameP, rx_lcid, module_idP, mac_sdu_len, *UE_info->rnti);
+          LOG_D(NR_MAC, "[UE %d] Frame %d : ULSCH -> UL-DCCH %d (gNB %d, %d bytes), rnti: %d \n", module_idP, frameP, rx_lcid, module_idP, mac_sdu_len, UE_info->rnti[UE_id]);
           mac_rlc_data_ind(module_idP,
-              *UE_info->rnti,
-              module_idP,
-              frameP,
-              ENB_FLAG_YES,
-              MBMS_FLAG_NO,
-              rx_lcid,
-              (char *) (pdu_ptr + mac_subheader_len),
-              mac_sdu_len,
-              1,
-              NULL);
+                           UE_info->rnti[UE_id],
+                           module_idP,
+                           frameP,
+                           ENB_FLAG_YES,
+                           MBMS_FLAG_NO,
+                           rx_lcid,
+                           (char *) (pdu_ptr + mac_subheader_len),
+                           mac_sdu_len,
+                           1,
+                           NULL);
           break;
         case UL_SCH_LCID_SRB3:
               // todo
@@ -662,6 +668,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
       if (UE_info->UE_sched_ctrl[UE_id].pusch_consecutive_dtx_cnt >= pusch_failure_thres) {
          LOG_D(NR_MAC,"Detected UL Failure on PUSCH, stopping scheduling\n");
          UE_info->UE_sched_ctrl[UE_id].ul_failure = 1;
+        nr_mac_eNB_rrc_ul_failure(gnb_mod_idP,CC_idP,frameP,slotP,rntiP);
       }
     }
   } else if(sduP) {
@@ -840,16 +847,6 @@ bool allocate_ul_retransmission(module_id_t module_id,
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
   NR_sched_pusch_t *retInfo = &sched_ctrl->ul_harq_processes[harq_pid].sched_pusch;
-  NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
-
-  // frame/slot in sched_pusch has been set previously. In the following, we
-  // overwrite the information in the retransmission information before storing
-  // as the new scheduling instruction
-  retInfo->frame = sched_ctrl->sched_pusch.frame;
-  retInfo->slot = sched_ctrl->sched_pusch.slot;
-
-  // Get previous PUSCH filed info
-  sched_ctrl->sched_pusch = *retInfo;
 
   NR_BWP_t *genericParameters = sched_ctrl->active_ubwp ? &sched_ctrl->active_ubwp->bwp_Common->genericParameters : &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
   int rbStart = sched_ctrl->active_ubwp ? NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE) : 0;
@@ -917,6 +914,15 @@ bool allocate_ul_retransmission(module_id_t module_id,
     return false;
   }
 
+  /* frame/slot in sched_pusch has been set previously. In the following, we
+   * overwrite the information in the retransmission information before storing
+   * as the new scheduling instruction */
+  retInfo->frame = sched_ctrl->sched_pusch.frame;
+  retInfo->slot = sched_ctrl->sched_pusch.slot;
+  /* Get previous PSUCH field info */
+  sched_ctrl->sched_pusch = *retInfo;
+  NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
+
   LOG_D(MAC,
         "%4d.%2d Allocate UL retransmission UE %d/RNTI %04x sched %4d.%2d (%d RBs)\n",
         frame,
@@ -950,7 +956,7 @@ void update_ul_ue_R_Qm(NR_sched_pusch_t *sched_pusch, const NR_pusch_semi_static
 }
 
 float ul_thr_ue[MAX_MOBILES_PER_GNB];
-uint32_t ul_pf_tbs[3][28]; // pre-computed, approximate TBS values for PF coefficient
+uint32_t ul_pf_tbs[3][29]; // pre-computed, approximate TBS values for PF coefficient
 void pf_ul(module_id_t module_id,
            frame_t frame,
            sub_frame_t slot,
@@ -963,7 +969,7 @@ void pf_ul(module_id_t module_id,
   gNB_MAC_INST *nrmac = RC.nrmac[module_id];
   NR_ServingCellConfigCommon_t *scc = nrmac->common_channels[CC_id].ServingCellConfigCommon;
   NR_UE_info_t *UE_info = &nrmac->UE_info;
-  const int min_rb = 5;
+  const int min_rb = 20;
   float coeff_ue[MAX_MOBILES_PER_GNB];
   // UEs that could be scheduled
   int ue_array[MAX_MOBILES_PER_GNB];
@@ -1309,7 +1315,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
   const NR_list_t *UE_list = &UE_info->list;
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-    if (sched_ctrl->ul_failure == 1) continue;
+    if (sched_ctrl->ul_failure == 1 && get_softmodem_params()->phy_test==0) continue;
     UE_info->mac_stats[UE_id].ulsch_current_bytes = 0;
 
     /* dynamic PUSCH values (RB alloc, MCS, hence R, Qm, TBS) that change in

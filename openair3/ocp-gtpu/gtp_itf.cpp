@@ -275,12 +275,15 @@ static void gtpv1uEndTunnel(instance_t instance, gtpv1u_enb_tunnel_data_req_t *r
   to.sin_family      = AF_INET;
   to.sin_port        = htons(tmp.outgoing_port);
   to.sin_addr.s_addr = tmp.outgoing_ip_addr;
+
+  char ip4[INET_ADDRSTRLEN];
+  //char ip6[INET6_ADDRSTRLEN];
   LOG_D(GTPU,"sending end packet to %s\n", inet_ntoa(to.sin_addr) );
 
   if (sendto(compatInst(instance), (void *)&msgHdr, sizeof(msgHdr), 0,(struct sockaddr *)&to, sizeof(to) ) !=  sizeof(msgHdr)) {
     LOG_E(GTPU,
-          "[SD %ld] Failed to send data to " IPV4_ADDR " on port %d, buffer size %lu\n",
-          compatInst(instance), IPV4_ADDR_FORMAT(tmp.outgoing_ip_addr), tmp.outgoing_port, sizeof(msgHdr));
+          "[SD %ld] Failed to send data to %s on port %d, buffer size %lu\n",
+          compatInst(instance), inet_ntop(AF_INET, &tmp.outgoing_ip_addr, ip4, INET_ADDRSTRLEN), tmp.outgoing_port, sizeof(msgHdr));
   }
 }
 
@@ -436,11 +439,16 @@ teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int incoming_bearer
   tmp->outgoing_port=port;
   tmp->teid_outgoing= outgoing_teid;
   pthread_mutex_unlock(&globGtp.gtp_lock);
-  LOG_D(GTPU, "Created tunnel for RNTI %x, bearer: %d/%d teid for DL: %x, teid for UL %x\n",
+  char ip4[INET_ADDRSTRLEN];
+  char ip6[INET6_ADDRSTRLEN];
+
+  LOG_I(GTPU, "Created tunnel for RNTI %x, teid for DL: %d, teid for UL %d to remote IPv4: %s, IPv6 %s\n",
         rnti,
-        outgoing_bearer_id, incoming_bearer_id,
         tmp->teid_incoming,
-        tmp->teid_outgoing);
+        tmp->teid_outgoing,
+        inet_ntop(AF_INET,(void*)&tmp->outgoing_ip_addr, ip4,INET_ADDRSTRLEN ),
+        inet_ntop(AF_INET6,(void*)&tmp->outgoing_ip6_addr.s6_addr, ip6, INET6_ADDRSTRLEN));
+
   return incoming_teid;
 }
 
@@ -542,6 +550,7 @@ int gtpv1u_update_ngu_tunnel(
   const gtpv1u_gnb_create_tunnel_req_t *const  create_tunnel_req_pP,
   const rnti_t prior_rnti
 ) {
+  AssertFatal( false, "to be developped\n");
   return GTPNOK;
 }
 
@@ -713,7 +722,7 @@ static int Gtpv1uHandleGpdu(int h,
   int offset=8;
 
   if( msgHdr->E ||  msgHdr->S ||msgHdr->PN)
-    offset+=4;
+    offset+=8;
 
   // This context is not good for gtp
   // frame, ... has no meaning
