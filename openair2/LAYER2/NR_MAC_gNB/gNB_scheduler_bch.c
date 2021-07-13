@@ -353,7 +353,7 @@ void schedule_control_sib1(module_id_t module_id,
 
   const uint16_t bwpSize = type0_PDCCH_CSS_config->num_rbs;
   int rbStart = 0; //type0_PDCCH_CSS_config->cset_start_rb;
-  LOG_I(PHY, "cset_start_rb is %d, ccdindex %d\n", type0_PDCCH_CSS_config->cset_start_rb, gNB_mac->sched_ctrlCommon->cce_index);
+  LOG_D(PHY, "cset_start_rb is %d, ccdindex %d\n", type0_PDCCH_CSS_config->cset_start_rb, gNB_mac->sched_ctrlCommon->cce_index);
   int startSymbolIndex = 0;
   int nrOfSymbols = 0;
 
@@ -394,8 +394,8 @@ void schedule_control_sib1(module_id_t module_id,
 
   LOG_D(MAC,"startSymbolIndex = %i\n", startSymbolIndex);
   LOG_D(MAC,"nrOfSymbols = %i\n", nrOfSymbols);
-  LOG_I(MAC, "rbSize = %i, %d, bwp %d %d\n", rbStart, gNB_mac->sched_ctrlCommon->sched_pdsch.rbSize, type0_PDCCH_CSS_config->cset_start_rb, bwpSize);
-  LOG_I(MAC,"TBS = %i, totalbyte %d\n", TBS,  gNB_mac->sched_ctrlCommon->num_total_bytes);
+  LOG_D(MAC, "rbSize = %i, %d, bwp %d %d\n", rbStart, gNB_mac->sched_ctrlCommon->sched_pdsch.rbSize, type0_PDCCH_CSS_config->cset_start_rb, bwpSize);
+  LOG_D(MAC,"TBS = %i, totalbyte %d\n", TBS,  gNB_mac->sched_ctrlCommon->num_total_bytes);
   LOG_D(MAC,"dmrs_length %d\n",dmrs_length);
   LOG_D(MAC,"N_PRB_DMRS = %d\n",N_PRB_DMRS);
   LOG_D(MAC,"mappingtype = %d\n", mappingtype);
@@ -537,7 +537,7 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
   LOG_D(MAC,"CyclicPrefix: %i\n", pdcch_pdu_rel15->CyclicPrefix);
   LOG_D(MAC,"StartSymbolIndex: %i\n", pdcch_pdu_rel15->StartSymbolIndex);
   LOG_D(MAC,"DurationSymbols: %i\n", pdcch_pdu_rel15->DurationSymbols);
-  for(int n=0;n<6;n++) LOG_I(MAC,"FreqDomainResource[%i]: %x\n",n, pdcch_pdu_rel15->FreqDomainResource[n]);
+  for(int n=0;n<6;n++) LOG_D(MAC,"FreqDomainResource[%i]: %x\n",n, pdcch_pdu_rel15->FreqDomainResource[n]);
   LOG_D(MAC,"CceRegMappingType: %i\n", pdcch_pdu_rel15->CceRegMappingType);
   LOG_D(MAC,"RegBundleSize: %i\n", pdcch_pdu_rel15->RegBundleSize);
   LOG_D(MAC,"InterleaverSize: %i\n", pdcch_pdu_rel15->InterleaverSize);
@@ -585,7 +585,7 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
        (type0_PDCCH_CSS_config->num_rbs > 0) &&
        (type0_PDCCH_CSS_config->active == true)) {
 
-      LOG_I(NR_MAC,"(%d.%d) SIB1 transmission: ssb_index %d\n", frameP, slotP, type0_PDCCH_CSS_config->ssb_index);
+      LOG_D(NR_MAC,"(%d.%d) SIB1 transmission: ssb_index %d\n", frameP, slotP, type0_PDCCH_CSS_config->ssb_index);
 
       // Get SIB1
       uint8_t sib1_payload[NR_MAX_SIB_LENGTH/8];

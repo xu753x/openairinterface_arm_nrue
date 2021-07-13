@@ -173,7 +173,8 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
                                           ssb_index,
                                           ssb_offset_point_a);
 
-    LOG_I(MAC,"in mib : ssb_start_subcarrier %d, ssb_subcarrier_offset %d, ssb_offset_point_a %d\n", 
+
+    LOG_D(MAC,"in mib : ssb_start_subcarrier %d, ssb_subcarrier_offset %d, ssb_offset_point_a %d\n", 
           ssb_start_subcarrier, ssb_subcarrier_offset, ssb_offset_point_a );
     mac->type0_pdcch_ss_mux_pattern = mac->type0_PDCCH_CSS_config.type0_pdcch_ss_mux_pattern;
     mac->type0_pdcch_ss_sfn_c = mac->type0_PDCCH_CSS_config.sfn_c;

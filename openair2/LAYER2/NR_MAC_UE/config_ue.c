@@ -337,8 +337,18 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
                                                       scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->carrierBandwidth,
                                                       *scc_SIB->downlinkConfigCommon.frequencyInfoDL.frequencyBandList.list.array[0]->freqBandIndicatorNR);
 
-  cfg->carrier_config.dl_frequency = downlink_frequency[0][0] - (10+scc_SIB->downlinkConfigCommon.frequencyInfoDL.offsetToPointA)*(15<<scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing); 
+  cfg->carrier_config.dl_frequency = downlink_frequency[0][0] - 
+  (10+scc_SIB->downlinkConfigCommon.frequencyInfoDL.offsetToPointA/2)*(15<<scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing)*12;
 
+  LOG_I(PHY, "downlink_frequency old : %ld,  new : %ld\n", downlink_frequency[0][0], cfg->carrier_config.dl_frequency);
+   
+  cfg->carrier_config.halfbw = (15<<scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing)
+                               * scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->carrierBandwidth
+                               * 6;
+  cfg->ssb_table.ssb_subcarrier_offset = 0;
+  
+   
+  // shoule take consider the ssb offset at the end.
   for (i=0; i<5; i++) {
     if (i==scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing) {
       cfg->carrier_config.dl_grid_size[i] = scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
@@ -390,11 +400,18 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
 
   // SSB Table config
 
-  cfg->ssb_table.ssb_offset_point_a = scc_SIB->downlinkConfigCommon.frequencyInfoDL.offsetToPointA;
+  cfg->ssb_table.ssb_offset_point_a = scc_SIB->downlinkConfigCommon.frequencyInfoDL.offsetToPointA / 2;
   cfg->ssb_table.ssb_period = scc_SIB->ssb_PeriodicityServingCell;
   //cfg->ssb_table.ssb_subcarrier_offset = 0; // TODO currently not in RRC?
 
-  LOG_I(PHY, "in SIB, ssb_offset_point_a %d, ssb_subcarrier_offset %d\n", cfg->ssb_table.ssb_offset_point_a, cfg->ssb_table.ssb_subcarrier_offset);
+  LOG_I(PHY, "in SIB, addr %p ssb_offset_point_a %d, ssb_subcarrier_offset %d, bw %d, sibscs %d, freqPointA %ld, bw %d\n", cfg,
+  cfg->ssb_table.ssb_offset_point_a, cfg->ssb_table.ssb_subcarrier_offset,
+  scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->carrierBandwidth,
+  scc_SIB->uplinkConfigCommon->frequencyInfoUL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
+  cfg->carrier_config.dl_frequency,
+  scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->carrierBandwidth
+  );
+
   AssertFatal(scc_SIB->ssb_PositionsInBurst.groupPresence==NULL, "Cannot handle more than 8 SSBs for now (%x.%x.%x.%x.%x.%x.%x.%x)\n",
 	      scc_SIB->ssb_PositionsInBurst.groupPresence->buf[0],
 	      scc_SIB->ssb_PositionsInBurst.groupPresence->buf[1],
@@ -699,9 +716,9 @@ int nr_rrc_mac_config_req_ue(
       mac->mib = mibP;    //  update by every reception
       mac->phy_config.Mod_id = module_id;
       mac->phy_config.CC_id = cc_idP;
-      mac->phy_config.config_req.ssb_table.ssb_subcarrier_offset = 0; // TODO currently not in RRC?
+     // mac->phy_config.config_req.ssb_table.ssb_subcarrier_offset = 0; // TODO currently not in RRC?
       mac->phy_config.config_req.tdd_table.tdd_period_in_slots=5<<get_softmodem_params()->numerology;
-      mac->phy_config.config_req.ssb_table.ssb_offset_point_a = (N_RB_DL-20)>>1;
+      //mac->phy_config.config_req.ssb_table.ssb_offset_point_a = (N_RB_DL-20)>>1;
     }
     AssertFatal(scell_group_config == NULL || cell_group_config == NULL,
 		"both scell_group_config and cell_group_config cannot be non-NULL\n");
@@ -711,12 +728,15 @@ int nr_rrc_mac_config_req_ue(
       mac->scc_SIB=sccP;
       LOG_I(MAC,"Keeping ServingCellConfigCommonSIB\n");
       config_common_ue(mac,module_id,cc_idP);
+
       int num_slots_ul = mac->scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
       if (mac->scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols>0) num_slots_ul++;
       LOG_I(MAC, "Initializing ul_config_request. num_slots_ul = %d\n", num_slots_ul);
       mac->ul_config_request = (fapi_nr_ul_config_request_t *)calloc(num_slots_ul, sizeof(fapi_nr_ul_config_request_t));
       // Setup the SSB to Rach Occasions mapping according to the config
+
       build_ssb_to_ro_map(mac);//->scc, mac->phy_config.config_req.cell_config.frame_duplex_type);
+
       mac->if_module->phy_config_request(&mac->phy_config);
       mac->common_configuration_complete = 1;
     }
