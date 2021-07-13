@@ -1,0 +1,336 @@
+diff --git a/nfapi/open-nFAPI/nfapi/public_inc/fapi_nr_ue_interface.h b/nfapi/open-nFAPI/nfapi/public_inc/fapi_nr_ue_interface.h
+index c0abf6acb0..f81b29b60a 100644
+--- a/nfapi/open-nFAPI/nfapi/public_inc/fapi_nr_ue_interface.h
++++ b/nfapi/open-nFAPI/nfapi/public_inc/fapi_nr_ue_interface.h
+@@ -951,6 +951,7 @@ typedef struct
+ {
+   uint16_t dl_bandwidth;//Carrier bandwidth for DL in MHz [38.104, sec 5.3.2] Values: 5, 10, 15, 20, 25, 30, 40,50, 60, 70, 80,90,100,200,400
+   uint32_t dl_frequency; //Absolute frequency of DL point A in KHz [38.104, sec5.2 and 38.211 sec 4.4.4.2] Value: 450000 -> 52600000
++  uint32_t halfbw; //Absolute frequency of DL point A in KHz [38.104, sec5.2 and 38.211 sec 4.4.4.2] Value: 450000 -> 52600000
+   uint16_t dl_k0[5];//𝑘_{0}^{𝜇} for each of the numerologies [38.211, sec 5.3.1] Value: 0 ->23699
+   uint16_t dl_grid_size[5];//Grid size 𝑁_{𝑔𝑟𝑖𝑑}^{𝑠𝑖𝑧𝑒,𝜇} for each of the numerologies [38.211, sec 4.4.2] Value: 0->275 0 = this numerology not used
+   uint16_t num_tx_ant;//Number of Tx antennas
+diff --git a/openair1/PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h b/openair1/PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h
+index 1e7e10def7..11fec6e1e1 100644
+--- a/openair1/PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h
++++ b/openair1/PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h
+@@ -1467,6 +1467,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
+ void nr_get_carrier_frequencies(NR_DL_FRAME_PARMS *fp,
+                                 uint64_t *dl_Carrier,
+                                 uint64_t *ul_Carrier);
++void nr_set_carrier_frequencies(NR_DL_FRAME_PARMS *fp, uint64_t dl_carrier);
+ 
+ /*!
+   \brief This function sets the OAI RF card rx/tx params
+diff --git a/openair1/PHY/NR_UE_TRANSPORT/nr_ue_rf_helpers.c b/openair1/PHY/NR_UE_TRANSPORT/nr_ue_rf_helpers.c
+index 6cf782d9d8..8891b6884b 100644
+--- a/openair1/PHY/NR_UE_TRANSPORT/nr_ue_rf_helpers.c
++++ b/openair1/PHY/NR_UE_TRANSPORT/nr_ue_rf_helpers.c
+@@ -33,6 +33,8 @@
+ #include "nr_transport_proto_ue.h"
+ #include "executables/softmodem-common.h"
+ 
++extern openair0_config_t openair0_cfg[];
++
+ void nr_get_carrier_frequencies(NR_DL_FRAME_PARMS *fp, uint64_t *dl_carrier, uint64_t *ul_carrier){
+ 
+   if (get_softmodem_params()->phy_test==1 || get_softmodem_params()->do_ra==1 || !downlink_frequency[0][0]) {
+@@ -48,6 +50,54 @@ void nr_get_carrier_frequencies(NR_DL_FRAME_PARMS *fp, uint64_t *dl_carrier, uin
+ 
+ }
+ 
++void nr_set_carrier_frequencies(NR_DL_FRAME_PARMS *fp, uint64_t dl_carrier){
++  uint8_t mod_id     = 0;
++  uint8_t cc_id      = 0;
++  PHY_VARS_NR_UE *ue = PHY_vars_UE_g[mod_id][cc_id];
++  int rf_chain       = ue->rf_map.chain;
++  uint64_t ul_carrier;
++  
++  if (get_softmodem_params()->phy_test==1 || get_softmodem_params()->do_ra==1 || !downlink_frequency[0][0]) {
++    fp->dl_CarrierFreq = dl_carrier;
++  } else {
++    downlink_frequency[0][0] = dl_carrier;
++  }
++  LOG_I(PHY, "downlink_frequency %ld,  dl_carrier %ld\n", downlink_frequency[0][0], dl_carrier);
++
++    if (uplink_frequency_offset[0][0])
++    ul_carrier = dl_carrier + uplink_frequency_offset[0][0];
++  else
++    ul_carrier = dl_carrier + fp->ul_CarrierFreq - fp->dl_CarrierFreq;
++
++  for (int i = rf_chain; i < rf_chain + 4; i++) {
++
++    if (i < openair0_cfg->rx_num_channels)
++      openair0_cfg->rx_freq[i + rf_chain] = dl_carrier + ue->common_vars.freq_offset;
++    else
++      openair0_cfg->rx_freq[i] = 0.0;
++
++    if (i < openair0_cfg->tx_num_channels)
++      openair0_cfg->tx_freq[i] = ul_carrier + ue->common_vars.freq_offset;
++    else
++      openair0_cfg->tx_freq[i] = 0.0;
++
++
++    if (i < openair0_cfg->rx_num_channels) {
++      LOG_I(PHY, "new HW: Configuring channel %d (rf_chain %d): setting tx_gain %f, rx_gain %f, tx_freq %f Hz, rx_freq %f Hz\n",
++        i,
++        rf_chain,
++        openair0_cfg->tx_gain[i],
++        openair0_cfg->rx_gain[i],
++        openair0_cfg->tx_freq[i],
++        openair0_cfg->rx_freq[i]);
++    }
++
++    ue->rfdevice.trx_set_freq_func(&ue->rfdevice,&openair0_cfg[0],0);
++
++  }
++
++}
++
+ void nr_rf_card_config(openair0_config_t *openair0_cfg,
+                        double rx_gain_offset,
+                        uint64_t ul_carrier,
+diff --git a/openair1/SCHED_NR_UE/fapi_nr_ue_l1.c b/openair1/SCHED_NR_UE/fapi_nr_ue_l1.c
+index c276de847d..14b34fc825 100644
+--- a/openair1/SCHED_NR_UE/fapi_nr_ue_l1.c
++++ b/openair1/SCHED_NR_UE/fapi_nr_ue_l1.c
+@@ -40,6 +40,8 @@
+ #include "PHY/defs_nr_UE.h"
+ #include "PHY/impl_defs_nr.h"
+ 
++#include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
++
+ extern PHY_VARS_NR_UE ***PHY_vars_UE_g;
+ 
+ const char *dl_pdu_type[]={"DCI", "DLSCH", "RA_DLSCH", "SI_DLSCH", "P_DLSCH"};
+@@ -269,12 +271,49 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
+ 
+ int8_t nr_ue_phy_config_request(nr_phy_config_t *phy_config){
+ 
++  NR_DL_FRAME_PARMS *fp = &PHY_vars_UE_g[0][0]->frame_parms;
++  uint64_t centreFreq;
++  uint8_t kssb;
+   fapi_nr_config_request_t *nrUE_config = &PHY_vars_UE_g[phy_config->Mod_id][phy_config->CC_id]->nrUE_config;
++  int freq_changed = 0;
++
++  LOG_I(PHY, "addr %p nr_ue_phy_config_request ssb_subcarrier_offset %d, dlfreq(point) %ld, bw %d\n", &phy_config->config_req,
++  phy_config->config_req.ssb_table.ssb_subcarrier_offset,
++  phy_config->config_req.carrier_config.dl_frequency,
++  phy_config->config_req.carrier_config.halfbw);
++  
++  //if (phy_config->config_req.ssb_table.ssb_subcarrier_offset != nrUE_config->ssb_table.ssb_subcarrier_offset)
++  {
++      kssb = nrUE_config->ssb_table.ssb_subcarrier_offset;
++      LOG_I(PHY, "save the kssb %d\n", kssb);
++  }
++  //else
++  {
++//     kssb = phy_config->config_req.ssb_table.ssb_subcarrier_offset;
++  }
++  if (phy_config->config_req.ssb_table.ssb_offset_point_a != nrUE_config->ssb_table.ssb_offset_point_a)
++  {
++     freq_changed = 1;
++     LOG_I(PHY, "dlfrequency %ld  %ld, pointA %d  %d, ssb offset %d %d\n", 
++       phy_config->config_req.carrier_config.dl_frequency, nrUE_config->carrier_config.dl_frequency,
++       phy_config->config_req.ssb_table.ssb_offset_point_a, nrUE_config->ssb_table.ssb_offset_point_a,
++       phy_config->config_req.ssb_table.ssb_subcarrier_offset, nrUE_config->ssb_table.ssb_subcarrier_offset);
+ 
++  }
+   if(phy_config != NULL) {
+       memcpy(nrUE_config,&phy_config->config_req,sizeof(fapi_nr_config_request_t));
+       if (PHY_vars_UE_g[phy_config->Mod_id][phy_config->CC_id]->UE_mode[0] == NOT_SYNCHED)
+ 	      PHY_vars_UE_g[phy_config->Mod_id][phy_config->CC_id]->UE_mode[0] = PRACH;
++    
++  }
++   
++  if (freq_changed)
++  { 
++      nrUE_config->ssb_table.ssb_subcarrier_offset = kssb;
++
++      centreFreq = phy_config->config_req.carrier_config.dl_frequency + phy_config->config_req.carrier_config.halfbw + nrUE_config->ssb_table.ssb_subcarrier_offset * 15;
++
++      nr_set_carrier_frequencies(fp, centreFreq);
+   }
+   return 0;
+ }
+diff --git a/openair2/LAYER2/NR_MAC_UE/config_ue.c b/openair2/LAYER2/NR_MAC_UE/config_ue.c
+index 6a3bf0d4d8..67a0926504 100755
+--- a/openair2/LAYER2/NR_MAC_UE/config_ue.c
++++ b/openair2/LAYER2/NR_MAC_UE/config_ue.c
+@@ -337,8 +337,18 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
+                                                       scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->carrierBandwidth,
+                                                       *scc_SIB->downlinkConfigCommon.frequencyInfoDL.frequencyBandList.list.array[0]->freqBandIndicatorNR);
+ 
+-  cfg->carrier_config.dl_frequency = downlink_frequency[0][0] - (10+scc_SIB->downlinkConfigCommon.frequencyInfoDL.offsetToPointA)*(15<<scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing); 
+-
++  cfg->carrier_config.dl_frequency = downlink_frequency[0][0] - 
++  (10+scc_SIB->downlinkConfigCommon.frequencyInfoDL.offsetToPointA/2)*(15<<scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing)*12;
++
++  LOG_I(PHY, "downlink_frequency %ld\n", downlink_frequency[0][0]);
++   
++  cfg->carrier_config.halfbw = (15<<scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing)
++                               * scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->carrierBandwidth
++                               * 6;
++  cfg->ssb_table.ssb_subcarrier_offset = 0;
++  
++   
++  // shoule take consider the ssb offset at the end.
+   for (i=0; i<5; i++) {
+     if (i==scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing) {
+       cfg->carrier_config.dl_grid_size[i] = scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
+@@ -390,11 +400,24 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
+ 
+   // SSB Table config
+ 
+-  cfg->ssb_table.ssb_offset_point_a = scc_SIB->downlinkConfigCommon.frequencyInfoDL.offsetToPointA;
++  cfg->ssb_table.ssb_offset_point_a = scc_SIB->downlinkConfigCommon.frequencyInfoDL.offsetToPointA / 2;
+   cfg->ssb_table.ssb_period = scc_SIB->ssb_PeriodicityServingCell;
+   //cfg->ssb_table.ssb_subcarrier_offset = 0; // TODO currently not in RRC?
+ 
+-  LOG_I(PHY, "in SIB, ssb_offset_point_a %d, ssb_subcarrier_offset %d\n", cfg->ssb_table.ssb_offset_point_a, cfg->ssb_table.ssb_subcarrier_offset);
++  LOG_I(PHY, "in SIB, addr %p ssb_offset_point_a %d, ssb_subcarrier_offset %d, bw %d, sibscs %d, freqPointA %ld, bw %d\n", cfg,
++  cfg->ssb_table.ssb_offset_point_a, cfg->ssb_table.ssb_subcarrier_offset,
++  scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->carrierBandwidth,
++  scc_SIB->uplinkConfigCommon->frequencyInfoUL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
++  cfg->carrier_config.dl_frequency,
++  scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->carrierBandwidth
++  );
++
++  LOG_I(PHY, "addr %p nr_ue_phy_config_request0 ssb_subcarrier_offset %d, dlfreq(point) %ld, bw %d\n", &mac->phy_config.config_req,
++  mac->phy_config.config_req.ssb_table.ssb_subcarrier_offset,
++  mac->phy_config.config_req.carrier_config.dl_frequency,
++  mac->phy_config.config_req.carrier_config.halfbw);
++
++
+   AssertFatal(scc_SIB->ssb_PositionsInBurst.groupPresence==NULL, "Cannot handle more than 8 SSBs for now (%x.%x.%x.%x.%x.%x.%x.%x)\n",
+ 	      scc_SIB->ssb_PositionsInBurst.groupPresence->buf[0],
+ 	      scc_SIB->ssb_PositionsInBurst.groupPresence->buf[1],
+@@ -699,9 +722,9 @@ int nr_rrc_mac_config_req_ue(
+       mac->mib = mibP;    //  update by every reception
+       mac->phy_config.Mod_id = module_id;
+       mac->phy_config.CC_id = cc_idP;
+-      mac->phy_config.config_req.ssb_table.ssb_subcarrier_offset = 0; // TODO currently not in RRC?
++     // mac->phy_config.config_req.ssb_table.ssb_subcarrier_offset = 0; // TODO currently not in RRC?
+       mac->phy_config.config_req.tdd_table.tdd_period_in_slots=5<<get_softmodem_params()->numerology;
+-      mac->phy_config.config_req.ssb_table.ssb_offset_point_a = (N_RB_DL-20)>>1;
++      //mac->phy_config.config_req.ssb_table.ssb_offset_point_a = (N_RB_DL-20)>>1;
+     }
+     AssertFatal(scell_group_config == NULL || cell_group_config == NULL,
+ 		"both scell_group_config and cell_group_config cannot be non-NULL\n");
+@@ -711,12 +734,29 @@ int nr_rrc_mac_config_req_ue(
+       mac->scc_SIB=sccP;
+       LOG_I(MAC,"Keeping ServingCellConfigCommonSIB\n");
+       config_common_ue(mac,module_id,cc_idP);
++       LOG_I(PHY, "addr %p nr_ue_phy_config_request1 ssb_subcarrier_offset %d, dlfreq(point) %ld, bw %d\n", &mac->phy_config.config_req,
++  mac->phy_config.config_req.ssb_table.ssb_subcarrier_offset,
++  mac->phy_config.config_req.carrier_config.dl_frequency,
++  mac->phy_config.config_req.carrier_config.halfbw);
++
+       int num_slots_ul = mac->scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
+       if (mac->scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols>0) num_slots_ul++;
+       LOG_I(MAC, "Initializing ul_config_request. num_slots_ul = %d\n", num_slots_ul);
+       mac->ul_config_request = (fapi_nr_ul_config_request_t *)calloc(num_slots_ul, sizeof(fapi_nr_ul_config_request_t));
+       // Setup the SSB to Rach Occasions mapping according to the config
++
++      LOG_I(PHY, "addr %p nr_ue_phy_config_request2 ssb_subcarrier_offset %d, dlfreq(point) %ld, bw %d\n", &mac->phy_config.config_req,
++  mac->phy_config.config_req.ssb_table.ssb_subcarrier_offset,
++  mac->phy_config.config_req.carrier_config.dl_frequency,
++  mac->phy_config.config_req.carrier_config.halfbw);
++
+       build_ssb_to_ro_map(mac);//->scc, mac->phy_config.config_req.cell_config.frame_duplex_type);
++
++      LOG_I(PHY, "addr %p nr_ue_phy_config_request3 ssb_subcarrier_offset %d, dlfreq(point) %ld, bw %d\n", &mac->phy_config.config_req,
++  mac->phy_config.config_req.ssb_table.ssb_subcarrier_offset,
++  mac->phy_config.config_req.carrier_config.dl_frequency,
++  mac->phy_config.config_req.carrier_config.halfbw);
++  
+       mac->if_module->phy_config_request(&mac->phy_config);
+       mac->common_configuration_complete = 1;
+     }
+diff --git a/openair2/LAYER2/NR_MAC_UE/nr_ue_procedures.c b/openair2/LAYER2/NR_MAC_UE/nr_ue_procedures.c
+index eb376a1568..090ee9d0f2 100644
+--- a/openair2/LAYER2/NR_MAC_UE/nr_ue_procedures.c
++++ b/openair2/LAYER2/NR_MAC_UE/nr_ue_procedures.c
+@@ -110,6 +110,11 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
+   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
+   mac->physCellId = cell_id;
+ 
++  LOG_I(PHY, "addr %p nr_ue_phy_config_request00 ssb_subcarrier_offset %d, dlfreq(point) %ld, bw %d\n", &mac->phy_config.config_req,
++  mac->phy_config.config_req.ssb_table.ssb_subcarrier_offset,
++  mac->phy_config.config_req.carrier_config.dl_frequency,
++  mac->phy_config.config_req.carrier_config.halfbw);
++
+   nr_mac_rrc_data_ind_ue( module_id, cc_id, gNB_index, 0, 0, 0, NR_BCCH_BCH, (uint8_t *) pduP, 3 );    //  fixed 3 bytes MIB PDU
+     
+   AssertFatal(mac->mib != NULL, "nr_ue_decode_mib() mac->mib == NULL\n");
+@@ -162,6 +167,11 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
+     uint16_t ssb_start_symbol = get_ssb_start_symbol(band,scs_ssb,ssb_index);
+     uint16_t ssb_offset_point_a = (ssb_start_subcarrier - ssb_subcarrier_offset / 2)/12;
+ 
++      LOG_I(PHY, "addr %p nr_ue_phy_config_request01 ssb_subcarrier_offset %d, dlfreq(point) %ld, bw %d\n", &mac->phy_config.config_req,
++  mac->phy_config.config_req.ssb_table.ssb_subcarrier_offset,
++  mac->phy_config.config_req.carrier_config.dl_frequency,
++  mac->phy_config.config_req.carrier_config.halfbw);
++
+     get_type0_PDCCH_CSS_config_parameters(&mac->type0_PDCCH_CSS_config,
+                                           frame,
+                                           mac->mib,
+@@ -173,6 +183,11 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
+                                           ssb_index,
+                                           ssb_offset_point_a);
+ 
++
++      LOG_I(PHY, "addr %p nr_ue_phy_config_request02 ssb_subcarrier_offset %d, dlfreq(point) %ld, bw %d\n", &mac->phy_config.config_req,
++  mac->phy_config.config_req.ssb_table.ssb_subcarrier_offset,
++  mac->phy_config.config_req.carrier_config.dl_frequency,
++  mac->phy_config.config_req.carrier_config.halfbw);
+     LOG_I(MAC,"in mib : ssb_start_subcarrier %d, ssb_subcarrier_offset %d, ssb_offset_point_a %d\n", 
+           ssb_start_subcarrier, ssb_subcarrier_offset, ssb_offset_point_a );
+     mac->type0_pdcch_ss_mux_pattern = mac->type0_PDCCH_CSS_config.type0_pdcch_ss_mux_pattern;
+diff --git a/openair2/LAYER2/NR_MAC_UE/nr_ue_scheduler.c b/openair2/LAYER2/NR_MAC_UE/nr_ue_scheduler.c
+index b2364a6116..383e87e8ba 100644
+--- a/openair2/LAYER2/NR_MAC_UE/nr_ue_scheduler.c
++++ b/openair2/LAYER2/NR_MAC_UE/nr_ue_scheduler.c
+@@ -1811,16 +1811,39 @@ void build_ssb_to_ro_map(NR_UE_MAC_INST_t *mac) {
+   memset(&ssb_list, 0, sizeof(ssb_list_info_t));
+ 
+   // Build the list of all the valid RACH occasions in the maximum association pattern period according to the PRACH config
+-  LOG_D(NR_MAC,"Build RO list\n");
++  LOG_I(NR_MAC,"Build RO list\n");
++  LOG_I(PHY, "addr %p nr_ue_phy_config_request20 ssb_subcarrier_offset %d, dlfreq(point) %ld, bw %d\n", &mac->phy_config.config_req,
++  mac->phy_config.config_req.ssb_table.ssb_subcarrier_offset,
++  mac->phy_config.config_req.carrier_config.dl_frequency,
++  mac->phy_config.config_req.carrier_config.halfbw);
++
+   build_ro_list(mac);
+ 
++      LOG_I(PHY, "addr %p nr_ue_phy_config_request21 ssb_subcarrier_offset %d, dlfreq(point) %ld, bw %d\n", &mac->phy_config.config_req,
++  mac->phy_config.config_req.ssb_table.ssb_subcarrier_offset,
++  mac->phy_config.config_req.carrier_config.dl_frequency,
++  mac->phy_config.config_req.carrier_config.halfbw);
++
++
+   // Build the list of all the valid/transmitted SSBs according to the config
+-  LOG_D(NR_MAC,"Build SSB list\n");
++  LOG_I(NR_MAC,"Build SSB list\n");
+   build_ssb_list(mac);
+ 
++        LOG_I(PHY, "addr %p nr_ue_phy_config_request22 ssb_subcarrier_offset %d, dlfreq(point) %ld, bw %d\n", &mac->phy_config.config_req,
++  mac->phy_config.config_req.ssb_table.ssb_subcarrier_offset,
++  mac->phy_config.config_req.carrier_config.dl_frequency,
++  mac->phy_config.config_req.carrier_config.halfbw);
++
++
+   // Map the transmitted SSBs to the ROs and create the association pattern according to the config
+-  LOG_D(NR_MAC,"Map SSB to RO\n");
++  LOG_I(NR_MAC,"Map SSB to RO\n");
+   map_ssb_to_ro(mac);
++
++        LOG_I(PHY, "addr %p nr_ue_phy_config_request23 ssb_subcarrier_offset %d, dlfreq(point) %ld, bw %d\n", &mac->phy_config.config_req,
++  mac->phy_config.config_req.ssb_table.ssb_subcarrier_offset,
++  mac->phy_config.config_req.carrier_config.dl_frequency,
++  mac->phy_config.config_req.carrier_config.halfbw);
++
+   LOG_D(NR_MAC,"Map SSB to RO done\n");
+ }
+ 

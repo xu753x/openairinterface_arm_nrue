@@ -1,0 +1,218 @@
+diff --git a/executables/nr-ue.c b/executables/nr-ue.c
+index 53ec70330c..4a4593282d 100644
+--- a/executables/nr-ue.c
++++ b/executables/nr-ue.c
+@@ -497,6 +497,10 @@ static inline int get_readBlockSize(uint16_t slot, NR_DL_FRAME_PARMS *fp) {
+   return rem_samples + next_slot_first_symbol;
+ }
+ 
++int global_slot_rx = 0;
++int global_frame_rx = 0;
++
++
+ void *UE_thread(void *arg) {
+   //this thread should be over the processing thread to keep in real time
+   PHY_VARS_NR_UE *UE = (PHY_VARS_NR_UE *) arg;
+@@ -619,6 +623,9 @@ void *UE_thread(void *arg) {
+     curMsg->proc.frame_rx    = (absolute_slot/nb_slot_frame) % MAX_FRAME_NUMBER;
+     curMsg->proc.frame_tx    = ((absolute_slot+DURATION_RX_TO_TX)/nb_slot_frame) % MAX_FRAME_NUMBER;
+     curMsg->proc.decoded_frame_rx=-1;
++    global_slot_rx = curMsg->proc.nr_slot_rx;
++    global_frame_rx = curMsg->proc.frame_rx;
++
+     //LOG_I(PHY,"Process slot %d thread Idx %d total gain %d\n", slot_nr, thread_idx, UE->rx_total_gain_dB);
+ 
+ #ifdef OAI_ADRV9371_ZC706
+diff --git a/nfapi/open-nFAPI/nfapi/public_inc/fapi_nr_ue_interface.h b/nfapi/open-nFAPI/nfapi/public_inc/fapi_nr_ue_interface.h
+index c0abf6acb0..1467c8613d 100644
+--- a/nfapi/open-nFAPI/nfapi/public_inc/fapi_nr_ue_interface.h
++++ b/nfapi/open-nFAPI/nfapi/public_inc/fapi_nr_ue_interface.h
+@@ -463,6 +463,9 @@ typedef struct {
+   double scaling_factor_S;
+   int8_t accumulated_delta_PUCCH;
+   uint8_t pucch_resource_id;
++  uint8_t n_CCE;
++  uint8_t N_CCE;
++
+   uint8_t pdsch_to_harq_feedback_time_ind;
+   uint8_t n_dmrs_cdm_groups;
+   uint8_t dmrs_ports[10];
+diff --git a/openair1/PHY/NR_UE_TRANSPORT/dci_nr.c b/openair1/PHY/NR_UE_TRANSPORT/dci_nr.c
+index 5d4d9df47e..ab55264a7d 100644
+--- a/openair1/PHY/NR_UE_TRANSPORT/dci_nr.c
++++ b/openair1/PHY/NR_UE_TRANSPORT/dci_nr.c
+@@ -978,6 +978,7 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
+             dci_ind->slot = proc->nr_slot_rx;
+             dci_ind->dci_list[dci_ind->number_of_dcis].rnti        = n_rnti;
+             dci_ind->dci_list[dci_ind->number_of_dcis].n_CCE       = CCEind;
++            dci_ind->dci_list[dci_ind->number_of_dcis].N_CCE       = L;
+             dci_ind->dci_list[dci_ind->number_of_dcis].dci_format  = rel15->dci_format_options[k];
+             dci_ind->dci_list[dci_ind->number_of_dcis].payloadSize = dci_length;
+             memcpy((void*)dci_ind->dci_list[dci_ind->number_of_dcis].payloadBits,(void*)dci_estimation,8);
+diff --git a/openair1/PHY/NR_UE_TRANSPORT/pucch_nr.c b/openair1/PHY/NR_UE_TRANSPORT/pucch_nr.c
+index c7bf459f6f..319f66eedc 100644
+--- a/openair1/PHY/NR_UE_TRANSPORT/pucch_nr.c
++++ b/openair1/PHY/NR_UE_TRANSPORT/pucch_nr.c
+@@ -440,7 +440,8 @@ void nr_generate_pucch1(PHY_VARS_NR_UE *ue,
+       }
+     }
+ 
+-    if ((intraSlotFrequencyHopping == 1) && (l<floor(nrofSymbols/2))) { // intra-slot hopping enabled, we need to calculate new offset PRB
++    //if ((intraSlotFrequencyHopping == 1) && (l<floor(nrofSymbols/2))) { // intra-slot hopping enabled, we need to calculate new offset PRB
++    if ((intraSlotFrequencyHopping == 1) && (l>=floor(nrofSymbols/2))) { // intra-slot hopping enabled, we need to calculate new offset PRB
+       startingPRB = startingPRB + startingPRB_intraSlotHopping;
+     }
+ 
+diff --git a/openair1/PHY/impl_defs_top.h b/openair1/PHY/impl_defs_top.h
+index fa021ffe81..4459384e8e 100644
+--- a/openair1/PHY/impl_defs_top.h
++++ b/openair1/PHY/impl_defs_top.h
+@@ -272,13 +272,13 @@
+ #define NB_NUMEROLOGIES_NR                       (5)
+ #define TDD_CONFIG_NB_FRAMES                     (2)
+ #define NR_MAX_SLOTS_PER_FRAME                   (160)                    /* number of slots per frame */
+-#define NR_UE_CAPABILITY_SLOT_RX_TO_TX           (6)                      /* FFS_NR_TODO it defines ue capability which is the number of slots */
++#define NR_UE_CAPABILITY_SLOT_RX_TO_TX           (4)                      /* FFS_NR_TODO it defines ue capability which is the number of slots */
+                                                                           /* - between reception of pdsch and tarnsmission of its acknowlegment */
+                                                                           /* - between reception of un uplink grant and its related transmission */
+ #ifndef NO_RAT_NR
+   #define DURATION_RX_TO_TX           (NR_UE_CAPABILITY_SLOT_RX_TO_TX)  /* for NR this will certainly depends to such UE capability which is not yet defined */
+ #else
+-  #define DURATION_RX_TO_TX           (6)   /* For LTE, this duration is fixed to 4 and it is linked to LTE standard for both modes FDD/TDD */
++  #define DURATION_RX_TO_TX           (4)   /* For LTE, this duration is fixed to 4 and it is linked to LTE standard for both modes FDD/TDD */
+ #endif
+ 
+ 
+diff --git a/openair1/PHY/phy_extern_nr_ue.h b/openair1/PHY/phy_extern_nr_ue.h
+index f1704a7902..95a6a30497 100644
+--- a/openair1/PHY/phy_extern_nr_ue.h
++++ b/openair1/PHY/phy_extern_nr_ue.h
+@@ -56,6 +56,11 @@ extern int16_t *primary_synch0_time; //!< index: [0..ofdm_symbol_size*2[
+ extern int16_t *primary_synch1_time; //!< index: [0..ofdm_symbol_size*2[
+ extern int16_t *primary_synch2_time; //!< index: [0..ofdm_symbol_size*2[
+ 
++extern int global_slot_rx;
++extern int global_frame_rx;
++
++
++
+ extern int flagMag;
+ //extern short **txdataF_rep_tmp;
+ 
+diff --git a/openair1/SCHED_NR_UE/fapi_nr_ue_l1.c b/openair1/SCHED_NR_UE/fapi_nr_ue_l1.c
+index c276de847d..de2e5b0452 100644
+--- a/openair1/SCHED_NR_UE/fapi_nr_ue_l1.c
++++ b/openair1/SCHED_NR_UE/fapi_nr_ue_l1.c
+@@ -120,6 +120,10 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
+             dlsch0_harq->rvidx = dlsch_config_pdu->rv;
+             dlsch0->g_pucch = dlsch_config_pdu->accumulated_delta_PUCCH;
+             dlsch0_harq->harq_ack.pucch_resource_indicator = dlsch_config_pdu->pucch_resource_id;
++            
++            dlsch0_harq->harq_ack.n_CCE = dlsch_config_pdu->n_CCE;
++            dlsch0_harq->harq_ack.N_CCE = dlsch_config_pdu->N_CCE;
++
+             dlsch0_harq->harq_ack.slot_for_feedback_ack = (slot+dlsch_config_pdu->pdsch_to_harq_feedback_time_ind)%frame_parms.slots_per_frame;
+             dlsch0_harq->Nl=1;
+             dlsch0_harq->mcs_table=dlsch_config_pdu->mcs_table;
+diff --git a/openair1/SCHED_NR_UE/pucch_uci_ue_nr.c b/openair1/SCHED_NR_UE/pucch_uci_ue_nr.c
+index a63829419a..1650b31beb 100644
+--- a/openair1/SCHED_NR_UE/pucch_uci_ue_nr.c
++++ b/openair1/SCHED_NR_UE/pucch_uci_ue_nr.c
+@@ -44,7 +44,7 @@
+ #include <common/utils/nr/nr_common.h>
+ 
+ #ifndef NO_RAT_NR
+-
++#include "PHY/phy_extern_nr_ue.h"
+ #include "SCHED_NR_UE/defs.h"
+ #include "SCHED_NR_UE/harq_nr.h"
+ #include "SCHED_NR_UE/pucch_power_control_ue_nr.h"
+@@ -419,6 +419,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
+ 
+   NR_UE_MAC_INST_t *mac = get_mac_inst(0);
+   NR_PUCCH_Resource_t *pucch_resource = NULL;
++  NR_PUCCH_Config_t *pucch_Config;
+   uint16_t crnti = mac->crnti;
+   NR_BWP_Id_t bwp_id = mac->UL_BWP_Id;
+ 
+@@ -529,6 +530,12 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
+     }
+   }
+ 
++  if (O_ACK > 0)
++  LOG_I(PHY, "frame %d %d (%d %d), pucch bits O_SR %d, O_ACK %d, O_CSI %d, pucch_resource_set %d, pucch_resource_id %d, bwp id %d\n", frame_tx, nr_slot_tx,
++  global_frame_rx, global_slot_rx,
++  O_SR, O_ACK, O_CSI, pucch_resource_set, pucch_resource_id, mac->UL_BWP_Id);
++
++
+   N_UCI = O_SR + O_ACK + O_CSI;
+   if (N_UCI ==0) return(TRUE);
+ 
+@@ -594,6 +601,14 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
+       NR_TST_PHY_PRINTF("PUCCH common configuration with index %d \n", initial_pucch_id);
+       startingPRB += BWPstart;
+       secondHopPRB += BWPstart;
++
++      LOG_I(PHY, "came here: pucch_resource_id %d, format %d, nb_symbols_total %d, starting_symbol_index %d, startingPRB %d, secondHopPRB %d, nCCE %d, NCCE %d, pucch ind %d, m_0 %d\n",
++      pucch_resource_id, format, nb_symbols_total, starting_symbol_index, startingPRB, secondHopPRB, harq_status->n_CCE, harq_status->N_CCE, harq_status->pucch_resource_indicator, m_0);
++
++      startingPRB = 0;
++      secondHopPRB = 105;
++      m_0 = 0;
++
+     }
+     /* use dedicated pucch resource configuration */
+     /**********************************************/
+@@ -614,7 +629,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
+         LOG_E(PHY,"PUCCH Unsupported code block group for serving cell config : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
+         return(FALSE);
+       }
+-      NR_PUCCH_Config_t *pucch_Config;
++      //NR_PUCCH_Config_t *pucch_Config;
+       if (bwp_id>0 &&
+           mac->ULbwp[bwp_id-1] &&
+           mac->ULbwp[bwp_id-1]->bwp_Dedicated &&
+@@ -730,6 +745,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
+   /* drop CSI report if simultaneous HARQ-ACK/SR and periodic/semi-periodic CSI cannot be transmitted at the same time */
+   if (format !=  pucch_format0_nr) {
+ 
++#if 0
+     if (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format1 != NULL) {
+       //max_code_rate = code_rate_r_time_100[mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format1->choice.setup->maxCodeRate[0]]; /* it is code rate * 10 */
+ 
+@@ -739,7 +755,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
+         csi_payload = 0; /* csi should be dropped in this case */
+       }
+     }
+-
++#endif
+     /* TS 38.212 6.3.1.2  Code block segmentation and CRC attachment */
+     /* crc attachment can be done depending of payload size */
+ //    if (N_UCI < 11) {
+diff --git a/openair2/LAYER2/NR_MAC_COMMON/nr_mac.h b/openair2/LAYER2/NR_MAC_COMMON/nr_mac.h
+index 6bb7970be6..5d46a6991b 100644
+--- a/openair2/LAYER2/NR_MAC_COMMON/nr_mac.h
++++ b/openair2/LAYER2/NR_MAC_COMMON/nr_mac.h
+@@ -268,6 +268,8 @@ typedef struct {
+   uint8_t     short_messages_indicator; //2 bits
+   uint8_t     short_messages; //8 bits
+   uint8_t     tb_scaling; //2 bits
++  uint8_t     n_CCE;
++  uint8_t     N_CCE;
+   uint8_t     pucch_resource_indicator; //3 bits
+   uint8_t     system_info_indicator; //1 bit
+   uint8_t     ulsch_indicator;
+diff --git a/openair2/LAYER2/NR_MAC_UE/nr_ue_procedures.c b/openair2/LAYER2/NR_MAC_UE/nr_ue_procedures.c
+index 1854925b21..6af95c9f1b 100644
+--- a/openair2/LAYER2/NR_MAC_UE/nr_ue_procedures.c
++++ b/openair2/LAYER2/NR_MAC_UE/nr_ue_procedures.c
+@@ -745,6 +745,9 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
+     //if (dci->pucch_resource_indicator == 6) dlsch_config_pdu_1_0->pucch_resource_id = 7; //pucch-ResourceId obtained from the 7th value of resourceList FIXME!!
+     //if (dci->pucch_resource_indicator == 7) dlsch_config_pdu_1_0->pucch_resource_id = 8; //pucch-ResourceId obtained from the 8th value of resourceList FIXME!!
+     dlsch_config_pdu_1_0->pucch_resource_id = dci->pucch_resource_indicator;
++    dlsch_config_pdu_1_0->n_CCE = dci->n_CCE;
++    dlsch_config_pdu_1_0->N_CCE = dci->N_CCE;
++
+     // Sanity check for pucch_resource_indicator value received to check for false DCI.
+     valid = 0;
+     if (mac->ULbwp[0] &&
