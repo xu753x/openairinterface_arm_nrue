@@ -1,0 +1,42 @@
+diff --git a/openair2/LAYER2/NR_MAC_UE/nr_ue_dci_configuration.c b/openair2/LAYER2/NR_MAC_UE/nr_ue_dci_configuration.c
+index 8891d3354e..83366a4b27 100644
+--- a/openair2/LAYER2/NR_MAC_UE/nr_ue_dci_configuration.c
++++ b/openair2/LAYER2/NR_MAC_UE/nr_ue_dci_configuration.c
+@@ -168,6 +168,9 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t
+     } else { // NSA mode is not using the Initial BWP
+       rel15->BWPStart = NRRIV2PRBOFFSET(bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+     }
++    rel15->BWPSize  = mac->type0_PDCCH_CSS_config.num_rbs;
++    rel15->BWPStart = mac->type0_PDCCH_CSS_config.cset_start_rb;
++
+     rel15->SubcarrierSpacing = initialDownlinkBWP->genericParameters.subcarrierSpacing;
+     rel15->dci_length_options[0] = nr_dci_size(initialUplinkBWP, mac->cg, &mac->def_dci_pdu_rel15[rel15->dci_format_options[0]], rel15->dci_format_options[0], NR_RNTI_RA, rel15->BWPSize, bwp_id);
+     break;
+diff --git a/openair2/LAYER2/NR_MAC_UE/nr_ue_procedures.c b/openair2/LAYER2/NR_MAC_UE/nr_ue_procedures.c
+index 2bac03fc4f..4e67fa9a54 100644
+--- a/openair2/LAYER2/NR_MAC_UE/nr_ue_procedures.c
++++ b/openair2/LAYER2/NR_MAC_UE/nr_ue_procedures.c
+@@ -648,6 +648,12 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
+           pdsch_config = mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup;
+           BWPSize = dlsch_config_pdu_1_0->BWPSize;
+         }
++        dlsch_config_pdu_1_0->BWPSize = mac->type0_PDCCH_CSS_config.num_rbs;
++        dlsch_config_pdu_1_0->BWPStart = mac->type0_PDCCH_CSS_config.cset_start_rb;
++        dlsch_config_pdu_1_0->SubcarrierSpacing = mac->mib->subCarrierSpacingCommon;
++        if (pdsch_config) pdsch_config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = NULL; // For PDSCH with mapping type A, the UE shall assume dmrs-AdditionalPosition='pos2'
++        BWPSize = dlsch_config_pdu_1_0->BWPSize;
++
+       } else if (mac->DLbwp[0]) {
+         dlsch_config_pdu_1_0->BWPSize = NRRIV2BW(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+         dlsch_config_pdu_1_0->BWPStart = NRRIV2PRBOFFSET(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+@@ -1219,6 +1225,10 @@ uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
+       } else {
+         N_RB = get_n_rb(mac, rnti_type);
+       }
++       N_RB = mac->type0_PDCCH_CSS_config.num_rbs;
++      // Freq domain assignment 0-16 bit
++      fsize = (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) );
++      pos+=fsize;
+       // Freq domain assignment
+       fsize = (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) );
+       pos=fsize;

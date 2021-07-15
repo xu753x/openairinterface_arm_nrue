@@ -1,0 +1,70 @@
+diff --git a/openair2/LAYER2/NR_MAC_UE/nr_ue_dci_configuration.c b/openair2/LAYER2/NR_MAC_UE/nr_ue_dci_configuration.c
+index 83366a4b27..b861a6e6a1 100644
+--- a/openair2/LAYER2/NR_MAC_UE/nr_ue_dci_configuration.c
++++ b/openair2/LAYER2/NR_MAC_UE/nr_ue_dci_configuration.c
+@@ -187,6 +187,13 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t
+       rel15->BWPStart = NRRIV2PRBOFFSET(initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+       rel15->SubcarrierSpacing = initialDownlinkBWP->genericParameters.subcarrierSpacing;
+       rel15->dci_length_options[0] = nr_dci_size(initialUplinkBWP, mac->cg, &mac->def_dci_pdu_rel15[rel15->dci_format_options[0]], rel15->dci_format_options[0], NR_RNTI_TC, rel15->BWPSize, bwp_id);
++    
++
++    rel15->BWPSize = mac->type0_PDCCH_CSS_config.num_rbs;
++    rel15->BWPStart = mac->type0_PDCCH_CSS_config.cset_start_rb;
++    rel15->SubcarrierSpacing = initialDownlinkBWP->genericParameters.subcarrierSpacing;
++    rel15->dci_length_options[0] = nr_dci_size(initialUplinkBWP, mac->cg, &mac->def_dci_pdu_rel15[rel15->dci_format_options[0]], rel15->dci_format_options[0], NR_RNTI_TC, rel15->BWPSize, bwp_id);
++    
+     break;
+     case NR_RNTI_SP_CSI:
+     break;
+diff --git a/openair2/LAYER2/NR_MAC_UE/nr_ue_procedures.c b/openair2/LAYER2/NR_MAC_UE/nr_ue_procedures.c
+index 4e67fa9a54..1854925b21 100644
+--- a/openair2/LAYER2/NR_MAC_UE/nr_ue_procedures.c
++++ b/openair2/LAYER2/NR_MAC_UE/nr_ue_procedures.c
+@@ -1463,6 +1463,7 @@ uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
+       // check BWP id
+       if (mac->DLbwp[0]) N_RB=NRRIV2BW(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+       else         N_RB=NRRIV2BW(mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
++       N_RB = mac->type0_PDCCH_CSS_config.num_rbs;
+ 
+       // indicating a DL DCI format - 1 bit
+       pos++;
+diff --git a/openair2/RRC/LTE/rrc_defs.h b/openair2/RRC/LTE/rrc_defs.h
+index 1c02c3de46..6a67194ac4 100644
+--- a/openair2/RRC/LTE/rrc_defs.h
++++ b/openair2/RRC/LTE/rrc_defs.h
+@@ -496,7 +496,7 @@ typedef struct MEASUREMENT_INFO_s {
+ typedef struct {
+   char Payload[RRC_BUFFER_SIZE_MAX];
+   char Header[RRC_HEADER_SIZE_MAX];
+-  char payload_size;
++  uint16_t payload_size;
+ } RRC_BUFFER;
+ #define RRC_BUFFER_SIZE sizeof(RRC_BUFFER)
+ 
+diff --git a/openair2/RRC/NR_UE/rrc_UE.c b/openair2/RRC/NR_UE/rrc_UE.c
+index cb8eca9504..8937b70138 100644
+--- a/openair2/RRC/NR_UE/rrc_UE.c
++++ b/openair2/RRC/NR_UE/rrc_UE.c
+@@ -1325,11 +1325,13 @@ static void rrc_ue_generate_RRCSetupComplete(
+   int   nas_msg_length;
+   NR_UE_MAC_INST_t *mac = get_mac_inst(0);
+ 
++#if 0
+   if (mac->cg &&
+       mac->cg->spCellConfig &&
+       mac->cg->spCellConfig->spCellConfigDedicated &&
+       mac->cg->spCellConfig->spCellConfigDedicated->csi_MeasConfig)
+     AssertFatal(1==0,"2 > csi_MeasConfig is not null\n");
++#endif
+ 
+  if (AMF_MODE_ENABLED) {
+ #if defined(ITTI_SIM) || defined(RFSIM_NAS)
+@@ -1389,7 +1391,7 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
+ 			  &asn_DEF_NR_DL_CCCH_Message,
+ 			  (void **)&dl_ccch_msg,
+ 			  (uint8_t *)Srb_info->Rx_buffer.Payload,
+-			  100,0,0);
++			  1000,0,0);
+ 
+ 	 if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+      xer_fprint(stdout,&asn_DEF_NR_DL_CCCH_Message,(void *)dl_ccch_msg);

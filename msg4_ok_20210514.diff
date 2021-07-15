@@ -1,0 +1,99 @@
+diff --git a/openair1/PHY/NR_UE_TRANSPORT/dci_nr.c b/openair1/PHY/NR_UE_TRANSPORT/dci_nr.c
+index b11f3b8574..fe4526908d 100644
+--- a/openair1/PHY/NR_UE_TRANSPORT/dci_nr.c
++++ b/openair1/PHY/NR_UE_TRANSPORT/dci_nr.c
+@@ -984,7 +984,8 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
+                                           currentPtrDCI);
+ 
+         n_rnti = rel15->rnti;
+-        if ((proc->nr_slot_rx == 11) || (proc->nr_slot_rx == 0))
++        //if ((proc->nr_slot_rx == 11) || (proc->nr_slot_rx == 0))
++        if ((rel15->rnti != 0xFFFF ) && (rel15->rnti != 0x10b))
+ 	LOG_D(PHY, "(%i.%i) dci indication (rnti %x,dci format %s,n_CCE %d, L %d, payloadSize %d), scramble rnti %d, scramble id %d, crc %d\n", 
+   proc->frame_rx, proc->nr_slot_rx,n_rnti,nr_dci_format_string[rel15->dci_format_options[k]],CCEind, L, dci_length, rel15->coreset.scrambling_rnti, rel15->coreset.pdcch_dmrs_scrambling_id, crc);
+         if (crc == n_rnti) {
+diff --git a/openair2/LAYER2/NR_MAC_UE/nr_ue_dci_configuration.c b/openair2/LAYER2/NR_MAC_UE/nr_ue_dci_configuration.c
+index 1356d451a6..c25b713038 100644
+--- a/openair2/LAYER2/NR_MAC_UE/nr_ue_dci_configuration.c
++++ b/openair2/LAYER2/NR_MAC_UE/nr_ue_dci_configuration.c
+@@ -195,7 +195,23 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t
+       rel15->BWPSize = NRRIV2BW(initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+       rel15->BWPStart = NRRIV2PRBOFFSET(initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+       rel15->SubcarrierSpacing = initialDownlinkBWP->genericParameters.subcarrierSpacing;
+-      rel15->dci_length_options[0] = nr_dci_size(initialUplinkBWP, mac->cg, def_dci_pdu_rel15, rel15->dci_format_options[0], NR_RNTI_TC, rel15->BWPSize, bwp_id);
++     // rel15->dci_length_options[0] = nr_dci_size(initialUplinkBWP, mac->cg, def_dci_pdu_rel15, rel15->dci_format_options[0], NR_RNTI_TC, rel15->BWPSize, bwp_id);
++
++    rel15->BWPSize = mac->type0_PDCCH_CSS_config.num_rbs;
++    rel15->BWPStart = mac->type0_PDCCH_CSS_config.cset_start_rb;
++    rel15->SubcarrierSpacing = initialDownlinkBWP->genericParameters.subcarrierSpacing;
++
++
++        rel15->dci_length_options[0] = nr_dci_size(initialUplinkBWP, mac->cg, def_dci_pdu_rel15, rel15->dci_format_options[0], NR_RNTI_TC, rel15->BWPSize, bwp_id);
++    LOG_D(PHY, "ss_id %d， ra rnti bwp %d %d, dci len %d freqsource 0x %2x %2x %2x %2x %2x %2x\n", ss_id, rel15->BWPStart, rel15->BWPSize, rel15->dci_length_options[0],
++    rel15->coreset.frequency_domain_resource[0],
++    rel15->coreset.frequency_domain_resource[1],
++    rel15->coreset.frequency_domain_resource[2],
++    rel15->coreset.frequency_domain_resource[3],
++    rel15->coreset.frequency_domain_resource[4],
++    rel15->coreset.frequency_domain_resource[5]);
++
++
+     break;
+     case NR_RNTI_SP_CSI:
+     break;
+diff --git a/openair2/LAYER2/NR_MAC_UE/nr_ue_procedures.c b/openair2/LAYER2/NR_MAC_UE/nr_ue_procedures.c
+index d45505f2c9..347713bc81 100644
+--- a/openair2/LAYER2/NR_MAC_UE/nr_ue_procedures.c
++++ b/openair2/LAYER2/NR_MAC_UE/nr_ue_procedures.c
+@@ -668,7 +668,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
+         pdsch_config = NULL;
+       }
+     }
+-    LOG_I(MAC, "rar : bwp %d %d\n", dlsch_config_pdu_1_0->BWPStart, dlsch_config_pdu_1_0->BWPSize);
++    LOG_I(MAC, "rar : bwp %d %d, bwpsize %d, riv %d\n", dlsch_config_pdu_1_0->BWPStart, dlsch_config_pdu_1_0->BWPSize, BWPSize, dci->frequency_domain_assignment.val);
+     /* IDENTIFIER_DCI_FORMATS */
+     /* FREQ_DOM_RESOURCE_ASSIGNMENT_DL */
+     if (nr_ue_process_dci_freq_dom_resource_assignment(NULL,dlsch_config_pdu_1_0,0,BWPSize,dci->frequency_domain_assignment.val) < 0) {
+@@ -1432,6 +1432,7 @@ uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
+       if (mac->DLbwp[0]) N_RB=NRRIV2BW(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+       else         N_RB=NRRIV2BW(mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+ 
++      N_RB = mac->type0_PDCCH_CSS_config.num_rbs;
+       // indicating a DL DCI format - 1 bit
+       pos++;
+       dci_pdu_rel15->format_indicator = (*dci_pdu>>(dci_size-pos))&1;
+@@ -1484,20 +1485,20 @@ uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
+       pos+=3;
+       dci_pdu_rel15->pdsch_to_harq_feedback_timing_indicator.val = (*dci_pdu>>(dci_size-pos))&7;
+ 
+-      LOG_D(NR_MAC,"N_RB = %i\n", N_RB);
+-      LOG_D(NR_MAC,"dci_size = %i\n", dci_size);
+-      LOG_D(NR_MAC,"fsize = %i\n", fsize);
+-      LOG_D(NR_MAC,"dci_pdu_rel15->format_indicator = %i\n", dci_pdu_rel15->format_indicator);
+-      LOG_D(NR_MAC,"dci_pdu_rel15->frequency_domain_assignment.val = %i\n", dci_pdu_rel15->frequency_domain_assignment.val);
+-      LOG_D(NR_MAC,"dci_pdu_rel15->time_domain_assignment.val = %i\n", dci_pdu_rel15->time_domain_assignment.val);
+-      LOG_D(NR_MAC,"dci_pdu_rel15->vrb_to_prb_mapping.val = %i\n", dci_pdu_rel15->vrb_to_prb_mapping.val);
+-      LOG_D(NR_MAC,"dci_pdu_rel15->mcs = %i\n", dci_pdu_rel15->mcs);
+-      LOG_D(NR_MAC,"dci_pdu_rel15->rv = %i\n", dci_pdu_rel15->rv);
+-      LOG_D(NR_MAC,"dci_pdu_rel15->harq_pid = %i\n", dci_pdu_rel15->harq_pid);
+-      LOG_D(NR_MAC,"dci_pdu_rel15->dai[0].val = %i\n", dci_pdu_rel15->dai[0].val);
+-      LOG_D(NR_MAC,"dci_pdu_rel15->tpc = %i\n", dci_pdu_rel15->tpc);
+-      LOG_D(NR_MAC,"dci_pdu_rel15->pucch_resource_indicator = %i\n", dci_pdu_rel15->pucch_resource_indicator);
+-      LOG_D(NR_MAC,"dci_pdu_rel15->pdsch_to_harq_feedback_timing_indicator.val = %i\n", dci_pdu_rel15->pdsch_to_harq_feedback_timing_indicator.val);
++      LOG_I(NR_MAC,"N_RB = %i\n", N_RB);
++      LOG_I(NR_MAC,"dci_size = %i\n", dci_size);
++      LOG_I(NR_MAC,"fsize = %i\n", fsize);
++      LOG_I(NR_MAC,"dci_pdu_rel15->format_indicator = %i\n", dci_pdu_rel15->format_indicator);
++      LOG_I(NR_MAC,"dci_pdu_rel15->frequency_domain_assignment.val = %i\n", dci_pdu_rel15->frequency_domain_assignment.val);
++      LOG_I(NR_MAC,"dci_pdu_rel15->time_domain_assignment.val = %i\n", dci_pdu_rel15->time_domain_assignment.val);
++      LOG_I(NR_MAC,"dci_pdu_rel15->vrb_to_prb_mapping.val = %i\n", dci_pdu_rel15->vrb_to_prb_mapping.val);
++      LOG_I(NR_MAC,"dci_pdu_rel15->mcs = %i\n", dci_pdu_rel15->mcs);
++      LOG_I(NR_MAC,"dci_pdu_rel15->rv = %i\n", dci_pdu_rel15->rv);
++      LOG_I(NR_MAC,"dci_pdu_rel15->harq_pid = %i\n", dci_pdu_rel15->harq_pid);
++      LOG_I(NR_MAC,"dci_pdu_rel15->dai[0].val = %i\n", dci_pdu_rel15->dai[0].val);
++      LOG_I(NR_MAC,"dci_pdu_rel15->tpc = %i\n", dci_pdu_rel15->tpc);
++      LOG_I(NR_MAC,"dci_pdu_rel15->pucch_resource_indicator = %i\n", dci_pdu_rel15->pucch_resource_indicator);
++      LOG_I(NR_MAC,"dci_pdu_rel15->pdsch_to_harq_feedback_timing_indicator.val = %i\n", dci_pdu_rel15->pdsch_to_harq_feedback_timing_indicator.val);
+ 
+       break;
+     }

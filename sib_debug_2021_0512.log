@@ -1,0 +1,81 @@
+diff --git a/openair1/PHY/NR_UE_TRANSPORT/dci_nr.c b/openair1/PHY/NR_UE_TRANSPORT/dci_nr.c
+index 27bc569517..d03ff0ae70 100644
+--- a/openair1/PHY/NR_UE_TRANSPORT/dci_nr.c
++++ b/openair1/PHY/NR_UE_TRANSPORT/dci_nr.c
+@@ -754,9 +754,9 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
+         avgs = cmax(avgs, avgP[aarx]);
+ 
+       log2_maxh = (log2_approx(avgs) / 2) + 5;  //+frame_parms->nb_antennas_rx;
+-#ifdef UE_DEBUG_TRACE
+-      LOG_D(PHY,"slot %d: pdcch log2_maxh = %d (%d,%d)\n",slot,log2_maxh,avgP[0],avgs);
+-#endif
++//#ifdef UE_DEBUG_TRACE
++      LOG_I(PHY,"slot %d: pdcch log2_maxh = %d (%d,%d)\n",slot,log2_maxh,avgP[0],avgs);
++//#endif
+ #if T_TRACER
+       T(T_UE_PHY_PDCCH_ENERGY, T_INT(0), T_INT(0), T_INT(frame%1024), T_INT(slot),
+ 	    T_INT(avgP[0]), T_INT(avgP[1]), T_INT(avgP[2]), T_INT(avgP[3]));
+@@ -797,6 +797,17 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
+     }
+ 
+     LOG_D(PHY,"we enter nr_pdcch_demapping_deinterleaving()\n");
++    LOG_I(PHY, "pdcch : dur %d nrb %d, RegBundleSize %d, InterleaverSize %d, ShiftIndex %d, number_of_candidates %d, CCE %d, L %d\n",
++                                     rel15->coreset.duration,
++                                      n_rb,
++                                      rel15->coreset.RegBundleSize,
++                                      rel15->coreset.InterleaverSize,
++                                      rel15->coreset.ShiftIndex,
++                                      rel15->number_of_candidates,
++                                      rel15->CCE,
++                                      rel15->L
++    );
++
+     nr_pdcch_demapping_deinterleaving((uint32_t *) pdcch_vars->llr,
+                                       (uint32_t *) pdcch_vars->e_rx,
+                                       rel15->coreset.duration,
+@@ -928,7 +939,7 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
+                                           currentPtrDCI);
+ 
+         n_rnti = rel15->rnti;
+-	LOG_D(PHY, "(%i.%i) dci indication (rnti %x,dci format %s,n_CCE %d,payloadSize %d)\n", proc->frame_rx, proc->nr_slot_rx,n_rnti,nr_dci_format_string[rel15->dci_format_options[k]],CCEind,dci_length);
++	LOG_I(PHY, " (%i.%i) dci indication %d (rnti %x,dci format %s,n_CCE %d,payloadSize %d, L %d)\n", proc->frame_rx, proc->nr_slot_rx, i, n_rnti,nr_dci_format_string[rel15->dci_format_options[k]],CCEind,dci_length, L);
+         if (crc == n_rnti) {
+           LOG_D(PHY, "(%i.%i) Received dci indication (rnti %x,dci format %s,n_CCE %d,payloadSize %d,payload %llx)\n",
+                 proc->frame_rx, proc->nr_slot_rx,n_rnti,nr_dci_format_string[rel15->dci_format_options[k]],CCEind,dci_length,*(unsigned long long*)dci_estimation);
+diff --git a/openair2/LAYER2/NR_MAC_COMMON/nr_mac_common.c b/openair2/LAYER2/NR_MAC_COMMON/nr_mac_common.c
+index 7004cf7aaf..c800fd24c8 100644
+--- a/openair2/LAYER2/NR_MAC_COMMON/nr_mac_common.c
++++ b/openair2/LAYER2/NR_MAC_COMMON/nr_mac_common.c
+@@ -3340,8 +3340,8 @@ void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PD
+       break;
+   }
+ 
+-  LOG_D(MAC,"Coreset0: index_4msb=%d, num_rbs=%d, num_symb=%d, rb_offset=%d\n",
+-        index_4msb,type0_PDCCH_CSS_config->num_rbs,type0_PDCCH_CSS_config->num_symbols,type0_PDCCH_CSS_config->rb_offset );
++  LOG_I(MAC,"Coreset0: index_4msb=%d, index_4lsb=%d, num_rbs=%d, num_symb=%d, rb_offset=%d\n",
++        index_4msb, index_4lsb, type0_PDCCH_CSS_config->num_rbs,type0_PDCCH_CSS_config->num_symbols,type0_PDCCH_CSS_config->rb_offset );
+ 
+   AssertFatal(type0_PDCCH_CSS_config->num_rbs != -1, "Type0 PDCCH coreset num_rbs undefined");
+   AssertFatal(type0_PDCCH_CSS_config->num_symbols != -1, "Type0 PDCCH coreset num_symbols undefined");
+@@ -3534,7 +3534,7 @@ void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PD
+ 
+   type0_PDCCH_CSS_config->n_0 = ((uint32_t)(big_o*(1<<scs_pdcch)) + (uint32_t)(type0_PDCCH_CSS_config->ssb_index*big_m))%num_slot_per_frame;
+   type0_PDCCH_CSS_config->cset_start_rb = ssb_offset_point_a - type0_PDCCH_CSS_config->rb_offset;
+-
++  LOG_I(MAC, "SIB1 cset_start_rb %d, sfn_c %d, n_0 %d", type0_PDCCH_CSS_config->cset_start_rb, type0_PDCCH_CSS_config->sfn_c, type0_PDCCH_CSS_config->n_c);
+ }
+ 
+ /* extract UL PTRS values from RRC and validate it based upon 38.214 6.2.3 */
+diff --git a/openair2/LAYER2/NR_MAC_UE/nr_ue_scheduler.c b/openair2/LAYER2/NR_MAC_UE/nr_ue_scheduler.c
+index 06f62abbf6..cc57fee667 100644
+--- a/openair2/LAYER2/NR_MAC_UE/nr_ue_scheduler.c
++++ b/openair2/LAYER2/NR_MAC_UE/nr_ue_scheduler.c
+@@ -884,7 +884,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
+ 	  config_dci_pdu(mac, rel15, dl_config, NR_RNTI_SI, -1);
+ 	  fill_dci_search_candidates(ss0, rel15);
+ 	  dl_config->number_pdus = 1;
+-	  LOG_D(NR_MAC,"Calling fill_scheduled_response, type0_pdcch, num_pdus %d\n",dl_config->number_pdus);
++	  LOG_I(NR_MAC,"frame %d %d Calling fill_scheduled_response, type0_pdcch, num_pdus %d\n", rx_frame,  rx_slot, dl_config->number_pdus );
+ 	  fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, mod_id, cc_id, rx_frame, rx_slot, dl_info->thread_id);
+ 	  if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
+ 	    mac->if_module->scheduled_response(&scheduled_response);

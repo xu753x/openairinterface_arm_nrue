@@ -1,0 +1,59 @@
+diff --git a/openair1/PHY/NR_UE_TRANSPORT/nr_ulsch_coding.c b/openair1/PHY/NR_UE_TRANSPORT/nr_ulsch_coding.c
+index 1adc81d556..f5d00aee65 100644
+--- a/openair1/PHY/NR_UE_TRANSPORT/nr_ulsch_coding.c
++++ b/openair1/PHY/NR_UE_TRANSPORT/nr_ulsch_coding.c
+@@ -262,9 +262,9 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
+ 
+   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_UE_ULSCH_ENCODING, VCD_FUNCTION_IN);
+ 
+-  LOG_D(PHY,"ulsch coding nb_rb %d, Nl = %d\n", nb_rb, harq_process->pusch_pdu.nrOfLayers);
+-  LOG_D(PHY,"ulsch coding A %d G %d mod_order %d\n", A,G, mod_order);
+-  LOG_D(PHY,"harq_pid %d harq_process->ndi %d, pusch_data.new_data_indicator %d\n",harq_pid,harq_process->ndi,harq_process->pusch_pdu.pusch_data.new_data_indicator);
++  LOG_I(PHY,"ulsch coding nb_rb %d, Nl = %d\n", nb_rb, harq_process->pusch_pdu.nrOfLayers);
++  LOG_I(PHY,"ulsch coding A %d G %d mod_order %d\n", A,G, mod_order);
++  LOG_I(PHY,"harq_pid %d harq_process->ndi %d, pusch_data.new_data_indicator %d\n",harq_pid,harq_process->ndi,harq_process->pusch_pdu.pusch_data.new_data_indicator);
+   if (harq_process->first_tx == 1 ||
+       harq_process->ndi != harq_process->pusch_pdu.pusch_data.new_data_indicator) {  // this is a new packet
+ #ifdef DEBUG_ULSCH_CODING
+diff --git a/openair1/PHY/NR_UE_TRANSPORT/nr_ulsch_ue.c b/openair1/PHY/NR_UE_TRANSPORT/nr_ulsch_ue.c
+index 18fe11d40a..57dd4869b8 100644
+--- a/openair1/PHY/NR_UE_TRANSPORT/nr_ulsch_ue.c
++++ b/openair1/PHY/NR_UE_TRANSPORT/nr_ulsch_ue.c
+@@ -146,8 +146,8 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
+ 
+     get_num_re_dmrs(pusch_pdu, &nb_dmrs_re_per_rb, &number_dmrs_symbols);
+ 
+-    LOG_D(PHY,"ulsch %x : start_rb %d bwp_start %d start_sc %d start_symbol %d num_symbols %d cdmgrpsnodata %d num_dmrs %d dmrs_re_per_rb %d\n",
+-	  rnti,start_rb,pusch_pdu->bwp_start,start_sc,start_symbol,number_of_symbols,cdm_grps_no_data,number_dmrs_symbols,nb_dmrs_re_per_rb);
++    LOG_I(PHY,"ulsch frame %d %d,  %x : start_rb %d bwp_start %d start_sc %d start_symbol %d num_symbols %d cdmgrpsnodata %d num_dmrs %d dmrs_re_per_rb %d, dmrs pos 0x%4x\n",
++	  frame, slot, rnti,start_rb,pusch_pdu->bwp_start,start_sc,start_symbol,number_of_symbols,cdm_grps_no_data,number_dmrs_symbols,nb_dmrs_re_per_rb, ul_dmrs_symb_pos);
+ 
+     // TbD num_of_mod_symbols is set but never used
+     N_RE_prime = NR_NB_SC_PER_RB*number_of_symbols - nb_dmrs_re_per_rb*number_dmrs_symbols - N_PRB_oh;
+diff --git a/openair2/LAYER2/NR_MAC_UE/nr_ue_scheduler.c b/openair2/LAYER2/NR_MAC_UE/nr_ue_scheduler.c
+index 06f62abbf6..5007a7cf31 100644
+--- a/openair2/LAYER2/NR_MAC_UE/nr_ue_scheduler.c
++++ b/openair2/LAYER2/NR_MAC_UE/nr_ue_scheduler.c
+@@ -772,15 +772,20 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
+ 
+   }
+ 
+-  LOG_D(NR_MAC, "In %s: received UL grant (rb_start %d, rb_size %d, start_symbol_index %d, nr_of_symbols %d) for RNTI type %s \n",
++  LOG_I(NR_MAC, "In %s: received UL grant (rb_start %d, rb_size %d, start_symbol_index %d, nr_of_symbols %d， mcs %d) for RNTI type %s \n",
+     __FUNCTION__,
+     pusch_config_pdu->rb_start,
+     pusch_config_pdu->rb_size,
+     pusch_config_pdu->start_symbol_index,
+     pusch_config_pdu->nr_of_symbols,
++     pusch_config_pdu->mcs_index,
+     rnti_types[rnti_type]);
+ 
+-  pusch_config_pdu->ul_dmrs_symb_pos = l_prime_mask << pusch_config_pdu->start_symbol_index;;
++  //pusch_config_pdu->ul_dmrs_symb_pos = l_prime_mask << pusch_config_pdu->start_symbol_index;;
++  pusch_config_pdu->ul_dmrs_symb_pos = fill_dmrs_mask(NULL,
++							 mac->mib->dmrs_TypeA_Position,
++							 pusch_config_pdu->nr_of_symbols,
++							 pusch_config_pdu->start_symbol_index);
+   pusch_config_pdu->target_code_rate = nr_get_code_rate_ul(pusch_config_pdu->mcs_index, pusch_config_pdu->mcs_table);
+   pusch_config_pdu->qam_mod_order = nr_get_Qm_ul(pusch_config_pdu->mcs_index, pusch_config_pdu->mcs_table);
+ 
