@@ -815,6 +815,7 @@ uint32_t nr_ulsch_decoding_fpga_ldpc(PHY_VARS_gNB *phy_vars_gNB,
 //调用FPGA的decode，并输出CRC
     // clock_gettime( CLOCK_REALTIME, &decode_start );
     decoder_load( &DecodeHead, pDeDataIn, pDeDataOut, pcrc );
+    LOG_D(PHY,"  decoder_load_OK\n");
     // clock_gettime( CLOCK_REALTIME, &decode_stop );
     if (*pcrc == 1) {
       LOG_D(PHY,"[gNB %d] ULSCH: Setting ACK for slot %d TBS %d\n",
@@ -825,6 +826,7 @@ uint32_t nr_ulsch_decoding_fpga_ldpc(PHY_VARS_gNB *phy_vars_gNB,
 
       LOG_D(PHY, "ULSCH received ok \n");
       nr_fill_indication(phy_vars_gNB,harq_process->frame, harq_process->slot, ULSCH_id, harq_pid, 0);
+      LOG_D(PHY,"crc = 1!\n");
 
     } else {
       LOG_D(PHY,"[gNB %d] ULSCH: Setting NAK for SFN/SF %d/%d (pid %d, status %d, round %d, TBS %d) r %d\n",

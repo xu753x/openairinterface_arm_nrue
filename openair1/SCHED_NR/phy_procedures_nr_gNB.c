@@ -194,6 +194,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,1);
     LOG_D(PHY, "PDSCH generation started (%d) in frame %d.%d\n", gNB->num_pdsch_rnti[slot],frame,slot);
     nr_generate_pdsch(gNB,frame, slot);
+    // nr_generate_pdsch_fpga_ldpc(gNB,frame, slot); //上面是OAI的代码，fpga_ldpc的encode切换到该行即可
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,0);
   }
 
@@ -699,7 +700,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
           //LOG_M("rxdataF_ext.m","rxF_ext",gNB->pusch_vars[0]->rxdataF_ext[0],6900,1,1);
           VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_ULSCH_PROCEDURES_RX,1);
           nr_ulsch_procedures(gNB, frame_rx, slot_rx, ULSCH_id, harq_pid);
-          // nr_ulsch_procedures_fpga_ldpc(gNB, frame_rx, slot_rx, ULSCH_id, harq_pid); //上面是OAI的代码，pga_ldpc的decode切换到该行即可
+          // nr_ulsch_procedures_fpga_ldpc(gNB, frame_rx, slot_rx, ULSCH_id, harq_pid); //上面是OAI的代码，fpga_ldpc的decode切换到该行即可
           VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_ULSCH_PROCEDURES_RX,0);
           break;
         }

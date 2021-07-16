@@ -462,3 +462,197 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
 
   return 0;
 }
+
+//FPGA加速，删除了部分OAI中的encode函数
+int nr_dlsch_encoding_fpga_ldpc(PHY_VARS_gNB *gNB,
+		      unsigned char *a,
+                      int frame,
+                      uint8_t slot,
+                      NR_gNB_DLSCH_t *dlsch,
+                      NR_DL_FRAME_PARMS* frame_parms,
+		      time_stats_t *tinput,time_stats_t *tprep,time_stats_t *tparity,time_stats_t *toutput,
+		      time_stats_t *dlsch_rate_matching_stats,time_stats_t *dlsch_interleaving_stats,
+		      time_stats_t *dlsch_segmentation_stats)
+{
+
+  unsigned int G;
+  NR_DL_gNB_HARQ_t *harq = &dlsch->harq_process;
+  nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &harq->pdsch_pdu.pdsch_pdu_rel15;
+  uint16_t nb_rb = rel15->rbSize;
+  uint8_t nb_symb_sch = rel15->NrOfSymbols;
+  uint32_t A = 0;
+  uint32_t *Zc = &dlsch->harq_process.Z;
+  uint8_t mod_order = rel15->qamModOrder[0];
+  uint16_t r = 0;
+  uint8_t nb_re_dmrs = 0;
+
+  if (rel15->dmrsConfigType==NFAPI_NR_DMRS_TYPE1)
+    nb_re_dmrs = 6*rel15->numDmrsCdmGrpsNoData;
+  else
+    nb_re_dmrs = 4*rel15->numDmrsCdmGrpsNoData;
+
+  uint16_t length_dmrs = get_num_dmrs(rel15->dlDmrsSymbPos);
+  uint16_t R=rel15->targetCodeRate[0];
+  float Coderate = 0.0;
+
+  EncodeInHeadStruct EncodeHead;
+  uint8_t *pEnDataIn = NULL;
+  uint8_t *pEnDataOut = NULL;
+  uint32_t iLS = 0;
+  uint32_t lsIndex = 0;
+  uint32_t dl_E0 = 0, dl_E1 = 0;
+
+  pEnDataIn = a;
+  pEnDataOut = harq->f;
+
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ENCODING, VCD_FUNCTION_IN);
+
+  A = rel15->TBSize[0]<<3;
+
+  NR_gNB_SCH_STATS_t *stats=NULL;
+  int first_free=-1;
+  for (int i=0;i<NUMBER_OF_NR_SCH_STATS_MAX;i++) {
+    if (gNB->dlsch_stats[i].rnti == 0 && first_free == -1) {
+      first_free = i;
+      stats=&gNB->dlsch_stats[i];
+    }
+    if (gNB->dlsch_stats[i].rnti == dlsch->rnti) {
+      stats=&gNB->dlsch_stats[i];
+      break;
+    }
+  }
+
+  if (stats) {
+    stats->rnti = dlsch->rnti;
+    stats->total_bytes_tx += rel15->TBSize[0];
+    stats->current_RI   = rel15->nrOfLayers;
+    stats->current_Qm   = rel15->qamModOrder[0];
+  }
+  G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs,mod_order,rel15->nrOfLayers);
+
+  LOG_D(PHY,"dlsch coding A %d G %d (nb_rb %d, nb_symb_sch %d, nb_re_dmrs %d, length_dmrs %d, mod_order %d)\n", A,G, nb_rb,nb_symb_sch,nb_re_dmrs,length_dmrs,mod_order);
+
+  if (A > 3824) 
+  {
+    harq->B = A+24;
+  }
+  else
+  {
+    harq->B = A+16;
+  }
+  if (R<1000)
+    Coderate = (float) R /(float) 1024;
+  else  // to scale for mcs 20 and 26 in table 5.1.3.1-2 which are decimal and input 2* in nr_tbs_tools
+    Coderate = (float) R /(float) 2048;
+
+  if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25)
+    harq->BG = 2;
+  else
+    harq->BG = 1;
+
+  start_meas(dlsch_segmentation_stats);
+  nr_segmentation(NULL, NULL, harq->B, &harq->C, &harq->K, Zc, &harq->F, harq->BG);
+  stop_meas(dlsch_segmentation_stats);
+
+  //FPGA加速的头部
+    //word 0
+    EncodeHead.pktType = 0x12;
+    EncodeHead.rsv0 = 0x00;
+    EncodeHead.chkCode = 0xFAFA;
+    //word 1
+ 
+    EncodeHead.rsv1 = 0x0000;
+    //word 2
+    EncodeHead.rsv2 = 0x0;
+    EncodeHead.sectorId = 0x0;
+    //=0表示单小区
+    EncodeHead.rsv3 = 0x0;
+    //word 3
+    EncodeHead.sfn = frame;
+    EncodeHead.rsv4 = 0x0;
+    EncodeHead.slotNum = slot;
+    EncodeHead.subfn = EncodeHead.slotNum/2;
+    EncodeHead.pduIdx = 0x0;
+    //=0表示第一个码字，总共一个码字
+    EncodeHead.rev5 = 0x0;
+    //word 4
+    EncodeHead.tbSizeB = rel15->TBSize[0];
+    EncodeHead.pktLen = 32+((EncodeHead.tbSizeB+32-1)/32)*32;	
+    //Byte，pktLen=encoder header(32byte)+ tbszie (byte)，并且32Byte对齐，是32的整数倍
+    EncodeHead.rev6 = 0x0;
+    EncodeHead.lastTb = 0x1;
+    EncodeHead.firstTb = 0x1;
+    //=1表示本slot只有一个TB
+    EncodeHead.rev7 = 0x0;
+    EncodeHead.cbNum = harq->C;
+    //word 5
+    EncodeHead.qm = rel15->qamModOrder[0]/2;	 
+    //规定是BPSK qm=0,QPSK qm=1,其他floor(调制阶数/2)；OAI的Qm为2/4/6/8
+    EncodeHead.rev8 = 0x0;
+    EncodeHead.fillbit = harq->F;
+    EncodeHead.rev9 = 0x0;
+    if( EncodeHead.cbNum == 1){
+       EncodeHead.kpInByte = ((harq->B)/ EncodeHead.cbNum)>>3;
+    }
+    else{
+       EncodeHead.kpInByte = ((harq->B+(( EncodeHead.cbNum)*24))/ EncodeHead.cbNum)>>3;
+    }
+    EncodeHead.rev10 = 0x0;
+    //word 6
+    EncodeHead.gamma = EncodeHead.cbNum - (G/(rel15->nrOfLayers*(2*EncodeHead.qm)))%EncodeHead.cbNum;
+    //=1表示本slot只有一个TB
+    EncodeHead.rev11 = 0x0;
+    EncodeHead.rvIdx = rel15->rvIndex[0];
+    EncodeHead.rev12 = 0x0;
+    //查找iLS和lfSizeIx
+    dl_find_iLS_lsIndex(Zc, &iLS, &lsIndex);
+    EncodeHead.iLs = iLS;
+    EncodeHead.lfSizeIx = lsIndex;
+    EncodeHead.rev13 = 0x0;
+    // EncodeHead.iLs = *iLS_out;
+    EncodeHead.bg = harq->BG-1; //规定选择协议base grape1 bg=0; base grape2 bg=1；OAI的BG大了1
+    if( EncodeHead.bg == 0){
+       EncodeHead.codeRate = 46;
+    }
+    else{
+       EncodeHead.codeRate = 42;
+    }
+    //word 7
+    //计算并获得e0和e1
+    nr_get_E0_E1(G, harq->C, mod_order, rel15->nrOfLayers, r, &dl_E0, &dl_E1);
+    EncodeHead.e0 = dl_E0;
+    EncodeHead.e1 = dl_E1;
+
+//调用FPGA的.so中的编码函数
+    encoder_load( &EncodeHead, pEnDataIn, pEnDataOut );
+    LOG_D(PHY,"encoder_load_OK!\n");
+    //LOG_M("pEnDataOut.m","pEnDataOut", pEnDataOut, G+32, 1, 9);
+
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ENCODING, VCD_FUNCTION_OUT);
+
+  return 0;
+}
+
+void dl_find_iLS_lsIndex(unsigned int *LDPC_lifting_size, uint32_t *iLS_out, uint32_t *lsIndex_out)
+{
+  unsigned int Set_of_LDPC_lifting_size[8][8] = {
+  {2,4,8,16,32,64,128,256},
+  {3,6,12,24,48,96,192,384},
+  {5,10,20,40,80,160,320},
+  {7,14,28,56,112,224},
+  {9,18,36,72,144,288},
+  {11,22,44,88,176,352},
+  {13,26,52,104,208},
+  {15,30,60,120,240}};
+
+  uint32_t iLS,lsIndex;
+
+  for(iLS = 0; iLS < 8; iLS++) {
+    for(lsIndex = 0; lsIndex < 8; lsIndex++){
+      if(*LDPC_lifting_size == Set_of_LDPC_lifting_size[iLS][lsIndex]){
+        *iLS_out = iLS;
+        *lsIndex_out = lsIndex;
+      }
+    }
+  }
+}
