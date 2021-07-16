@@ -166,10 +166,10 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
     pdsch_pdu_rel15->StartSymbolIndex = StartSymbolIndex;
     pdsch_pdu_rel15->NrOfSymbols      = NrOfSymbols;
     pdsch_pdu_rel15->dlDmrsSymbPos = fill_dmrs_mask(NULL,
-						    scc->dmrs_TypeA_Position,
-						    NrOfSymbols,
-                StartSymbolIndex,
-                mappingtype);
+                                                    scc->dmrs_TypeA_Position,
+                                                    NrOfSymbols,
+                                                    StartSymbolIndex,
+                                                    mappingtype, 1);
 
     /*
     AssertFatal(k0==0,"k0 is not zero for Initial DL BWP TimeDomain Alloc\n");
@@ -365,10 +365,9 @@ void nr_preprocessor_phytest(module_id_t module_id,
   sched_pdsch->rbStart = rbStart;
   sched_pdsch->rbSize = rbSize;
   const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] : 1;
-  const uint8_t num_dmrs_cdm_grps_no_data = 1;
-  if (ps->time_domain_allocation != tda || ps->numDmrsCdmGrpsNoData != num_dmrs_cdm_grps_no_data)
-    nr_set_pdsch_semi_static(
-        scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, tda, num_dmrs_cdm_grps_no_data, ps);
+  int nrOfLayers = 1;
+  if (ps->time_domain_allocation != tda || ps->nrOfLayers != nrOfLayers)
+    nr_set_pdsch_semi_static(scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, tda, nrOfLayers, sched_ctrl, ps);
 
   sched_pdsch->mcs = target_dl_mcs;
   sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
@@ -380,7 +379,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
                                         ps->N_PRB_DMRS * ps->N_DMRS_SLOT,
                                         0 /* N_PRB_oh, 0 for initialBWP */,
                                         0 /* tb_scaling */,
-                                        1 /* nrOfLayers */)
+                                        ps->nrOfLayers)
                          >> 3;
 
   /* get the PID of a HARQ process awaiting retransmission, or -1 otherwise */

@@ -664,6 +664,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
       if (UE_info->UE_sched_ctrl[UE_id].pusch_consecutive_dtx_cnt >= pusch_failure_thres) {
          LOG_D(NR_MAC,"Detected UL Failure on PUSCH, stopping scheduling\n");
          UE_info->UE_sched_ctrl[UE_id].ul_failure = 1;
+        nr_mac_eNB_rrc_ul_failure(gnb_mod_idP,CC_idP,frameP,slotP,rntiP);
       }
     }
   } else if(sduP) {
@@ -850,9 +851,6 @@ bool allocate_ul_retransmission(module_id_t module_id,
   retInfo->frame = sched_ctrl->sched_pusch.frame;
   retInfo->slot = sched_ctrl->sched_pusch.slot;
 
-  // Get previous PUSCH filed info
-  sched_ctrl->sched_pusch = *retInfo;
-
   NR_BWP_t *genericParameters = sched_ctrl->active_ubwp ? &sched_ctrl->active_ubwp->bwp_Common->genericParameters : &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
   int rbStart = sched_ctrl->active_ubwp ? NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE) : 0;
   const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
@@ -893,6 +891,7 @@ bool allocate_ul_retransmission(module_id_t module_id,
     uint16_t new_rbSize;
     bool success = nr_find_nb_rb(retInfo->Qm,
                                  retInfo->R,
+                                 1, // layers
                                  temp_ps.nrOfSymbols,
                                  temp_ps.N_PRB_DMRS * temp_ps.num_dmrs_symb,
                                  retInfo->tb_size,
@@ -910,6 +909,9 @@ bool allocate_ul_retransmission(module_id_t module_id,
     retInfo->rbSize = new_rbSize;
     retInfo->time_domain_allocation = tda;
     sched_ctrl->pusch_semi_static = temp_ps;
+
+    // Get previous PUSCH filed info
+    sched_ctrl->sched_pusch = *retInfo;
   }
 
   /* Find free CCE */
@@ -1150,6 +1152,7 @@ void pf_ul(module_id_t module_id,
     uint32_t TBS = 0;
     nr_find_nb_rb(sched_pusch->Qm,
                   sched_pusch->R,
+                  1, // layers
                   ps->nrOfSymbols,
                   ps->N_PRB_DMRS * ps->num_dmrs_symb,
                   B,
@@ -1575,7 +1578,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
       n_ubwp = CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.count;
 
     config_uldci(sched_ctrl->active_ubwp,
-		             scc,
+                 scc,
                  pusch_pdu,
                  &uldci_payload,
                  ps->dci_format,

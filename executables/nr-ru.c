@@ -1374,6 +1374,7 @@ void *ru_thread( void *param ) {
       }
     }
 
+
     // At this point, all information for subframe has been received on FH interface
     res = pullTpool(gNB->resp_L1, gNB->threadPool);
     syncMsg = (processingData_L1_t *)NotifiedFifoData(res);
@@ -1385,6 +1386,7 @@ void *ru_thread( void *param ) {
     syncMsg->timestamp_tx = proc->timestamp_tx;
     res->key = proc->tti_rx;
     pushTpool(gNB->threadPool, res);
+
 
   }
 
@@ -2049,6 +2051,7 @@ static void NRRCconfig_RU(void)
       RC.ru[j]->att_rx                            = *(RUParamList.paramarray[j][RU_ATT_RX_IDX].uptr);
       RC.ru[j]->if_frequency                      = *(RUParamList.paramarray[j][RU_IF_FREQUENCY].u64ptr);
       RC.ru[j]->if_freq_offset                    = *(RUParamList.paramarray[j][RU_IF_FREQ_OFFSET].iptr);
+      RC.ru[j]->do_precoding                      = *(RUParamList.paramarray[j][RU_DO_PRECODING].iptr);
 
       if (config_isparamset(RUParamList.paramarray[j], RU_BF_WEIGHTS_LIST_IDX)) {
         RC.ru[j]->nb_bfw = RUParamList.paramarray[j][RU_BF_WEIGHTS_LIST_IDX].numelt;

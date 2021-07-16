@@ -240,9 +240,9 @@ void update_ptrs_config(NR_CellGroupConfig_t *secondaryCellGroup, uint16_t *rbSi
 void update_dmrs_config(NR_CellGroupConfig_t *scg,PHY_VARS_NR_UE *ue, int8_t* dmrs_arg);
 extern void fix_scd(NR_ServingCellConfig_t *scd);// forward declaration
 
-/* specific dlsim DL preprocessor: uses rbStart/rbSize/mcs from command line of
+/* specific dlsim DL preprocessor: uses rbStart/rbSize/mcs/nrOfLayers from command line of
    dlsim, does not search for CCE/PUCCH occasion but simply sets to 0 */
-int g_mcsIndex = -1, g_mcsTableIdx = 0, g_rbStart = -1, g_rbSize = -1;
+int g_mcsIndex = -1, g_mcsTableIdx = 0, g_rbStart = -1, g_rbSize = -1, g_nrOfLayers = 1;
 void nr_dlsim_preprocessor(module_id_t module_id,
                            frame_t frame,
                            sub_frame_t slot) {
@@ -267,7 +267,8 @@ void nr_dlsim_preprocessor(module_id_t module_id,
                            UE_info->CellGroup[0],
                            sched_ctrl->active_bwp,
                            /* tda = */ 2,
-                           /* num_dmrs_cdm_grps_no_data = */ 1,
+                           g_nrOfLayers,
+                           sched_ctrl,
                            ps);
 
   NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
@@ -277,6 +278,7 @@ void nr_dlsim_preprocessor(module_id_t module_id,
   /* the following might override the table that is mandated by RRC
    * configuration */
   ps->mcsTableIdx = g_mcsTableIdx;
+  ps->nrOfLayers = g_nrOfLayers;
 
   sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
   sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, ps->mcsTableIdx);
@@ -287,7 +289,7 @@ void nr_dlsim_preprocessor(module_id_t module_id,
                                         ps->N_PRB_DMRS * ps->N_DMRS_SLOT,
                                         0 /* N_PRB_oh, 0 for initialBWP */,
                                         0 /* tb_scaling */,
-                                        1 /* nrOfLayers */)
+                                        g_nrOfLayers)
                          >> 3;
 
   /* the simulator assumes the HARQ PID is equal to the slot number */
@@ -355,7 +357,7 @@ int main(int argc, char **argv)
   //  char fname[40], vname[40];
   int trial, n_trials = 1, n_errors = 0, n_false_positive = 0;
   //int n_errors2, n_alamouti;
-  uint8_t transmission_mode = 1,n_tx=1,n_rx=1;
+  uint8_t n_tx=1,n_rx=1;
   uint8_t round;
   uint8_t num_rounds = 4;
 
@@ -512,12 +514,11 @@ int main(int argc, char **argv)
       break;
       */
     case 'x':
-      transmission_mode=atoi(optarg);
+      g_nrOfLayers=atoi(optarg);
 
-      if ((transmission_mode!=1) &&
-          (transmission_mode!=2) &&
-          (transmission_mode!=6)) {
-        printf("Unsupported transmission mode %d\n",transmission_mode);
+      if ((g_nrOfLayers!=1) &&
+          (g_nrOfLayers!=2)) {
+        printf("Unsupported nr Of Layers %d\n",g_nrOfLayers);
         exit(-1);
       }
 
@@ -1161,6 +1162,7 @@ int main(int argc, char **argv)
         }
 
         nr_ue_dcireq(&dcireq); //to be replaced with function pointer later
+        UE_harq_process->Nl = g_nrOfLayers;
         nr_ue_scheduled_response(&scheduled_response);
         
         phy_procedures_nrUE_RX(UE,
