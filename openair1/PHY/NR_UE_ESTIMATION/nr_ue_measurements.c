@@ -55,13 +55,14 @@
 int16_t get_nr_PL(uint8_t Mod_id, uint8_t CC_id, uint8_t gNB_index){
 
   PHY_VARS_NR_UE *ue = PHY_vars_UE_g[Mod_id][CC_id];
+  NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   int16_t pathloss;
 
   if (get_softmodem_params()->do_ra){
 
     long referenceSignalPower = ue->nrUE_config.ssb_config.ss_pbch_power;
 
-    pathloss = (int16_t)(referenceSignalPower - ue->measurements.rsrp_dBm[gNB_index]);
+    pathloss = (int16_t)(referenceSignalPower - ue->measurements.rsrp_dBm[gNB_index][frame_parms->ssb_index]);
 
     LOG_D(MAC, "In %s: pathloss %d dB, UE RX total gain %d dB, referenceSignalPower %ld dBm/RE (%f mW), RSRP %d dBm (%f mW)\n",
       __FUNCTION__,
@@ -69,12 +70,12 @@ int16_t get_nr_PL(uint8_t Mod_id, uint8_t CC_id, uint8_t gNB_index){
       ue->rx_total_gain_dB,
       referenceSignalPower,
       pow(10, referenceSignalPower/10),
-      ue->measurements.rsrp_dBm[gNB_index],
-      pow(10, ue->measurements.rsrp_dBm[gNB_index]/10));
+      ue->measurements.rsrp_dBm[gNB_index][frame_parms->ssb_index],
+      pow(10, ue->measurements.rsrp_dBm[gNB_index][frame_parms->ssb_index]/10));
 
   } else {
 
-    pathloss = ((int16_t)(((10*ue->rx_total_gain_dB) - dB_fixed_times10(ue->measurements.rsrp[gNB_index]))/10));
+    pathloss = ((int16_t)(((10*ue->rx_total_gain_dB) - dB_fixed_times10(ue->measurements.rsrp[gNB_index][frame_parms->ssb_index]))/10));
 
   }
 
@@ -102,9 +103,10 @@ float_t get_nr_RSRP(module_id_t Mod_id,uint8_t CC_id,uint8_t gNB_index)
   AssertFatal(PHY_vars_UE_g[Mod_id][CC_id]!=NULL,"PHY_vars_UE_g[%d][%d] is null\n",Mod_id,CC_id);
 
   PHY_VARS_NR_UE *ue = PHY_vars_UE_g[Mod_id][CC_id];
+  NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
 
   if (ue)
-    return (10*log10(ue->measurements.rsrp[gNB_index])-
+    return (10*log10(ue->measurements.rsrp[gNB_index][frame_parms->ssb_index])-
 	    get_nr_rx_total_gain_dB(Mod_id,0) -
 	    10*log10(20*12));
   return -140.0;
@@ -208,14 +210,16 @@ void nr_ue_rsrp_measurements(PHY_VARS_NR_UE *ue,
                              uint8_t gNB_id,
                              UE_nr_rxtx_proc_t *proc,
                              uint8_t slot,
-                             uint8_t abstraction_flag)
-{
+                             int i_ssb,
+                             int symbol_offset) {
+
   int aarx;
   int nb_re;
   int k_start = 55;
   int k_end   = 183;
   unsigned int ssb_offset = ue->frame_parms.first_carrier_offset + ue->frame_parms.ssb_start_subcarrier;
-  uint8_t           l_sss = ue->symbol_offset + 2;
+  NR_DL_FRAME_PARMS *fp = &ue->frame_parms;
+  uint8_t l_sss = (symbol_offset%fp->symbols_per_slot) + 2;
 
   if (ssb_offset>= ue->frame_parms.ofdm_symbol_size){
 
@@ -223,49 +227,44 @@ void nr_ue_rsrp_measurements(PHY_VARS_NR_UE *ue,
 
   }
 
-  ue->measurements.rsrp[gNB_id] = 0;
+  ue->measurements.rsrp[gNB_id][i_ssb] = 0;
 
-  if (abstraction_flag == 0) {
+  LOG_D(PHY, "In %s: [UE %d] slot %d l_sss %d ssb_offset %d\n", __FUNCTION__, ue->Mod_id, slot, l_sss, ssb_offset);
 
-    LOG_D(PHY, "In %s: [UE %d] slot %d l_sss %d ssb_offset %d\n", __FUNCTION__, ue->Mod_id, slot, l_sss, ssb_offset);
+  nb_re = 0;
 
-    nb_re = 0;
+  for (aarx = 0; aarx < ue->frame_parms.nb_antennas_rx; aarx++) {
 
-    for (aarx = 0; aarx < ue->frame_parms.nb_antennas_rx; aarx++) {
+    int16_t *rxF_sss = (int16_t *)&ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aarx][(l_sss*ue->frame_parms.ofdm_symbol_size) + ssb_offset];
 
-      int16_t *rxF_sss = (int16_t *)&ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aarx][(l_sss*ue->frame_parms.ofdm_symbol_size) + ssb_offset];
+    for(int k = k_start; k < k_end; k++){
 
-      for(int k = k_start; k < k_end; k++){
+#ifdef DEBUG_MEAS_UE
+      LOG_I(PHY, "In %s rxF_sss %d %d\n", __FUNCTION__, rxF_sss[k*2], rxF_sss[k*2 + 1]);
+#endif
 
-        #ifdef DEBUG_MEAS_UE
-        LOG_I(PHY, "In %s rxF_sss %d %d\n", __FUNCTION__, rxF_sss[k*2], rxF_sss[k*2 + 1]);
-        #endif
+      ue->measurements.rsrp[gNB_id][i_ssb] += (((int32_t)rxF_sss[k*2]*rxF_sss[k*2]) + ((int32_t)rxF_sss[k*2 + 1]*rxF_sss[k*2 + 1]));
 
-        ue->measurements.rsrp[gNB_id] += (((int32_t)rxF_sss[k*2]*rxF_sss[k*2]) + ((int32_t)rxF_sss[k*2 + 1]*rxF_sss[k*2 + 1]));
+      nb_re++;
 
-        nb_re++;
-
-      }
     }
-
-    ue->measurements.rsrp[gNB_id] /= nb_re;
-
-  } else {
-
-    ue->measurements.rsrp[gNB_id] = -93;
-
   }
 
-  ue->measurements.rsrp_filtered[gNB_id] = ue->measurements.rsrp[gNB_id];
+  ue->measurements.rsrp[gNB_id][i_ssb] /= nb_re;
 
-  ue->measurements.rsrp_dBm[gNB_id] = 10*log10(ue->measurements.rsrp[gNB_id]) + 30 - 10*log10(pow(2,30)) - ((int)openair0_cfg[0].rx_gain[0] - (int)openair0_cfg[0].rx_gain_offset[0]) - dB_fixed(ue->frame_parms.ofdm_symbol_size);
+  ue->measurements.rsrp_filtered[gNB_id][i_ssb] = ue->measurements.rsrp[gNB_id][i_ssb];
 
-  LOG_D(PHY, "In %s: [UE %d] slot %d SS-RSRP: %d dBm/RE (%d)\n",
-    __FUNCTION__,
-    ue->Mod_id,
-    slot,
-    ue->measurements.rsrp_dBm[gNB_id],
-    ue->measurements.rsrp[gNB_id]);
+  ue->measurements.rsrp_dBm[gNB_id][i_ssb] = 10*log10(ue->measurements.rsrp[gNB_id][i_ssb]) + 30 - 10*log10(pow(2,30)) -
+                                             ((int)openair0_cfg[0].rx_gain[0] - (int)openair0_cfg[0].rx_gain_offset[0]) -
+                                             dB_fixed(ue->frame_parms.ofdm_symbol_size);
+
+  LOG_D(PHY, "In %s: [UE %d] slot %d SSB %d SS-RSRP: %d dBm/RE (%d)\n",
+        __FUNCTION__,
+        ue->Mod_id,
+        slot,
+        i_ssb,
+        ue->measurements.rsrp_dBm[gNB_id][i_ssb],
+        ue->measurements.rsrp[gNB_id][i_ssb]);
 
 }
 

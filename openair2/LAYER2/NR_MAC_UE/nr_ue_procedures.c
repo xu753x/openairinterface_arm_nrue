@@ -1340,7 +1340,7 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
         mac->cg->physicalCellGroupConfig &&
         (mac->cg->physicalCellGroupConfig->harq_ACK_SpatialBundlingPUCCH != NULL ||
         mac->cg->physicalCellGroupConfig->pdsch_HARQ_ACK_Codebook != 1)) {
-      LOG_E(PHY,"PUCCH Unsupported cell group configuration : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
+      LOG_E(MAC,"PUCCH Unsupported cell group configuration : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
       return;
     }
     else if (mac->cg &&
@@ -2295,15 +2295,10 @@ uint8_t get_ssb_rsrp_payload(NR_UE_MAC_INST_t *mac,
       AssertFatal(nb_ssb>0,"No SSB found in the resource set\n");
       int ssbri_bits = ceil(log2(nb_ssb));
 
-      //TODO measurement of multiple SSBs at PHY and indication to MAC
-      if(nb_ssb>1)
-        LOG_E(MAC, "In current implementation only the SSB of synchronization is measured at PHY. This works only for a single SSB scenario\n");
-
       int ssb_rsrp[2][nb_meas]; // the array contains index and RSRP of each SSB to be reported (nb_meas highest RSRPs)
 
-      //TODO replace the following 2 lines with a function to order the nb_meas highest SSB RSRPs
-      ssb_rsrp[0][0] = mac->mib_ssb;
-      ssb_rsrp[1][0] = mac->ssb_rsrp_dBm;
+      //function to order the nb_meas highest SSB RSRPs
+      nr_sort_rsrp(mac, ssb_rsrp[0], ssb_rsrp[1], nb_meas);
 
       uint8_t ssbi;
 
@@ -2318,6 +2313,8 @@ uint8_t get_ssb_rsrp_payload(NR_UE_MAC_INST_t *mac,
       reverse_n_bits(&rsrp_idx, 7);
       temp_payload |= (rsrp_idx<<bits);
       bits += 7; // 7 bits for highest RSRP
+
+      LOG_D(MAC,"Highest SSB %d with RSRP %d\n",ssb_rsrp[0][0],ssb_rsrp[1][0]);
 
       // from the second SSB, differential report
       for (int i=1; i<nb_meas; i++){
@@ -2336,6 +2333,43 @@ uint8_t get_ssb_rsrp_payload(NR_UE_MAC_INST_t *mac,
   }
   pucch->csi_part1_payload = temp_payload;
   return bits;
+}
+
+
+void nr_sort_rsrp(NR_UE_MAC_INST_t *mac,
+                  int *ssb_indices,
+                  int *ssb_rsrps,
+                  int nb_meas) {
+
+  int n_ssb;
+
+  if (mac->frequency_range == FR1) {
+    n_ssb = 8;
+  } else {
+    n_ssb = 64;
+  }
+
+  int temp_rsrps[n_ssb];
+
+  for (int i=0; i<n_ssb; i++)
+    temp_rsrps[i] = mac->ssb_rsrp_dBm[i];
+
+  for (int j=0; j<nb_meas; j++) {
+    int save_ssb = -1;
+    for (int i=0; i<n_ssb; i++) {
+      if(temp_rsrps[i]!=0) { // it 0 for non transmitted ssb
+        if(save_ssb == -1)
+          save_ssb = i;
+        else if(temp_rsrps[i]>temp_rsrps[save_ssb])
+          save_ssb = i;
+      }
+    }
+    if (save_ssb != -1) {
+      ssb_indices[j] = save_ssb;
+      ssb_rsrps[j] = temp_rsrps[save_ssb];
+      temp_rsrps[save_ssb] = INT_MIN;
+    }
+  }
 }
 
 

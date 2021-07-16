@@ -38,6 +38,7 @@
 #include "PHY/defs_nr_UE.h"
 #include "PHY/phy_extern_nr_ue.h"
 #include "PHY/MODULATION/modulation_UE.h"
+#include "PHY/INIT/phy_init.h"
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_ue.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
@@ -327,7 +328,7 @@ void nr_ue_measurement_procedures(uint16_t l,
 #if T_TRACER
     if(slot == 0)
       T(T_UE_PHY_MEAS, T_INT(eNB_id),  T_INT(ue->Mod_id), T_INT(frame_rx%1024), T_INT(nr_slot_rx),
-	T_INT((int)(10*log10(ue->measurements.rsrp[0])-ue->rx_total_gain_dB)),
+	T_INT((int)(10*log10(ue->measurements.rsrp[0][frame_parms->ssb_index])-ue->rx_total_gain_dB)),
 	T_INT((int)ue->measurements.rx_rssi_dBm[0]),
 	T_INT((int)(ue->measurements.rx_power_avg_dB[0] - ue->measurements.n0_power_avg_dB)),
 	T_INT((int)ue->measurements.rx_power_avg_dB[0]),
@@ -1536,80 +1537,6 @@ void *UE_thread_slot1_dl_processing(void *arg) {
 }
 #endif
 
-int is_ssb_in_slot(fapi_nr_config_request_t *config, int frame, int slot, NR_DL_FRAME_PARMS *fp)
-{
-  int mu = fp->numerology_index;
-  //uint8_t half_frame_index = fp->half_frame_bit;
-  //uint8_t i_ssb = fp->ssb_index;
-  uint8_t Lmax = fp->Lmax;
-
-  if (!(frame%(1<<(config->ssb_table.ssb_period-1)))){
-
-    if(Lmax <= 8) {
-      if(slot <=3 && (((config->ssb_table.ssb_mask_list[0].ssb_mask << 2*slot)&0x80000000) == 0x80000000 || ((config->ssb_table.ssb_mask_list[0].ssb_mask << (2*slot +1))&0x80000000) == 0x80000000))
-      return 1;
-      else return 0;
-    
-    }
-    else if(Lmax == 64) {
-      if (mu == NR_MU_3){
-
-        if (slot>=0 && slot <= 7){
-          if(((config->ssb_table.ssb_mask_list[0].ssb_mask << 2*slot)&0x80000000) == 0x80000000 || ((config->ssb_table.ssb_mask_list[0].ssb_mask << (2*slot +1))&0x80000000) == 0x80000000)
-          return 1;
-          else return 0;
-        }
-      else if (slot>=10 && slot <=17){
-         if(((config->ssb_table.ssb_mask_list[0].ssb_mask << 2*(slot-2))&0x80000000) == 0x80000000 || ((config->ssb_table.ssb_mask_list[0].ssb_mask << (2*(slot-2) +1))&0x80000000) == 0x80000000)
-         return 1;
-         else return 0;
-      }
-      else if (slot>=20 && slot <=27){
-         if(((config->ssb_table.ssb_mask_list[1].ssb_mask << 2*(slot-20))&0x80000000) == 0x80000000 || ((config->ssb_table.ssb_mask_list[1].ssb_mask << (2*(slot-20) +1))&0x80000000) == 0x80000000)
-         return 1;
-         else return 0;
-      }
-      else if (slot>=30 && slot <=37){
-         if(((config->ssb_table.ssb_mask_list[1].ssb_mask << 2*(slot-22))&0x80000000) == 0x80000000 || ((config->ssb_table.ssb_mask_list[1].ssb_mask << (2*(slot-22) +1))&0x80000000) == 0x80000000)
-         return 1;
-         else return 0;
-       }
-      else return 0;
-
-    }
-
-
-    else if (mu == NR_MU_4) {
-         AssertFatal(0==1, "not implemented for mu =  %d yet\n", mu);
-    }
-    else AssertFatal(0==1, "Invalid numerology index %d for the synchronization block\n", mu);
-   }
-   else AssertFatal(0==1, "Invalid Lmax %u for the synchronization block\n", Lmax);
-  }
-  else return 0;
-
-}
-
-int is_pbch_in_slot(fapi_nr_config_request_t *config, int frame, int slot, NR_DL_FRAME_PARMS *fp)  {
-
-  int ssb_slot_decoded = (fp->ssb_index>>1) + ((fp->ssb_index>>4)<<1); //slot in which the decoded SSB can be found
-
-  if (config->ssb_table.ssb_period == 0) {  
-    // check for pbch in corresponding slot each half frame
-    if (fp->half_frame_bit)
-      return(slot == ssb_slot_decoded || slot == ssb_slot_decoded - fp->slots_per_frame/2);
-    else
-      return(slot == ssb_slot_decoded || slot == ssb_slot_decoded + fp->slots_per_frame/2);
-  }
-  else {
-    // if the current frame is supposed to contain ssb
-    if (!(frame%(1<<(config->ssb_table.ssb_period-1))))
-      return(slot == ssb_slot_decoded);
-    else
-      return 0;
-  }
-}
-
 
 int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            UE_nr_rxtx_proc_t *proc,
@@ -1620,8 +1547,6 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 {                                         
   int frame_rx = proc->frame_rx;
   int nr_slot_rx = proc->nr_slot_rx;
-  int slot_pbch;
-  int slot_ssb;
   NR_UE_PDCCH *pdcch_vars  = ue->pdcch_vars[proc->thread_id][0];
   fapi_nr_config_request_t *cfg = &ue->nrUE_config;
 
@@ -1644,50 +1569,76 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   if (pdcch_vars->nb_search_space > 0)
     get_coreset_rballoc(pdcch_vars->pdcch_config[0].coreset.frequency_domain_resource,&coreset_nb_rb,&coreset_start_rb);
 
-  slot_pbch = is_pbch_in_slot(cfg, frame_rx, nr_slot_rx, fp);
-  slot_ssb  = is_ssb_in_slot(cfg, frame_rx, nr_slot_rx, fp);
+  uint8_t ssb_frame_periodicity = 1;  // every how many frames SSB are generated
 
-  // looking for pbch only in slot where it is supposed to be
-  if (slot_ssb) {
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP_PBCH, VCD_FUNCTION_IN);
-    LOG_D(PHY," ------  PBCH ChannelComp/LLR: frame.slot %d.%d ------  \n", frame_rx%1024, nr_slot_rx);
-    for (int i=1; i<4; i++) {
+  if (cfg->ssb_table.ssb_period > 1) // 0 is every half frame
+    ssb_frame_periodicity = 1 << (cfg->ssb_table.ssb_period-1);
 
-      nr_slot_fep(ue,
-                  proc,
-                  (ue->symbol_offset+i)%(fp->symbols_per_slot),
-                  nr_slot_rx);
+  // if ssb in this frame
+  if (!(frame_rx%ssb_frame_periodicity) &&
+      ((nr_slot_rx<(fp->slots_per_frame>>1)) ||
+      (cfg->ssb_table.ssb_period == 0))) {
 
+    for (int ssb=0; ssb<fp->Lmax; ssb++) {
+
+      if(((cfg->ssb_table.ssb_mask_list[ssb/32].ssb_mask)>>(31-(ssb%32)))&0x01) {
+
+        int ssb_start_symbol = nr_get_ssb_start_symbol(fp,ssb);
+
+        int rel_slot;
+        if (cfg->ssb_table.ssb_period == 0) // scheduling every half frame
+          rel_slot = nr_slot_rx%(fp->slots_per_frame>>1);
+        else
+          rel_slot = nr_slot_rx;
+
+        if ((ssb_start_symbol/14) == rel_slot) {
+
+          // looking for pbch only in slot where it is supposed to be
+          VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP_PBCH, VCD_FUNCTION_IN);
+          LOG_D(PHY," ------  PBCH ChannelComp/LLR: frame.slot %d.%d ------  \n", frame_rx%1024, nr_slot_rx);
+          for (int i=1; i<4; i++) {
+
+            nr_slot_fep(ue,
+                        proc,
+                        (ssb_start_symbol+i)%(fp->symbols_per_slot),
+                        nr_slot_rx);
+
+            //TODO replace second argument with value coming from MAC)
+            if(ue->decode_MIB == 1 && ssb==fp->ssb_index) {
 #if UE_TIMING_TRACE
-      start_meas(&ue->dlsch_channel_estimation_stats);
+              start_meas(&ue->dlsch_channel_estimation_stats);
 #endif
-      nr_pbch_channel_estimation(ue,proc,0,nr_slot_rx,(ue->symbol_offset+i)%(fp->symbols_per_slot),i-1,(fp->ssb_index)&7,fp->half_frame_bit);
+              nr_pbch_channel_estimation(ue,proc,0,nr_slot_rx,(ssb_start_symbol+i)%(fp->symbols_per_slot),i-1,ssb&7,fp->half_frame_bit);
 #if UE_TIMING_TRACE
-      stop_meas(&ue->dlsch_channel_estimation_stats);
+              stop_meas(&ue->dlsch_channel_estimation_stats);
 #endif
-    }
+            }
+          }
 
-    nr_ue_rsrp_measurements(ue, gNB_id, proc, nr_slot_rx, 0);
+          nr_ue_rsrp_measurements(ue, gNB_id, proc, nr_slot_rx, ssb, ssb_start_symbol);
 
-    if ((ue->decode_MIB == 1) && slot_pbch) {
+          //TODO replace second argument with value coming from MAC)
+          if(ue->decode_MIB == 1 && ssb==fp->ssb_index) {
 
-      LOG_D(PHY," ------  Decode MIB: frame.slot %d.%d ------  \n", frame_rx%1024, nr_slot_rx);
-      nr_ue_pbch_procedures(gNB_id, ue, proc, 0);
+            LOG_D(PHY," ------  Decode MIB: frame.slot %d.%d ------  \n", frame_rx%1024, nr_slot_rx);
+            nr_ue_pbch_procedures(gNB_id, ue, proc, 0);
 
-      if (ue->no_timing_correction==0) {
-        LOG_D(PHY,"start adjust sync slot = %d no timing %d\n", nr_slot_rx, ue->no_timing_correction);
-        nr_adjust_synch_ue(fp,
-                           ue,
-                           gNB_id,
-                           frame_rx,
-                           nr_slot_rx,
-                           0,
-                           16384);
+            if (ue->no_timing_correction==0) {
+              LOG_D(PHY,"start adjust sync slot = %d no timing %d\n", nr_slot_rx, ue->no_timing_correction);
+              nr_adjust_synch_ue(fp,
+                                 ue,
+                                 gNB_id,
+                                 frame_rx,
+                                 nr_slot_rx,
+                                 0,
+                                 16384);
+            }
+            LOG_D(PHY, "Doing N0 measurements in %s\n", __FUNCTION__);
+            nr_ue_rrc_measurements(ue, proc, nr_slot_rx);
+            VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP_PBCH, VCD_FUNCTION_OUT);
+          }
+        }
       }
-
-      LOG_D(PHY, "Doing N0 measurements in %s\n", __FUNCTION__);
-      nr_ue_rrc_measurements(ue, proc, nr_slot_rx);
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP_PBCH, VCD_FUNCTION_OUT);
     }
   }
 

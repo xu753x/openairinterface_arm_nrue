@@ -318,7 +318,7 @@ int do_pss_sss_extract_nr(PHY_VARS_NR_UE *ue,
                           int32_t pss_ext[NB_ANTENNAS_RX][LENGTH_PSS_NR],
                           int32_t sss_ext[NB_ANTENNAS_RX][LENGTH_SSS_NR],
                           uint8_t doPss, uint8_t doSss,
-					      uint8_t subframe) // add flag to indicate extracting only PSS, only SSS, or both
+                          uint8_t subframe) // add flag to indicate extracting only PSS, only SSS, or both
 {
   uint8_t aarx;
   int32_t *pss_rxF,*pss_rxF_ext;

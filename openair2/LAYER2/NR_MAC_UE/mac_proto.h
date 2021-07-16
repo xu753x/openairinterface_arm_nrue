@@ -132,6 +132,11 @@ int nr_ue_process_dci_indication_pdu(module_id_t module_id, int cc_id, int gNB_i
 
 uint32_t get_ssb_frame(uint32_t test);
 
+void nr_sort_rsrp(NR_UE_MAC_INST_t *mac,
+                  int *ssb_indices,
+                  int *ssb_rsrps,
+                  int nb_meas);
+
 bool trigger_periodic_scheduling_request(NR_UE_MAC_INST_t *mac,
                                          PUCCH_sched_t *pucch,
                                          frame_t frame,
