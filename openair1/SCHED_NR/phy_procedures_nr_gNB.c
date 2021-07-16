@@ -59,6 +59,27 @@ extern uint8_t nfapi_mode;
 
 int8_t ul_de_llr8[0x40000];
 
+struct timespec nr_t[10];
+
+#define NR_TIMESPEC_TO_DOUBLE_US( nr_t )    ( ( (double)nr_t.tv_sec * 1000000 ) + ( (double)nr_t.tv_nsec / 1000 ) )
+struct timespec  nr_get_timespec_diff(
+              struct timespec *start,
+              struct timespec *stop )
+{
+  struct timespec   result;
+
+  if ( ( stop->tv_nsec - start->tv_nsec ) < 0 ) {
+    result.tv_sec = stop->tv_sec - start->tv_sec - 1;
+    result.tv_nsec = stop->tv_nsec - start->tv_nsec + 1000000000;
+  }
+  else {
+    result.tv_sec = stop->tv_sec - start->tv_sec;
+    result.tv_nsec = stop->tv_nsec - start->tv_nsec;
+  }
+
+  return result;
+}
+
 void nr_set_ssb_first_subcarrier(nfapi_nr_config_request_scf_t *cfg, NR_DL_FRAME_PARMS *fp) {
 
   uint8_t sco = 0;
