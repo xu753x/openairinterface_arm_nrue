@@ -46,6 +46,8 @@
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "common/utils/LOG/log.h"
 #include <syscall.h>
+#include "SCHED_NR/fapi_nr_l1.h"
+#include "PHY/NR_TRANSPORT/time_measure_diff.h"
 //#define DEBUG_ULSCH_DECODING
 //#define gNB_DEBUG_TRACE
 
@@ -651,4 +653,220 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     //////////////////////////////////////////////////////////////////////////////////////////
   }
   return 1;
+}
+
+uint32_t nr_ulsch_decoding_fpga_ldpc(PHY_VARS_gNB *phy_vars_gNB,
+                           uint8_t ULSCH_id,
+                           short *ulsch_llr,
+                           int8_t *ul_llr8,
+                           NR_DL_FRAME_PARMS *frame_parms,
+                           nfapi_nr_pusch_pdu_t *pusch_pdu,
+                           uint32_t frame,
+                           uint8_t nr_tti_rx,
+                           uint8_t harq_pid,
+                           uint32_t G) {
+
+  uint32_t A;
+  uint32_t r = 0;
+
+#ifdef PRINT_CRC_CHECK
+  prnt_crc_cnt++;
+#endif
+  
+
+  NR_gNB_ULSCH_t                       *ulsch                 = phy_vars_gNB->ulsch[ULSCH_id][0];
+  NR_UL_gNB_HARQ_t                     *harq_process          = ulsch->harq_processes[harq_pid];
+
+  if (!harq_process) {
+    LOG_E(PHY,"ulsch_decoding.c: NULL harq_process pointer\n");
+    return 1;
+  }
+
+  t_nrLDPC_dec_params decParams;
+  t_nrLDPC_dec_params* p_decParams    = &decParams;
+
+    
+  phy_vars_gNB->nbDecode = 0;
+  harq_process->processedSegments = 0;
+
+  double   Coderate = 0.0;
+  
+  // ------------------------------------------------------------------
+  uint16_t nb_rb          = pusch_pdu->rb_size;
+  uint8_t Qm              = pusch_pdu->qam_mod_order;
+  uint16_t R              = pusch_pdu->target_code_rate;
+  uint8_t mcs             = pusch_pdu->mcs_index;
+  uint8_t n_layers        = pusch_pdu->nrOfLayers;
+  // ------------------------------------------------------------------
+
+  uint32_t iLS, lsIndex = 0;
+  uint32_t E0, E1 = 0;
+  DecodeInHeadStruct DecodeHead;
+  uint8_t *pDeDataIn = NULL;
+  uint8_t *pDeDataOut = NULL;
+  uint8_t *pcrc = NULL;
+  pDeDataIn = (uint8_t *)ul_llr8;
+  pDeDataOut = harq_process->b;
+  pcrc = (unsigned char *)malloc(4);
+
+   if (!ulsch_llr) {
+    LOG_E(PHY,"ulsch_decoding.c: NULL ulsch_llr pointer\n");
+    return 1;
+  }
+
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_gNB_ULSCH_DECODING,1);
+  harq_process->TBS = pusch_pdu->pusch_data.tb_size;
+  harq_process->round = nr_rv_round_map[pusch_pdu->pusch_data.rv_index];
+
+  A   = (harq_process->TBS)<<3;
+
+  LOG_D(PHY,"ULSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_rb %d, Qm %d, n_layers %d\n",harq_pid,A,G, mcs, n_layers, nb_rb, Qm, n_layers);
+
+  if (R<1024)
+    Coderate = (float) R /(float) 1024;
+  else
+    Coderate = (float) R /(float) 2048;
+  
+  if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25){
+    p_decParams->BG = 2;
+    if (Coderate < 0.3333) {
+      p_decParams->R = 15;
+    }
+    else if (Coderate <0.6667) {
+      p_decParams->R = 13;
+    }
+    else {
+      p_decParams->R = 23;
+    }
+  } else {
+    p_decParams->BG = 1;
+    if (Coderate < 0.6667) {
+      p_decParams->R = 13;
+    }
+    else if (Coderate <0.8889) {
+      p_decParams->R = 23;
+    }
+    else {
+      p_decParams->R = 89;
+    }
+  }
+
+  if (A > 3824)
+    harq_process->B = A+24;
+  else
+    harq_process->B = A+16;
+
+// [hna] Perform nr_segmenation with input and output set to NULL to calculate only (B, C, K, Z, F)
+  nr_segmentation(NULL,
+                  NULL,
+                  harq_process->B,
+                  &harq_process->C,
+                  &harq_process->K,
+                  &harq_process->Z, // [hna] Z is Zc
+                  &harq_process->F,
+                  p_decParams->BG);
+
+//FPGA头部参数
+    DecodeHead.cbNum = harq_process->C;
+    LOG_D(PHY,"cbnum = %d\n", DecodeHead.cbNum);
+    DecodeHead.tbSizeB = A>>3;
+    DecodeHead.pktLen = 32+((DecodeHead.cbNum+7)/8)*32+((G+32-1)/32)*32;//Byte，pktLen=decoder header(32byte)+ DDR Header + tbszie (byte)，并且32Byte对齐，是32的整数倍
+    LOG_D(PHY,"pktLen = %d\n", DecodeHead.pktLen);
+    DecodeHead.pduSize = DecodeHead.pktLen/4; //word
+    DecodeHead.qm = Qm/2;//规定是BPSK qm=0,QPSK qm=1,其他floor(调制阶数/2)；OAI的Qm为2/4/6/8
+    DecodeHead.sfn = frame;
+    DecodeHead.slotNum = nr_tti_rx;
+    DecodeHead.subfn = DecodeHead.slotNum/2;
+    DecodeHead.fillbit = harq_process->F;
+    DecodeHead.bg = p_decParams->BG-1;  //规定选择协议base grape1 bg=0; base grape2 bg=1；OAI的BG大了1
+    ul_find_iLS_lsIndex(&harq_process->Z, &iLS, &lsIndex);
+    DecodeHead.iLs = iLS;
+    DecodeHead.lfSizeIx = lsIndex;
+    if(DecodeHead.bg == 0){
+      DecodeHead.maxRowNm = 46;
+    }
+    else{
+      DecodeHead.maxRowNm = 42;
+    }
+
+    if(DecodeHead.cbNum == 1){
+      DecodeHead.kpInByte = ((harq_process->B)/DecodeHead.cbNum);   //decode的kpInByte应该用bit，encode用的Byte
+    }
+    else{
+      DecodeHead.kpInByte = ((harq_process->B+((DecodeHead.cbNum)*24))/DecodeHead.cbNum);
+    }
+    nr_get_E0_E1(G, harq_process->C, Qm, n_layers, r, &E0, &E1);
+    DecodeHead.e0 = E0;
+    DecodeHead.e1 = E1;
+    DecodeHead.rvIdx = pusch_pdu->pusch_data.rv_index;
+    DecodeHead.ndi = 1;        //1表示新传，0表示重传
+    DecodeHead.flush = 0;
+    DecodeHead.maxIter = 4;     //最大迭代次数
+    DecodeHead.maxRvIdx = 0;
+
+    DecodeHead.pktType = 0x10;
+    DecodeHead.chkCode = 0xFAFA;
+    DecodeHead.pktTpTmp = 0;
+    DecodeHead.sectorId = 0;     //=0表示单小区
+    DecodeHead.pduIdx = 0;       //=0表示第一个码字，总共一个码字
+    DecodeHead.lastTb = 1;
+    DecodeHead.firstTb = 1;      //=1表示本slot只有一个TB
+    DecodeHead.gamma = DecodeHead.cbNum - (G/(n_layers*(2*DecodeHead.qm)))%DecodeHead.cbNum;        //E0的CB个数
+//调用FPGA的decode，并输出CRC
+    // clock_gettime( CLOCK_REALTIME, &decode_start );
+    decoder_load( &DecodeHead, pDeDataIn, pDeDataOut, pcrc );
+    // clock_gettime( CLOCK_REALTIME, &decode_stop );
+    if (*pcrc == 1) {
+      LOG_D(PHY,"[gNB %d] ULSCH: Setting ACK for slot %d TBS %d\n",
+            phy_vars_gNB->Mod_id,harq_process->slot,harq_process->TBS);
+      harq_process->status = SCH_IDLE;
+      harq_process->round  = 0;
+      ulsch->harq_mask &= ~(1 << harq_pid);
+
+      LOG_D(PHY, "ULSCH received ok \n");
+      nr_fill_indication(phy_vars_gNB,harq_process->frame, harq_process->slot, ULSCH_id, harq_pid, 0);
+
+    } else {
+      LOG_D(PHY,"[gNB %d] ULSCH: Setting NAK for SFN/SF %d/%d (pid %d, status %d, round %d, TBS %d) r %d\n",
+            phy_vars_gNB->Mod_id, harq_process->frame, harq_process->slot,
+            harq_pid,harq_process->status, harq_process->round,harq_process->TBS,r);
+      if (harq_process->round >= ulsch->Mlimit) {
+        harq_process->status = SCH_IDLE;
+        harq_process->round  = 0;
+        harq_process->handled  = 0;
+        ulsch->harq_mask &= ~(1 << harq_pid);
+      }
+      harq_process->handled  = 1;
+
+      LOG_D(PHY, "ULSCH %d in error\n",ULSCH_id);
+      nr_fill_indication(phy_vars_gNB,harq_process->frame, harq_process->slot, ULSCH_id, harq_pid, 1);
+    }
+
+  free(pcrc);
+    
+  return 1;
+}
+
+void  ul_find_iLS_lsIndex(unsigned int *LDPC_lifting_size, uint32_t *iLS_out, uint32_t *lsIndex_out)
+{
+  unsigned int Set_of_LDPC_lifting_size[8][8] = {
+  {2,4,8,16,32,64,128,256},
+  {3,6,12,24,48,96,192,384},
+  {5,10,20,40,80,160,320},
+  {7,14,28,56,112,224},
+  {9,18,36,72,144,288},
+  {11,22,44,88,176,352},
+  {13,26,52,104,208},
+  {15,30,60,120,240}};
+
+  uint32_t iLS,lsIndex;
+
+  for(iLS = 0; iLS < 8; iLS++) {
+    for(lsIndex = 0; lsIndex < 8; lsIndex++){
+      if(*LDPC_lifting_size == Set_of_LDPC_lifting_size[iLS][lsIndex]){
+        *iLS_out = iLS;
+        *lsIndex_out = lsIndex;
+      }
+    }
+  }
 }

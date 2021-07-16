@@ -197,3 +197,47 @@ NR_gNB_SCH_STATS_t *get_ulsch_stats(PHY_VARS_gNB *gNB,NR_gNB_ULSCH_t *ulsch) {
    return(stats);
 }
 
+void nr_ulsch_unscrambling_optim_fpga_ldpc(int16_t* llr,int8_t* llr8,
+				 uint32_t size,
+				 uint8_t q,
+				 uint32_t Nid,
+				 uint32_t n_RNTI) {
+  
+#if defined(__x86_64__) || defined(__i386__)
+  uint32_t x1, x2, s=0;
+
+  x2 = (n_RNTI<<15) + Nid;
+
+  uint8_t *s8=(uint8_t *)&s;
+  __m128i *llr128 = (__m128i*)llr;
+  int j=0;
+  s = lte_gold_generic(&x1, &x2, 1);
+
+  for (int i=0; i<((size>>5)+((size&0x1f) > 0 ? 1 : 0)); i++,j+=4) {
+    llr128[j]   = _mm_mullo_epi16(llr128[j],byte2m128i[s8[0]]);
+    llr128[j+1] = _mm_mullo_epi16(llr128[j+1],byte2m128i[s8[1]]);
+    llr128[j+2] = _mm_mullo_epi16(llr128[j+2],byte2m128i[s8[2]]);
+    llr128[j+3] = _mm_mullo_epi16(llr128[j+3],byte2m128i[s8[3]]);
+    s = lte_gold_generic(&x1, &x2, 0);
+  }
+
+  //为FPGA加速调整格式，调整成+-32以内
+  for (int i = 0; i < size; i++)
+  {
+    if(llr[i] > 31)
+       llr8[i] = 31;
+    else if(llr[i] < -31)
+       llr8[i] = -31;  
+    else 
+       llr8[i] = llr[i];
+  }
+  
+#else
+
+    nr_ulsch_unscrambling(llr,
+                          size,
+                          q,
+                          Nid,
+                          n_RNTI);
+#endif
+}

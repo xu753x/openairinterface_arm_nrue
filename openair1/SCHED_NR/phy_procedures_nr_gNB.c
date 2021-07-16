@@ -50,11 +50,14 @@
 
 #include "intertask_interface.h"
 
+#include "PHY/NR_TRANSPORT/time_measure_diff.h"
 //#define DEBUG_RXDATA
 
 uint8_t SSB_Table[38]={0,2,4,6,8,10,12,14,254,254,16,18,20,22,24,26,28,30,254,254,32,34,36,38,40,42,44,46,254,254,48,50,52,54,56,58,60,62};
 
 extern uint8_t nfapi_mode;
+
+int8_t ul_de_llr8[0x40000];
 
 void nr_set_ssb_first_subcarrier(nfapi_nr_config_request_scf_t *cfg, NR_DL_FRAME_PARMS *fp) {
 
@@ -696,6 +699,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
           //LOG_M("rxdataF_ext.m","rxF_ext",gNB->pusch_vars[0]->rxdataF_ext[0],6900,1,1);
           VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_ULSCH_PROCEDURES_RX,1);
           nr_ulsch_procedures(gNB, frame_rx, slot_rx, ULSCH_id, harq_pid);
+          // nr_ulsch_procedures_fpga_ldpc(gNB, frame_rx, slot_rx, ULSCH_id, harq_pid); //上面是OAI的代码，pga_ldpc的decode切换到该行即可
           VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_ULSCH_PROCEDURES_RX,0);
           break;
         }
@@ -714,4 +718,74 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_UESPEC_RX,0);
   return 0;
+}
+
+void nr_ulsch_procedures_fpga_ldpc(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH_id, uint8_t harq_pid)
+{
+  NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
+  nfapi_nr_pusch_pdu_t *pusch_pdu = &gNB->ulsch[ULSCH_id][0]->harq_processes[harq_pid]->ulsch_pdu;
+  
+  uint8_t l, number_dmrs_symbols = 0;
+  uint32_t G;
+  uint16_t start_symbol, number_symbols, nb_re_dmrs;
+
+  start_symbol = pusch_pdu->start_symbol_index;
+  number_symbols = pusch_pdu->nr_of_symbols;
+
+  for (l = start_symbol; l < start_symbol + number_symbols; l++)
+    number_dmrs_symbols += ((pusch_pdu->ul_dmrs_symb_pos)>>l)&0x01;
+
+  if (pusch_pdu->dmrs_config_type==pusch_dmrs_type1)
+    nb_re_dmrs = 6*pusch_pdu->num_dmrs_cdm_grps_no_data;
+  else
+    nb_re_dmrs = 4*pusch_pdu->num_dmrs_cdm_grps_no_data;
+
+  G = nr_get_G(pusch_pdu->rb_size,
+               number_symbols,
+               nb_re_dmrs,
+               number_dmrs_symbols, // number of dmrs symbols irrespective of single or double symbol dmrs
+               pusch_pdu->qam_mod_order,
+               pusch_pdu->nrOfLayers);
+  
+  AssertFatal(G>0,"G is 0 : rb_size %u, number_symbols %d, nb_re_dmrs %d, number_dmrs_symbols %d, qam_mod_order %u, nrOfLayer %u\n",
+	      pusch_pdu->rb_size,
+	      number_symbols,
+	      nb_re_dmrs,
+	      number_dmrs_symbols, // number of dmrs symbols irrespective of single or double symbol dmrs
+	      pusch_pdu->qam_mod_order,
+	      pusch_pdu->nrOfLayers);
+  LOG_D(PHY,"rb_size %d, number_symbols %d, nb_re_dmrs %d, number_dmrs_symbols %d, qam_mod_order %d, nrOfLayer %d\n",
+	pusch_pdu->rb_size,
+	number_symbols,
+	nb_re_dmrs,
+	number_dmrs_symbols, // number of dmrs symbols irrespective of single or double symbol dmrs
+	pusch_pdu->qam_mod_order,
+	pusch_pdu->nrOfLayers);
+  //----------------------------------------------------------
+  //------------------- ULSCH unscrambling -------------------
+  //----------------------------------------------------------
+  start_meas(&gNB->ulsch_unscrambling_stats);
+  nr_ulsch_unscrambling_optim_fpga_ldpc(gNB->pusch_vars[ULSCH_id]->llr, ul_de_llr8,
+			      G,
+			      0,
+			      pusch_pdu->data_scrambling_id,
+			      pusch_pdu->rnti);
+  stop_meas(&gNB->ulsch_unscrambling_stats);
+  //----------------------------------------------------------
+  //--------------------- ULSCH decoding ---------------------
+  //----------------------------------------------------------
+
+  start_meas(&gNB->ulsch_decoding_stats);
+  nr_ulsch_decoding_fpga_ldpc(gNB,
+                    ULSCH_id,
+                    gNB->pusch_vars[ULSCH_id]->llr,
+                    ul_de_llr8,
+                    frame_parms,
+                    pusch_pdu,
+                    frame_rx,
+                    slot_rx,
+                    harq_pid,
+                    G);
+
+  stop_meas(&gNB->ulsch_decoding_stats);
 }
