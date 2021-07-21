@@ -88,3 +88,9 @@ flake8 oai-ci-test-main.py
 ```
 
 You shall have no error message.
+
+## Usage ##
+
+```bash
+python3 ./oai-ci-test-main.py --infra_yaml testinfra-as-code.yaml --tstcfg_yaml test-example.yaml --git_yaml git_info_template.yaml --mode BuildAndTest
+```

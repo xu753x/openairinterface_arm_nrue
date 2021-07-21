@@ -1,0 +1,9 @@
+git:
+    url : GIT_URL
+    branch : GIT_BRANCH
+    commit : GIT_COMMIT
+    merge_request :
+        status : no
+        id : MR_IID
+        src_branch : SRC_BRANCH
+        src_commit : SRC_COMMIT

@@ -23,11 +23,53 @@ For more information about the OpenAirInterface (OAI) Software Alliance:
 
 """
 
+import argparse
+
 import yaml
 
 import cls_cn
 import cls_ran
 import cls_ue
+
+
+def _parse_args() -> argparse.Namespace:
+    """Parse the command line args
+
+    Returns:
+        argparse.Namespace: the created parser
+    """
+    parser = argparse.ArgumentParser(description='OAI CI Test Framework')
+
+    # Infra YML filename
+    parser.add_argument(
+        '--infra_yaml', '-in',
+        action='store',
+        required=True,
+        help='Setup Infrastructure Yaml File',
+    )
+    # Test Configuration YML filename
+    parser.add_argument(
+        '--tstcfg_yaml', '-tc',
+        action='store',
+        required=True,
+        help='Test Configuration Yaml File',
+    )
+    # Git Information YML filename
+    parser.add_argument(
+        '--git_yaml', '-g',
+        action='store',
+        required=True,
+        help='Git Information Yaml File',
+    )
+    # Mode
+    parser.add_argument(
+        '--mode',
+        action='store',
+        required=True,
+        choices=['BuildAndTest', 'RetrieveLogs'],
+        help='OAI CI Test Mode',
+    )
+    return parser.parse_args()
 
 
 def get_test_infrastructure(filename):
@@ -60,14 +102,30 @@ def get_test_config(filename):
     return test_config
 
 
-def get_test_objects(key, infrastructure, test_cfg):
+def get_git_info(filename):
+    """
+    Load the git information data model.
+
+    Args:
+        filename: yaml description file of git information
+
+    Returns:
+        test_config: git information data model
+    """
+    with open(filename, 'r') as git_yml:
+        git_info = yaml.safe_load(git_yml)
+    return git_info
+
+
+def get_test_objects(key, infra, test_cfg, git_info):
     """
     Load the test objects.
 
     Args:
         key: relevant keys to select
-        infrastructure: infrastructure data model
+        infra: infrastructure data model
         test_cfg: test configuration data model
+        git_info: git information data model
 
     Returns:
         dict_obj: dictionary of objects under test
@@ -80,25 +138,36 @@ def get_test_objects(key, infrastructure, test_cfg):
     # create dict of Objects under test
     dict_obj = {}
     for elt in elements:
-        deployment = test_cfg['config'][key][key][elt]['Deploy']
+        deploy = test_cfg['config'][key][key][elt]['Deploy']
         # retrieve the infra part of the element under test only
-        obj_part = infrastructure[part][elt]
+        obj_part = infra[part][elt]
         if key == 'RAN':
-            dict_obj[elt] = cls_ran.NodeB(infrastructure, obj_part, deployment)
+            dict_obj[elt] = cls_ran.NodeB(infra, obj_part, deploy, git_info)
         elif key == 'CN':
-            dict_obj[elt] = cls_cn.CN(infrastructure, obj_part, deployment)
+            dict_obj[elt] = cls_cn.CN(infra, obj_part, deploy, git_info)
         elif key == 'UE':
-            dict_obj[elt] = cls_ue.UE(infrastructure, obj_part, deployment)
+            dict_obj[elt] = cls_ue.UE(infra, obj_part, deploy, git_info)
         else:
             pass
     return dict_obj
 
 
 if __name__ == '__main__':
-    testbench = 'testinfra-as-code.yaml'
-    test = 'test-example.yaml'
-    infrastructure = get_test_infrastructure(testbench)
-    test_cfg = get_test_config(test)
-    RAN = get_test_objects('RAN', infrastructure, test_cfg)
-    CN = get_test_objects('CN', infrastructure, test_cfg)
-    UEs = get_test_objects('UE', infrastructure, test_cfg)
+    # Parse the arguments to recover the YAML filenames
+    args = _parse_args()
+    # Retrieve the infrastructure
+    infrastructure = get_test_infrastructure(args.infra_yaml)
+    # Retrieve the test configuration (ie infra being used and testsuite)
+    test_cfg = get_test_config(args.tstcfg_yaml)
+    # Retrieve the git information
+    git_info = get_git_info(args.git_yaml)
+    # Populate objects
+    RAN = get_test_objects('RAN', infrastructure, test_cfg, git_info)
+    CN = get_test_objects('CN', infrastructure, test_cfg, git_info)
+    UEs = get_test_objects('UE', infrastructure, test_cfg, git_info)
+    for key1 in RAN.keys():
+        print(key1, RAN[key1].Type)
+    if args.mode == 'BuildAndTest':
+        print('Mode is BuildAndTest')
+    if args.mode == 'RetrieveLogs':
+        print('Mode is RetrieveLogs')

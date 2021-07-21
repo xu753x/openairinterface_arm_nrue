@@ -27,8 +27,9 @@ For more information about the OpenAirInterface (OAI) Software Alliance:
 class UE:
     """Object class to support any UE operations."""
 
-    def __init__(self, infra, config, deployment):
+    def __init__(self, infra, config, deployment, git_info):
         self.Deployment = deployment
         self.Infra = infra
+        self.GitInfo = git_info
         for key, val in config.items():
             setattr(self, key, val)
