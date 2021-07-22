@@ -72,49 +72,19 @@ def _parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def get_test_infrastructure(filename):
+def get_yaml_structure(filename):
     """
-    Load the test infrastructure.
+    Load the YAML structure (for infra, test-cfg, git-info).
 
     Args:
-        filename: yaml description file of test infrastructure
+        filename: yaml description file
 
     Returns:
-        infra: infrastructure data model
+        data_model: data model
     """
-    with open(filename, 'r') as infra_yml:
-        infra = yaml.safe_load(infra_yml)
-    return infra
-
-
-def get_test_config(filename):
-    """
-    Load the test configuration data model.
-
-    Args:
-        filename: yaml description file of testcase
-
-    Returns:
-        test_config: test configuration data model
-    """
-    with open(filename, 'r') as test_yml:
-        test_config = yaml.safe_load(test_yml)
-    return test_config
-
-
-def get_git_info(filename):
-    """
-    Load the git information data model.
-
-    Args:
-        filename: yaml description file of git information
-
-    Returns:
-        test_config: git information data model
-    """
-    with open(filename, 'r') as git_yml:
-        git_info = yaml.safe_load(git_yml)
-    return git_info
+    with open(filename, 'r') as my_yml:
+        data_model = yaml.safe_load(my_yml)
+    return data_model
 
 
 def get_test_objects(key, infra, test_cfg, git_info):
@@ -156,11 +126,11 @@ if __name__ == '__main__':
     # Parse the arguments to recover the YAML filenames
     args = _parse_args()
     # Retrieve the infrastructure
-    infrastructure = get_test_infrastructure(args.infra_yaml)
+    infrastructure = get_yaml_structure(args.infra_yaml)
     # Retrieve the test configuration (ie infra being used and testsuite)
-    test_cfg = get_test_config(args.tstcfg_yaml)
+    test_cfg = get_yaml_structure(args.tstcfg_yaml)
     # Retrieve the git information
-    git_info = get_git_info(args.git_yaml)
+    git_info = get_yaml_structure(args.git_yaml)
     # Populate objects
     RAN = get_test_objects('RAN', infrastructure, test_cfg, git_info)
     CN = get_test_objects('CN', infrastructure, test_cfg, git_info)
