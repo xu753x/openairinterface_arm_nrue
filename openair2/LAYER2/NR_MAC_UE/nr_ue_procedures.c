@@ -900,7 +900,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
 							 dlsch_config_pdu_1_1->number_symbols,
                dlsch_config_pdu_1_1->start_symbol,
                mappingtype);
-    dlsch_config_pdu_1_1->dmrsConfigType = mac->DLbwp[dl_bwp_id-1]->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1;
+    dlsch_config_pdu_1_1->dmrsConfigType = mac->DLbwp[dl_bwp_id-1]->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? NFAPI_NR_DMRS_TYPE1 : NFAPI_NR_DMRS_TYPE2;
     /* TODO: fix number of DM-RS CDM groups without data according to subclause 5.1.6.2 of 3GPP TS 38.214,
              using tables 7.3.1.2.2-1, 7.3.1.2.2-2, 7.3.1.2.2-3, 7.3.1.2.2-4 of 3GPP TS 38.212 */
     dlsch_config_pdu_1_1->n_dmrs_cdm_groups = 1;
@@ -1001,7 +1001,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
                                             (table_7_3_2_3_3_2_oneCodeword[dci->antenna_ports.val][8]<<7));
 	dlsch_config_pdu_1_1->n_front_load_symb = table_7_3_2_3_3_2_oneCodeword[dci->antenna_ports.val][9];
       }
-      if (n_codewords == 1) {
+      if (n_codewords == 2) {
 	dlsch_config_pdu_1_1->n_dmrs_cdm_groups = table_7_3_2_3_3_2_twoCodeword[dci->antenna_ports.val][0];
         dlsch_config_pdu_1_1->dmrs_ports = (table_7_3_2_3_3_2_twoCodeword[dci->antenna_ports.val][1] +
                                             (table_7_3_2_3_3_2_twoCodeword[dci->antenna_ports.val][2]<<1) +
@@ -1025,7 +1025,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
                                             (table_7_3_2_3_3_3_oneCodeword[dci->antenna_ports.val][5]<<4) +
                                             (table_7_3_2_3_3_3_oneCodeword[dci->antenna_ports.val][6]<<5));
       }
-      if (n_codewords == 1) {
+      if (n_codewords == 2) {
 	dlsch_config_pdu_1_1->n_dmrs_cdm_groups = table_7_3_2_3_3_3_twoCodeword[dci->antenna_ports.val][0];
         dlsch_config_pdu_1_1->dmrs_ports = (table_7_3_2_3_3_3_twoCodeword[dci->antenna_ports.val][1] +
                                             (table_7_3_2_3_3_3_twoCodeword[dci->antenna_ports.val][2]<<1) +
@@ -1053,7 +1053,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
                                             (table_7_3_2_3_3_4_oneCodeword[dci->antenna_ports.val][12]<<11));
 	dlsch_config_pdu_1_1->n_front_load_symb = table_7_3_2_3_3_4_oneCodeword[dci->antenna_ports.val][13];
       }
-      if (n_codewords == 1) {
+      if (n_codewords == 2) {
 	dlsch_config_pdu_1_1->n_dmrs_cdm_groups = table_7_3_2_3_3_4_twoCodeword[dci->antenna_ports.val][0];
         dlsch_config_pdu_1_1->dmrs_ports = (table_7_3_2_3_3_4_twoCodeword[dci->antenna_ports.val][1] +
                                             (table_7_3_2_3_3_4_twoCodeword[dci->antenna_ports.val][2]<<1) +
@@ -2207,7 +2207,7 @@ uint16_t nr_generate_ulsch_pdu(uint8_t *sdus_payload,
         ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->F = 0;
         ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->LCID = sdu_lcids[i];
         ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->L = (unsigned char) sdu_lengths[i];
-	mac_pdu_ptr += sizeof(NR_MAC_SUBHEADER_SHORT); 
+        mac_pdu_ptr += sizeof(NR_MAC_SUBHEADER_SHORT);
       } else {
         ((NR_MAC_SUBHEADER_LONG *) mac_pdu_ptr)->R = 0;
         ((NR_MAC_SUBHEADER_LONG *) mac_pdu_ptr)->F = 1;
@@ -2295,7 +2295,9 @@ uint16_t nr_generate_ulsch_pdu(uint8_t *sdus_payload,
 
   if(buflen > 0) // If the buflen is provided
     padding_bytes = buflen + pdu - (unsigned char *) mac_pdu_ptr;
+
   AssertFatal(padding_bytes>=0,"");
+
   // Compute final offset for padding
   if (post_padding || padding_bytes>0) {
     ((NR_MAC_SUBHEADER_FIXED *) mac_pdu_ptr)->R = 0;
