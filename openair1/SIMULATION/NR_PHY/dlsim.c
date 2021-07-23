@@ -88,8 +88,8 @@ uint16_t NB_UE_INST = 1;
  /*! \file openairinterface5g/openair1/SIMULATION/NR_PHY/dlsim
  * \brief merge ISIP beamforming
  * \author NCTU OpinConnect Terng-Yin Hsu,WEI-YING LIN,Min-Hsun Wu
- * \email a22490010@gmail.com
- * \date 23-7-2021
+ * \email  a22490010@gmail.com
+ * \date   23-7-2021
  * \version 
  * \note
  * \warning
