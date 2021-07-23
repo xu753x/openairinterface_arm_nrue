@@ -1,7 +1,8 @@
 #ifndef OPENAIRINTERFACE5G_LIMITS_H_
 #define OPENAIRINTERFACE5G_LIMITS_H_
-
-#if 1 /*defined(CBMIMO1) || defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_LMSSDR) || defined(OAI_ADRV9371_ZC706)*/
+//min
+//#if 1 /*defined(CBMIMO1) || defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_LMSSDR) || defined(OAI_ADRV9371_ZC706)*/
+#if 0 /*defined(CBMIMO1) || defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_LMSSDR) || defined(OAI_ADRV9371_ZC706)*/
 #        define NUMBER_OF_eNB_MAX 1
 #        define NUMBER_OF_gNB_MAX 1
 #        define NUMBER_OF_RU_MAX 2

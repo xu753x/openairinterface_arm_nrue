@@ -176,6 +176,9 @@
 
 #define NB_ANTENNA_PORTS_ENB  6                                         // total number of eNB antenna ports
 
+//min
+#define NB_ANTENNA_PORTS_GNB  6                                         // total number of gNB antenna ports
+
 #ifdef EXMIMO
 #define TARGET_RX_POWER 55    // Target digital power for the AGC
 #define TARGET_RX_POWER_MAX 55    // Maximum digital power, such that signal does not saturate (value found by simulation)

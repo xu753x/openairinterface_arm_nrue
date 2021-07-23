@@ -19,10 +19,6 @@
  *      contact@openairinterface.org
  */
 
-#define _GNU_SOURCE
-#include <sched.h>
-#include <time.h>
-#include "PHY/phy_extern.h"
 #include <fcntl.h>
 #include <math.h>
 #include <string.h>
@@ -60,9 +56,6 @@
 #include "openair1/SIMULATION/TOOLS/sim.h"
 #include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
 #include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
-#define CPU_AFF
-
-#include "PHY/CODING/nrLDPC_encoder/defs.h"
 
 PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
@@ -72,6 +65,99 @@ int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 double cpuf;
 int nfapi_mode=0;
 uint16_t NB_UE_INST = 1;
+
+
+
+//min
+
+  /** \brief This function performs beamforming precoding for common
+   * data
+      @param txdataF Table of pointers for frequency-domain TX signals
+      @param txdataF_BF Table of pointers for frequency-domain TX signals
+      @param frame_parms Frame descriptor structure
+  after beamforming
+      @param beam_weights Beamforming weights applied on each
+  antenna element and each carrier
+      @param slot Slot number
+      @param symbol Symbol index on which to act
+      @param aa physical antenna index
+      @param p logical antenna index
+  */
+
+
+ /*! \file openairinterface5g/openair1/SIMULATION/NR_PHY/dlsim
+ * \brief merge ISIP beamforming
+ * \author NCTU OpinConnect Terng-Yin Hsu,WEI-YING LIN,Min-Hsun Wu
+ * \email a22490010@gmail.com
+ * \date 23-7-2021
+ * \version 
+ * \note
+ * \warning
+ */
+
+
+/* int16_t *x1
+ x1 = txdataF[p][symbol .....]
+ printf(... , x1)*/
+ 
+int counter = 0;
+struct timespec start_ts, end_ts;
+
+int nr_beam_precoding(int32_t **txdataF,
+	                    int32_t **txdataF_BF,
+                      NR_DL_FRAME_PARMS *frame_parms,
+	                    int32_t ***beam_weights,
+                      int slot,
+                      int symbol,
+                      int aa,
+                      int nb_antenna_ports)
+{
+  uint8_t p;
+  
+  //int counter = 0; 
+  // clear txdata_BF[aa][re] for each call of ue_spec_beamforming
+  // printf("frame_parms->ofdm_symbol_size = %d\n",frame_parms->ofdm_symbol_size);
+  // frame_parms->ofdm_symbol_size=4096 //RB=273
+  // frame_parms->ofdm_symbol_size=2048 //RB=106
+  // printf("txdataF_BF[%d][%d] : %04d\n",aa,symbol*frame_parms->ofdm_symbol_size,txdataF_BF[aa][symbol*frame_parms->ofdm_symbol_size]);
+  // printf("&txdataF_BF[%d][%d] : %04p\n",aa,symbol*frame_parms->ofdm_symbol_size,&txdataF_BF[aa][symbol*frame_parms->ofdm_symbol_size]);
+    
+  memset(&txdataF_BF[aa][symbol*frame_parms->ofdm_symbol_size],0,sizeof(int32_t)*(frame_parms->ofdm_symbol_size));
+  
+  // printf("txdataF_BF[%d][%d] : %04d\n",aa,symbol*frame_parms->ofdm_symbol_size,txdataF_BF[aa][symbol*frame_parms->ofdm_symbol_size]);
+  // printf("&txdataF_BF[%d][%d] : %04p\n",aa,symbol*frame_parms->ofdm_symbol_size,&txdataF_BF[aa][symbol*frame_parms->ofdm_symbol_size]);
+  
+  for (p=0; p<nb_antenna_ports; p++) {
+    if ((frame_parms->L_ssb >> p) & 0x01) {
+      
+      if(check_time){
+       clock_gettime(CLOCK_MONOTONIC, &start_ts); 
+      }
+      // printf("&txdataF[p][symbol*frame_parms->ofdm_symbol_size] :%x\n",&txdataF[p][symbol*frame_parms->ofdm_symbol_size]);
+      // printf("&txdataF_BF[aa][symbol*frame_parms->ofdm_symbol_size] : %p\n",&txdataF_BF[aa][symbol*frame_parms->ofdm_symbol_size]);
+      // printf("&beam_weights[p][aa] :%x\n",&beam_weights[p][aa]);
+      //int f = symbol*frame_parms->ofdm_symbol_size;
+
+      multadd_cpx_vector((int16_t*)&txdataF[p][symbol*frame_parms->ofdm_symbol_size],
+                          (int16_t*)&beam_weights[p][aa], 
+                          (int16_t*)&txdataF_BF[aa][symbol*frame_parms->ofdm_symbol_size], 
+                          0, 
+                          frame_parms->ofdm_symbol_size, 
+                          15
+                          );
+
+      if(check_time){
+       clock_gettime(CLOCK_MONOTONIC, &end_ts); 
+      }                    
+    }
+  }
+  counter++;
+  // printf("txdataF_BF[%d][%d] : %04d\n",aa,symbol*frame_parms->ofdm_symbol_size,txdataF_BF[aa][symbol*frame_parms->ofdm_symbol_size]);
+  // printf("&txdataF_BF[%d][%d] : %04p\n",aa,symbol*frame_parms->ofdm_symbol_size,&txdataF_BF[aa][symbol*frame_parms->ofdm_symbol_size]);
+
+  return 0;
+}
+
 
 //Dummy Functions
 lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms, unsigned char subframe) {return(SF_DL);}
@@ -131,384 +217,6 @@ void mac_rlc_data_ind     (
 // needed for some functions
 openair0_config_t openair0_cfg[MAX_CARDS];
 
-
-uint32_t nr_get_G(uint16_t nb_rb, uint16_t nb_symb_sch, uint8_t nb_re_dmrs, uint16_t length_dmrs, uint8_t Qm, uint8_t Nl);
-uint32_t nr_get_E(uint32_t G, uint8_t C, uint8_t Qm, uint8_t Nl, uint8_t r);
-uint32_t nr_compute_tbslbrm(uint16_t table, uint16_t nb_rb, uint8_t Nl, uint8_t C);
-void nr_interleaving_ldpc(uint32_t E, uint8_t Qm, uint8_t *e,uint8_t *f);
-int nr_rate_matching_ldpc(uint8_t Ilbrm, uint32_t Tbslbrm, uint8_t BG, uint16_t Z, uint8_t *w, uint8_t *e, uint8_t C, uint8_t rvidx, uint32_t E);
-int32_t nr_segmentation(unsigned char *input_buffer, unsigned char **output_buffers, unsigned int B, unsigned int *C, unsigned int *K, unsigned int *Zout, unsigned int *F, uint8_t BG);
-int ldpc_encoder_optim_8seg_multi(unsigned char **test_input,unsigned char **channel_input,int Zc,int Kb,short block_length, short BG, int n_segments,unsigned int macro_num, time_stats_t *tinput,time_stats_t *tprep,time_stats_t *tparity,time_stats_t *toutput);
-
-/*! \file openair1/SIMULATION/NR_PHY/dlsim.c
- * \brief Integration of dual thread and multi-parallelism threads
- * \author Terngyin Hsu, Sendren Xu, Nungyi Kuo, Kuankai Hsiung, Kaimi Yang (OpInConnect_NCTU)
- * \email tyhsu@cs.nctu.edu.tw
- * \date 04-06-2020
- * \version 3.2
- * \note
- * \warning
- */
-
-//[START]multi_genetate_pdsch_proc
-struct timespec start_encoder_ts[thread_num_pdsch], end_encoder_ts[thread_num_pdsch], start_perenc_ts[thread_num_pdsch], end_perenc_ts[thread_num_pdsch], start_pressure_ts[thread_num_pressure], end_pressure_ts[thread_num_pressure], start_perpre_ts[thread_num_pressure], end_perpre_ts[thread_num_pressure];
-struct timespec start_multi_enc_ts[thread_num_ldpc_encoder], end_multi_enc_ts[thread_num_ldpc_encoder], start_multi_scr_ts[thread_num_scrambling], end_multi_scr_ts[thread_num_scrambling], start_multi_mod_ts[thread_num_modulation], end_multi_mod_ts[thread_num_modulation];
-int vcd = 0;	//default : 0
-/*original genetate_pdsch for multi threads*/
-static void *multi_genetate_pdsch_proc(void *ptr){
-  //ldpc_encoder_optim_8seg_multi(dlsch->harq_processes[harq_pid]->c,dlsch->harq_processes[harq_pid]->d,*Zc,Kb,Kr,BG,dlsch->harq_processes[harq_pid]->C,j,NULL,NULL,NULL,NULL);
-  //ldpc_encoder_optim_8seg_multi(unsigned char **test_input,unsigned char **channel_input,int Zc,int Kb,short block_length, short BG, int n_segments,unsigned int macro_num, time_stats_t *tinput,time_stats_t *tprep,time_stats_t *tparity,time_stats_t *toutput)
-  multi_ldpc_encoder_gNB *test =(multi_ldpc_encoder_gNB*) ptr;
-  printf("[READY] : %d\n", test->id);
-  while(!oai_exit){
-  	while(pthread_cond_wait(&(gNB->multi_encoder[test->id].cond),&(gNB->multi_encoder[test->id].mutex))!=0);
-  	  if(oai_exit){	//If oai_exit, KILL this thread!
-  	  	pthread_mutex_destroy(&gNB->multi_encoder[test->id].mutex);
-  	  	pthread_mutex_destroy(&gNB->multi_encoder[test->id].mutex_scr_mod);
-      	pthread_join(gNB->multi_encoder[test->id].pthread, NULL);
-      	return 0;
-  	  }
-	  //Print params of multi_ldpc_enc
-	  // printf("[b]ldpc_encoder_optim_8seg: BG %d, Zc %d, Kb %d, block_length %d, segments %d\n",
-	  //       ldpc_enc[test->id].BG,
-	  //       ldpc_enc[test->id].Zc,
-	  //       ldpc_enc[test->id].Kb,
-	  //       ldpc_enc[test->id].block_length,
-	  //       ldpc_enc[test->id].n_segments);
-
-	  int j_start, j_end; //Check if our situation((n_segments > 7)&(thread_num_pdsch == 2))
-	  if((gNB->multi_encoder[test->id].n_segments > 7)&&(thread_num_pdsch == 2)){
-	    j_start = test->id;
-	    j_end = j_start + 1;
-	  }else{
-	    j_start = 0;
-	    j_end = (gNB->multi_encoder[test->id].n_segments/8+1);
-	  }
-	  int offset = test->id>7?7:test->id;
-	  //printf("[OFFSET] : %d %d\n", offset, test->id);
-	  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_MULTI_ENC_0 + offset,1);
-	  if(check_time)
-	  	clock_gettime(CLOCK_MONOTONIC, &start_encoder_ts[test->id]);  //timing	  
-	  for(int j=j_start;j<j_end;j++){	  	
-	  	if(check_time){
-	  		printf("   Active      %d       %d\n", test->id, j);
-	    	clock_gettime(CLOCK_MONOTONIC, &start_perenc_ts[test->id]);  //timing
-	  	}	    
-	    ldpc_encoder_optim_8seg_multi(gNB->multi_encoder[test->id].test_input,//gNB->multi_encoder[0].c_test,
-	                                  gNB->multi_encoder[test->id].channel_input_optim,//gNB->multi_encoder[0].d_test,
-	                                  gNB->multi_encoder[test->id].Zc,
-	                                  gNB->multi_encoder[test->id].Kb,
-	                                  gNB->multi_encoder[test->id].block_length,
-	                                  gNB->multi_encoder[test->id].BG,
-	                                  gNB->multi_encoder[test->id].n_segments,
-	                                  j,
-	                                  NULL, NULL, NULL, NULL);
-	    if(check_time){
-	    	clock_gettime(CLOCK_MONOTONIC, &end_perenc_ts[test->id]);  //timing
-	    	printf("    Done       %d       %d      %.2f usec\n", test->id, j, (end_perenc_ts[test->id].tv_nsec - start_perenc_ts[test->id].tv_nsec) *1.0 / 1000);
-	    }	    
-	  }
-	  if(check_time){
-	  	clock_gettime(CLOCK_MONOTONIC, &end_encoder_ts[test->id]);  //timing
-	  	printf("  All done     %d              %.2f usec\n", test->id, (end_encoder_ts[test->id].tv_nsec - start_encoder_ts[test->id].tv_nsec) *1.0 / 1000);
-	  }	  
-	  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_MULTI_ENC_0 + offset,0);	  
-	  gNB->multi_encoder[test->id].complete = 1;
-	  //==================================================
-	while(pthread_cond_wait(&(gNB->multi_encoder[test->id].cond_scr_mod),&(gNB->multi_encoder[test->id].mutex_scr_mod))!=0);
-	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_MULTI_ENC_0 + offset,1);
-	if(check_time)
-		clock_gettime(CLOCK_MONOTONIC, &start_encoder_ts[test->id]);  //timing	
-	for (int q=0; q<1; q++){	//Need to change by codewords
-	  if(check_time){
-	  	printf("   Active      %d       %d\n", test->id, q);
-	  	clock_gettime(CLOCK_MONOTONIC, &start_perenc_ts[test->id]);  //timing
-	  }	  
-	  nr_pdsch_codeword_scrambling(gNB->multi_encoder[test->id].f,
-	                               gNB->multi_encoder[test->id].encoded_length,
-	                               q,
-	                               gNB->multi_encoder[test->id].Nid,
-	                               gNB->multi_encoder[test->id].n_RNTI,
-	                               gNB->multi_encoder[test->id].scrambled_output);	  
-	  nr_modulation(gNB->multi_encoder[test->id].scrambled_output,
-	                gNB->multi_encoder[test->id].encoded_length,
-	                gNB->multi_encoder[test->id].Qm,
-	                gNB->multi_encoder[test->id].mod_symbs);
-	  if(check_time){
-	  	clock_gettime(CLOCK_MONOTONIC, &end_perenc_ts[test->id]);  //timing
-	  	printf("    Done       %d       %d      %.2f usec\n", test->id, q, (end_perenc_ts[test->id].tv_nsec - start_perenc_ts[test->id].tv_nsec) *1.0 / 1000);
-	  }
-	}
-	if(check_time){
-		clock_gettime(CLOCK_MONOTONIC, &end_encoder_ts[test->id]);  //timing
-		printf("  All done     %d              %.2f usec\n", test->id, (end_encoder_ts[test->id].tv_nsec - start_encoder_ts[test->id].tv_nsec) *1.0 / 1000);
-	}	
-	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_MULTI_ENC_0 + offset,0);	
-	gNB->multi_encoder[test->id].complete_scr_mod = 1;
-  }
-  return 0;
-}
-/*pressure test*/
-static void *multi_genetate_pdsch_pressure(void *ptr){
-  //ldpc_encoder_optim_8seg_multi(dlsch->harq_processes[harq_pid]->c,dlsch->harq_processes[harq_pid]->d,*Zc,Kb,Kr,BG,dlsch->harq_processes[harq_pid]->C,j,NULL,NULL,NULL,NULL);
-  //ldpc_encoder_optim_8seg_multi(unsigned char **test_input,unsigned char **channel_input,int Zc,int Kb,short block_length, short BG, int n_segments,unsigned int macro_num, time_stats_t *tinput,time_stats_t *tprep,time_stats_t *tparity,time_stats_t *toutput)
-  multi_ldpc_encoder_gNB *test =(multi_ldpc_encoder_gNB*) ptr;
-  printf("[READY] : %d(p)\n", test->id);
-  while(!oai_exit){
-  	while(pthread_cond_wait(&(gNB->pressure_test[test->id].cond),&(gNB->pressure_test[test->id].mutex))!=0);
-  	  if(oai_exit){	//If oai_exit, KILL this thread!
-  	  	pthread_mutex_destroy(&gNB->pressure_test[test->id].mutex);
-  	  	pthread_mutex_destroy(&gNB->pressure_test[test->id].mutex_scr_mod);
-      	pthread_join(gNB->pressure_test[test->id].pthread, NULL);
-      	return 0;
-  	  }
-	  //Print params of multi_ldpc_enc
-	  // printf("[b]ldpc_encoder_optim_8seg: BG %d, Zc %d, Kb %d, block_length %d, segments %d\n",
-	  //       ldpc_enc[test->id].BG,
-	  //       ldpc_enc[test->id].Zc,
-	  //       ldpc_enc[test->id].Kb,
-	  //       ldpc_enc[test->id].block_length,
-	  //       ldpc_enc[test->id].n_segments);
-
-	  int j_start, j_end; //Check if our situation((n_segments > 7)&(thread_num_pdsch == 2))
-	  if((gNB->pressure_test[test->id].n_segments > 7)&&(thread_num_pdsch == 2)){
-	    j_start = test->id;
-	    j_end = j_start + 1;
-	  }else{
-	    j_start = 0;
-	    j_end = (gNB->pressure_test[test->id].n_segments/8+1);
-	  }
-	  int offset = test->id+thread_num_pdsch;
-	  if(offset>7){
-	  	offset = 7;
-	  }
-	  //printf("[OFFSET] : %d %d\n", offset, test->id);
-	  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_MULTI_ENC_0 + offset,1);
-	  if(check_time)
-	  	clock_gettime(CLOCK_MONOTONIC, &start_pressure_ts[test->id]);  //timing	  
-	  for(int j=j_start;j<j_end;j++){
-	  	if(check_time){
-	  		printf("   Active      %d(p)    %d\n", test->id, j);
-	    	clock_gettime(CLOCK_MONOTONIC, &start_perpre_ts[test->id]);  //timing
-	  	}
-	    ldpc_encoder_optim_8seg_multi(gNB->pressure_test[test->id].c_test,
-	                                  gNB->pressure_test[test->id].d_test,
-	                                  gNB->pressure_test[test->id].Zc,
-	                                  gNB->pressure_test[test->id].Kb,
-	                                  gNB->pressure_test[test->id].block_length,
-	                                  gNB->pressure_test[test->id].BG,
-	                                  gNB->pressure_test[test->id].n_segments,
-	                                  j,
-	                                  NULL, NULL, NULL, NULL);
-	    if(check_time){
-	    	clock_gettime(CLOCK_MONOTONIC, &end_perpre_ts[test->id]);  //timing
-	    	printf("    Done       %d(p)    %d      %.2f usec\n", test->id, j, (end_perpre_ts[test->id].tv_nsec - start_perpre_ts[test->id].tv_nsec) *1.0 / 1000);
-	    }
-	  }
-	  if(check_time){
-	  	clock_gettime(CLOCK_MONOTONIC, &end_pressure_ts[test->id]);  //timing
-	  	printf("  All done     %d(p)           %.2f usec\n", test->id, (end_pressure_ts[test->id].tv_nsec - start_pressure_ts[test->id].tv_nsec) *1.0 / 1000);
-	  }	  
-	  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_MULTI_ENC_0 + offset,0);	  
-	  gNB->pressure_test[test->id].complete = 1;
-	  //==================================================
-	while(pthread_cond_wait(&(gNB->pressure_test[test->id].cond_scr_mod),&(gNB->pressure_test[test->id].mutex_scr_mod))!=0);
-	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_MULTI_ENC_0 + offset,1);
-	if(check_time)
-		clock_gettime(CLOCK_MONOTONIC, &start_pressure_ts[test->id]);  //timing	
-	for (int q=0; q<1; q++){	//Need to change by codewords
-	  if(check_time){
-	  	printf("   Active      %d(p)    %d\n", test->id, q);
-	  	clock_gettime(CLOCK_MONOTONIC, &start_perpre_ts[test->id]);  //timing
-	  }	  
-	  nr_pdsch_codeword_scrambling(gNB->pressure_test[test->id].f_test,
-	                               gNB->pressure_test[test->id].encoded_length,
-	                               q,
-	                               gNB->pressure_test[test->id].Nid,
-	                               gNB->pressure_test[test->id].n_RNTI,
-	                               gNB->pressure_test[test->id].scrambled_output_test);	  
-	  nr_modulation(gNB->pressure_test[test->id].scrambled_output_test,
-	                gNB->pressure_test[test->id].encoded_length,
-	                gNB->pressure_test[test->id].Qm,
-	                gNB->pressure_test[test->id].mod_symbs_test);
-	  if(check_time){
-	  	clock_gettime(CLOCK_MONOTONIC, &end_perpre_ts[test->id]);  //timing
-	  	printf("    Done       %d(p)    %d      %.2f usec\n", test->id, q, (end_perpre_ts[test->id].tv_nsec - start_perpre_ts[test->id].tv_nsec) *1.0 / 1000);
-	  }
-	}
-	if(check_time){
-		clock_gettime(CLOCK_MONOTONIC, &end_pressure_ts[test->id]);  //timing
-		printf("  All done     %d(p)           %.2f usec\n", test->id, (end_pressure_ts[test->id].tv_nsec - start_pressure_ts[test->id].tv_nsec) *1.0 / 1000);
-	}	
-	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_MULTI_ENC_0 + offset,0);	
-	gNB->pressure_test[test->id].complete_scr_mod = 1;
-  }
-  return 0;
-}
-/*ldpc_encoder*/
-static void *multi_ldpc_encoder_proc(int id){
-  //ldpc_encoder_optim_8seg_multi(dlsch->harq_processes[harq_pid]->c,dlsch->harq_processes[harq_pid]->d,*Zc,Kb,Kr,BG,dlsch->harq_processes[harq_pid]->C,j,NULL,NULL,NULL,NULL);
-  //ldpc_encoder_optim_8seg_multi(unsigned char **test_input,unsigned char **channel_input,int Zc,int Kb,short block_length, short BG, int n_segments,unsigned int macro_num, time_stats_t *tinput,time_stats_t *tprep,time_stats_t *tparity,time_stats_t *toutput)
-  printf("[READY] : %d(e)\n", id);
-  while(!oai_exit){
-  	while(pthread_cond_wait(&(gNB->multi_pdsch.cond_enc[id]),&(gNB->multi_pdsch.mutex_enc[id]))!=0);
-  	  if(oai_exit){	//If oai_exit, KILL this thread!
-  	  	pthread_mutex_destroy(&gNB->multi_pdsch.mutex_enc[id]);
-      	pthread_join(gNB->multi_pdsch.pthread_enc[id], NULL);
-      	return 0;
-  	  }
-
-	  // int offset = id+thread_num_pdsch;
-	  // if(offset>7){
-	  // 	offset = 7;
-	  // }
-	  //printf("[OFFSET] : %d %d\n", offset, id);
-
-	  int j_start, j_end;	// ==Wait for n_segments increasing ==***
-	  j_start = 0;
-	  j_end = 1;
-	  //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_MULTI_ENC_0 + offset,1);
-	  if(check_time)
-	  	clock_gettime(CLOCK_MONOTONIC, &start_multi_enc_ts[id]);  //timing	  
-	  for(int j=j_start;j<j_end;j++){
-	  	if(check_time){
-	  		printf("   Active      %d(e)    %d\n", id, j);
-	    	//clock_gettime(CLOCK_MONOTONIC, &start_perpre_ts[id]);  //timing
-	  	}
-	  	if(id == 0){  // ==deal with original memory space for check ==
-	  		ldpc_encoder_optim_8seg_multi(gNB->multi_pdsch.test_input_first,
-		                                  gNB->multi_pdsch.channel_input_optim_first,
-		                                  gNB->multi_pdsch.Zc[id],
-		                                  gNB->multi_pdsch.Kb[id],
-		                                  gNB->multi_pdsch.block_length[id],
-		                                  gNB->multi_pdsch.BG[id],
-		                                  gNB->multi_pdsch.n_segments[id],
-		                                  j,
-		                                  NULL, NULL, NULL, NULL);
-		}else{
-			ldpc_encoder_optim_8seg_multi(gNB->multi_pdsch.c[id],
-		                                  gNB->multi_pdsch.d[id],
-		                                  gNB->multi_pdsch.Zc[id],
-		                                  gNB->multi_pdsch.Kb[id],
-		                                  gNB->multi_pdsch.block_length[id],
-		                                  gNB->multi_pdsch.BG[id],
-		                                  gNB->multi_pdsch.n_segments[id],
-		                                  j,
-		                                  NULL, NULL, NULL, NULL);
-		}	    
-	    if(check_time){
-	    	// clock_gettime(CLOCK_MONOTONIC, &end_perpre_ts[id]);  //timing
-	    	// printf("    Done       %d(e)    %d      %.2f usec\n", id, j, (end_perpre_ts[id].tv_nsec - start_perpre_ts[id].tv_nsec) *1.0 / 1000);
-	    }
-	  }
-	  if(check_time){
-	  	clock_gettime(CLOCK_MONOTONIC, &end_multi_enc_ts[id]);  //timing
-	  	printf("  All done     %d(e)           %.2f usec\n", id, (end_multi_enc_ts[id].tv_nsec - start_multi_enc_ts[id].tv_nsec) *1.0 / 1000);
-	  }	  
-	  //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_MULTI_ENC_0 + offset,0);	  
-	  gNB->multi_pdsch.complete_enc[id] = 1;
-  }
-  return 0;
-}
-/*scrambling*/
-static void *multi_scrambling_proc(int id){
-  //ldpc_encoder_optim_8seg_multi(dlsch->harq_processes[harq_pid]->c,dlsch->harq_processes[harq_pid]->d,*Zc,Kb,Kr,BG,dlsch->harq_processes[harq_pid]->C,j,NULL,NULL,NULL,NULL);
-  //ldpc_encoder_optim_8seg_multi(unsigned char **test_input,unsigned char **channel_input,int Zc,int Kb,short block_length, short BG, int n_segments,unsigned int macro_num, time_stats_t *tinput,time_stats_t *tprep,time_stats_t *tparity,time_stats_t *toutput)
-  printf("[READY] : %d(s)\n", id);
-  while(!oai_exit){
-	while(pthread_cond_wait(&(gNB->multi_pdsch.cond_scr[id]),&(gNB->multi_pdsch.mutex_scr[id]))!=0);
-	if(oai_exit){	//If oai_exit, KILL this thread!
-  	  	pthread_mutex_destroy(&gNB->multi_pdsch.mutex_scr[id]);
-      	pthread_join(gNB->multi_pdsch.pthread_scr[id], NULL);
-      	return 0;
-  	  }
-	//VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_MULTI_ENC_0 + offset,1);
-	if(check_time)
-		clock_gettime(CLOCK_MONOTONIC, &start_multi_scr_ts[id]);  //timing	
-	for (int q=0; q<1; q++){	//Need to change by codewords
-	  if(check_time){
-	  	printf("   Active      %d(s)    %d\n", id, q);
-	  	// clock_gettime(CLOCK_MONOTONIC, &start_perpre_ts[id]);  //timing
-	  }
-	  //if(0){
-	  if(id == 0){  // ==deal with original memory space for check ==
-	  	nr_pdsch_codeword_scrambling(gNB->multi_pdsch.f_first,
-		                               gNB->multi_pdsch.encoded_length_scr[id],
-		                               q,
-		                               gNB->multi_pdsch.Nid[id],
-		                               gNB->multi_pdsch.n_RNTI[id],
-		                               gNB->multi_pdsch.scrambled_output_first);
-	  }else{
-	  	nr_pdsch_codeword_scrambling(gNB->multi_pdsch.f[id],
-		                               gNB->multi_pdsch.encoded_length_scr[id],
-		                               q,
-		                               gNB->multi_pdsch.Nid[id],
-		                               gNB->multi_pdsch.n_RNTI[id],
-		                               gNB->multi_pdsch.scrambled_output_scr[id]);
-	  }	  
-	  if(check_time){
-	  	// clock_gettime(CLOCK_MONOTONIC, &end_perpre_ts[id]);  //timing
-	  	// printf("    Done       %d(p)    %d      %.2f usec\n", id, q, (end_perpre_ts[id].tv_nsec - start_perpre_ts[id].tv_nsec) *1.0 / 1000);
-	  }
-	}
-	if(check_time){
-		clock_gettime(CLOCK_MONOTONIC, &end_multi_scr_ts[id]);  //timing
-		printf("  All done     %d(s)           %.2f usec\n", id, (end_multi_scr_ts[id].tv_nsec - start_multi_scr_ts[id].tv_nsec) *1.0 / 1000);
-	}	
-	//VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_MULTI_ENC_0 + offset,0);	
-	gNB->multi_pdsch.complete_scr[id] = 1;
-  }
-  return 0;
-}
-/*modulation*/
-static void *multi_modulation_proc(int id){
-  //ldpc_encoder_optim_8seg_multi(dlsch->harq_processes[harq_pid]->c,dlsch->harq_processes[harq_pid]->d,*Zc,Kb,Kr,BG,dlsch->harq_processes[harq_pid]->C,j,NULL,NULL,NULL,NULL);
-  //ldpc_encoder_optim_8seg_multi(unsigned char **test_input,unsigned char **channel_input,int Zc,int Kb,short block_length, short BG, int n_segments,unsigned int macro_num, time_stats_t *tinput,time_stats_t *tprep,time_stats_t *tparity,time_stats_t *toutput)
-  printf("[READY] : %d(m)\n", id);
-  while(!oai_exit){
-	while(pthread_cond_wait(&(gNB->multi_pdsch.cond_mod[id]),&(gNB->multi_pdsch.mutex_mod[id]))!=0);
-	if(oai_exit){	//If oai_exit, KILL this thread!
-  	  	pthread_mutex_destroy(&gNB->multi_pdsch.mutex_mod[id]);
-      	pthread_join(gNB->multi_pdsch.pthread_mod[id], NULL);
-      	return 0;
-  	  }
-	//VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_MULTI_ENC_0 + offset,1);
-	if(check_time)
-		clock_gettime(CLOCK_MONOTONIC, &start_multi_mod_ts[id]);  //timing
-	//printf("%d, %p\n", id, gNB->multi_pdsch.mod_symbs[id]);
-	//printf("%d, %p\n", id, *gNB->multi_pdsch.mod_symbs[id]);
-	for (int q=0; q<1; q++){	//Need to change by codewords
-	  if(check_time){
-	  	printf("   Active      %d(m)    %d\n", id, q);
-	  	// clock_gettime(CLOCK_MONOTONIC, &start_perpre_ts[id]);  //timing
-	  }
-	  if(id == 0){  // ==deal with original memory space for check ==
-	  	nr_modulation(gNB->multi_pdsch.scrambled_output_first,
-		                gNB->multi_pdsch.encoded_length_mod[id],
-		                gNB->multi_pdsch.Qm[id],
-		                gNB->multi_pdsch.mod_symbs_first);
-	  }else{
-	  	nr_modulation(gNB->multi_pdsch.scrambled_output_mod[id],
-		                gNB->multi_pdsch.encoded_length_mod[id],
-		                gNB->multi_pdsch.Qm[id],
-		                *gNB->multi_pdsch.mod_symbs[id]);//gNB->pressure_test[id].mod_symbs_test);
-	  }
-	  if(check_time){
-	  	// clock_gettime(CLOCK_MONOTONIC, &end_perpre_ts[id]);  //timing
-	  	// printf("    Done       %d(p)    %d      %.2f usec\n", id, q, (end_perpre_ts[id].tv_nsec - start_perpre_ts[id].tv_nsec) *1.0 / 1000);
-	  }
-	}
-	if(check_time){
-		clock_gettime(CLOCK_MONOTONIC, &end_multi_mod_ts[id]);  //timing
-		printf("  All done     %d(m)           %.2f usec\n", id, (end_multi_mod_ts[id].tv_nsec - start_multi_mod_ts[id].tv_nsec) *1.0 / 1000);
-	}	
-	//VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_MULTI_ENC_0 + offset,0);	
-	gNB->multi_pdsch.complete_mod[id] = 1;
-  }
-  return 0;
-}
-//[END]multi_genetate_pdsch_proc
-
 int main(int argc, char **argv)
 {
   char c;
@@ -545,11 +253,9 @@ int main(int argc, char **argv)
 
   SCM_t channel_model=AWGN;//Rayleigh1_anticorr;
 
-
-
   //double pbch_sinr;
   //int pbch_tx_ant;
-  int N_RB_DL=106,mu=1;
+  int N_RB_DL = 273 , mu= 1;
   nfapi_nr_dl_config_dlsch_pdu_rel15_t dlsch_config;
   dlsch_config.start_prb = 0;
   dlsch_config.n_prb = 50;
@@ -583,14 +289,14 @@ int main(int argc, char **argv)
   float target_error_rate = 0.01;
 
   cpuf = get_cpu_freq_GHz();
-  
+
   if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == 0) {
     exit_fun("[NR_DLSIM] Error, configuration module init failed\n");
   }
 
   randominit(0);
 
-  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:s:S:t:x:y:z:M:N:F:GR:dP:IL:o:a:b:c:j:e:V:")) != -1) {
+  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:s:S:t:x:y:z:M:N:F:GR:dP:IL:o:a:b:c:j:e:")) != -1) {
     switch (c) {
     /*case 'f':
       write_output_file=1;
@@ -779,12 +485,6 @@ int main(int argc, char **argv)
       dlsch_config.mcs_idx = atoi(optarg);
       break;
 
-    case 'V':
-      vcd = atoi(optarg);
-      if(vcd)
-      	T_init(2021, 1, 0);	//VCD init
-      break;
-
     default:
     case 'h':
       printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n",
@@ -812,14 +512,14 @@ int main(int argc, char **argv)
       printf("-F Input filename (.txt format) for RX conformance testing\n");
       printf("-o CORESET offset\n");
       printf("-a Start PRB for PDSCH\n");
-      printf("-b Number of PRB for PDSCH, default : 50\n");
+      printf("-b Number of PRB for PDSCH\n");
       printf("-c Start symbol for PDSCH (fixed for now)\n");
       printf("-j Number of symbols for PDSCH (fixed for now)\n");
       printf("-e MSC index\n");
       exit (-1);
       break;
     }
-  }  
+  }
 
   logInit();
   set_glog(loglvl);
@@ -936,90 +636,9 @@ int main(int argc, char **argv)
     printf("Error at UE NR initialisation\n");
     exit(-1);
   }
-  
- //  for (int t = 0; t < 4; t++){	//create threads
-	// gNB->thread_encode[t].id = t;
-	// gNB->thread_encode[t].flag_wait = 1;
-	// pthread_mutex_init( &(gNB->thread_encode[t].mutex_encode), NULL);
-	// pthread_cond_init( &(gNB->thread_encode[t].cond_encode), NULL);
-	// pthread_create(&(gNB->thread_encode[t].pthread_encode),&gNB->thread_encode[t].attr_encode,dlsch_encoding_proc,&gNB->thread_encode[t]);
-	// printf("[CREATE] DLSCH ENCODER Thread %d\n", gNB->thread_encode[t].id);
- //  }
-
- //  for(int aa = 0;aa<1;aa++){
-	// pthread_attr_init( &gNB->thread_scrambling[aa].attr_scrambling);
-	// pthread_mutex_init(&(gNB->thread_scrambling[aa].mutex_tx), NULL);
-	// pthread_cond_init(&(gNB->thread_scrambling[aa].cond_tx), NULL);
-	// gNB->thread_scrambling[aa].q_id = aa;
-	// pthread_create(&(gNB->thread_scrambling[aa].pthread_scrambling),&gNB->thread_scrambling[aa].attr_scrambling,scrambling_proc,&gNB->thread_scrambling[aa]);
-	// printf("[CREATE] scrambling_channel thread[%d] \n",aa);
- //  }
-	
-  // pthread_mutex_init( &(gNB->thread_modulation.mutex_tx), NULL);
-  // pthread_cond_init( &(gNB->thread_modulation.cond_tx), NULL);
-  // pthread_create(&(gNB->thread_modulation.pthread_modulation),&gNB->thread_modulation.attr_modulation,modulation_proc,&gNB->thread_modulation);
-  // printf("[CREATE] modulation_channel thread \n");
-
-  //[START]multi_genetate_pdsch_proc:create thread
-  for(int th=0;th<thread_num_pdsch;th++){
-    pthread_attr_init(&(gNB->multi_encoder[th].attr));
-    pthread_mutex_init(&(gNB->multi_encoder[th].mutex), NULL);
-    pthread_mutex_init(&(gNB->multi_encoder[th].mutex_scr_mod), NULL);
-    pthread_cond_init(&(gNB->multi_encoder[th].cond), NULL);
-    pthread_cond_init(&(gNB->multi_encoder[th].cond_scr_mod), NULL);
-    gNB->multi_encoder[th].id = th;
-    gNB->multi_encoder[th].flag_wait = 1;
-    gNB->multi_encoder[th].complete = 0;
-    gNB->multi_encoder[th].complete_scr_mod = 0;
-    pthread_create(&(gNB->multi_encoder[th].pthread), &(gNB->multi_encoder[th].attr), multi_genetate_pdsch_proc, &(gNB->multi_encoder[th]));    
-    printf("[CREATE] LDPC encoder thread %d \n",gNB->multi_encoder[th].id);
-  }
-  for(int th=0;th<thread_num_pressure;th++){
-    pthread_attr_init(&(gNB->pressure_test[th].attr));
-    pthread_mutex_init(&(gNB->pressure_test[th].mutex), NULL);
-    pthread_mutex_init(&(gNB->pressure_test[th].mutex_scr_mod), NULL);
-    pthread_cond_init(&(gNB->pressure_test[th].cond), NULL);
-    pthread_cond_init(&(gNB->pressure_test[th].cond_scr_mod), NULL);
-    gNB->pressure_test[th].id = th;
-    gNB->pressure_test[th].flag_wait = 1;
-    gNB->pressure_test[th].complete = 0;
-    gNB->pressure_test[th].complete_scr_mod = 0;
-    pthread_create(&(gNB->pressure_test[th].pthread), &(gNB->pressure_test[th].attr), multi_genetate_pdsch_pressure, &(gNB->pressure_test[th]));    
-    printf("[CREATE] LDPC encoder thread %d(p) \n",gNB->pressure_test[th].id);
-  }
-  /*multi pdsch*/
-  for(int th=0;th<thread_num_ldpc_encoder;th++){
-    pthread_attr_init(&(gNB->multi_pdsch.attr_enc[th]));
-    pthread_mutex_init(&(gNB->multi_pdsch.mutex_enc[th]), NULL);
-    pthread_cond_init(&(gNB->multi_pdsch.cond_enc[th]), NULL);
-    gNB->multi_pdsch.id_enc[th] = th;
-    gNB->multi_pdsch.complete_enc[th] = 0;
-    pthread_create(&(gNB->multi_pdsch.pthread_enc[th]), &(gNB->multi_pdsch.attr_enc[th]), multi_ldpc_encoder_proc, gNB->multi_pdsch.id_enc[th]);    
-    printf("[CREATE] multi_ldpc_encoder_proc %d \n",gNB->multi_pdsch.id_enc[th]);
-  }
-  for(int th=0;th<thread_num_scrambling;th++){
-    pthread_attr_init(&(gNB->multi_pdsch.attr_scr[th]));
-    pthread_mutex_init(&(gNB->multi_pdsch.mutex_scr[th]), NULL);
-    pthread_cond_init(&(gNB->multi_pdsch.cond_scr[th]), NULL);
-    gNB->multi_pdsch.id_scr[th] = th;
-    gNB->multi_pdsch.complete_scr[th] = 0;
-    pthread_create(&(gNB->multi_pdsch.pthread_scr[th]), &(gNB->multi_pdsch.attr_scr[th]), multi_scrambling_proc, gNB->multi_pdsch.id_scr[th]);    
-    printf("[CREATE] multi_scrambling_proc %d \n",gNB->multi_pdsch.id_scr[th]);
-  }
-  //for(int th=0;th<0;th++){
-  for(int th=0;th<thread_num_modulation;th++){
-    pthread_attr_init(&(gNB->multi_pdsch.attr_mod[th]));
-    pthread_mutex_init(&(gNB->multi_pdsch.mutex_mod[th]), NULL);
-    pthread_cond_init(&(gNB->multi_pdsch.cond_mod[th]), NULL);
-    gNB->multi_pdsch.id_mod[th] = th;
-    gNB->multi_pdsch.complete_mod[th] = 0;
-    pthread_create(&(gNB->multi_pdsch.pthread_mod[th]), &(gNB->multi_pdsch.attr_mod[th]), multi_modulation_proc, gNB->multi_pdsch.id_mod[th]);    
-    printf("[CREATE] multi_modulation_proc %d \n",gNB->multi_pdsch.id_mod[th]);
-  }
-  //[END]multi_genetate_pdsch_proc:create thread
 
   init_nr_ue_transport(UE,0);
-  usleep(1000000);
+
   nr_gold_pbch(UE);
   nr_gold_pdcch(UE,0,2);
 
@@ -1071,7 +690,7 @@ int main(int argc, char **argv)
     Sched_INFO.TX_req    = &gNB_mac->TX_req[0];
     nr_schedule_response(&Sched_INFO);
 
-    phy_procedures_gNB_TX(gNB,frame,slot,0);	// ==the way to downlink ==
+    phy_procedures_gNB_TX(gNB,frame,slot,0);
     
     //nr_common_signal_procedures (gNB,frame,subframe);
     int txdataF_offset = (slot%2) * frame_parms->samples_per_slot_wCP;
@@ -1081,7 +700,7 @@ int main(int argc, char **argv)
       LOG_M("txsigF1.m","txsF1", gNB->common_vars.txdataF[1],frame_length_complex_samples_no_prefix,1,1);
 
     int tx_offset = slot*frame_parms->samples_per_slot;
-  //  printf("samples_per_slot_wCP = %d\n", frame_parms->samples_per_slot_wCP);
+    printf("samples_per_slot_wCP = %d\n", frame_parms->samples_per_slot_wCP);
 
     //TODO: loop over slots
     for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++) {
@@ -1365,40 +984,219 @@ int main(int argc, char **argv)
 
   } // NSR
 
-//[START]Send Kill massage
-  oai_exit = 1;	//set oai status oai_exit = 1
-  printf("Kill them all!\n");
-  for(int th=0; th<thread_num_pdsch; th++){
-  	pthread_cond_signal(&(gNB->multi_encoder[th].cond));
-  }
-  for(int th=0; th<thread_num_pressure; th++){
-  	pthread_cond_signal(&(gNB->pressure_test[th].cond));
-  }
-//free pressure memorys
-	unsigned char bw_scaling =2; // ==Need to change ==***
-  for(int th=0;th<thread_num_pressure;th++){
-  	for(int j=0;j<MAX_NUM_NR_DLSCH_SEGMENTS/bw_scaling;j++){
-  	  free(gNB->pressure_test[th].c_test[j]);
-  	  free(gNB->pressure_test[th].d_test[j]);
+  printf("\n");
+  
+  //min
+  // beamforming
+  //RU_t *ru;
+  struct timespec start, end;
+  int l,j,p,re;
+  //int counter = 0;
+  // RC.ru = (RU_t **)malloc(sizeof(RC.ru));
+  // RC.ru[0] = ru;
+  NR_DL_FRAME_PARMS *fp = frame_parms;
+  // printf("fp : %p\n",fp);
+  // printf("frame_parms : %p\n",frame_parms);
+  
+  //Table of pointers for frequency-domain TX signals
+  int32_t **txdataF_BF; 
+  
+  //Beamforming weights applied on each antenna element and each carrier
+  int32_t **beam_weights[NUMBER_OF_gNB_MAX+1][15];
+  int32_t ***bws = beam_weights[0];
+  //printf("beam_weights[0] : %p\n",beam_weights[0]);
+  
+  int tti_tx = 0;
+  
+  // number of TX paths on device
+  int nb_tx = 1; 
+
+  // Number of NR L1 instances in this node
+  RC.nb_nr_L1_inst = 1;
+
+  //openairinterface5g_limits.h
+  //printf("NUMBER_OF_gNB_MAX : %d\n",NUMBER_OF_gNB_MAX);
+
+  //printf("frame_parms->symbols_per_tti*frame_parms->ofdm_symbol_size : %d\n",frame_parms->symbols_per_tti*frame_parms->ofdm_symbol_size);
+  //frame_parms->symbols_per_tti*frame_parms->ofdm_symbol_size=0
+
+  //printf("frame_parms->samples_per_subframe_wCP : %d\n",frame_parms->samples_per_subframe_wCP);
+  //frame_parms->samples_per_subframe_wCP : 57344
+
+  //printf("frame_parms->Lmax : %d\n",frame_parms->Lmax);
+  //frame_parms->Lmax : 8
+  
+  //printf("frame_parms->L_ssb : %d\n",frame_parms->L_ssb);
+  //frame_parms->L_ssb : 1
+  
+  // printf("frame_parms->symbols_per_slot : %d\n",frame_parms->symbols_per_slot);
+  // printf("fp->symbols_per_slot : %d\n",fp->symbols_per_slot);
+  //frame_parms->symbols_per_slot : 14
+  
+  
+  //nr_init_ru.c
+  // allocate IFFT input buffers (TX)
+    txdataF_BF = (int32_t **)malloc16(nb_tx*sizeof(int32_t*));
+      //LOG_I(PHY,"[INIT] common.txdata_BF= %p (%lu bytes)\n",ru->common.txdataF_BF,ru->nb_tx*sizeof(int32_t*));
+        for (i=0; i<nb_tx; i++) {
+          txdataF_BF[i] = (int32_t*)malloc16_clear(fp->samples_per_subframe_wCP*sizeof(int32_t) );
+            //LOG_I(PHY,"txdataF_BF[%d] %p for RU %d\n",i,ru->common.txdataF_BF[i],ru->idx);
+        }
+
+    
+    /* number of elements of an array X is computed as sizeof(X) / sizeof(X[0]) */
+    //    AssertFatal(ru->nb_rx <= sizeof(ru->prach_rxsigF) / sizeof(ru->prach_rxsigF[0]),
+    //		"nb_antennas_rx too large");
+    /*
+    ru->prach_rxsigF = (int16_t**)malloc(ru->nb_rx * sizeof(int16_t*));
+    for (j=0;j<4;j++) ru->prach_rxsigF_br[j] = (int16_t**)malloc(ru->nb_rx * sizeof(int16_t*));
+
+    for (i=0; i<ru->nb_rx; i++) {
+      ru->prach_rxsigF[i] = (int16_t*)malloc16_clear( fp->ofdm_symbol_size*12*2*sizeof(int16_t) );
+      LOG_D(PHY,"[INIT] prach_vars->rxsigF[%d] = %p\n",i,ru->prach_rxsigF[i]);
     }
-    // ==We have some problom here ==???
-    // for (int q=0; q<NR_MAX_NB_CODEWORDS; q++){
-    //   free(*gNB->pressure_test[th].mod_symbs_test[q]);
-    // }
+    
+    AssertFatal(RC.nb_nr_L1_inst <= NUMBER_OF_eNB_MAX,"gNB instances %d > %d\n",
+		RC.nb_nr_L1_inst,NUMBER_OF_gNB_MAX);
+
+    LOG_E(PHY,"[INIT] %s() RC.nb_nr_L1_inst:%d \n", __FUNCTION__, RC.nb_nr_L1_inst);
+    
+    int beam_count = 0;
+    if (ru->nb_tx>1) {
+      for (p=0;p<fp->Lmax;p++) {
+        if ((fp->L_ssb >> p) & 0x01)
+          beam_count++;
+      }
+      AssertFatal(ru->nb_bfw==(beam_count*ru->nb_tx),"Number of beam weights from config file is %d while the expected number is %d",ru->nb_bfw,(beam_count*ru->nb_tx));
+    */
+    //int l_ind = 0;
+      for (i=0; i<RC.nb_nr_L1_inst; i++) {
+        for (p=0;p<fp->Lmax;p++) {
+          if ((fp->L_ssb >> p) & 0x01) {
+	            beam_weights[i][p] = (int32_t **)malloc16_clear(nb_tx*sizeof(int32_t*));
+	              for (j=0; j<nb_tx; j++) {
+	                beam_weights[i][p][j] = (int32_t *)malloc16_clear(fp->ofdm_symbol_size*sizeof(int32_t));
+                    for (re=0; re<fp->ofdm_symbol_size; re++){
+                      beam_weights[i][p][j][re] = 0x00007fff/nb_tx; //lte
+                      //beam_weights[i][p][j][re] = ru->bw_list[i][l_ind];//nr
+                      } 
+                      //printf("Beam Weight %08x for beam %d and tx %d\n",ru->bw_list[i][l_ind],p,j);
+                      //l_ind++; 
+  	                } // for j
+	                }  // for p
+                }
+               }   
+  
+
+  //lte_init_ru.c
+  // allocate IFFT input buffers (TX)
+  // txdataF_BF = (int32_t **)malloc16(nb_tx*sizeof(int32_t*));
+  // for (i=0; i<nb_tx; i++) {
+  //   txdataF_BF[i] = (int32_t*)malloc16_clear(frame_parms->symbols_per_tti*frame_parms->ofdm_symbol_size*sizeof(int32_t) );
+  // }
+  //RC.nb_L1_inst = 1;
+  // for (int i = 0; i < 4098; i++)
+  // {
+  //   printf("&txdataF_BF[0][%d] : %p\n",i,&txdataF_BF[0][i]);
+  // }
+
+  /* number of elements of an array X is computed as sizeof(X) / sizeof(X[0]) */
+  //    AssertFatal(ru->nb_rx <= sizeof(ru->prach_rxsigF) / sizeof(ru->prach_rxsigF[0]),
+  //		"nb_antennas_rx too large");
+  
+  //printf("RC.nb_L1_inst : %d \n ", RC.nb_L1_inst);
+  //printf("frame_parms.nb_antenna_ports_eNB : %d \n",frame_parms.nb_antenna_ports_eNB);
+
+  // for ( i=0; i<RC.nb_L1_inst; i++) {
+  //   for ( p=0; p<15; p++) {      
+	//     if (p<frame_parms->nb_antenna_ports_eNB || p==5) {
+  //         beam_weights[i][p] = (int32_t **)malloc16_clear(nb_tx*sizeof(int32_t*));
+	//     for ( j=0; j<nb_tx; j++) {
+	//         beam_weights[i][p][j] = (int32_t *)malloc16_clear(frame_parms->ofdm_symbol_size*sizeof(int32_t));
+	//     // antenna ports 0-3 are mapped on antennas 0-3
+	//     // antenna port 4 is mapped on antenna 0
+	//     // antenna ports 5-14 are mapped on all antennas 
+	//     if (((p<4) && (p==j)) || ((p==4) && (j==0))) {
+	//       for ( re=0; re<frame_parms->ofdm_symbol_size; re++) 
+  //             {
+	// 	            beam_weights[i][p][j][re] = 0x00007fff; 
+
+  //               //LOG_D(PHY,"[INIT] lte_common_vars->beam_weights[%d][%d][%d][%d] = %d\n", i,p,j,re,ru->beam_weights[i][p][j][re]);
+  //             }
+	//     }
+	//     else if (p>4) {
+	//       for ( re=0; re<frame_parms->ofdm_symbol_size; re++) 
+  //             {
+	// 	            beam_weights[i][p][j][re] = 0x00007fff/nb_tx; 
+  //               //LOG_D(PHY,"[INIT] lte_common_vars->beam_weights[%d][%d][%d][%d] = %d\n", i,p,j,re,ru->beam_weights[i][p][j][re]);
+  //             }
+	//     }  
+	//     //LOG_D(PHY,"[INIT] lte_common_vars->beam_weights[%d][%d] = %p (%lu bytes)\n", i,j,ru->beam_weights[i][p][j], fp->ofdm_symbol_size*sizeof(int32_t)); 
+	//   } // for (j=0
+	// } // if (p<ru
+  //     } // for p
+  //   } //for i
+
+  printf("NR_ru_param_init done\n");
+
+  //printf("gNB->common_vars.txdataF = %p\n",&gNB->common_vars.txdataF);
+  //printf("&bws : %p\n",&bws);
+  // printf("&beam_weights : %p\n",&beam_weights);
+
+  // printf("frame_parms->symbols_per_slot = %d \n",
+  // frame_parms->symbols_per_slot);
+  // symbols_per_slot=14
+
+  // printf("frame_parms->Lmax = %d\n",frame_parms->Lmax);
+  // frame_parms->Lmax=8
+ 
+  printf("Initializing gNodeB for mu %d, N_RB_DL %d\n",mu,N_RB_DL);
+  printf("fp->ofdm_symbol_size = %d\n",fp->ofdm_symbol_size);
+  printf("NB_ANTENNA_PORTS_GNB : %d\n",NB_ANTENNA_PORTS_GNB); 
+ 
+  //top
+  printf("[START] beam_precoding \n");
+ 
+  if(check_time){
+       clock_gettime(CLOCK_MONOTONIC, &start); 
+      }
+
+  for (p=0;p<NB_ANTENNA_PORTS_GNB;p++){
+     for ( l=0;l<fp->symbols_per_slot;l++) {
+        for ( aa=0;aa<nb_tx;aa++) {
+            nr_beam_precoding( gNB->common_vars.txdataF,
+              txdataF_BF,
+              fp,
+              bws,
+              tti_tx,
+              l,
+              aa,
+              gNB->frame_parms.nb_antennas_tx//frame_parms->Lmax
+              );
+              //counter++;
+        }
+      } 
   }
-//free multi_pdsch memorys
-  for(int th=0;th<thread_num_ldpc_encoder;th++){
-  	for(int j=0;j<MAX_NUM_NR_DLSCH_SEGMENTS/bw_scaling;j++){
-	  	free(gNB->multi_pdsch.c[th][j]);
-	  	free(gNB->multi_pdsch.d[th][j]);
-	}
-  }
-  for(int th=0;th<thread_num_modulation;th++){
-  	for (int q=0; q<NR_MAX_NB_CODEWORDS; q++){
-	    free(gNB->multi_pdsch.mod_symbs[th][q]);
-	}
-  }
-//[END]Send Kill massage
+
+  if(check_time){
+    clock_gettime(CLOCK_MONOTONIC, &end);
+      }
+      
+       
+  printf("[END] beam_precoding \n");
+  //printf("counter = %d \n",counter);
+  
+  if(check_time){
+      printf("multadd_cpx_vector [%d] : %.2f usec\n ",counter ,(end_ts.tv_nsec - start_ts.tv_nsec) *1.0 / 1000);
+      printf("beam_precoding total : %.2f usec\n ", (end.tv_nsec - start.tv_nsec) *1.0 / 1000);
+      }
+  
+
+  //min
+  //kill memmory
+  free(txdataF_BF);
+  //free(beam_weights);
+  //free(bws);
 
   for (i = 0; i < 2; i++) {
     free(s_re[i]);

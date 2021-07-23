@@ -31,28 +31,6 @@
 
 #include "PHY/TOOLS/time_meas.h"
 
-// ==[START]multi_ldpc_encoder
-//#define thread_num 2  // ==Change thread_num here ==
-#define thread_num_max 8  // ==Change max tread_num here ==
-typedef struct{
-  int id;
-  volatile int flag_wait;
-  pthread_t pthread;
-  pthread_cond_t cond;
-  pthread_mutex_t mutex;
-  pthread_attr_t attr;
-  volatile uint8_t complete;
-  unsigned char **test_input;
-  unsigned char **channel_input_optim;
-  int Zc;
-  int Kb;
-  short block_length;
-  short BG;
-  int n_segments;
-  //unsigned int macro_num; //Not necessary to do
-}multi_ldpc_encoder;
-// ==[END]multi_ldpc_encoder
-
 /*ldpc_encoder.c*/
 int encode_parity_check_part_orig(unsigned char *c,unsigned char *d, short BG,short Zc,short Kb,short block_length);
 

@@ -236,6 +236,18 @@ int multadd_cpx_vector(int16_t *x1,
   x1_128 = (simd_q15_t *)&x1[0];
   x2_128 = (simd_q15_t *)&x2[0];
   y_128  = (simd_q15_t *)&y[0];
+  
+  //printf("&x2[0] : %p\n",&x2[0]);
+  
+  // for(i=0; i<N; i++) {
+  // printf("i: %3d, x1: %04X %04X\n", i,(&x1[i*2]), (&x1[i*2]+1));
+  // printf("i: %3d, x2: %04X %04X\n", i, (&x2[i*2]), (&x2[i*2+1]));
+  // printf("i: %3d, x1: %04X %04X, x2: %04X %04X\n", i, x1[i*2], x1[i*2]+1, x2[i*2], x2[i*2+1]);
+  // printf("i: %3d, *x1: %04d %04d, *x2: %04d %04d\n", i, x1[i*2], x1[i*2]+1, x2[i*2], x2[i*2+1]);
+  // printf("i: %3d, *x1: %04d %04d, *x2: %04d %04d\n", i, *(&x1[i*2]), *(&x1[i*2]+1), *(&x2[i*2]), *(&x2[i*2+1]));
+  // }
+  //printf("N = %d\n",N);
+
   // we compute 4 cpx multiply for each loop
   for(i=0; i<(N>>2); i++) {
 #if defined(__x86_64__) || defined(__i386__)
@@ -262,6 +274,8 @@ int multadd_cpx_vector(int16_t *x1,
     x2_128++;
     y_128++;
   }
+
+ // printf("loop counter : %d \n",i);
   _mm_empty();
   _m_empty();
   return(0);

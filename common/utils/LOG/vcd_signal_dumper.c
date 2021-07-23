@@ -63,7 +63,6 @@ struct vcd_module_s {
 
 const char* eurecomVariablesNames[] = {
   "frame_number_TX0_eNB",
-  "multi_enc_finish",
   "mask_ru",
   "mask_tx_ru",
   "frame_number_TX1_eNB",
@@ -255,15 +254,6 @@ const char* eurecomVariablesNames[] = {
 const char* eurecomFunctionsNames[] = {
   /*  softmodem signals   */
   "rt_sleep",
-  "multi_enc",
-  "multi_enc_0",
-  "multi_enc_1",
-  "multi_enc_2",
-  "multi_enc_3",
-  "multi_enc_4",
-  "multi_enc_5",
-  "multi_enc_6",
-  "multi_enc_7",
   "trx_read",
   "trx_write",
   "trx_read_ue",

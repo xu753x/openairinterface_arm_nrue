@@ -43,99 +43,10 @@
 #include "PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.h"
 #include "PHY/CODING/nrLDPC_decoder/nrLDPC_types.h"
 
-#include "common/utils/LOG/vcd_signal_dumper.h" //VCD
-
 #define MAX_NUM_RU_PER_gNB MAX_NUM_RU_PER_eNB
-#define thread_num_pdsch 0  // ==Change thread_num_pdsch here. Don't greater than 2 ==
-#define thread_num_pressure 0  // ==Change thread_num_pressure here ==
-#define thread_num_ldpc_encoder 2
-#define thread_num_scrambling 3
-#define thread_num_modulation 4
-#define check_time 0  // ==Change if you wnat to check time of threads ==
 
-typedef struct{
-  /*params of thread*/
-  int id;
-  volatile int flag_wait;
-  pthread_t pthread;
-  pthread_cond_t cond;
-  pthread_cond_t cond_scr_mod;
-  pthread_mutex_t mutex;
-  pthread_mutex_t mutex_scr_mod;
-  pthread_attr_t attr;
-  volatile uint8_t complete;
-  volatile uint8_t complete_scr_mod;
-  /*encoder*/
-  unsigned char **test_input;
-  unsigned char **channel_input_optim;
-  int Zc;
-  int Kb;
-  short block_length;
-  short BG;
-  int n_segments;
-  //unsigned int macro_num; //Not necessary to do
-  /*scrambling & modulation*/
-  uint8_t *f;
-  uint32_t *scrambled_output;
-  int16_t *mod_symbs;
-  uint32_t encoded_length;
-  uint16_t Nid;
-  uint16_t n_RNTI;
-  uint8_t Qm;
-  /*pressure test*/
-  uint8_t *c_test[MAX_NUM_NR_DLSCH_SEGMENTS];
-  uint8_t *d_test[MAX_NUM_NR_DLSCH_SEGMENTS];
-  uint8_t f_test[MAX_NUM_NR_CHANNEL_BITS] __attribute__((aligned(32)));
-  int32_t *mod_symbs_test[NR_MAX_NB_CODEWORDS];
-  uint32_t scrambled_output_test[NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH>>5];
-}multi_ldpc_encoder_gNB;
-
-typedef struct{
-  /*params of thread*/
-  int id_enc[thread_num_ldpc_encoder];
-  int id_scr[thread_num_scrambling];
-  int id_mod[thread_num_modulation];
-  pthread_t pthread_enc[thread_num_ldpc_encoder];
-  pthread_t pthread_scr[thread_num_scrambling];
-  pthread_t pthread_mod[thread_num_modulation];
-  pthread_cond_t cond_enc[thread_num_ldpc_encoder];
-  pthread_cond_t cond_scr[thread_num_scrambling];
-  pthread_cond_t cond_mod[thread_num_modulation];
-  pthread_mutex_t mutex_enc[thread_num_ldpc_encoder];
-  pthread_mutex_t mutex_scr[thread_num_scrambling];
-  pthread_mutex_t mutex_mod[thread_num_modulation];
-  pthread_attr_t attr_enc[thread_num_ldpc_encoder];
-  pthread_attr_t attr_scr[thread_num_scrambling];
-  pthread_attr_t attr_mod[thread_num_modulation];
-  volatile uint8_t complete_enc[thread_num_ldpc_encoder];
-  volatile uint8_t complete_scr[thread_num_scrambling];
-  volatile uint8_t complete_mod[thread_num_modulation];
-  /*memorys of the first thread*/
-  unsigned char **test_input_first;
-  unsigned char **channel_input_optim_first;
-  uint8_t *f_first;
-  uint32_t *scrambled_output_first;
-  int16_t *mod_symbs_first;
-  /*encoder*/
-  uint8_t *c[thread_num_ldpc_encoder][MAX_NUM_NR_DLSCH_SEGMENTS];
-  uint8_t *d[thread_num_ldpc_encoder][MAX_NUM_NR_DLSCH_SEGMENTS];
-  int Zc[thread_num_ldpc_encoder];
-  int Kb[thread_num_ldpc_encoder];
-  short block_length[thread_num_ldpc_encoder];
-  short BG[thread_num_ldpc_encoder];
-  int n_segments[thread_num_ldpc_encoder];
-  /*scrambling*/
-  uint8_t f[thread_num_scrambling][MAX_NUM_NR_CHANNEL_BITS] __attribute__((aligned(32)));
-  uint32_t scrambled_output_scr[thread_num_scrambling][NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH>>5];  // ==use thread_num_scrambling or thread_num_modulation ==???
-  uint32_t encoded_length_scr[thread_num_scrambling];  // ==use thread_num_scrambling or thread_num_modulation ==???
-  uint16_t Nid[thread_num_scrambling];
-  uint16_t n_RNTI[thread_num_scrambling];
-  /*modulation*/
-  uint32_t scrambled_output_mod[thread_num_modulation][NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH>>5];  // ==use thread_num_scrambling or thread_num_modulation ==???
-  int32_t *mod_symbs[thread_num_modulation][NR_MAX_NB_CODEWORDS];
-  uint32_t encoded_length_mod[thread_num_modulation];  // ==use thread_num_scrambling or thread_num_modulation ==???
-  uint8_t Qm[thread_num_modulation];
-}multi_pdsch_gNB;
+//min
+#define check_time 1  
 
 typedef struct {
   uint32_t pbch_a;
@@ -225,8 +136,6 @@ typedef struct {
   int32_t *txdataF[NR_MAX_NB_LAYERS];
   /// Modulated symbols buffer
   int32_t *mod_symbs[NR_MAX_NB_CODEWORDS];
-  /// Modulated symbols buffer for test
-  int32_t *mod_symbs_test[NR_MAX_NB_CODEWORDS];
   /// beamforming weights for UE-spec transmission (antenna ports 5 or 7..14), for each codeword, maximum 4 layers?
   int32_t **ue_spec_bf_weights[NR_MAX_NB_LAYERS];
   /// dl channel estimates (estimated from ul channel estimates)
@@ -263,8 +172,6 @@ typedef struct {
   int16_t sqrt_rho_a;
   /// amplitude of PDSCH (compared to RS) in symbols containing pilots
   int16_t sqrt_rho_b;
-  // to signal 
-  volatile int complete_modulation;
 } NR_gNB_DLSCH_t;
 
 
@@ -384,37 +291,6 @@ typedef struct {
   int16_t w[MAX_NUM_ULSCH_SEGMENTS][3*(6144+64)];
   //////////////////////////////////////////////////////////////
 } NR_UL_gNB_HARQ_t;
-
-typedef struct{
-	pthread_t pthread_scrambling;
-	pthread_cond_t cond_tx;
-	pthread_mutex_t mutex_tx;
-	//=====//
-	relaying_type_t r_type;
-	pthread_attr_t attr_scrambling;
-	int q_id;
-}scrambling_channel;
-
-typedef struct{
-	pthread_t pthread_encode;
-	pthread_cond_t cond_encode;
-	pthread_mutex_t mutex_encode;
-	pthread_attr_t attr_encode;
-	volatile int flag_wait;
-	int id;
-}dlsch_encoding_ISIP;
-
-typedef struct{
-	int seg;
-}ldpc_encoding_ISIP;
-typedef struct{
-	pthread_t pthread_modulation;
-	pthread_cond_t cond_tx;
-	pthread_mutex_t mutex_tx;
-	//=====//
-	relaying_type_t r_type;
-	pthread_attr_t attr_modulation;
-}modulation_channel;
 
 
 typedef struct {
@@ -942,7 +818,7 @@ typedef struct PHY_VARS_gNB_s {
   /// time state for localization
   time_stats_t localization_stats;
 #endif
-  
+
   int32_t pucch1_stats_cnt[NUMBER_OF_UE_MAX][10];
   int32_t pucch1_stats[NUMBER_OF_UE_MAX][10*1024];
   int32_t pucch1_stats_thres[NUMBER_OF_UE_MAX][10*1024];
@@ -953,26 +829,6 @@ typedef struct PHY_VARS_gNB_s {
   int32_t pusch_stats_mcs[NUMBER_OF_UE_MAX][10240];
   int32_t pusch_stats_bsr[NUMBER_OF_UE_MAX][10240];
   int32_t pusch_stats_BO[NUMBER_OF_UE_MAX][10240];
-  
-  scrambling_channel thread_scrambling[NR_MAX_NB_CODEWORDS];
-  modulation_channel thread_modulation;
-  volatile uint8_t complete_modulation;
-  volatile uint8_t complete_scrambling;
-  volatile uint8_t complete_scrambling_and_modulation;
-  uint32_t scrambled_output[NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH>>5];
-  uint32_t scrambled_output_test[NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH>>5];
-  volatile int q_scrambling[NR_MAX_NB_CODEWORDS];
-  pthread_mutex_t complete_scrambling_modulation_mutex;
-  //**************************DLSCH ENCODING**************************//
-  dlsch_encoding_ISIP thread_encode[4];
-  ldpc_encoding_ISIP ldpc_encode;
-  multi_ldpc_encoder_gNB multi_encoder[thread_num_pdsch];
-  multi_ldpc_encoder_gNB pressure_test[thread_num_pressure];
-  multi_pdsch_gNB multi_pdsch;
-  
-  volatile uint8_t complete_encode[4];
-  
-  //**************************DLSCH ENCODING**************************//
 } PHY_VARS_gNB;
 
 #endif
