@@ -335,7 +335,15 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
                                                       scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->carrierBandwidth,
                                                       *scc_SIB->downlinkConfigCommon.frequencyInfoDL.frequencyBandList.list.array[0]->freqBandIndicatorNR);
 
-  cfg->carrier_config.dl_frequency = downlink_frequency[0][0] - (10+scc_SIB->downlinkConfigCommon.frequencyInfoDL.offsetToPointA)*(15<<scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing); 
+  cfg->carrier_config.dl_frequency = downlink_frequency[0][0] - 
+  (10+scc_SIB->downlinkConfigCommon.frequencyInfoDL.offsetToPointA/2)*(15<<scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing)*12;
+
+  LOG_I(PHY, "downlink_frequency old(ssb center) : %ld,  new (point A): %ld\n", downlink_frequency[0][0], cfg->carrier_config.dl_frequency);
+   
+  cfg->carrier_config.halfbw = (15<<scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing)
+                               * scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->carrierBandwidth
+                               * 6;
+
 
   for (i=0; i<5; i++) {
     if (i==scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing) {
@@ -390,7 +398,15 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
 
   cfg->ssb_table.ssb_offset_point_a = scc_SIB->downlinkConfigCommon.frequencyInfoDL.offsetToPointA;
   cfg->ssb_table.ssb_period = scc_SIB->ssb_PeriodicityServingCell;
-  cfg->ssb_table.ssb_subcarrier_offset = 0; // TODO currently not in RRC?
+  //cfg->ssb_table.ssb_subcarrier_offset = 0; // TODO currently not in RRC?
+
+ LOG_I(PHY, "in SIB, addr %p ssb_offset_point_a %d, ssb_subcarrier_offset %d, bw %d, sibscs %d, freqPointA %ld, bw %d\n", cfg,
+  cfg->ssb_table.ssb_offset_point_a, cfg->ssb_table.ssb_subcarrier_offset,
+  scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->carrierBandwidth,
+  scc_SIB->uplinkConfigCommon->frequencyInfoUL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
+  cfg->carrier_config.dl_frequency,
+  scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->carrierBandwidth
+  );
 
   AssertFatal(scc_SIB->ssb_PositionsInBurst.groupPresence==NULL, "Cannot handle more than 8 SSBs for now (%x.%x.%x.%x.%x.%x.%x.%x)\n",
 	      scc_SIB->ssb_PositionsInBurst.groupPresence->buf[0],

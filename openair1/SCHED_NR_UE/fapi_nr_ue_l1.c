@@ -39,6 +39,7 @@
 
 #include "PHY/defs_nr_UE.h"
 #include "PHY/impl_defs_nr.h"
+#include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 
 extern PHY_VARS_NR_UE ***PHY_vars_UE_g;
 
@@ -273,14 +274,41 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 
 int8_t nr_ue_phy_config_request(nr_phy_config_t *phy_config){
 
+  NR_DL_FRAME_PARMS *fp = &PHY_vars_UE_g[0][0]->frame_parms;
+  uint64_t centreFreq;
+  uint8_t kssb;
   fapi_nr_config_request_t *nrUE_config = &PHY_vars_UE_g[phy_config->Mod_id][phy_config->CC_id]->nrUE_config;
+  int freq_changed = 0;
 
+   {
+      kssb = nrUE_config->ssb_table.ssb_subcarrier_offset;
+      LOG_I(PHY, "save the kssb %d\n", kssb);
+  }
+
+  if (phy_config->config_req.ssb_table.ssb_offset_point_a != nrUE_config->ssb_table.ssb_offset_point_a)
+  {
+     freq_changed = 1;
+     LOG_I(PHY, "dlfrequency %ld  %ld, pointA %d  %d, ssb offset %d %d\n", 
+       phy_config->config_req.carrier_config.dl_frequency, nrUE_config->carrier_config.dl_frequency,
+       phy_config->config_req.ssb_table.ssb_offset_point_a, nrUE_config->ssb_table.ssb_offset_point_a,
+       phy_config->config_req.ssb_table.ssb_subcarrier_offset, nrUE_config->ssb_table.ssb_subcarrier_offset);
+
+  }
   if(phy_config != NULL) {
       memcpy(nrUE_config,&phy_config->config_req,sizeof(fapi_nr_config_request_t));
       if (PHY_vars_UE_g[phy_config->Mod_id][phy_config->CC_id]->UE_mode[0] == NOT_SYNCHED)
 	      PHY_vars_UE_g[phy_config->Mod_id][phy_config->CC_id]->UE_mode[0] = PRACH;
+    
+  }
+   
+  if (freq_changed)
+  { 
+      nrUE_config->ssb_table.ssb_subcarrier_offset = kssb;
+
+      centreFreq = phy_config->config_req.carrier_config.dl_frequency + phy_config->config_req.carrier_config.halfbw + nrUE_config->ssb_table.ssb_subcarrier_offset * 15;
+
+      nr_set_carrier_frequencies(fp, centreFreq);
   }
   return 0;
 }
-
 

@@ -314,9 +314,16 @@ int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,
   uint8_t sco = 0;
   if (((fp->freq_range == nr_FR1) && (config->ssb_table.ssb_subcarrier_offset<24)) ||
       ((fp->freq_range == nr_FR2) && (config->ssb_table.ssb_subcarrier_offset<12)) )
-    sco = config->ssb_table.ssb_subcarrier_offset;
+    sco = config->ssb_table.ssb_subcarrier_offset;  // counted by 15khz
 
-  fp->ssb_start_subcarrier = (12 * config->ssb_table.ssb_offset_point_a + sco);
+  fp->ssb_start_subcarrier = (12 * config->ssb_table.ssb_offset_point_a + sco/2);
+
+  LOG_I(PHY, "ue init sco %d, ssb_subcarrier_offset %d, ssb_offset_point_a %d, ssb_start_subcarrier %d, ofdmsize %d\n",
+       sco, // sco is 15khz
+       config->ssb_table.ssb_subcarrier_offset,
+       config->ssb_table.ssb_offset_point_a,
+       fp->ssb_start_subcarrier,
+       fp->ofdm_symbol_size);
 
   // definition of Lmax according to ts 38.213 section 4.1
   if (fp->dl_CarrierFreq < 6e9) {

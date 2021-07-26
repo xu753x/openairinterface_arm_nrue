@@ -1468,6 +1468,8 @@ void nr_get_carrier_frequencies(NR_DL_FRAME_PARMS *fp,
                                 uint64_t *dl_Carrier,
                                 uint64_t *ul_Carrier);
 
+void nr_set_carrier_frequencies(NR_DL_FRAME_PARMS *fp, uint64_t dl_carrier);
+
 /*!
   \brief This function sets the OAI RF card rx/tx params
   @param openair0_cfg   Pointer OAI config for a specific card
