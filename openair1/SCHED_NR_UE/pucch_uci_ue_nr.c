@@ -611,7 +611,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
       pucch_resource_id, format, nb_symbols_total, starting_symbol_index, startingPRB, secondHopPRB, harq_status->n_CCE, harq_status->N_CCE, harq_status->pucch_resource_indicator, m_0);
 
       startingPRB = 0;
-      secondHopPRB = 105;
+      secondHopPRB = 272;
       m_0 = 0;
 
     }
@@ -907,7 +907,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     }
     case pucch_format1_nr:
     {
-      LOG_D(PHY, "pucch1: slot %d, m0 %d, symbols %d, %d, prb %d, %d, occ %d, NUCI %d, payload %d\n",
+      LOG_I(PHY, "pucch1: slot %d, m0 %d, symbols %d, %d, prb %d, %d, occ %d, NUCI %d, payload %d\n",
       nr_slot_tx,
                          (uint8_t)m_0,
                          nb_symbols_total,

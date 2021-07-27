@@ -153,7 +153,7 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
     uint8_t scs_ssb = get_softmodem_params()->numerology;
     uint32_t band   = get_softmodem_params()->band;
     uint16_t ssb_start_symbol = get_ssb_start_symbol(band,scs_ssb,ssb_index);
-    uint16_t ssb_offset_point_a = (ssb_start_subcarrier - ssb_subcarrier_offset)/12;
+    uint16_t ssb_offset_point_a = (ssb_start_subcarrier - ssb_subcarrier_offset/2)/12;// ssb_subcarrier_offset is 15khz step
 
     get_type0_PDCCH_CSS_config_parameters(&mac->type0_PDCCH_CSS_config,
                                           frame,

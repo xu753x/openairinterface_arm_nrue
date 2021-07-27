@@ -136,7 +136,7 @@ void nr_set_carrier_frequencies(NR_DL_FRAME_PARMS *fp, uint64_t dl_carrier){
         openair0_cfg->tx_freq[i],
         openair0_cfg->rx_freq[i]);
     }
-
+  }
     ue->rfdevice.trx_set_freq_func(&ue->rfdevice,&openair0_cfg[0],0);
 
   }
