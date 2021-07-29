@@ -128,11 +128,11 @@ if __name__ == '__main__':
     # Parse the arguments to recover the YAML filenames
     args = _parse_args()
     # Retrieve the infrastructure
-    infrastructure = get_yaml_structure(args.infra_yaml)
+    infrastructure = get_yaml_structure("testinfra-as-code.yaml")
     # Retrieve the test configuration (ie infra being used and testsuite)
-    test_cfg = get_yaml_structure(args.tstcfg_yaml)
+    test_cfg = get_yaml_structure("test-example.yaml")
     # Retrieve the git information
-    git_info = get_yaml_structure(args.git_yaml)
+    git_info = get_yaml_structure("git_info_template.yaml")
     # Populate objects
     RAN = get_test_objects('RAN', infrastructure, test_cfg, git_info)
     CN = get_test_objects('CN', infrastructure, test_cfg, git_info)

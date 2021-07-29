@@ -21,7 +21,7 @@ RAN_1:
     gNB_0 :
       ID : gNB_0
       Name : titi
-      Type : eNB
+      Type : gNB
       Deploy :
         Bare :
           Kind : Bare
@@ -33,12 +33,11 @@ RAN_1:
           Args :  
         Cluster :
           Kind : openshift
-          Args :
-                   
+          Args :                   
     eNB_1 :
-      ID : eNB_0
+      ID : eNB_1
       Name : tata
-      Type : eNB
+      Type : xNB
       Deploy :
         Bare :
           Kind : Bare

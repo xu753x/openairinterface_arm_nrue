@@ -24,19 +24,21 @@ For more information about the OpenAirInterface (OAI) Software Alliance:
 """
 
 
-class NodeB:
-    """Object class to support any RAN (eNB/gNB) operations."""
-
-    def __init__(self, infra, config, deployment, git_info):
-        self.Deployment = deployment
-        self.Infra = infra
-        self.GitInfo = git_info
-        for key, val in config.items():
-            setattr(self, key, val)
-
-
-    def PrintDeploy(self):
-        print(self.Deploy)
+class Instructions:
+    def __init__(self):
+        self.test_dict = {'Build_PhySim' : self.function1 , 'Run_PhySim' : self.function2}
         
-    def PrintGitInfo(self):
-        print(self.GitInfo)
+    def function1(self,RAN,CN,UEs):
+        print("executing from method function1")
+        for k in RAN:
+            print(RAN[k].Type, RAN[k].Name)
+            if RAN[k].Type=='eNB':
+                RAN[k].PrintDeploy()
+            elif RAN[k].Type=='gNB':
+                RAN[k].PrintGitInfo()
+            else:
+                print("invalid type")
+        
+    def function2(self,RAN,CN,UEs):
+        print("executing from method function2")
+        
