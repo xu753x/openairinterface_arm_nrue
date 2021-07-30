@@ -1,0 +1,45 @@
+htmlTabRef : 'TEST-NSA-FR1-TM1'
+htmlTabName : 'NSA Ping DL UL with QUECTEL'
+htmlTabIcon : tasks
+repeatCount : 1
+TestCaseRequestedList : 
+  - '030000'
+  - '040000'
+  - '000002'
+  - '010000'
+  - '000001'
+  - '050000'
+  - '050001'
+  - '000001'
+  - '070000' 
+  - '000001'
+  - '070001'
+  - '000001'
+  - '010002'
+  - '080001'
+  - '080000'
+TestCaseExclusionList : 
+
+TestCaseList : 
+    '010000' : 
+      class : 'Initialize_UE'
+      desc : 'Initialize Quectel'
+      args :
+        id : idefix
+        UE_Trace : 'yes'
+
+    '010002' : 
+      class : 'Terminate_UE'
+      desc : 'Terminate Quectel'
+      args :
+        id : idefix
+
+    '030000' : 
+      class : 'Initialize_eNB'
+      desc : 'Initialize eNB'
+      args :
+        Initialize_eNB_args : '-O ci-scripts/conf_files/enb.band7.tm1.fr1.25PRB.usrpb210.conf'
+        eNB_instance : 0
+        eNB_serverId : 0
+        air_interface : lte
+        eNB_Trace : 'yes'

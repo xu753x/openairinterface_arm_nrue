@@ -145,11 +145,25 @@ if __name__ == '__main__':
         print('Mode is RetrieveLogs')
 
  
-    
+    #load testcase described as yaml
+    tc = get_yaml_structure("fr1_nsa_quectel.yaml")
+    #code example to check if requested tests are defined
+    for t in tc['TestCaseRequestedList'] :
+        if t not in tc['TestCaseList'] :
+            print('missing tc '+ t +' in specification')
+        else :
+            print('tc '+t+' spec is present')
+    print("\n")
+
+    #create object comprising function pointers dict and related functions
     execute=cls_instructions.Instructions()
-    
-    commands=['Build_PhySim','Run_PhySim']     
-    for c in commands:
-        print(c)
-        execute.test_dict[c](RAN,CN,UEs)
-        
+    #execute the testcase (skip action if not described)     
+    for t in tc['TestCaseRequestedList']:
+        if t in tc['TestCaseList'] :
+            cmd=tc['TestCaseList'][t]['class']
+            #debug
+            print(tc['TestCaseList'][t]['desc'])
+            print(tc['TestCaseList'][t]['args']) #args are a dictionary that can be passed as argument if needed
+            #debug
+            execute.test_dict[cmd](RAN,CN,UEs)
+            print('\n')

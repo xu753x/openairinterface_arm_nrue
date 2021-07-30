@@ -26,7 +26,11 @@ For more information about the OpenAirInterface (OAI) Software Alliance:
 
 class Instructions:
     def __init__(self):
-        self.test_dict = {'Build_PhySim' : self.function1 , 'Run_PhySim' : self.function2}
+        self.test_dict = {
+            'Initialize_UE'  : self.function1, 
+            'Terminate_UE'   : self.function2,
+            'Initialize_eNB' : self.function3 
+            }
         
     def function1(self,RAN,CN,UEs):
         print("executing from method function1")
@@ -42,3 +46,5 @@ class Instructions:
     def function2(self,RAN,CN,UEs):
         print("executing from method function2")
         
+    def function3(self,RAN,CN,UEs):
+        print("executing from method function3")
