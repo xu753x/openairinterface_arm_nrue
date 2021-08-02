@@ -312,7 +312,7 @@ int mac_init_codebook_gNB(PHY_VARS_gNB *gNB,
                   }
         }
       } else {//codebookMode 2
-        printf("CodeBook Type 1, CodebookMode %d is not supported\n",csi_reportconfig->codebookConfig->codebookType.choice.type1->codebookMode);
+        printf("CodeBook Type 1, CodebookMode %ld is not supported\n",csi_reportconfig->codebookConfig->codebookType.choice.type1->codebookMode);
       }
     }
   } else {
