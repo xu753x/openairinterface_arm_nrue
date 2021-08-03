@@ -1319,6 +1319,7 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
     }
     else { /* SR + eventually ack are transmitted TS 36.213 9.2.5.1 UE procedure for multiplexing HARQ-ACK or CSI and SR */
       if (pucch->sr_payload == 1) {                /* positive scheduling request */
+        LOG_D(MAC,"%s(): SR transmitted pucch_resource == NULL O_SR %d O_ACK %d O_CSI %d\n",__func__, O_SR,  O_ACK, O_CSI);
         if (O_ACK == 1)
           pucch_pdu->mcs = sequence_cyclic_shift_1_harq_ack_bit_positive_sr[pucch->ack_payload & 0x1];   /* positive SR and harq of 1 bit */
         else if (O_ACK == 2)
@@ -1436,6 +1437,7 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
         }
         else { /* SR + eventually ack are transmitted TS 36.213 9.2.5.1 UE procedure for multiplexing HARQ-ACK or CSI and SR */
           if (pucch->sr_payload == 1) {                /* positive scheduling request */
+            LOG_D(MAC,"%s(): SR transmitted PR_format0 O_SR %d O_ACK %d O_CSI %d\n",__func__, O_SR,  O_ACK, O_CSI);
             if (O_ACK == 1)
               pucch_pdu->mcs = sequence_cyclic_shift_1_harq_ack_bit_positive_sr[pucch->ack_payload & 0x1];   /* positive SR and harq of 1 bit */
             else if (O_ACK == 2)
@@ -2140,9 +2142,144 @@ bool trigger_periodic_scheduling_request(NR_UE_MAC_INST_t *mac,
   return false;
 }
 
+int8_t nr_ue_get_SR(module_id_t module_idP, frame_t frameP, slot_t slot){
+  // no UL-SCH resources available for this tti && UE has a valid PUCCH resources for SR configuration for this tti
+  DevCheck(module_idP < (int) NB_UE_INST, module_idP, NB_NR_UE_MAC_INST, 0);
+  NR_UE_MAC_INST_t *mac = get_mac_inst(module_idP);
+#if 0
+  //  int MGL=6;// measurement gap length in ms
+  int MGRP = 0;   // measurement gap repetition period in ms
+  int gapOffset = -1;
+  int T = 0;
+  // determin the measurement gap
+  if (mac->measGapConfig != NULL) {
+    if (mac->measGapConfig->choice.setup.
+        gapOffset.present == LTE_MeasGapConfig__setup__gapOffset_PR_gp0) {
+      MGRP = 40;
+      gapOffset =
+        mac->measGapConfig->choice.
+        setup.gapOffset.choice.gp0;
+    } else if (mac->measGapConfig->choice.
+               setup.gapOffset.present ==
+               LTE_MeasGapConfig__setup__gapOffset_PR_gp1) {
+      MGRP = 80;
+      gapOffset =
+        mac->measGapConfig->choice.
+        setup.gapOffset.choice.gp1;
+    } else {
+      LOG_W(MAC, "Measurement GAP offset is unknown\n");
+    }
 
-int8_t nr_ue_get_SR(module_id_t module_idP, frame_t frameP, int slotP){
-  return 0;
+    T = MGRP / 10;
+    DevAssert(T != 0);
+
+    //check the measurement gap and sr prohibit timer
+    if ((subframe == gapOffset % 10)
+        && ((frameP % T) == (floor(gapOffset / 10)))
+        && (mac->
+            scheduling_info.sr_ProhibitTimer_Running == 0)) {
+      mac->scheduling_info.SR_pending = 1;
+      return (0);
+    }
+  }
+  if ((mac->physicalConfigDedicated != NULL) &&
+      (mac->scheduling_info.SR_pending == 1) &&
+      (mac->scheduling_info.SR_COUNTER <
+       (1 <<
+        (2 +
+         mac->
+         physicalConfigDedicated->schedulingRequestConfig->choice.setup.
+         dsr_TransMax)))) {
+    LOG_D(MAC,
+          "[UE %d][SR %x] Frame %d slot %d PHY asks for SR (SR_COUNTER/dsr_TransMax %d/%d), SR_pending %d\n",
+          module_idP, rnti, frameP, slot,
+          mac->scheduling_info.SR_COUNTER,
+          (1 <<
+           (2 +
+            mac->
+            physicalConfigDedicated->schedulingRequestConfig->choice.
+            setup.dsr_TransMax)),
+          mac->scheduling_info.SR_pending);
+#endif
+  DSR_TRANSMAX_t dsr_TransMax = sr_n64; //TBD
+  uint16_t rnti = 0; //TBD
+  LOG_D(MAC,
+        "[UE %d][SR %x] Frame %d slot %d send SR indication (SR_COUNTER/dsr_TransMax %d/%d), SR_pending %d\n",
+        module_idP, rnti, frameP, slot,
+        mac->scheduling_info.SR_COUNTER,
+        (1 <<
+         (2 +
+//            mac->
+//            physicalConfigDedicated->schedulingRequestConfig->choice.
+//            setup.dsr_TransMax)),
+          dsr_TransMax)),
+        mac->scheduling_info.SR_pending);
+/*
+  if ((mac->scheduling_info.sr_ProhibitTimer_Running == 0)) {
+    mac->scheduling_info.SR_pending = 1;
+    LOG_D(MAC,
+          "[UE %d][SR %x] Frame %d slot %d send SR indication (SR_COUNTER/dsr_TransMax %d/%d), SR_pending %d, sr_ProhibitTimer_Running == 0\n",
+          module_idP, rnti, frameP, slot,
+          mac->scheduling_info.SR_COUNTER,
+          (1 <<
+           (2 +
+//            mac->
+//            physicalConfigDedicated->schedulingRequestConfig->choice.
+//            setup.dsr_TransMax)),
+            dsr_TransMax)),
+          mac->scheduling_info.SR_pending);
+    return (0);
+  }
+*/
+  if ((mac->scheduling_info.SR_pending == 1) &&
+      (mac->scheduling_info.SR_COUNTER <
+       (1 <<
+        (2 +
+         //mac->
+         //physicalConfigDedicated->schedulingRequestConfig->choice.setup.
+		 //dsr_TransMax)))) {
+		 dsr_TransMax)))) {
+    LOG_D(MAC,
+          "[UE %d][SR %x] Frame %d slot %d PHY asks for SR (SR_COUNTER/dsr_TransMax %d/%d), SR_pending %d, increment SR_COUNTER\n",
+          module_idP, rnti, frameP, slot,
+          mac->scheduling_info.SR_COUNTER,
+          (1 <<
+           (2 +
+            //mac->
+            //physicalConfigDedicated->schedulingRequestConfig->choice.
+            //setup.dsr_TransMax)),
+            dsr_TransMax)),
+          mac->scheduling_info.SR_pending);
+    mac->scheduling_info.SR_COUNTER++;
+
+    // start the sr-prohibittimer : rel 9 and above
+    if (mac->scheduling_info.sr_ProhibitTimer > 0) { // timer configured
+      mac->scheduling_info.sr_ProhibitTimer--;
+      mac->scheduling_info.
+      sr_ProhibitTimer_Running = 1;
+    } else {
+      mac->scheduling_info.
+      sr_ProhibitTimer_Running = 0;
+    }
+    //mac->ul_active =1;
+    return (1);   //instruct phy to signal SR
+  } else {
+    // notify RRC to relase PUCCH/SRS
+    // clear any configured dl/ul
+    // initiate RA
+    if (mac->scheduling_info.SR_pending) {
+      // release all pucch resource
+      //mac->physicalConfigDedicated = NULL;
+      //mac->ul_active = 0;
+      mac->BSR_reporting_active =
+        BSR_TRIGGER_NONE;
+      LOG_I(MAC, "[UE %d] Release all SRs \n", module_idP);
+    }
+
+    mac->scheduling_info.SR_pending = 0;
+    mac->scheduling_info.SR_COUNTER = 0;
+    return (0);
+  }
 }
 
 
@@ -3394,15 +3531,15 @@ uint16_t nr_generate_ulsch_pdu(uint8_t *sdus_payload,
                                     uint8_t *sdu_lcids,
                                     uint8_t power_headroom,
                                     uint16_t crnti,
-                                    uint16_t truncated_bsr,
-                                    uint16_t short_bsr,
-                                    uint16_t long_bsr,
+									NR_BSR_SHORT *truncated_bsr,
+									NR_BSR_SHORT *short_bsr,
+									NR_BSR_LONG  *long_bsr,
                                     unsigned short post_padding,
                                     uint16_t buflen) {
 
   NR_MAC_SUBHEADER_FIXED *mac_pdu_ptr = (NR_MAC_SUBHEADER_FIXED *) pdu;
 
-  LOG_D(MAC, "[UE] Generating ULSCH PDU : num_sdus %d\n", num_sdus);
+  LOG_D(MAC, "[UE] Generating ULSCH PDU : num_sdus %d pdu %p mac_pdu_ptr %p buflen %d\n", num_sdus, pdu, mac_pdu_ptr, buflen);
 
   #ifdef DEBUG_HEADER_PARSING
 
@@ -3417,12 +3554,13 @@ uint16_t nr_generate_ulsch_pdu(uint8_t *sdus_payload,
     LOG_D(MAC, "[UE] Generating UL MAC subPDUs for SDU with lenght %d ( num_sdus %d )\n", sdu_lengths[i], num_sdus);
 
     if (sdu_lcids[i] != UL_SCH_LCID_CCCH){
-      if (sdu_lengths[i] < 128) {
+      if (sdu_lengths[i] < 256) {
         ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->R = 0;
         ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->F = 0;
         ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->LCID = sdu_lcids[i];
         ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->L = (unsigned char) sdu_lengths[i];
         mac_pdu_ptr += sizeof(NR_MAC_SUBHEADER_SHORT);
+        LOG_D(MAC, "[UE] Generating ULSCH PDU sdu_lengths %d < 256 : num_sdus %d pdu %p mac_pdu_ptr %p buflen %d\n", sdu_lengths[i], num_sdus, pdu, mac_pdu_ptr, buflen);
       } else {
         ((NR_MAC_SUBHEADER_LONG *) mac_pdu_ptr)->R = 0;
         ((NR_MAC_SUBHEADER_LONG *) mac_pdu_ptr)->F = 1;
@@ -3430,17 +3568,20 @@ uint16_t nr_generate_ulsch_pdu(uint8_t *sdus_payload,
         ((NR_MAC_SUBHEADER_LONG *) mac_pdu_ptr)->L1 = ((unsigned short) sdu_lengths[i] >> 8) & 0x7f;
         ((NR_MAC_SUBHEADER_LONG *) mac_pdu_ptr)->L2 = (unsigned short) sdu_lengths[i] & 0xff;
         mac_pdu_ptr += sizeof(NR_MAC_SUBHEADER_LONG);
+        LOG_D(MAC, "[UE] Generating ULSCH PDU sdu_lengths %d >= 256 : num_sdus %d pdu %p mac_pdu_ptr %p buflen %d\n", sdu_lengths[i], num_sdus, pdu, mac_pdu_ptr, buflen);
       }
     } else { // UL CCCH SDU
       mac_pdu_ptr->R = 0;
       mac_pdu_ptr->LCID = sdu_lcids[i];
       mac_pdu_ptr ++;
+      LOG_D(MAC, "[UE] Generating ULSCH PDU CCCH SDU : num_sdus %d pdu %p mac_pdu_ptr %p buflen %d\n", num_sdus, pdu, mac_pdu_ptr, buflen);
     }
 
     // cycle through SDUs, compute each relevant and place ulsch_buffer in
     memcpy((void *) mac_pdu_ptr, (void *) sdus_payload, sdu_lengths[i]);
     sdus_payload += sdu_lengths[i]; 
     mac_pdu_ptr  += sdu_lengths[i];
+    LOG_D(MAC, "[UE] Generating ULSCH PDU : num_sdus %d pdu %p mac_pdu_ptr %p buflen %d\n", num_sdus, pdu, mac_pdu_ptr, buflen);
   }
 
   // Generating UL MAC subPDUs including MAC CEs (MAC CE and subheader)
@@ -3457,6 +3598,8 @@ uint16_t nr_generate_ulsch_pdu(uint8_t *sdus_payload,
     ((NR_SINGLE_ENTRY_PHR_MAC_CE *) mac_pdu_ptr)->PCMAX = 0; // todo
     ((NR_SINGLE_ENTRY_PHR_MAC_CE *) mac_pdu_ptr)->R2 = 0;
     mac_pdu_ptr += sizeof(NR_SINGLE_ENTRY_PHR_MAC_CE);
+    LOG_D(MAC, "[UE] Generating ULSCH PDU : power_headroom pdu %p mac_pdu_ptr %p buflen %d\n",
+    		pdu, mac_pdu_ptr, buflen);
   }
 
   if (crnti) {
@@ -3468,6 +3611,8 @@ uint16_t nr_generate_ulsch_pdu(uint8_t *sdus_payload,
     // C-RNTI MAC CE (2 octets)
     * (uint16_t *) mac_pdu_ptr = crnti;
     mac_pdu_ptr += sizeof(uint16_t);
+    LOG_D(MAC, "[UE] Generating ULSCH PDU : crnti pdu %p mac_pdu_ptr %p buflen %d\n",
+    		pdu, mac_pdu_ptr, buflen);
   }
 
   if (truncated_bsr) {
@@ -3477,9 +3622,11 @@ uint16_t nr_generate_ulsch_pdu(uint8_t *sdus_payload,
     mac_pdu_ptr++;
 
     // Short truncated BSR MAC CE (1 octet)
-    ((NR_BSR_SHORT_TRUNCATED *) mac_pdu_ptr)-> Buffer_size = truncated_bsr;
-    ((NR_BSR_SHORT_TRUNCATED *) mac_pdu_ptr)-> LcgID = 0; // todo
+    ((NR_BSR_SHORT_TRUNCATED *) mac_pdu_ptr)-> Buffer_size = truncated_bsr->Buffer_size;
+    ((NR_BSR_SHORT_TRUNCATED *) mac_pdu_ptr)-> LcgID = truncated_bsr->LcgID;
     mac_pdu_ptr+= sizeof(NR_BSR_SHORT_TRUNCATED);
+    LOG_D(MAC, "[UE] Generating ULSCH PDU : truncated_bsr Buffer_size %d LcgID %d pdu %p mac_pdu_ptr %p buflen %d\n",
+    		truncated_bsr->Buffer_size, truncated_bsr->LcgID, pdu, mac_pdu_ptr, buflen);
   } else if (short_bsr) {
     // MAC CE fixed subheader
     mac_pdu_ptr->R = 0;
@@ -3487,23 +3634,85 @@ uint16_t nr_generate_ulsch_pdu(uint8_t *sdus_payload,
     mac_pdu_ptr++;
 
     // Short truncated BSR MAC CE (1 octet)
-    ((NR_BSR_SHORT *) mac_pdu_ptr)->Buffer_size = short_bsr;
-    ((NR_BSR_SHORT *) mac_pdu_ptr)->LcgID = 0; // todo
+    ((NR_BSR_SHORT *) mac_pdu_ptr)->Buffer_size = short_bsr->Buffer_size;
+    ((NR_BSR_SHORT *) mac_pdu_ptr)->LcgID = short_bsr->LcgID;
      mac_pdu_ptr+= sizeof(NR_BSR_SHORT);
+     LOG_D(MAC, "[UE] Generating ULSCH PDU : short_bsr Buffer_size %d LcgID %d pdu %p mac_pdu_ptr %p buflen %d\n",
+    	     short_bsr->Buffer_size, short_bsr->LcgID, pdu, mac_pdu_ptr, buflen);
   } else if (long_bsr) {
     // MAC CE variable subheader
     // todo ch 6.1.3.1. TS 38.321
-    // ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->R = 0;
-    // ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->F = 0;
-    // ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->LCID = UL_SCH_LCID_L_BSR;
-    // ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->L = 0;
-    // last_size = 2;
-    // mac_pdu_ptr += last_size;
+    ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->R = 0;
+    ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->F = 0;
+    ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->LCID = UL_SCH_LCID_L_BSR;
 
-    // Short truncated BSR MAC CE (1 octet)
-    // ((NR_BSR_LONG *) ce_ptr)->Buffer_size0 = short_bsr;
-    // ((NR_BSR_LONG *) ce_ptr)->LCGID0 = 0;
-    // mac_ce_size = sizeof(NR_BSR_LONG); // size is variable
+    NR_MAC_SUBHEADER_SHORT *mac_pdu_subheader_ptr = (NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr;
+    mac_pdu_ptr += 2;
+
+    // Could move to nr_get_sdu()
+    uint8_t *Buffer_size_ptr= (uint8_t*) mac_pdu_ptr + 1;
+    //int NR_BSR_LONG_SIZE = 1;
+    if (long_bsr->Buffer_size0 == 0) {
+      ((NR_BSR_LONG *) mac_pdu_ptr)->LcgID0 = 0;
+    } else {
+      ((NR_BSR_LONG *) mac_pdu_ptr)->LcgID0 = 1;
+      *Buffer_size_ptr++ = long_bsr->Buffer_size0;
+      //NR_BSR_LONG_SIZE++;
+    }
+    if (long_bsr->Buffer_size1 == 0) {
+      ((NR_BSR_LONG *) mac_pdu_ptr)->LcgID1 = 0;
+    } else {
+      ((NR_BSR_LONG *) mac_pdu_ptr)->LcgID1 = 1;
+      *Buffer_size_ptr++ = long_bsr->Buffer_size1;
+      //NR_BSR_LONG_SIZE++;
+    }
+    if (long_bsr->Buffer_size2 == 0) {
+      ((NR_BSR_LONG *) mac_pdu_ptr)->LcgID2 = 0;
+    } else {
+      ((NR_BSR_LONG *) mac_pdu_ptr)->LcgID2 = 1;
+      *Buffer_size_ptr++ = long_bsr->Buffer_size2;
+      //NR_BSR_LONG_SIZE++;
+    }
+    if (long_bsr->Buffer_size3 == 0) {
+      ((NR_BSR_LONG *) mac_pdu_ptr)->LcgID3 = 0;
+    } else {
+      ((NR_BSR_LONG *) mac_pdu_ptr)->LcgID3 = 1;
+      *Buffer_size_ptr++ = long_bsr->Buffer_size3;
+      //NR_BSR_LONG_SIZE++;
+    }
+    if (long_bsr->Buffer_size4 == 0) {
+      ((NR_BSR_LONG *) mac_pdu_ptr)->LcgID4 = 0;
+    } else {
+      ((NR_BSR_LONG *) mac_pdu_ptr)->LcgID4 = 1;
+      *Buffer_size_ptr++ = long_bsr->Buffer_size4;
+      //NR_BSR_LONG_SIZE++;
+    }
+    if (long_bsr->Buffer_size5 == 0) {
+      ((NR_BSR_LONG *) mac_pdu_ptr)->LcgID5 = 0;
+    } else {
+      ((NR_BSR_LONG *) mac_pdu_ptr)->LcgID5 = 1;
+      *Buffer_size_ptr++ = long_bsr->Buffer_size5;
+      //NR_BSR_LONG_SIZE++;
+    }
+    if (long_bsr->Buffer_size6 == 0) {
+      ((NR_BSR_LONG *) mac_pdu_ptr)->LcgID6 = 0;
+    } else {
+      ((NR_BSR_LONG *) mac_pdu_ptr)->LcgID6 = 1;
+      *Buffer_size_ptr++ = long_bsr->Buffer_size6;
+      //NR_BSR_LONG_SIZE++;
+    }
+    if (long_bsr->Buffer_size7 == 0) {
+      ((NR_BSR_LONG *) mac_pdu_ptr)->LcgID7 = 0;
+    } else {
+      ((NR_BSR_LONG *) mac_pdu_ptr)->LcgID7 = 1;
+      *Buffer_size_ptr++ = long_bsr->Buffer_size7;
+      //NR_BSR_LONG_SIZE++;
+    }
+    LOG_D(MAC, "[UE] Generating ULSCH PDU : long_bsr Lcg %d Buffer_size %d %d %d %d %d %d %d %d\n", *((uint8_t*) mac_pdu_ptr),
+    		((NR_BSR_LONG *) mac_pdu_ptr)->Buffer_size0, ((NR_BSR_LONG *) mac_pdu_ptr)->Buffer_size1, ((NR_BSR_LONG *) mac_pdu_ptr)->Buffer_size2, ((NR_BSR_LONG *) mac_pdu_ptr)->Buffer_size3,
+			((NR_BSR_LONG *) mac_pdu_ptr)->Buffer_size4, ((NR_BSR_LONG *) mac_pdu_ptr)->Buffer_size5, ((NR_BSR_LONG *) mac_pdu_ptr)->Buffer_size6, ((NR_BSR_LONG *) mac_pdu_ptr)->Buffer_size7);
+    ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_subheader_ptr)->L = (uint8_t*) Buffer_size_ptr - (uint8_t*) mac_pdu_ptr;
+    mac_pdu_ptr = (NR_MAC_SUBHEADER_FIXED *) Buffer_size_ptr;
   }
 // compute offset before adding padding (if necessary)
   int padding_bytes = 0; 
