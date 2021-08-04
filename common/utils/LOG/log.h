@@ -563,6 +563,8 @@ static inline void updateTimes(uint64_t start,
   }
 }
 
+void LOG_ARRAY(const char *fname,const char *vname,void *data,int length);
+
 #define check(a) do { checkT(a,__FILE__,__LINE__); } while (0)
 #define checkcpu(a) do { checkTCPU(a,__FILE__,__LINE__); } while (0)
 #define initRefTimes(a) static __thread Meas a= {0}

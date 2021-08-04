@@ -204,6 +204,18 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   }
   
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_TX+offset,0);
+  // static int test = 0;
+  // if(test == 0)
+  // {
+  //   int16_t *a = (int16_t *)malloc(2048 * sizeof(int32_t));
+  //   for (int i = 0; i < 2048*2; i++)
+  //   {
+  //       *(a+2*i) = rand();
+  //       *(a+2*i+1) = rand();
+  //   }
+  //   nr_rotation_test(fp->symbol_rotation[0],a,slot);
+  //   test ++;
+  // }
 }
 
 
@@ -503,34 +515,69 @@ void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
   uint8_t symbol;
   unsigned char aa;
 
-  // for (aa = 0; aa < gNB->frame_parms.nb_antennas_rx; aa++) {
-  //   cuda_nr_slot_fep_ul(&gNB->frame_parms,
-  //                       gNB->common_vars.rxdata[aa],
-  //                       gNB->common_vars.rxdataF[aa],
-  //                       gNB->frame_parms.Ncp==EXTENDED?12:14,
-  //                       slot_rx,
-  //                       0);
+  // static int rotate1 = 0;
+  // int32_t* curxdataF =(int32_t*)malloc(2048*14*sizeof(int32_t));
+  // if(rotate1==0)
+  // {
+  //   for(symbol = 0; symbol < (gNB->frame_parms.Ncp==EXTENDED?12:14); symbol++) {
+  //     for (aa = 0; aa < gNB->frame_parms.nb_antennas_rx; aa++) {
+  //       nr_slot_fep_ul(&gNB->frame_parms,
+  //                     gNB->common_vars.rxdata[aa],
+  //                     gNB->common_vars.rxdataF[aa],
+  //                     symbol,
+  //                     slot_rx,
+  //                     0);
+  //     }
+  //   }
+
+  //   memcpy(curxdataF,gNB->common_vars.rxdataF[aa],2048*14*sizeof(int));
+  //   for (aa = 0; aa < gNB->frame_parms.nb_antennas_rx; aa++) {
+  //     apply_nr_rotation_ul(&gNB->frame_parms,
+  //       gNB->common_vars.rxdataF[aa],
+  //       slot_rx,
+  //       0,
+  //       gNB->frame_parms.Ncp==EXTENDED?12:14,
+  //       gNB->frame_parms.ofdm_symbol_size);
+  //   }
+  //   LOG_M("./rotate1/oai_output.m","oai_output",gNB->common_vars.rxdataF[0],2048*14,1,1);
   // }
 
-  for(symbol = 0; symbol < (gNB->frame_parms.Ncp==EXTENDED?12:14); symbol++) {
-    for (aa = 0; aa < gNB->frame_parms.nb_antennas_rx; aa++) {
-      nr_slot_fep_ul(&gNB->frame_parms,
-                     gNB->common_vars.rxdata[aa],
-                     gNB->common_vars.rxdataF[aa],
-                     symbol,
-                     slot_rx,
-                     0);
-    }
+  for (aa = 0; aa < gNB->frame_parms.nb_antennas_rx; aa++) {
+    cuda_nr_slot_fep_ul(&gNB->frame_parms,
+                        gNB->common_vars.rxdata[aa],
+                        gNB->common_vars.rxdataF[aa],
+                        gNB->frame_parms.Ncp==EXTENDED?12:14,
+                        slot_rx,
+                        0);
   }
 
-  for (aa = 0; aa < gNB->frame_parms.nb_antennas_rx; aa++) {
-    apply_nr_rotation_ul(&gNB->frame_parms,
-			 gNB->common_vars.rxdataF[aa],
-			 slot_rx,
-			 0,
-			 gNB->frame_parms.Ncp==EXTENDED?12:14,
-			 gNB->frame_parms.ofdm_symbol_size);
-  }
+  // if(rotate1==0)
+  // {
+  //   LOG_M("./rotate1/input.m","oai_input",curxdataF,2048*14,1,1);
+  //   LOG_M("./rotate1/cuda_output.m","cuda_output",gNB->common_vars.rxdataF[0],2048*14,1,1);
+  // }
+  // rotate1++;
+
+  //-----------------------------------------------------------------------------
+  // for(symbol = 0; symbol < (gNB->frame_parms.Ncp==EXTENDED?12:14); symbol++) {
+  //   for (aa = 0; aa < gNB->frame_parms.nb_antennas_rx; aa++) {
+  //     nr_slot_fep_ul(&gNB->frame_parms,
+  //                    gNB->common_vars.rxdata[aa],
+  //                    gNB->common_vars.rxdataF[aa],
+  //                    symbol,
+  //                    slot_rx,
+  //                    0);
+  //   }
+  // }
+
+  // for (aa = 0; aa < gNB->frame_parms.nb_antennas_rx; aa++) {
+  // apply_nr_rotation_ul(&gNB->frame_parms,
+	// 		 gNB->common_vars.rxdataF[aa],
+	// 		 slot_rx,
+	// 		 0,
+	// 		 gNB->frame_parms.Ncp==EXTENDED?12:14,
+	// 		 gNB->frame_parms.ofdm_symbol_size);
+  // }
 
 }
 

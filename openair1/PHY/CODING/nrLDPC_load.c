@@ -106,7 +106,7 @@ int load_cuFFT1(void) {
           return -1;
      }
      //根据动态链接库操作句柄与符号，返回符号对应的地址
-     cudft20481 = (cudft_EnTx) dlsym(handle1, "_Z9cudft2048PsS_h");
+     cudft20481 = (cudft_EnTx) dlsym(handle1, "_Z9cudft2048PsS_S_");
      if(!cudft20481){
           printf("cuFFT1.so cudft2048 error!\n");
           dlclose(handle1);
@@ -118,6 +118,7 @@ int load_cuFFT1(void) {
           dlclose(handle1);
           return -1;
      }
+     cuda_rotate = (cudft_rotate) dlsym(handle1, "_Z22cuda_rotate_cpx_vectorPsS_S_jt");
      load_cudft1();
 return 0;
 }

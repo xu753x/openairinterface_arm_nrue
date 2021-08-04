@@ -27,6 +27,7 @@ cudft_EnTx cudft2048;
 cudft_load load_cudft;
 cudft_EnTx cudft20481;
 cudft_load load_cudft1;
+cudft_rotate cuda_rotate;
 #else
 /* functions to load the LDPC shared lib, implemented in openair1/PHY/CODING/nrLDPC_load.c */
 extern int load_nrLDPClib(void) ;
@@ -40,6 +41,7 @@ extern cudft_EnTx cudft2048;
 extern cudft_load load_cudft;
 extern cudft_EnTx cudft20481;
 extern cudft_load load_cudft1;
+extern cudft_rotate cuda_rotate;
 // inline functions:
 #include "openair1/PHY/CODING/nrLDPC_decoder/nrLDPC_init_mem.h"
 #endif

@@ -129,7 +129,7 @@ int main()
     // cudaHostAlloc((void **)&a, SYMBOLS_PER_SLOT*LEN * sizeof(int32_t), cudaHostAllocDefault);
     // cudaHostAlloc((void **)&b, SYMBOLS_PER_SLOT*LEN * sizeof(int32_t), cudaHostAllocDefault);
 
-    for (int j = 0; j < 100; j++)
+    for (int j = 0; j < 10; j++)
     {
         for (int i = 0; i < SYMBOLS_PER_SLOT*LEN; i++)
         {

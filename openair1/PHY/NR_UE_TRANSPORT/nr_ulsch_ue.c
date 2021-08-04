@@ -509,7 +509,7 @@ uint8_t nr_ue_pusch_common_procedures(PHY_VARS_NR_UE *UE,
         frame_parms->symbol_rotation[1][2 * (s + symb_offset)],
         frame_parms->symbol_rotation[1][1 + (2 * (s + symb_offset))]);
 
-      rotate_cpx_vector((int16_t *)&txdataF[ap][frame_parms->ofdm_symbol_size * s],
+      rotate_cpx_vector1((int16_t *)&txdataF[ap][frame_parms->ofdm_symbol_size * s],
                         &frame_parms->symbol_rotation[1][2 * (s + symb_offset)],
                         (int16_t *)&txdataF[ap][frame_parms->ofdm_symbol_size * s],
                         frame_parms->ofdm_symbol_size,

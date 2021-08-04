@@ -442,6 +442,29 @@ int rotate_cpx_vector(int16_t *x,
   return(0);
 }
 
+int rotate_cpx_vector1(int16_t *x,
+                      int16_t *alpha,
+                      int16_t *y,
+                      uint32_t N,
+                      uint16_t output_shift)
+{
+  //x=a+bi,alpha=c+di
+  int temp,temp1;
+  for(int i=0; i<N; i++) {
+    temp = (*(x+2*i)) * (*(alpha)) - (*(x+2*i+1)) * (*(alpha + 1)); //R(y) = (a*c - b*d)/|alpha|
+    temp1 = (*(x+2*i)) * (*(alpha + 1)) + (*(x+2*i+1)) * (*(alpha)); //I(y) = (a*d + b*c)/|alpha|
+    *(y+2*i) = temp >> output_shift;//这四句不能颠倒，防止y=x的情况
+    *(y+2*i+1) = temp1 >> output_shift;
+  }
+  // for(int i=0; i<N; i++) {
+  //   temp = (*(x+2*i)) * (*(alpha)) - (*(x+2*i+1)) * (*(alpha + 1)); //R(y) = (a*c - b*d)/|alpha|
+  //   *(y+2*i) = temp >> 15;
+  //   temp1 = (*(x+2*i)) * (*(alpha + 1)) + (*(x+2*i+1)) * (*(alpha)); //I(y) = (a*d + b*c)/|alpha|
+  //   *(y+2*i+1) = temp1 >> 15;
+  // }
+  return(0);
+}
+
 /*
 int mult_vector32_scalar(int16_t *x1,
                          int x2,

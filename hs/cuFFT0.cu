@@ -5,7 +5,7 @@
 #define LEN 2048
 #define SQRT2048_real 45.2876
 #define SQRT2048_imag 45.3065
-#define SYMBOLS_PER_SLOT 1400
+#define SYMBOLS_PER_SLOT 14
 
 __global__ void int_cufftComplex(int16_t *a, cufftComplex *b, int length)
 {
@@ -55,6 +55,7 @@ void cudft2048(int16_t *x,int16_t *y,unsigned char scale)
     float time;
     cudaEventCreate(&start);
     cudaEventCreate(&stop);
+    cudaEventRecord( start, 0 );
     
     
     cudaMemcpy(x11, x, SYMBOLS_PER_SLOT*LEN * sizeof(int32_t), cudaMemcpyHostToDevice);
@@ -62,18 +63,19 @@ void cudft2048(int16_t *x,int16_t *y,unsigned char scale)
     
     int threadNum = 512;
     int blockNum = (SYMBOLS_PER_SLOT * LEN - 1) / threadNum + 1;
-    cudaEventRecord( start, 0 );
+
     int_cufftComplex<<<blockNum, threadNum>>>(x11, CompData1, SYMBOLS_PER_SLOT*LEN);
-    cudaEventRecord( stop, 0 );
-    cudaEventSynchronize(start);
-    cudaEventSynchronize( stop );//注意函数所处位置
+
 
     cufftExecC2C(plan1, (cufftComplex*)CompData1, (cufftComplex*)CompData1, CUFFT_FORWARD);//execute
     cudaDeviceSynchronize();//wait to be done
 
     cufftComplex_int<<<blockNum, threadNum>>>(CompData1, x11, SYMBOLS_PER_SLOT*LEN);
     cudaMemcpy(y, x11, SYMBOLS_PER_SLOT*LEN * sizeof(int32_t), cudaMemcpyDeviceToHost);// copy the result from device to host
-    
+        
+    cudaEventRecord( stop, 0 );
+    cudaEventSynchronize(start);
+    cudaEventSynchronize( stop );//注意函数所处位置
     cudaEventElapsedTime( &time, start, stop );
     printf("cudft2048执行时间：%f(us)\n",time*1000);
 
@@ -100,10 +102,10 @@ int main()
     // cudaHostAlloc((void **)&b, SYMBOLS_PER_SLOT*LEN * sizeof(int32_t), cudaHostAllocDefault);
     for (int i = 0; i < SYMBOLS_PER_SLOT*LEN; i++)
     {
-        *(a+2*i) = i;
-        *(a+2*i+1) = LEN-i;
+        *(a+2*i) = rand()%LEN;
+        *(a+2*i+1) = rand()%LEN;
     }
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < 1; i++)
     {
         cudft2048((int16_t *)a,(int16_t *)b,0);
         // printf("hs1111111111111111:\n");

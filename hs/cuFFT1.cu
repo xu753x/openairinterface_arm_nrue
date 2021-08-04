@@ -52,8 +52,8 @@ void initcudft()
 
 void cudft2048(int16_t *x,int16_t *y,unsigned char scale)
 {
-    // cudaStream_t stream;
-	// cudaStreamCreate(&stream);
+    cudaStream_t stream;
+	cudaStreamCreate(&stream);
 
     cudaEvent_t start, stop;
     float time;
@@ -62,18 +62,19 @@ void cudft2048(int16_t *x,int16_t *y,unsigned char scale)
     cudaEventRecord( start, 0 );
 
     memcpy(cuda_x,x,SYMBOLS_PER_SLOT*LEN * sizeof(int32_t));
-    cudaMemcpy(x11, cuda_x, SYMBOLS_PER_SLOT*LEN * sizeof(int32_t), cudaMemcpyHostToDevice);
+    cudaMemcpyAsync(x11, cuda_x, SYMBOLS_PER_SLOT*LEN * sizeof(int32_t), cudaMemcpyHostToDevice,stream);
 
     int threadNum = 512;
     int blockNum = (SYMBOLS_PER_SLOT * LEN - 1) / threadNum + 1;
     
-    int_cufftComplex<<<blockNum, threadNum>>>(x11, CompData1, SYMBOLS_PER_SLOT*LEN);
+    int_cufftComplex<<<blockNum, threadNum,0,stream>>>(x11, CompData1, SYMBOLS_PER_SLOT*LEN);
 
     cufftExecC2C(plan1, (cufftComplex*)CompData1, (cufftComplex*)CompData1, CUFFT_FORWARD);//execute
     cudaDeviceSynchronize();//wait to be done
 
-    cufftComplex_int<<<blockNum, threadNum>>>(CompData1, x11, SYMBOLS_PER_SLOT*LEN);
-    cudaMemcpy(cuda_y, x11, SYMBOLS_PER_SLOT*LEN * sizeof(int32_t), cudaMemcpyDeviceToHost);// copy the result from device to host
+    cufftComplex_int<<<blockNum, threadNum,0,stream>>>(CompData1, x11, SYMBOLS_PER_SLOT*LEN);
+    cudaMemcpyAsync(cuda_y, x11, SYMBOLS_PER_SLOT*LEN * sizeof(int32_t), cudaMemcpyDeviceToHost,stream);// copy the result from device to host
+    cudaDeviceSynchronize();
     memcpy(y,cuda_y,SYMBOLS_PER_SLOT*LEN * sizeof(int32_t));
 
     cudaEventRecord( stop, 0 );

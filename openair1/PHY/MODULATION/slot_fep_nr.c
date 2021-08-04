@@ -393,11 +393,36 @@ int cuda_nr_slot_fep_ul(NR_DL_FRAME_PARMS *frame_parms,
            (frame_parms->ofdm_symbol_size) * sizeof(int32_t));
   }
   
+  int symb_offset = (Ns%frame_parms->slots_per_subframe)*frame_parms->symbols_per_slot;
+  uint32_t *rot2 = (uint32_t *)malloc(symbol_slot*sizeof(uint32_t));
+  for (int symbol=0;symbol<symbol_slot;symbol++) {
+    rot2[symbol] = ((uint32_t*)frame_parms->symbol_rotation[1])[symbol + symb_offset];
+    ((int16_t*)rot2)[2*symbol+1]=-((int16_t*)rot2)[2*symbol+1];
+  }
+
   rxdata_ptr = (int16_t *)tmp_dft_in;
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_CUFFT_WAIT, 1 );
-  cudft20481(rxdata_ptr,(int16_t *)rxdataF,0);
+  cudft20481(rxdata_ptr,(int16_t *)rxdataF,rot2);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_CUFFT_WAIT, 0 );
   
+  // int symb_offset = (Ns%frame_parms->slots_per_subframe)*frame_parms->symbols_per_slot;
+  // int32_t * temp1=(int32_t *)malloc(frame_parms->ofdm_symbol_size*symbol_slot*sizeof(int32_t));
+  // memcpy(temp1,rxdataF,frame_parms->ofdm_symbol_size*symbol_slot*sizeof(int32_t));
+  // int32_t * temp2=(int32_t *)malloc(frame_parms->ofdm_symbol_size*symbol_slot*sizeof(int32_t));
+
+  // static int rotate1=0;
+  // uint32_t *rot2 = (uint32_t *)malloc(symbol_slot*sizeof(uint32_t));
+  // for (int symbol=0;symbol<symbol_slot;symbol++) {
+  //   rot2[symbol] = ((uint32_t*)frame_parms->symbol_rotation[1])[symbol + symb_offset];
+  //   ((int16_t*)rot2)[2*symbol+1]=-((int16_t*)rot2)[2*symbol+1];
+  // }
+  // cuda_rotate((int16_t *)temp1,
+  //   (int16_t*)rot2,
+  //   (int16_t *)temp2,
+  //   symbol_slot*frame_parms->ofdm_symbol_size,
+  //   15);
+  // memcpy(rxdataF,temp2,frame_parms->ofdm_symbol_size*symbol_slot*sizeof(int32_t));
+
   // clear DC carrier from OFDM symbols
   for (int symbol = 0; symbol < symbol_slot; symbol++) 
     rxdataF[symbol * frame_parms->ofdm_symbol_size] = 0;

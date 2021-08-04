@@ -5,7 +5,7 @@
 #define LEN 2048
 #define SQRT2048_real 45.2876
 #define SQRT2048_imag 45.3065
-#define SYMBOLS_PER_SLOT 1
+#define SYMBOLS_PER_SLOT 14
 
 __global__ void int_cufftComplex(int16_t *a, cufftComplex *b, int length)
 {
@@ -37,14 +37,14 @@ void initcudft()
 {
     cudaMalloc((void**)&x1, SYMBOLS_PER_SLOT*LEN * sizeof(int32_t));
     cudaMalloc((void**)&CompData, SYMBOLS_PER_SLOT*LEN * sizeof(cufftComplex));
-    cufftPlan1d(&plan, LEN, CUFFT_C2C, 1);
-	// int rank=1;
-	// int n[1]; n[0]=LEN;
-    // int nembed[2]; nembed[0]=LEN; nembed[1]=SYMBOLS_PER_SLOT;
-    // int stride=1;
-    // int dist = LEN;
-    // int batch=SYMBOLS_PER_SLOT;
-    // cufftPlanMany(&plan,rank,n,nembed, stride ,dist , nembed, stride,dist, CUFFT_C2C, batch);
+    // cufftPlan1d(&plan, LEN, CUFFT_C2C, 1);
+	int rank=1;
+	int n[1]; n[0]=LEN;
+    int nembed[2]; nembed[0]=LEN; nembed[1]=SYMBOLS_PER_SLOT;
+    int stride=1;
+    int dist = LEN;
+    int batch=SYMBOLS_PER_SLOT;
+    cufftPlanMany(&plan,rank,n,nembed, stride ,dist , nembed, stride,dist, CUFFT_C2C, batch);
 }
 
 void cudft2048(int16_t *x,int16_t *y,unsigned char scale)
@@ -88,11 +88,21 @@ int main()
     }
     for (int i = 0; i < 3; i++)
     {
+        cudaEvent_t start, stop;
+        float time;
+        cudaEventCreate(&start);
+        cudaEventCreate(&stop);
+        cudaEventRecord( start, 0 );
         cudft2048((int16_t *)a,(int16_t *)b,0);
-        printf("hs1111111111111111:\n");
-        for (int j = 0; j < SYMBOLS_PER_SLOT*LEN; j++)
-        {
-            printf("a=%d + %dj\tb=%d + %dj\n", a[j*2],a[j*2+1],b[j*2],b[j*2+1]);
-        }
+        cudaEventRecord( stop, 0 );
+        cudaEventSynchronize(start);
+        cudaEventSynchronize( stop );//注意函数所处位置
+        cudaEventElapsedTime( &time, start, stop );
+        printf("cudft2048执行时间：%f(us)\n",time*1000);
+        // printf("hs1111111111111111:\n");
+        // for (int j = 0; j < SYMBOLS_PER_SLOT*LEN; j++)
+        // {
+        //     printf("a=%d + %dj\tb=%d + %dj\n", a[j*2],a[j*2+1],b[j*2],b[j*2+1]);
+        // }
     }
 }

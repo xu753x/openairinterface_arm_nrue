@@ -671,6 +671,15 @@ void nr_fep_full(RU_t *ru, int slot) {
   //   }
   // }
 
+  //     for (aa = 0; aa < fp->nb_antennas_rx; aa++) {
+  //   apply_nr_rotation_ul(fp,
+	// 		 ru->common.rxdataF[aa],
+	// 		 proc->tti_rx,
+	// 		 0,
+	// 		 fp->symbols_per_slot,
+	// 		 fp->ofdm_symbol_size);
+  // }
+
   for (aa = 0; aa < fp->nb_antennas_rx; aa++) {
     cuda_nr_slot_fep_ul(fp,
                         ru->common.rxdata[aa],

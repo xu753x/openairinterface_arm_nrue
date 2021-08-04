@@ -37,6 +37,7 @@ This section deals with basic functions for OFDM Modulation.
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "modulation_common.h"
 #include "PHY/LTE_TRANSPORT/transport_common_proto.h"
+#include "nas_log.h"
 //#define DEBUG_OFDM_MOD
 
 

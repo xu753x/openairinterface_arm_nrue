@@ -1076,3 +1076,14 @@ int test_log(void) {
   return 0;
 }
 #endif
+void LOG_ARRAY(const char *fname,const char *vname,void *data,int length)
+{
+    FILE *fp;
+    if((fp=fopen(fname,"w"))==NULL)
+          printf("Cannot open .\n");
+    fprintf(fp,"%s [] = {",vname);
+    for (int i=0; i<length<<1; i+=(2*1)) {
+        fprintf(fp,"%d,%d,\n",((short *)data)[i],((short *)data)[i+1]);
+      }
+    fprintf(fp,"};\n");
+}

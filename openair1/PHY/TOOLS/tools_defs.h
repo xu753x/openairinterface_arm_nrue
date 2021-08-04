@@ -106,6 +106,12 @@ int rotate_cpx_vector(int16_t *x,
                       uint32_t N,
                       uint16_t output_shift);
 
+int rotate_cpx_vector1(int16_t *x,
+                      int16_t *alpha,
+                      int16_t *y,
+                      uint32_t N,
+                      uint16_t output_shift);
+
 
 
 

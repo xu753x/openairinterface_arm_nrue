@@ -122,6 +122,8 @@ void apply_nr_rotation(NR_DL_FRAME_PARMS *fp,
 		       int nsymb,
 		       int length);
 
+void nr_rotation_test(int16_t *symbol_rotation,int16_t* txdata,int slot);
+
 void init_symbol_rotation(NR_DL_FRAME_PARMS *fp);
 
 void apply_nr_rotation_ul(NR_DL_FRAME_PARMS *frame_parms,

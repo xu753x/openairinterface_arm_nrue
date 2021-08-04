@@ -325,7 +325,7 @@ int main(int argc, char **argv)
   //logInit();
   randominit(0);
   // load_cuFFT();
-  // load_cuFFT1();
+  load_cuFFT1();
 
   /* initialize the sin-cos table */
    InitSinLUT();
