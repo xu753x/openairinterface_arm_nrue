@@ -224,9 +224,9 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
   unsigned int  ssb_offset = ue->frame_parms.first_carrier_offset + ue->frame_parms.ssb_start_subcarrier;
   if (ssb_offset>= ue->frame_parms.ofdm_symbol_size) ssb_offset-=ue->frame_parms.ofdm_symbol_size;
 
-  if (ue->high_speed_flag == 0) // use second channel estimate position for temporary storage
-    ch_offset     = ue->frame_parms.ofdm_symbol_size ;
-  else
+  //if (ue->high_speed_flag == 0) // use second channel estimate position for temporary storage
+  //  ch_offset     = ue->frame_parms.ofdm_symbol_size ;
+  //else
     ch_offset     = ue->frame_parms.ofdm_symbol_size*symbol;
 
   AssertFatal(dmrss >= 0 && dmrss < 3,
@@ -285,10 +285,10 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
     dl_ch = (int16_t *)&dl_ch_estimates[aarx][ch_offset];
 
     memset(dl_ch,0,4*(ue->frame_parms.ofdm_symbol_size));
-    if (ue->high_speed_flag==0) // multiply previous channel estimate by ch_est_alpha
-      multadd_complex_vector_real_scalar(dl_ch-(ue->frame_parms.ofdm_symbol_size<<1),
-                                         ue->ch_est_alpha,dl_ch-(ue->frame_parms.ofdm_symbol_size<<1),
-                                         1,ue->frame_parms.ofdm_symbol_size);
+    //if (ue->high_speed_flag==0) // multiply previous channel estimate by ch_est_alpha
+    //  multadd_complex_vector_real_scalar(dl_ch-(ue->frame_parms.ofdm_symbol_size<<1),
+    //                                     ue->ch_est_alpha,dl_ch-(ue->frame_parms.ofdm_symbol_size<<1),
+    //                                     1,ue->frame_parms.ofdm_symbol_size);
 #ifdef DEBUG_CH
     printf("pbch ch est pilot addr %p RB_DL %d\n",&pilot[0], ue->frame_parms.N_RB_DL);
     printf("k %d, first_carrier %d\n",k,ue->frame_parms.first_carrier_offset);
@@ -451,7 +451,7 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
       assert(0);
     }
 
-    if( dmrss == 2) // update time statistics for last PBCH symbol
+    if( dmrss == 0) // update time statistics for last PBCH symbol
     {
       // do ifft of channel estimate
       for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++)

@@ -1171,41 +1171,41 @@ int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(
 
   if (bcch_message->message.present == NR_BCCH_DL_SCH_MessageType_PR_c1) {
     switch (bcch_message->message.choice.c1->present) {
-      case NR_BCCH_DL_SCH_MessageType__c1_PR_systemInformationBlockType1:
-        if ((NR_UE_rrc_inst[module_id].Info[gNB_index].SIStatus&1) == 0) {
-          NR_SIB1_t *sib1 = NR_UE_rrc_inst[module_id].sib1[gNB_index];
-          if(sib1 != NULL){
-            SEQUENCE_free(&asn_DEF_NR_SIB1, (void *)sib1, 1 );
-          }
-	        NR_UE_rrc_inst[module_id].Info[gNB_index].SIStatus|=1;
-          sib1 = bcch_message->message.choice.c1->choice.systemInformationBlockType1;
-          if (*(int64_t*)sib1 != 1) {
-            NR_UE_rrc_inst[module_id].sib1[gNB_index] = sib1;
-            if( g_log->log_component[NR_RRC].level >= OAILOG_DEBUG ) {
-              xer_fprint(stdout, &asn_DEF_NR_SIB1, (const void *) NR_UE_rrc_inst[module_id].sib1[gNB_index]);
-            }
-            LOG_I(NR_RRC, "SIB1 decoded\n");
+      // case NR_BCCH_DL_SCH_MessageType__c1_PR_systemInformationBlockType1:
+      //   if ((NR_UE_rrc_inst[module_id].Info[gNB_index].SIStatus&1) == 0) {
+      //     NR_SIB1_t *sib1 = NR_UE_rrc_inst[module_id].sib1[gNB_index];
+      //     if(sib1 != NULL){
+      //       SEQUENCE_free(&asn_DEF_NR_SIB1, (void *)sib1, 1 );
+      //     }
+	    //     NR_UE_rrc_inst[module_id].Info[gNB_index].SIStatus|=1;
+      //     sib1 = bcch_message->message.choice.c1->choice.systemInformationBlockType1;
+      //     if (*(int64_t*)sib1 != 1) {
+      //       NR_UE_rrc_inst[module_id].sib1[gNB_index] = sib1;
+      //       if( g_log->log_component[NR_RRC].level >= OAILOG_DEBUG ) {
+      //         xer_fprint(stdout, &asn_DEF_NR_SIB1, (const void *) NR_UE_rrc_inst[module_id].sib1[gNB_index]);
+      //       }
+      //       LOG_I(NR_RRC, "SIB1 decoded\n");
 
-            ///	    dump_SIB1();
-            // FIXME: improve condition for the RA trigger
-            // Check for on-demand not broadcasted SI
-            check_requested_SI_List(module_id, NR_UE_rrc_inst[module_id].requested_SI_List, *sib1);
-            if( nr_rrc_get_state(module_id) <= RRC_STATE_IDLE_NR ) {
-              NR_UE_rrc_inst[module_id].ra_trigger = INITIAL_ACCESS_FROM_RRC_IDLE;
-              // TODO: remove flag after full RA procedures implemented
-              //              get_softmodem_params()->do_ra = 1;
-              LOG_D(PHY,"Setting state to NR_RRC_SI_RECEIVED\n");
-              nr_rrc_set_state (module_id, NR_RRC_SI_RECEIVED);
-            }
-            // take ServingCellConfigCommon and configure L1/L2
-            NR_UE_rrc_inst[module_id].servingCellConfigCommonSIB = sib1->servingCellConfigCommon;
-            nr_rrc_mac_config_req_ue(module_id,0,0,NULL,sib1->servingCellConfigCommon,NULL,NULL);
-            nr_rrc_ue_generate_ra_msg(module_id,gNB_index);
-          } else {
-            LOG_E(NR_RRC, "SIB1 not decoded\n");
-          }
-        }
-        break;
+      //       ///	    dump_SIB1();
+      //       // FIXME: improve condition for the RA trigger
+      //       // Check for on-demand not broadcasted SI
+      //       check_requested_SI_List(module_id, NR_UE_rrc_inst[module_id].requested_SI_List, *sib1);
+      //       if( nr_rrc_get_state(module_id) <= RRC_STATE_IDLE_NR ) {
+      //         NR_UE_rrc_inst[module_id].ra_trigger = INITIAL_ACCESS_FROM_RRC_IDLE;
+      //         // TODO: remove flag after full RA procedures implemented
+      //         //              get_softmodem_params()->do_ra = 1;
+      //         LOG_D(PHY,"Setting state to NR_RRC_SI_RECEIVED\n");
+      //         nr_rrc_set_state (module_id, NR_RRC_SI_RECEIVED);
+      //       }
+      //       // take ServingCellConfigCommon and configure L1/L2
+      //       NR_UE_rrc_inst[module_id].servingCellConfigCommonSIB = sib1->servingCellConfigCommon;
+      //       nr_rrc_mac_config_req_ue(module_id,0,0,NULL,sib1->servingCellConfigCommon,NULL,NULL);
+      //       nr_rrc_ue_generate_ra_msg(module_id,gNB_index);
+      //     } else {
+      //       LOG_E(NR_RRC, "SIB1 not decoded\n");
+      //     }
+      //   }
+      //   break;
 
       case NR_BCCH_DL_SCH_MessageType__c1_PR_systemInformation:
         if ((NR_UE_rrc_inst[module_id].Info[gNB_index].SIStatus&1) == 1) {

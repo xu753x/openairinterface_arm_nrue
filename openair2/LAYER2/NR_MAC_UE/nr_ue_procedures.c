@@ -62,11 +62,15 @@
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
+#include "PHY/phy_extern_nr_ue.h"
+
 //#define ENABLE_MAC_PAYLOAD_DEBUG 1
 //#define DEBUG_EXTRACT_DCI
 //#define DEBUG_RAR
 
 extern uint32_t N_RB_DL;
+
+int kssb_offset_mib = 0;
 
 int get_rnti_type(NR_UE_MAC_INST_t *mac, uint16_t rnti){
 
@@ -137,7 +141,7 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
   LOG_D(MAC,"system frame number(6 MSB bits): %d\n",  mac->mib->systemFrameNumber.buf[0]);
   LOG_D(MAC,"system frame number(with LSB): %d\n", (int)frame);
   LOG_D(MAC,"subcarrier spacing (0=15or60, 1=30or120): %d\n", (int)mac->mib->subCarrierSpacingCommon);
-  LOG_D(MAC,"ssb carrier offset(with MSB):  %d\n", (int)ssb_subcarrier_offset);
+  LOG_I(MAC,"ssb carrier offset(with MSB):  %d, mibssboffset %d, msb %d, old offset %d\n", (int)ssb_subcarrier_offset, mac->mib->ssb_SubcarrierOffset, ssb_subcarrier_offset_msb);  
   LOG_D(MAC,"dmrs type A position (0=pos2,1=pos3): %d\n", (int)mac->mib->dmrs_TypeA_Position);
   LOG_D(MAC,"cell barred (0=barred,1=notBarred): %d\n", (int)mac->mib->cellBarred);
   LOG_D(MAC,"intra frequency reselection (0=allowed,1=notAllowed): %d\n", (int)mac->mib->intraFreqReselection);
@@ -148,6 +152,33 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
   mac->mib_ssb = ssb_index;
 
   if (get_softmodem_params()->sa == 1) {
+
+    fapi_nr_config_request_t *nrUE_config = &PHY_vars_UE_g[module_id][cc_id]->nrUE_config;
+    NR_DL_FRAME_PARMS * fp = &PHY_vars_UE_g[module_id][cc_id]->frame_parms;
+
+  LOG_I(PHY, "old: ssb offset %d, pointA(30khz) %d , ssb_start_subcarrier %d\n", 
+              nrUE_config->ssb_table.ssb_subcarrier_offset, nrUE_config->ssb_table.ssb_offset_point_a, fp->ssb_start_subcarrier);
+
+  if (ssb_subcarrier_offset != nrUE_config->ssb_table.ssb_subcarrier_offset) 
+  {
+       kssb_offset_mib = (nrUE_config->ssb_table.ssb_subcarrier_offset - ssb_subcarrier_offset);
+      //  if (nrUE_config->ssb_table.ssb_subcarrier_offset * 2 - ssb_subcarrier_offset >= 24)
+      //  {
+      //     nrUE_config->ssb_table.ssb_offset_point_a += 1;
+      //  }
+      //  else if (nrUE_config->ssb_table.ssb_subcarrier_offset - ssb_subcarrier_offset < 0)
+      //  {
+      //     nrUE_config->ssb_table.ssb_offset_point_a -= 1;
+      //  }
+       fp->ssb_start_subcarrier = (12 * nrUE_config->ssb_table.ssb_offset_point_a + ssb_subcarrier_offset/2);
+       nrUE_config->ssb_table.ssb_subcarrier_offset = ssb_subcarrier_offset;
+       LOG_I(PHY, "new: ssb offset %d, pointA(30khz) %d , ssb_start_subcarrier %d\n", 
+              nrUE_config->ssb_table.ssb_subcarrier_offset,  nrUE_config->ssb_table.ssb_offset_point_a, fp->ssb_start_subcarrier);
+  }
+  else
+  {
+      kssb_offset_mib = 0;
+  }
 
     // TODO these values shouldn't be taken from SCC in SA
     uint8_t scs_ssb = get_softmodem_params()->numerology;
@@ -227,10 +258,10 @@ int8_t nr_ue_process_dci_freq_dom_resource_assignment(nfapi_nr_ue_pusch_pdu_t *p
       return -1;
     }
 
-    LOG_D(MAC,"DLSCH riv = %i\n", riv);
-    LOG_D(MAC,"DLSCH n_RB_DLBWP = %i\n", n_RB_DLBWP);
-    LOG_D(MAC,"DLSCH number_rbs = %i\n", dlsch_config_pdu->number_rbs);
-    LOG_D(MAC,"DLSCH start_rb = %i\n", dlsch_config_pdu->start_rb);
+    LOG_I(MAC,"DLSCH riv = %i\n", riv);
+    LOG_I(MAC,"DLSCH n_RB_DLBWP = %i\n", n_RB_DLBWP);
+    LOG_I(MAC,"DLSCH number_rbs = %i\n", dlsch_config_pdu->number_rbs);
+    LOG_I(MAC,"DLSCH start_rb = %i\n", dlsch_config_pdu->start_rb);
 
   }
   if(pusch_config_pdu != NULL){
@@ -1468,15 +1499,15 @@ uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
       pos++;
       dci_pdu_rel15->system_info_indicator = (*dci_pdu>>(dci_size-pos))&0x1;
 
-      LOG_D(MAC,"N_RB = %i\n", N_RB);
-      LOG_D(MAC,"dci_size = %i\n", dci_size);
-      LOG_D(MAC,"fsize = %i\n", fsize);
-      LOG_D(MAC,"dci_pdu_rel15->frequency_domain_assignment.val = %i\n", dci_pdu_rel15->frequency_domain_assignment.val);
-      LOG_D(MAC,"dci_pdu_rel15->time_domain_assignment.val = %i\n", dci_pdu_rel15->time_domain_assignment.val);
-      LOG_D(MAC,"dci_pdu_rel15->vrb_to_prb_mapping.val = %i\n", dci_pdu_rel15->vrb_to_prb_mapping.val);
-      LOG_D(MAC,"dci_pdu_rel15->mcs = %i\n", dci_pdu_rel15->mcs);
-      LOG_D(MAC,"dci_pdu_rel15->rv = %i\n", dci_pdu_rel15->rv);
-      LOG_D(MAC,"dci_pdu_rel15->system_info_indicator = %i\n", dci_pdu_rel15->system_info_indicator);
+      LOG_I(MAC,"N_RB = %i\n", N_RB);
+      LOG_I(MAC,"dci_size = %i\n", dci_size);
+      LOG_I(MAC,"fsize = %i\n", fsize);
+      LOG_I(MAC,"dci_pdu_rel15->frequency_domain_assignment.val = %i\n", dci_pdu_rel15->frequency_domain_assignment.val);
+      LOG_I(MAC,"dci_pdu_rel15->time_domain_assignment.val = %i\n", dci_pdu_rel15->time_domain_assignment.val);
+      LOG_I(MAC,"dci_pdu_rel15->vrb_to_prb_mapping.val = %i\n", dci_pdu_rel15->vrb_to_prb_mapping.val);
+      LOG_I(MAC,"dci_pdu_rel15->mcs = %i\n", dci_pdu_rel15->mcs);
+      LOG_I(MAC,"dci_pdu_rel15->rv = %i\n", dci_pdu_rel15->rv);
+      LOG_I(MAC,"dci_pdu_rel15->system_info_indicator = %i\n", dci_pdu_rel15->system_info_indicator);
 
       break;
 	

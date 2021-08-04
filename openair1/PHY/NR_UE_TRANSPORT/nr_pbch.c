@@ -138,10 +138,10 @@ uint16_t nr_pbch_extract(int **rxdataF,
       }
     }
 
-    if (high_speed_flag == 1)
+    //if (high_speed_flag == 1)
       dl_ch0     = &dl_ch_estimates[aarx][((symbol+s_offset)*(frame_parms->ofdm_symbol_size))];
-    else
-      dl_ch0     = &dl_ch_estimates[aarx][0];
+    //else
+    //  dl_ch0     = &dl_ch_estimates[aarx][0];
 
     //printf("dl_ch0 addr %p\n",dl_ch0);
     dl_ch0_ext = &dl_ch_estimates_ext[aarx][symbol*20*12];

@@ -43,6 +43,7 @@ void nr_get_carrier_frequencies(NR_DL_FRAME_PARMS *fp, uint64_t *dl_carrier, uin
     *dl_carrier = downlink_frequency[0][0];
   }
 
+  LOG_I(PHY, "dl_carrier %d\n", *dl_carrier);
   if (uplink_frequency_offset[0][0])
     *ul_carrier = *dl_carrier + uplink_frequency_offset[0][0];
   else

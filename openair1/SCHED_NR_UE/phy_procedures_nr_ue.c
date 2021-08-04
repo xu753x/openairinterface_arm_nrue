@@ -337,7 +337,7 @@ void nr_ue_measurement_procedures(uint16_t l,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_MEASUREMENT_PROCEDURES, VCD_FUNCTION_OUT);
 }
 
-void nr_ue_pbch_procedures(uint8_t gNB_id,
+int nr_ue_pbch_procedures(uint8_t gNB_id,
 			   PHY_VARS_NR_UE *ue,
 			   UE_nr_rxtx_proc_t *proc,
 			   uint8_t abstraction_flag)
@@ -378,13 +378,19 @@ void nr_ue_pbch_procedures(uint8_t gNB_id,
 
 #ifdef DEBUG_PHY_PROC
     uint16_t frame_tx;
-    LOG_D(PHY,"[UE %d] frame %d, nr_slot_rx %d, Received PBCH (MIB): frame_tx %d. N_RB_DL %d\n",
+    LOG_I(PHY,"[UE %d] frame %d, nr_slot_rx %d, Received PBCH (MIB): frame_tx %d. N_RB_DL %d\n",
     ue->Mod_id,
     frame_rx,
     nr_slot_rx,
     frame_tx,
     ue->frame_parms.N_RB_DL);
 #endif
+    
+    LOG_I(PHY,"[UE %d] frame %d, nr_slot_rx %d, Received PBCH (MIB): N_RB_DL %d\n",
+    ue->Mod_id,
+    frame_rx,
+    nr_slot_rx,
+    ue->frame_parms.N_RB_DL);
 
   } else {
     LOG_E(PHY,"[UE %d] frame %d, nr_slot_rx %d, Error decoding PBCH!\n",
@@ -440,6 +446,8 @@ void nr_ue_pbch_procedures(uint8_t gNB_id,
 	ue->pbch_vars[gNB_id]->pdu_errors_conseq);
 #endif
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_PBCH_PROCEDURES, VCD_FUNCTION_OUT);
+
+  return ret;
 }
 
 
@@ -678,7 +686,7 @@ int nr_ue_pdcch_procedures(uint8_t gNB_id,
   //LOG_D(PHY,"[UE  %d][PUSCH] Frame %d nr_slot_rx %d PHICH RX\n",ue->Mod_id,frame_rx,nr_slot_rx);
 
   for (int i=0; i<dci_cnt; i++) {
-    LOG_D(PHY,"[UE  %d] AbsSubFrame %d.%d, Mode %s: DCI %i of %d total DCIs found --> rnti %x : format %d\n",
+    LOG_I(PHY,"[UE  %d] AbsSubFrame %d.%d, Mode %s: DCI %i of %d total DCIs found --> rnti %x : format %d\n",
       ue->Mod_id,frame_rx%1024,nr_slot_rx,nr_mode_string[ue->UE_mode[gNB_id]],
       i + 1,
       dci_cnt,
@@ -761,7 +769,8 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
     uint16_t s1             = dlsch0_harq->nb_symbols;
     bool is_SI              = dlsch0->rnti_type == _SI_RNTI_;
 
-    LOG_D(PHY,"[UE %d] PDSCH type %d active in nr_slot_rx %d, harq_pid %d (%d), rb_start %d, nb_rb %d, symbol_start %d, nb_symbols %d, DMRS mask %x\n",ue->Mod_id,pdsch,nr_slot_rx,harq_pid,dlsch0->harq_processes[harq_pid]->status,pdsch_start_rb,pdsch_nb_rb,s0,s1,dlsch0->harq_processes[harq_pid]->dlDmrsSymbPos);
+    LOG_I(PHY,"[UE %d] PDSCH type %d active in nr_slot_rx %d, bwpstart %d, harq_pid %d (%d), rb_start %d, nb_rb %d, symbol_start %d, nb_symbols %d, DMRS mask %x\n",
+    ue->Mod_id,pdsch,nr_slot_rx, dlsch0_harq->BWPStart, harq_pid,dlsch0->harq_processes[harq_pid]->status,pdsch_start_rb,pdsch_nb_rb,s0,s1,dlsch0->harq_processes[harq_pid]->dlDmrsSymbPos);
 
     for (m = s0; m < (s0 +s1); m++) {
       if (((1<<m)&dlsch0->harq_processes[harq_pid]->dlDmrsSymbPos) > 0) {
@@ -1599,7 +1608,7 @@ int is_pbch_in_slot(fapi_nr_config_request_t *config, int frame, int slot, NR_DL
   }
 }
 
-
+extern int g_rx_offset[];
 int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            UE_nr_rxtx_proc_t *proc,
                            uint8_t gNB_id,
@@ -1617,6 +1626,11 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   uint8_t nb_symb_pdcch = pdcch_vars->nb_search_space > 0 ? pdcch_vars->pdcch_config[0].coreset.duration : 0;
   uint8_t dci_cnt = 0;
   NR_DL_FRAME_PARMS *fp = &ue->frame_parms;
+
+  static int g_log_pbch_num = 0;
+  static int g_pbch_ch[20000];
+  static int g_pbch_pos = 0;
+
   
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_IN);
 
@@ -1635,11 +1649,13 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 
   slot_pbch = is_pbch_in_slot(cfg, frame_rx, nr_slot_rx, fp);
   slot_ssb  = is_ssb_in_slot(cfg, frame_rx, nr_slot_rx, fp);
+ 
 
   // looking for pbch only in slot where it is supposed to be
-  if (slot_ssb) {
+  //if (slot_ssb) {
+  if (slot_pbch && (nr_slot_rx == 0) && ((frame_rx & 0x01)== 0)) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP_PBCH, VCD_FUNCTION_IN);
-    LOG_D(PHY," ------  PBCH ChannelComp/LLR: frame.slot %d.%d ------  \n", frame_rx%1024, nr_slot_rx);
+    LOG_D(PHY," ------  PBCH ChannelComp/LLR: frame.slot %d.%d ------  decode_MIB %d, slot_pbch %d \n", frame_rx%1024, nr_slot_rx, ue->decode_MIB, slot_pbch);
     for (int i=1; i<4; i++) {
 
       nr_slot_fep(ue,
@@ -1651,19 +1667,29 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
       start_meas(&ue->dlsch_channel_estimation_stats);
 #endif
       nr_pbch_channel_estimation(ue,proc,0,nr_slot_rx,(ue->symbol_offset+i)%(fp->symbols_per_slot),i-1,(fp->ssb_index)&7,fp->half_frame_bit);
+
+      //if ((g_log_pbch_num < 400) && (g_log_pbch_num > 380))
+
 #if UE_TIMING_TRACE
       stop_meas(&ue->dlsch_channel_estimation_stats);
 #endif
     }
 
+      if (ue->UE_mode[0] == PRACH)
+      {
+            memcpy(&g_pbch_ch[g_pbch_pos], &ue->pbch_vars[0]->dl_ch_estimates[0][1*4096],20 * 12 * 4);
+            memcpy(&g_pbch_ch[g_pbch_pos + 20*12], &ue->pbch_vars[0]->dl_ch_estimates[0][2*4096],20 * 12 * 4);
+            memcpy(&g_pbch_ch[g_pbch_pos + 20*12 * 2], &ue->pbch_vars[0]->dl_ch_estimates[0][3*4096],20 * 12 * 4);
+            
+      }
     nr_ue_rsrp_measurements(ue, gNB_id, proc, nr_slot_rx, 0);
 
     if ((ue->decode_MIB == 1) && slot_pbch) {
-
+      int pbchret;
       LOG_D(PHY," ------  Decode MIB: frame.slot %d.%d ------  \n", frame_rx%1024, nr_slot_rx);
-      nr_ue_pbch_procedures(gNB_id, ue, proc, 0);
+      pbchret = nr_ue_pbch_procedures(gNB_id, ue, proc, 0);
 
-      if (ue->no_timing_correction==0) {
+      if ((ue->no_timing_correction==0) && (pbchret == 0)) {
         LOG_D(PHY,"start adjust sync slot = %d no timing %d\n", nr_slot_rx, ue->no_timing_correction);
         nr_adjust_synch_ue(fp,
                            ue,
@@ -1672,6 +1698,24 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            nr_slot_rx,
                            0,
                            16384);
+
+
+
+        //if ((g_log_pbch_num < 400) && (g_log_pbch_num > 380))
+        if (ue->UE_mode[0] == PRACH)
+        {
+            g_pbch_pos +=  60*12;
+            g_log_pbch_num++;  
+            LOG_I(PHY, "frame %d %d, ue->symbol_offset %d, rxoffset %d  %d  %d, prefix %d %d, highflag %d\n", 
+            frame_rx, nr_slot_rx, ue->symbol_offset, g_rx_offset[ue->symbol_offset+1], g_rx_offset[ue->symbol_offset+2], g_rx_offset[ue->symbol_offset+3], 
+            fp->nb_prefix_samples0, fp->nb_prefix_samples,
+            ue->high_speed_flag) ;    
+        }
+        if(g_log_pbch_num == 20)
+        {
+          LOG_M("pbch_ch.m", "pbch_ch", g_pbch_ch, g_pbch_pos,1,1);
+              
+        }                      
       }
 
       LOG_D(PHY, "Doing N0 measurements in %s\n", __FUNCTION__);

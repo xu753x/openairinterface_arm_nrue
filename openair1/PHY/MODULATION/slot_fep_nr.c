@@ -34,6 +34,8 @@
 #define LOG_I(A,B...) printf(A)
 #endif*/
 
+int g_rx_offset[28];
+
 dft_size_idx_t get_dft_size_idx(uint16_t ofdm_symbol_size)
 {
   switch (ofdm_symbol_size) {
@@ -108,6 +110,8 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
 
   // use OFDM symbol from within 1/8th of the CP to avoid ISI
   rx_offset -= nb_prefix_samples / 8;
+
+  g_rx_offset[symbol] = rx_offset;
 
 #ifdef DEBUG_FEP
   //  if (ue->frame <100)

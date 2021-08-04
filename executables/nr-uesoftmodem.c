@@ -435,6 +435,7 @@ int main( int argc, char **argv ) {
 
   get_options (); //Command-line options specific for NRUE
 
+
   get_common_options(SOFTMODEM_5GUE_BIT );
   init_tpools(nrUE_params.nr_dlsch_parallel);
   CONFIG_CLEARRTFLAG(CONFIG_NOEXITONHELP);
@@ -495,20 +496,10 @@ int main( int argc, char **argv ) {
       nrUE_config->carrier_config.dl_frequency =  (downlink_frequency[0][0] -(6*UE[CC_id]->frame_parms.N_RB_DL*(15000<<nrUE_config->ssb_config.scs_common)))/1000;
       nrUE_config->carrier_config.uplink_frequency =  (downlink_frequency[0][0] -(6*UE[CC_id]->frame_parms.N_RB_DL*(15000<<nrUE_config->ssb_config.scs_common)))/1000;
       nrUE_config->cell_config.frame_duplex_type = TDD; 
-      if ((point_a_15khz == 86) && (kssb_15khz == 0))
-      {
-          nrUE_config->ssb_table.ssb_offset_point_a =  (UE[CC_id]->frame_parms.N_RB_DL - 20)>>1;
-          if (UE[CC_id]->frame_parms.N_RB_DL == 106)
-             nrUE_config->ssb_table.ssb_subcarrier_offset = 0; // used as 15kHZ
-          else
-             nrUE_config->ssb_table.ssb_subcarrier_offset = 12; // used as 15kHZ
-
-      }
-      else
-      {
-         nrUE_config->ssb_table.ssb_offset_point_a =  point_a_15khz>>1; // used as 30kHZ             //(UE[CC_id]->frame_parms.N_RB_DL - 20)>>1;
-         nrUE_config->ssb_table.ssb_subcarrier_offset = kssb_15khz; // used as 15kHZ
-      }
+      nrUE_config->ssb_table.ssb_offset_point_a =  (UE[CC_id]->frame_parms.N_RB_DL - 20)>>1;
+      
+      nrUE_config->ssb_table.ssb_subcarrier_offset = kssb_15khz;
+      
       LOG_I(PHY, "freq %d  %d\n", downlink_frequency[0][0]/1000, nrUE_config->carrier_config.dl_frequency);
 
 
