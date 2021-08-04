@@ -2506,7 +2506,10 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
   uint8_t bsr_len = 0, bsr_ce_len = 0, bsr_header_len = 0;
   //uint8_t phr_header_len = 0, phr_ce_len = 0, phr_len = 0;
   uint8_t phr_len = 0;
-  uint8_t lcid = 0;
+  //uint8_t lcid = 0;
+  uint8_t lcid = 0, lcid_rlc_pdu_count = 0;
+  boolean_t is_lcid_processed = FALSE;
+  boolean_t is_all_lcid_processed = FALSE;
   uint16_t sdu_lengths[MAX_LCID] = { 0 };
   uint8_t sdu_lcids[MAX_LCID] = { 0 };
   uint16_t payload_offset = 0, num_sdus = 0;
@@ -2625,7 +2628,12 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
   // Check for DCCH first
   // TO DO: Multiplex in the order defined by the logical channel prioritization
   for (lcid = UL_SCH_LCID_SRB1;
-       lcid < MAX_LCID; lcid++) {
+	   (lcid < MAX_LCID) && (is_all_lcid_processed == FALSE); lcid++) {
+//       lcid < MAX_LCID; lcid++) {
+//  if (UE_mac_inst[module_idP].scheduling_info.LCID_status[lcid] ==
+//    LCID_NOT_EMPTY) {
+    lcid_rlc_pdu_count = 0;
+    is_lcid_processed = FALSE;
     lcid_buffer_occupancy_old = mac_rlc_get_buffer_occupancy_ind(module_idP, mac->crnti, eNB_index, frameP, subframe, ENB_FLAG_NO, lcid);
     lcid_buffer_occupancy_new = lcid_buffer_occupancy_old;
 
@@ -2641,7 +2649,14 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
               buflen, sdu_length_total,
               total_rlc_pdu_header_len, buflen_remain); // ,nr_ue_mac_inst->scheduling_info.BSR_bytes[nr_ue_mac_inst->scheduling_info.LCGID[lcid]]
 
-      while(buflen_remain > 0 && lcid_buffer_occupancy_new){
+      //while(buflen_remain > 0 && lcid_buffer_occupancy_new){
+      while ((!is_lcid_processed) && (lcid_buffer_occupancy_new)
+             && (buflen_remain > 0)) {
+        if (( get_softmodem_params()->usim_test == 0) && (lcid == UL_SCH_LCID_SRB2)
+            && (lcid_rlc_pdu_count == 0) && (num_sdus)) {
+          // Skip SRB2 multiplex if at least one SRB1 SDU is already multiplexed
+          break;
+        }
 
         sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP,
                                 mac->crnti,
@@ -2663,22 +2678,26 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
         if (sdu_lengths[num_sdus]) {
           sdu_length_total += sdu_lengths[num_sdus];
           sdu_lcids[num_sdus] = lcid;
-#if 0
+#if 1
           if (buflen ==
               (bsr_len + phr_len + total_rlc_pdu_header_len +
                sdu_length_total +  sizeof(SCH_SUBHEADER_FIXED))) {
             //No more remaining TBS after this PDU
             //exit the function
             rlc_pdu_header_len_last = 1;
+            is_lcid_processed = TRUE;
+            is_all_lcid_processed = TRUE;
           } else {
             rlc_pdu_header_len_last =
-              (sdu_lengths[num_sdus] > 128) ?  sizeof(SCH_SUBHEADER_LONG) :  sizeof(SCH_SUBHEADER_SHORT);
+              (sdu_lengths[num_sdus] > 256) ?  sizeof(SCH_SUBHEADER_LONG) :  sizeof(SCH_SUBHEADER_SHORT);
 
             //Change to 1 byte if it does not fit in the TBS, ie last PDU
             if (buflen <=
                 (bsr_len + phr_len + total_rlc_pdu_header_len +
                  rlc_pdu_header_len_last + sdu_length_total)) {
               rlc_pdu_header_len_last = 1;
+              is_lcid_processed = TRUE;
+              is_all_lcid_processed = TRUE;
             }
           }
 #else
@@ -2689,6 +2708,9 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
           total_rlc_pdu_header_len += rlc_pdu_header_len_last;
           //Update number of SDU
           num_sdus++;
+        } else {
+          /* avoid infinite loop ... */
+          is_lcid_processed = TRUE;
         }
 
         /* Get updated BO after multiplexing this PDU */
@@ -2734,6 +2756,7 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
       mac->scheduling_info.LCID_status[lcid] =
         LCID_EMPTY;
     }
+  //}
   }
 
   // Compute BSR Values and update Nb LCGID with data after multiplexing
