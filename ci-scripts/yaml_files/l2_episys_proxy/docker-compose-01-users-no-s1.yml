@@ -1,0 +1,88 @@
+version: '3.8'
+
+services:
+    enb_vnf_nfapi:
+        image: oai-enb:develop
+        privileged: true
+        container_name: l2sim-enb-vnf
+        environment:
+            USE_FDD_FAPI_RCC: 'yes'
+            ENB_NAME: vnf-in-docker
+            MCC: '208'
+            MNC: '93'
+            MNC_LENGTH: 2
+            TAC: 1
+            UTRA_BAND_ID: 7
+            DL_FREQUENCY_IN_MHZ: 2680
+            UL_FREQUENCY_OFFSET_IN_MHZ: 120
+            NID_CELL: 10
+            NB_PRB: 25
+            MME_S1C_IP_ADDRESS: 192.168.61.4
+            F1_CU_IP_ADDRESS: 192.168.61.20
+            S1C_IF_NAME: eth0
+            S1U_IF_NAME: eth0
+            F1_IF_NAME: eth0
+            F1_DU_IP_ADDRESS: 192.168.61.25
+            USE_ADDITIONAL_OPTIONS: '--noS1'
+        networks:
+            public_net:
+                ipv4_address: 192.168.61.20
+        healthcheck:
+            test: /bin/bash -c "pgrep lte-softmodem"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+    proxy_pnf_nfapi:
+        image: oai-lte-multi-ue-proxy:latest
+        privileged: true
+        container_name: l2sim-proxy-pnf
+        environment:
+            NUM_UES: 1
+            ENB_IP_ADDRESS: 192.168.61.20
+            PROXY_IP_ADDRESS: 192.168.61.25
+            UE_IP_ADDRESS: 192.168.61.30
+        networks:
+            public_net:
+                ipv4_address: 192.168.61.25
+        entrypoint: /bin/bash -c "/oai-lte-multi-ue-proxy/bin/proxy 1 192.168.61.20 192.168.61.25 192.168.61.30"
+        healthcheck:
+            test: /bin/bash -c "pgrep proxy"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+    oai_ue_l2_sim0:
+        image: oai-lte-ue:develop
+        privileged: true
+        container_name: l2sim-oai-ue0
+        environment:
+            USE_NFAPI: 'yes'
+            UE_NFAPI_IF_NAME: eth0
+            ENB_IP_ADDRESS: 192.168.61.25
+            LTE_UE_IP_ADDRESS: 192.168.61.30
+            MCC: '208'
+            MNC: '93'
+            SHORT_IMSI: '0100001111'
+            LTE_KEY: '8baf473f2f8fd09487cccbd7097c6862'
+            OPC: 'd52e6f6544c4c78b945dca2d3af26890'
+            MSISDN: '33611123456'
+            HPLMN: '20893'
+            USE_ADDITIONAL_OPTIONS: --L2-emul 5 --num-ues 1 --nokrnmod 1 --node-number 2 --noS1
+        networks:
+            public_net:
+                ipv4_address: 192.168.61.30
+        healthcheck:
+            test: /bin/bash -c "pgrep lte-uesoftmodem"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+networks:
+    public_net:
+        name: l2sim-net
+        ipam:
+            config:
+                - subnet: 192.168.61.0/26
+        driver_opts:
+            com.docker.network.bridge.name: "l2sim-net"
