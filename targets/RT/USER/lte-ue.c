@@ -1088,14 +1088,14 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
     nfapi_ul_config_request_t *ul_config_req = get_queue(&ul_config_req_queue);
     nfapi_hi_dci0_request_t *hi_dci0_req = get_queue(&hi_dci0_req_queue);
 
-    LOG_I(MAC, "received from proxy frame %d subframe %d\n",
+    LOG_D(MAC, "received from proxy frame %d subframe %d\n",
           NFAPI_SFNSF2SFN(sfn_sf), NFAPI_SFNSF2SF(sfn_sf));
 
     if (ul_config_req != NULL) {
       uint8_t ul_num_pdus = ul_config_req->ul_config_request_body.number_of_pdus;
       if (ul_num_pdus > 0) {
         char *ul_str = nfapi_ul_config_req_to_string(ul_config_req);
-        LOG_I(MAC, "ul_config_req: %s\n", ul_str);
+        LOG_D(MAC, "ul_config_req: %s\n", ul_str);
         free(ul_str);
       }
     }
@@ -1111,13 +1111,13 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
       nfapi_dl_config_request_t *dl_config_req = dl_config_req_tx_req->dl_config_req;
 
       uint16_t dl_num_pdus = dl_config_req->dl_config_request_body.number_pdu;
-      LOG_A(MAC, "(OAI UE) Received dl_config_req from proxy at Frame: %d, Subframe: %d,"
+      LOG_D(MAC, "(OAI UE) Received dl_config_req from proxy at Frame: %d, Subframe: %d,"
             " with number of PDUs: %u\n",
             NFAPI_SFNSF2SFN(dl_config_req->sfn_sf), NFAPI_SFNSF2SF(dl_config_req->sfn_sf),
             dl_num_pdus);
       if (dl_num_pdus > 0) {
         char *dl_str = nfapi_dl_config_req_to_string(dl_config_req);
-        LOG_I(MAC, "dl_config_req: %s\n", dl_str);
+        LOG_D(MAC, "dl_config_req: %s\n", dl_str);
         free(dl_str);
       }
       LOG_D(MAC, "tx_req pdus: %d\n", tx_req_pdu_list->num_pdus);

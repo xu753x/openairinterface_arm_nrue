@@ -677,8 +677,8 @@ if (selectRetval==-1 && errno == 22)
 					//phy->insync_minor_adjustment = 0;
                                         phy->insync_minor_adjustment_duration--;
 
-                                        NFAPI_TRACE(NFAPI_TRACE_NOTE, "[VNF] AFTER adjustment - Subframe minor adjustment %dus sf_start.tv_nsec:%d duration:%u\n", 
-                                            phy->insync_minor_adjustment, sf_start.tv_nsec, phy->insync_minor_adjustment_duration);
+                                        //NFAPI_TRACE(NFAPI_TRACE_NOTE, "[VNF] AFTER adjustment - Subframe minor adjustment %dus sf_start.tv_nsec:%d duration:%u\n",
+                                        //    phy->insync_minor_adjustment, sf_start.tv_nsec, phy->insync_minor_adjustment_duration);
 
                                         if (phy->insync_minor_adjustment_duration==0)
                                         {

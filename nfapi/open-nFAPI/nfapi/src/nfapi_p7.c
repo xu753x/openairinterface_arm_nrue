@@ -2185,6 +2185,7 @@ static uint8_t pack_tx_request_body_value(void* tlv, uint8_t **ppWritePackedMsg,
                         // DJP - if(pusharray8(pdu->segments[j].segment_data, (uint32_t)(-1), pdu->segments[j].segment_length, ppWritePackedMsg, end) == 0)
 			int push_ret = pusharray8(pdu->segments[j].segment_data, 65535, pdu->segments[j].segment_length, ppWritePackedMsg, end);
                         
+#if 0
                         if (pdu->segments[j].segment_length == 3)
                         {
                           NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() BCH? segment_data:%x %x %x\n", __FUNCTION__, 
@@ -2193,6 +2194,7 @@ static uint8_t pack_tx_request_body_value(void* tlv, uint8_t **ppWritePackedMsg,
                           pdu->segments[j].segment_data[2]
                           );
                         }
+#endif
                         //NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() segment_data:%p segment_length:%u pusharray8()=%d\n", __FUNCTION__, pdu->segments[j].segment_data, pdu->segments[j].segment_length, push_ret);
 
                         if (push_ret == 0)
@@ -6051,6 +6053,7 @@ static uint8_t unpack_tx_request(uint8_t **ppReadPackedMsg, uint8_t *end, void *
 					  {
 						  if(!pullarray8(ppReadPackedMsg, pdu->segments[0].segment_data, pdu->segments[0].segment_length, pdu->segments[0].segment_length, end))
 							return 0;
+#if 0
                                                   if (pdu->segments[0].segment_length == 3)
                                                   {
                                                   NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() BCH? segment_data:%x %x %x\n", __FUNCTION__, 
@@ -6059,6 +6062,7 @@ static uint8_t unpack_tx_request(uint8_t **ppReadPackedMsg, uint8_t *end, void *
                                                       pdu->segments[0].segment_data[2]
                                                       );
                                                   }
+#endif
 					  }
 					  else
 					  {
@@ -6490,8 +6494,8 @@ static uint8_t unpack_rx_indication_body_value(void *tlv, uint8_t **ppReadPacked
 	// the rxBodyEnd points to the end of the cqi PDU's
 	uint8_t *rxBodyEnd = *ppReadPackedMsg + value->tl.length;
 
-	NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s rxBodyEnd: %p end: %p\n", __FUNCTION__,
-				rxBodyEnd, end);
+	//NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s rxBodyEnd: %p end: %p\n", __FUNCTION__,
+	//			rxBodyEnd, end);
 	if (rxBodyEnd > end)
 	{
 		// pdu end is past buffer end
@@ -6532,7 +6536,7 @@ static uint8_t unpack_rx_indication_body_value(void *tlv, uint8_t **ppReadPacked
 			return 0;
 		}
 
-		NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s generic_tl.tag = 0x%x length = %u\n", __FUNCTION__, generic_tl.tag, generic_tl.length);
+		//NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s generic_tl.tag = 0x%x length = %u\n", __FUNCTION__, generic_tl.tag, generic_tl.length);
 
 		if (generic_tl.tag != NFAPI_RX_UE_INFORMATION_TAG)
 		{
@@ -6557,7 +6561,7 @@ static uint8_t unpack_rx_indication_body_value(void *tlv, uint8_t **ppReadPacked
 			return 0;
 		}
 
-		NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s generic_tl.tag = 0x%x length = %u\n", __FUNCTION__, generic_tl.tag, generic_tl.length);
+		//NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s generic_tl.tag = 0x%x length = %u\n", __FUNCTION__, generic_tl.tag, generic_tl.length);
 
 		if (generic_tl.tag != NFAPI_RX_INDICATION_REL8_TAG)
 		{
@@ -6571,8 +6575,8 @@ static uint8_t unpack_rx_indication_body_value(void *tlv, uint8_t **ppReadPacked
 			return 0;
 		}
 		//What is offset not stripping 10 bytes
-		NFAPI_TRACE(NFAPI_TRACE_INFO, "%s pdu->rx_indication_rel8.offset = %u", __FUNCTION__,
-					pdu->rx_indication_rel8.offset);
+		//NFAPI_TRACE(NFAPI_TRACE_INFO, "%s pdu->rx_indication_rel8.offset = %u", __FUNCTION__,
+		//			pdu->rx_indication_rel8.offset);
 
 		// NFAPI_RX_INDICATION_REL9_TAG
 		if (unpack_tl(ppReadPackedMsg, &generic_tl, end) == 0)
@@ -6581,7 +6585,7 @@ static uint8_t unpack_rx_indication_body_value(void *tlv, uint8_t **ppReadPacked
 			return 0;
 		}
 
-		NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s generic_tl.tag = 0x%x length = %u\n", __FUNCTION__, generic_tl.tag, generic_tl.length);
+		//NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s generic_tl.tag = 0x%x length = %u\n", __FUNCTION__, generic_tl.tag, generic_tl.length);
 
 		if (generic_tl.tag != NFAPI_RX_INDICATION_REL9_TAG)
 		{

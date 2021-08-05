@@ -925,7 +925,7 @@ static void analyze_cqi_pdus_for_duplicates(nfapi_cqi_indication_t *ind)
   {
     nfapi_cqi_indication_pdu_t *src_pdu = &ind->cqi_indication_body.cqi_pdu_list[i];
 
-    LOG_I(MAC, "CQI_IND[PDU:%d][rnti:%x cqi:%d channel:%d]\n", i, src_pdu->rx_ue_information.rnti,
+    LOG_D(MAC, "CQI_IND[PDU:%d][rnti:%x cqi:%d channel:%d]\n", i, src_pdu->rx_ue_information.rnti,
           src_pdu->ul_cqi_information.ul_cqi, src_pdu->ul_cqi_information.channel);
 
     for (int j = i + 1; j < num_cqis; j++)
@@ -1593,8 +1593,9 @@ int oai_nfapi_dl_config_req(nfapi_dl_config_request_t *dl_config_req) {
   nfapi_vnf_p7_config_t *p7_config = vnf.p7_vnfs[0].config;
   dl_config_req->header.phy_id = 1; // DJP HACK TODO FIXME - need to pass this around!!!!
   dl_config_req->header.message_id = NFAPI_DL_CONFIG_REQUEST;
-  LOG_I(PHY, "[VNF] %s() DL_CONFIG_REQ sfn_sf:%d_%d number_of_pdus:%d\n", __FUNCTION__,
+  LOG_D(PHY, "[VNF] %s() DL_CONFIG_REQ sfn_sf:%d_%d number_of_pdus:%d\n", __FUNCTION__,
         NFAPI_SFNSF2SFN(dl_config_req->sfn_sf),NFAPI_SFNSF2SF(dl_config_req->sfn_sf), dl_config_req->dl_config_request_body.number_pdu);
+#if 0
   if (dl_config_req->dl_config_request_body.number_pdu > 0)
   {
     for (int i = 0; i < dl_config_req->dl_config_request_body.number_pdu; i++)
@@ -1604,12 +1605,13 @@ int oai_nfapi_dl_config_req(nfapi_dl_config_request_t *dl_config_req) {
             {
                 uint16_t dl_rnti = dl_config_req->dl_config_request_body.dl_config_pdu_list[i].dlsch_pdu.dlsch_pdu_rel8.rnti;
                 uint16_t numPDUs = dl_config_req->dl_config_request_body.number_pdu;
-                LOG_A(MAC, "(OAI eNB) Sending dl_config_req at VNF during Frame: %d and Subframe: %d,"
+                LOG_D(MAC, "(OAI eNB) Sending dl_config_req at VNF during Frame: %d and Subframe: %d,"
                            " with a RNTI value of: %x and with number of PDUs: %u\n",
                       NFAPI_SFNSF2SFN(dl_config_req->sfn_sf),NFAPI_SFNSF2SF(dl_config_req->sfn_sf), dl_rnti, numPDUs);
             }
         }
   }
+#endif
   int retval = nfapi_vnf_p7_dl_config_req(p7_config, dl_config_req);
   dl_config_req->dl_config_request_body.number_pdcch_ofdm_symbols           = 1;
   dl_config_req->dl_config_request_body.number_dci                          = 0;
@@ -1762,7 +1764,7 @@ int oai_nfapi_ul_config_req(nfapi_ul_config_request_t *ul_config_req) {
   {
     uint8_t pdu_type = pdu_list[i].pdu_type;
 
-    LOG_I(MAC, "ul_config_req num_pdus: %u pdu_number: %d pdu_type: %u SFN.SF: %d.%d\n",
+    LOG_D(MAC, "ul_config_req num_pdus: %u pdu_number: %d pdu_type: %u SFN.SF: %d.%d\n",
           num_pdus, i, pdu_type, ul_config_req->sfn_sf >> 4, ul_config_req->sfn_sf & 15);
 
     if (pdu_type != NFAPI_UL_CONFIG_ULSCH_CQI_RI_PDU_TYPE)

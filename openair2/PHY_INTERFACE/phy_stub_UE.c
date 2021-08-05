@@ -105,7 +105,7 @@ void fill_rx_indication_UE_MAC(module_id_t Mod_id,
   // ulsch_buffer is necessary to keep its value.
   pdu->data = malloc(buflen);
   memcpy(pdu->data, ulsch_buffer, buflen);
-  LOG_I(MAC, "buflen of rx_ind pdu_data = %u SFN.SF: %d.%d\n", buflen,
+  LOG_D(MAC, "buflen of rx_ind pdu_data = %u SFN.SF: %d.%d\n", buflen,
         frame, subframe);
   // estimate timing advance for MAC
   timing_advance_update = 0; // Don't know what to put here
@@ -791,7 +791,7 @@ void dl_config_req_UE_MAC_dci(int sfn,
     return;
   }
 
-  LOG_I(MAC, "%s() rnti value: 0x%x rnti type: %d\n", __func__,
+  LOG_D(MAC, "%s() rnti value: 0x%x rnti type: %d\n", __func__,
         rnti, rnti_type);
   if (rnti_type == 1) { // C-RNTI (Normal DLSCH case)
     for (int ue_id = 0; ue_id < num_ue; ue_id++) {
@@ -1076,7 +1076,7 @@ int memcpy_hi_dci0_req (L1_rxtx_proc_t *proc,
 
   if (!is_my_hi_dci0_req(req))
   {
-    LOG_I(MAC, "Filtering hi_dci0_req\n");
+    LOG_D(MAC, "Filtering hi_dci0_req\n");
     return 0;
   }
   nfapi_hi_dci0_request_t *p = (nfapi_hi_dci0_request_t *)malloc(sizeof(nfapi_hi_dci0_request_t));
@@ -1111,7 +1111,7 @@ int memcpy_hi_dci0_req (L1_rxtx_proc_t *proc,
   if (!put_queue(&hi_dci0_req_queue, p)) {
     free(p);
   }
-  LOG_I(MAC, "DCI0 QUEUE: %zu\n", hi_dci0_req_queue.num_items);
+  LOG_D(MAC, "DCI0 QUEUE: %zu\n", hi_dci0_req_queue.num_items);
   return 0;
 }
 
@@ -1308,7 +1308,7 @@ void *ue_standalone_pnf_task(void *context)
           break;
         }
 
-        LOG_I(MAC, "dl_config_req Frame: %u Subframe: %u\n", dl_config_req.sfn_sf >> 4,
+        LOG_D(MAC, "dl_config_req Frame: %u Subframe: %u\n", dl_config_req.sfn_sf >> 4,
               dl_config_req.sfn_sf & 15);
 
         dl_config_req_valid = true;
@@ -1343,7 +1343,7 @@ void *ue_standalone_pnf_task(void *context)
           break;
         }
 
-        LOG_I(MAC, "tx_req Frame: %u Subframe: %u\n", tx_req.sfn_sf >> 4,
+        LOG_D(MAC, "tx_req Frame: %u Subframe: %u\n", tx_req.sfn_sf >> 4,
               tx_req.sfn_sf & 15);
 
         tx_req_valid = true;
@@ -1514,8 +1514,8 @@ void enqueue_dl_config_req_tx_req(nfapi_dl_config_request_t *dl_config_req, nfap
 
   nfapi_dl_config_request_t *dl_config_req_temp = memcpy_dl_config_req_standalone(dl_config_req);
   nfapi_tx_req_pdu_list_t *tx_req_temp = memcpy_tx_req_standalone(tx_req);
-  LOG_I(MAC, "This is the num_pdus for tx_req: %d\n", tx_req_temp->num_pdus);
-  LOG_I(MAC, "This is the num_pdus for dl_config_req and the sfn_sf: %d, %d:%d\n", dl_config_req_temp->dl_config_request_body.number_pdu,
+  LOG_D(MAC, "This is the num_pdus for tx_req: %d\n", tx_req_temp->num_pdus);
+  LOG_D(MAC, "This is the num_pdus for dl_config_req and the sfn_sf: %d, %d:%d\n", dl_config_req_temp->dl_config_request_body.number_pdu,
         NFAPI_SFNSF2SFN(dl_config_req_temp->sfn_sf), NFAPI_SFNSF2SF(dl_config_req_temp->sfn_sf));
 
   nfapi_dl_config_req_tx_req_t *req = malloc(sizeof(nfapi_dl_config_req_tx_req_t));
@@ -1582,32 +1582,32 @@ static void print_rx_ind(nfapi_rx_indication_t *p)
       break;
     case NFAPI_CRC_INDICATION:
       encoded_size = nfapi_p7_message_pack(&UL->crc_ind, buffer, sizeof(buffer), NULL);
-      LOG_I(MAC, "CRC_IND sent to Proxy, Size: %d Frame %d Subframe %d num_crcs: %u\n", encoded_size,
+      LOG_D(MAC, "CRC_IND sent to Proxy, Size: %d Frame %d Subframe %d num_crcs: %u\n", encoded_size,
             NFAPI_SFNSF2SFN(UL->crc_ind.sfn_sf), NFAPI_SFNSF2SF(UL->crc_ind.sfn_sf),
             UL->crc_ind.crc_indication_body.number_of_crcs);
       break;
     case NFAPI_RX_ULSCH_INDICATION:
       encoded_size = nfapi_p7_message_pack(&UL->rx_ind, buffer, sizeof(buffer), NULL);
-      LOG_I(MAC, "RX_IND sent to Proxy, Size: %d Frame %d Subframe %d rx_ind.tl.length: %u num_pdus: %u\n",
+      LOG_D(MAC, "RX_IND sent to Proxy, Size: %d Frame %d Subframe %d rx_ind.tl.length: %u num_pdus: %u\n",
             encoded_size, NFAPI_SFNSF2SFN(UL->rx_ind.sfn_sf), NFAPI_SFNSF2SF(UL->rx_ind.sfn_sf),
             UL->rx_ind.rx_indication_body.tl.length, UL->rx_ind.rx_indication_body.number_of_pdus);
       break;
     case NFAPI_RX_CQI_INDICATION:
       encoded_size = nfapi_p7_message_pack(&UL->cqi_ind, buffer, sizeof(buffer), NULL);
-      LOG_I(MAC, "CQI_IND sent to Proxy, Size: %d num_cqis: %u\n", encoded_size,
+      LOG_D(MAC, "CQI_IND sent to Proxy, Size: %d num_cqis: %u\n", encoded_size,
             UL->cqi_ind.cqi_indication_body.number_of_cqis);
       break;
     case NFAPI_HARQ_INDICATION:
       encoded_size = nfapi_p7_message_pack(&UL->harq_ind, buffer, sizeof(buffer), NULL);
-      LOG_I(MAC, "HARQ_IND sent to Proxy, Size: %d Frame %d Subframe %d\n", encoded_size,
+      LOG_D(MAC, "HARQ_IND sent to Proxy, Size: %d Frame %d Subframe %d\n", encoded_size,
             NFAPI_SFNSF2SFN(UL->harq_ind.sfn_sf), NFAPI_SFNSF2SF(UL->harq_ind.sfn_sf));
       break;
     case NFAPI_RX_SR_INDICATION:
       encoded_size = nfapi_p7_message_pack(&UL->sr_ind, buffer, sizeof(buffer), NULL);
-      LOG_I(MAC, "SR_IND sent to Proxy, Size: %d\n", encoded_size);
+      LOG_D(MAC, "SR_IND sent to Proxy, Size: %d\n", encoded_size);
       break;
     default:
-      LOG_I(MAC, "%s Unknown Message msg_type :: %u\n", __func__, msg_type);
+      LOG_E(MAC, "%s Unknown Message msg_type :: %u\n", __func__, msg_type);
       return;
     }
     if (encoded_size < 0)

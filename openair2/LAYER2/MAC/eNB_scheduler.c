@@ -591,11 +591,11 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   // This threshold is arbitrary
   if (delta > 8500 || delta == 0) // 850 frames
   {
-    LOG_I(MAC, "scheduler ignoring outerspace %d.%d -> %d.%d = %d\n",
+    LOG_D(MAC, "scheduler ignoring outerspace %d.%d -> %d.%d = %d\n",
           eNB->frame, eNB->subframe, frameP, subframeP, delta);
     return;
   }
-  LOG_I(MAC, "Entering dlsch_ulsch scheduler %d.%d -> %d.%d = %d\n",
+  LOG_D(MAC, "Entering dlsch_ulsch scheduler %d.%d -> %d.%d = %d\n",
         eNB->frame, eNB->subframe, frameP, subframeP, delta);
 
   eNB->frame    = frameP;
