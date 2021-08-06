@@ -246,6 +246,13 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
       printf("\n");
     }
 #endif
+
+LOG_I(PHY, "pdsch: frame %d %d, symb %d %d, bwp %d %d, rb %d %d\n", frame, slot, rel15->NrOfSymbols,
+                          rel15->StartSymbolIndex,
+                          rel15->BWPSize,
+                          rel15->BWPStart, 
+                          rel15->rbSize,
+                          rel15->rbStart);
     
     
     /// Layer mapping

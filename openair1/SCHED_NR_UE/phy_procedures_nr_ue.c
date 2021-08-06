@@ -1677,9 +1677,9 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 
       if (ue->UE_mode[0] == PRACH)
       {
-            memcpy(&g_pbch_ch[g_pbch_pos], &ue->pbch_vars[0]->dl_ch_estimates[0][1*4096],20 * 12 * 4);
-            memcpy(&g_pbch_ch[g_pbch_pos + 20*12], &ue->pbch_vars[0]->dl_ch_estimates[0][2*4096],20 * 12 * 4);
-            memcpy(&g_pbch_ch[g_pbch_pos + 20*12 * 2], &ue->pbch_vars[0]->dl_ch_estimates[0][3*4096],20 * 12 * 4);
+            memcpy(&g_pbch_ch[g_pbch_pos], &ue->pbch_vars[0]->dl_ch_estimates[0][(ue->symbol_offset+1)*4096],20 * 12 * 4);
+            memcpy(&g_pbch_ch[g_pbch_pos + 20*12], &ue->pbch_vars[0]->dl_ch_estimates[0][(ue->symbol_offset+2)*4096],20 * 12 * 4);
+            memcpy(&g_pbch_ch[g_pbch_pos + 20*12 * 2], &ue->pbch_vars[0]->dl_ch_estimates[0][(ue->symbol_offset+3)*4096],20 * 12 * 4);
             
       }
     nr_ue_rsrp_measurements(ue, gNB_id, proc, nr_slot_rx, 0);

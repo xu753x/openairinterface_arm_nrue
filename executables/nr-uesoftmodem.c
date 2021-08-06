@@ -500,7 +500,7 @@ int main( int argc, char **argv ) {
       
       nrUE_config->ssb_table.ssb_subcarrier_offset = kssb_15khz;
       
-      LOG_I(PHY, "freq %d  %d\n", downlink_frequency[0][0]/1000, nrUE_config->carrier_config.dl_frequency);
+      LOG_I(PHY, "freq %d  %d, ssb_subcarrier_offset %d\n", downlink_frequency[0][0]/1000, nrUE_config->carrier_config.dl_frequency, kssb_15khz);
 
 
     }

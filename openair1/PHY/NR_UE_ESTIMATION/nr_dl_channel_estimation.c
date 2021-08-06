@@ -451,7 +451,7 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
       assert(0);
     }
 
-    if( dmrss == 0) // update time statistics for last PBCH symbol
+    if( dmrss == 2) // update time statistics for last PBCH symbol
     {
       // do ifft of channel estimate
       for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++)

@@ -537,24 +537,27 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                                           0);
   }
   static int g_log_num = 0;
-  static int g_rxdataF_ext[10000];
-  static int g_rxdataF_comp0[10000];
-  static int g_rxdataF_comp1[10000];
-  static int g_ch_est[10000];
+  static int g_rxdataF_ext[12000];
+  static int g_rxdataF_comp0[12000];
+  static int g_rxdataF_comp1[12000];
+  static int g_ch_est[12000];
 
   static int g_pos = 0;
 
-  if (g_log_num < 100)
-  {
-      memcpy(&g_rxdataF_ext[g_pos], &pdsch_vars[gNB_id]->rxdataF_ext[0][symbol*nb_rb*12],nb_rb*12 * 4);
-      memcpy(&g_rxdataF_comp0[g_pos], &pdsch_vars[gNB_id]->rxdataF_comp0[0][symbol*nb_rb*12],nb_rb*12 * 4);
-      if (g_log_num % 12 == 0)
-      {
-          memcpy(&g_ch_est[g_pos+ 0* nb_rb*12], &pdsch_vars[gNB_id]->dl_ch_estimates[0][2*4096], nb_rb*12*4);
-           memcpy(&g_ch_est[g_pos+2 *nb_rb*12], &pdsch_vars[gNB_id]->dl_ch_estimates[0][7*4096], nb_rb*12*4);
-            memcpy(&g_ch_est[g_pos+4 *nb_rb*12], &pdsch_vars[gNB_id]->dl_ch_estimates[0][11*4096], nb_rb*12*4);
-      }
-  }
+   if (ue->UE_mode[0] == PRACH)
+   {
+    if ((symbol  == 13 ) && (g_log_num < 10))
+    {
+        for (int ii = 2; ii< 14; ii++ )
+        {
+            memcpy(&g_rxdataF_ext[g_pos + (ii-2)*nb_rb*12], &pdsch_vars[gNB_id]->rxdataF_ext[0][ii*nb_rb*12],nb_rb*12 * 4);
+            memcpy(&g_rxdataF_comp0[g_pos + (ii-2)*nb_rb*12], &pdsch_vars[gNB_id]->rxdataF_comp0[0][ii*nb_rb*12],nb_rb*12 * 4);
+        }
+        memcpy(&g_ch_est[g_pos+ 0* nb_rb*12], &pdsch_vars[gNB_id]->dl_ch_estimates[0][2*4096], nb_rb*12*4);
+        memcpy(&g_ch_est[g_pos+2 *nb_rb*12], &pdsch_vars[gNB_id]->dl_ch_estimates[0][7*4096], nb_rb*12*4);
+        memcpy(&g_ch_est[g_pos+4 *nb_rb*12], &pdsch_vars[gNB_id]->dl_ch_estimates[0][11*4096], nb_rb*12*4);     
+    }
+   }
 #if UE_TIMING_TRACE
     stop_meas(&ue->generic_stat_bis[proc->thread_id][slot]);
 #if DISABLE_LOG_X
@@ -604,20 +607,27 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                                   0);
     }
   }
-  if (g_log_num < 100)
+  if (ue->UE_mode[0] == PRACH)
   {
-      memcpy(&g_rxdataF_comp1[g_pos], &pdsch_vars[gNB_id]->rxdataF_comp0[0][symbol*nb_rb*12],nb_rb*12 * 4);
-      g_pos +=  nb_rb*12;
+    if ((symbol  == 13 ) && (g_log_num < 10))
+    {
+        for (int ii = 2; ii< 14; ii++ )
+        {
+            memcpy(&g_rxdataF_comp1[g_pos + (ii-2)*nb_rb*12], &pdsch_vars[gNB_id]->rxdataF_comp0[0][ii*nb_rb*12],nb_rb*12 * 4);
+        }
+        g_pos +=  12*nb_rb*12;
+        
+        g_log_num++;
+        if(g_log_num == 10)
+        {
+          LOG_M("rxdataF_ext.m", "rxdataExt", g_rxdataF_ext,g_pos,1,1);
+          LOG_M("rxdataF_comp0.m", "rxdataF_comp0", g_rxdataF_comp0,g_pos,1,1);
+          LOG_M("rxdataF_comp1.m", "rxdataF_comp1", g_rxdataF_comp1,g_pos,1,1);
+          LOG_M("ch_est.m", "ch_est", g_ch_est,g_pos,1,1);
+        }
+    }
   }
-  g_log_num++;
-  if(g_log_num == 100)
-  {
-     LOG_M("rxdataF_ext.m", "rxdataExt", g_rxdataF_ext,g_pos,1,1);
-     LOG_M("rxdataF_comp0.m", "rxdataF_comp0", g_rxdataF_comp0,g_pos,1,1);
-     LOG_M("rxdataF_comp1.m", "rxdataF_comp1", g_rxdataF_comp1,g_pos,1,1);
-     LOG_M("ch_est.m", "ch_est", g_ch_est,g_pos,1,1);
-     
-  }
+  
   //printf("start compute LLR\n");
   if (dlsch0_harq->mimo_mode == NR_DUALSTREAM)  {
     rxdataF_comp_ptr = pdsch_vars[gNB_id]->rxdataF_comp1[harq_pid][round];

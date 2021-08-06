@@ -94,7 +94,7 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
       else
           ue->rx_offset = diff;
 
-      if(abs(diff)<=2)
+      if(abs(diff)<=5)
           count_max_pos_ok ++;
       else
           count_max_pos_ok = 0;
