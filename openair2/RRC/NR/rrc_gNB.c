@@ -330,6 +330,7 @@ char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigu
   rrc->carrier.ssb_SubcarrierOffset = configuration->ssb_SubcarrierOffset;
   rrc->carrier.pdsch_AntennaPorts = configuration->pdsch_AntennaPorts;
   rrc->carrier.pusch_AntennaPorts = configuration->pusch_AntennaPorts;
+  rrc->carrier.do_CSIRS = configuration->do_CSIRS;
    /// System Information INIT
   pthread_mutex_init(&rrc->cell_info_mutex,NULL);
   rrc->cell_info_configured = 0;
@@ -3115,6 +3116,89 @@ void nr_rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
   }
 
   if (fd) fclose(fd);
+
+  ue_context_p = NULL;
+  fd=fopen("nrRRCstats.log","w");
+  RB_FOREACH(ue_context_p, rrc_nr_ue_tree_s, &(RC.nrrrc[ctxt_pP->module_id]->rrc_ue_head)) {
+    ctxt_pP->rnti = ue_context_p->ue_id_rnti;
+
+     if (fd) {
+        if (ue_context_p->ue_context.Initialue_identity_5g_s_TMSI.presence == TRUE) {
+          fprintf(fd,"NR RRC UE rnti %x: S-TMSI %x failure timer %d/8\n",
+                ue_context_p->ue_id_rnti,
+                ue_context_p->ue_context.Initialue_identity_5g_s_TMSI.fiveg_tmsi,
+                ue_context_p->ue_context.ul_failure_timer);
+        } else {
+          fprintf(fd,"NR RRC UE rnti %x failure timer %d/8\n",
+                ue_context_p->ue_id_rnti,
+                ue_context_p->ue_context.ul_failure_timer);
+        }
+
+        if (ue_context_p->ue_context.UE_Capability_nr) {
+          fprintf(fd,"NR RRC UE cap: BW DL %x. BW UL %x, 256 QAM DL %s, 256 QAM UL %s, DL MIMO Layers %d UL MIMO Layers (CB) %d UL MIMO Layers (nonCB) %d\n",
+                get_dl_bw_mask(RC.nrrrc[0],ue_context_p->ue_context.UE_Capability_nr),
+                get_ul_bw_mask(RC.nrrrc[0],ue_context_p->ue_context.UE_Capability_nr),
+                is_dl_256QAM_supported(RC.nrrrc[0],ue_context_p->ue_context.UE_Capability_nr) == 1 ? "yes" : "no",
+                is_ul_256QAM_supported(RC.nrrrc[0],ue_context_p->ue_context.UE_Capability_nr) == 1 ? "yes" : "no",
+                get_dl_mimo_layers(RC.nrrrc[0],ue_context_p->ue_context.UE_Capability_nr),
+                get_ul_mimo_layersCB(RC.nrrrc[0],ue_context_p->ue_context.UE_Capability_nr),
+                get_ul_mimo_layers(RC.nrrrc[0],ue_context_p->ue_context.UE_Capability_nr));
+        }
+    }
+    if (ue_context_p->ue_context.ul_failure_timer > 0) {
+      ue_context_p->ue_context.ul_failure_timer++;
+
+      if (ue_context_p->ue_context.ul_failure_timer >= 20000) {
+        // remove UE after 20 seconds after MAC (or else) has indicated UL failure
+        LOG_I(RRC, "Removing UE %x instance, because of uplink failure timer timeout\n",
+              ue_context_p->ue_context.rnti);
+        if(ue_context_p->ue_context.StatusRrc >= NR_RRC_CONNECTED){
+          rrc_gNB_send_NGAP_UE_CONTEXT_RELEASE_REQ(
+                   ctxt_pP->module_id,
+                   ue_context_p,
+                   NGAP_CAUSE_RADIO_NETWORK,
+                   30);
+        }else{
+          mac_remove_nr_ue(ctxt_pP->module_id, ctxt_pP->rnti);
+          rrc_rlc_remove_ue(ctxt_pP);
+          pdcp_remove_UE(ctxt_pP);
+
+          /* remove RRC UE Context */
+          ue_context_p = rrc_gNB_get_ue_context(RC.nrrrc[ctxt_pP->module_id], ctxt_pP->rnti);
+          if (ue_context_p) {
+            rrc_gNB_remove_ue_context(ctxt_pP, RC.nrrrc[ctxt_pP->module_id], ue_context_p);
+            LOG_I(NR_RRC, "remove UE %x \n", ctxt_pP->rnti);
+          }
+        }
+        break; // break RB_FOREACH
+      }
+    }
+
+    if (ue_context_p->ue_context.ue_release_timer_rrc > 0) {
+      ue_context_p->ue_context.ue_release_timer_rrc++;
+
+      if (ue_context_p->ue_context.ue_release_timer_rrc >= ue_context_p->ue_context.ue_release_timer_thres_rrc) {
+        LOG_I(NR_RRC, "Removing UE %x instance after UE_CONTEXT_RELEASE_Complete (ue_release_timer_rrc timeout)\n",
+              ue_context_p->ue_context.rnti);
+        ue_context_p->ue_context.ue_release_timer_rrc = 0;
+
+        mac_remove_nr_ue(ctxt_pP->module_id, ctxt_pP->rnti);
+        rrc_rlc_remove_ue(ctxt_pP);
+        pdcp_remove_UE(ctxt_pP);
+
+        /* remove RRC UE Context */
+        ue_context_p = rrc_gNB_get_ue_context(RC.nrrrc[ctxt_pP->module_id], ctxt_pP->rnti);
+        if (ue_context_p) {
+          rrc_gNB_remove_ue_context(ctxt_pP, RC.nrrrc[ctxt_pP->module_id], ue_context_p);
+          LOG_I(NR_RRC, "remove UE %x \n", ctxt_pP->rnti);
+        }
+
+        break; // break RB_FOREACH
+      }
+    }
+  }
+
+  fclose(fd);
 
   /* send a tick to x2ap */
   if (is_x2ap_enabled()){
