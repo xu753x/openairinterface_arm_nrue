@@ -121,7 +121,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   int i;
   int Ptx=cfg->carrier_config.num_tx_ant.value;
   int Prx=cfg->carrier_config.num_rx_ant.value;
-  int max_ul_mimo_layers = 4;
+  int max_ul_mimo_layers = NR_MAX_NB_LAYERS;
 
   AssertFatal(Ptx>0 && Ptx<9,"Ptx %d is not supported\n",Ptx);
   AssertFatal(Prx>0 && Prx<9,"Prx %d is not supported\n",Prx);

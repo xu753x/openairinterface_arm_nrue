@@ -143,7 +143,17 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
   dlsch->Mlimit = 4;
   dlsch->Nsoft = Nsoft;
 
-  for (layer=0; layer<NR_MAX_NB_LAYERS; layer++) {
+  int max_layers;
+  if (frame_parms->nb_antennas_tx<NR_MAX_NB_LAYERS)
+    max_layers = frame_parms->nb_antennas_tx;
+  else
+    max_layers = NR_MAX_NB_LAYERS;
+
+  dlsch->ue_spec_bf_weights = (int32_t***)malloc16(max_layers*sizeof(int32_t**));
+  dlsch->txdataF = (int32_t**)malloc16(max_layers*sizeof(int32_t*));
+  dlsch->txdataF_precoding = (int32_t**)malloc16(max_layers*sizeof(int32_t*));
+
+  for (layer=0; layer<max_layers; layer++) {
     dlsch->ue_spec_bf_weights[layer] = (int32_t**)malloc16(64*sizeof(int32_t*));
 
     for (aa=0; aa<64; aa++) {
@@ -194,12 +204,12 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
     bzero(harq->d[r], (3 * 8448));
   }
 
-  harq->e = malloc16(N_RB * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * NR_MAX_NB_LAYERS);
+  harq->e = malloc16(N_RB * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * max_layers);
   AssertFatal(harq->e, "cannot allocate harq->e\n");
-  bzero(harq->e, N_RB * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * NR_MAX_NB_LAYERS);
-  harq->f = malloc16(N_RB * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * NR_MAX_NB_LAYERS);
+  bzero(harq->e, N_RB * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * max_layers);
+  harq->f = malloc16(N_RB * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * max_layers);
   AssertFatal(harq->f, "cannot allocate harq->f\n");
-  bzero(harq->f, N_RB * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * NR_MAX_NB_LAYERS);
+  bzero(harq->f, N_RB * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * max_layers);
 
   return(dlsch);
 }
