@@ -337,7 +337,7 @@ void nr_ue_measurement_procedures(uint16_t l,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_MEASUREMENT_PROCEDURES, VCD_FUNCTION_OUT);
 }
 
-void nr_ue_pbch_procedures(uint8_t gNB_id,
+int nr_ue_pbch_procedures(uint8_t gNB_id,
 			   PHY_VARS_NR_UE *ue,
 			   UE_nr_rxtx_proc_t *proc,
 			   uint8_t abstraction_flag)
@@ -363,7 +363,7 @@ void nr_ue_pbch_procedures(uint8_t gNB_id,
 
   if (ret==0) {
 
-    LOG_D(PHY,"[UE %d] frame %d, nr_slot_rx %d, OK decoding PBCH!\n",
+    LOG_I(PHY,"[UE %d] frame %d, nr_slot_rx %d, OK decoding PBCH!\n",
 	  ue->Mod_id,frame_rx, nr_slot_rx);
     ue->pbch_vars[gNB_id]->pdu_errors_conseq = 0;
 
@@ -442,6 +442,7 @@ void nr_ue_pbch_procedures(uint8_t gNB_id,
 	ue->pbch_vars[gNB_id]->pdu_errors_conseq);
 #endif
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_PBCH_PROCEDURES, VCD_FUNCTION_OUT);
+  return ret;
 }
 
 
@@ -1620,6 +1621,10 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   uint8_t dci_cnt = 0;
   NR_DL_FRAME_PARMS *fp = &ue->frame_parms;
   
+  static int g_log_pbch_num = 0;
+  static int g_pbch_ch[20000];
+  static int g_pbch_pos = 0;
+
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_IN);
 
   LOG_D(PHY," ****** start RX-Chain for Frame.Slot %d.%d ******  \n", frame_rx%1024, nr_slot_rx);
@@ -1658,14 +1663,23 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 #endif
     }
 
+      if (ue->UE_mode[0] == PRACH)
+      {
+            memcpy(&g_pbch_ch[g_pbch_pos], &ue->pbch_vars[0]->dl_ch_estimates[0][(ue->symbol_offset+1)*4096],20 * 12 * 4);
+            memcpy(&g_pbch_ch[g_pbch_pos + 20*12], &ue->pbch_vars[0]->dl_ch_estimates[0][(ue->symbol_offset+2)*4096],20 * 12 * 4);
+            memcpy(&g_pbch_ch[g_pbch_pos + 20*12 * 2], &ue->pbch_vars[0]->dl_ch_estimates[0][(ue->symbol_offset+3)*4096],20 * 12 * 4);
+            
+      }
+
     nr_ue_rsrp_measurements(ue, gNB_id, proc, nr_slot_rx, 0);
 
     if ((ue->decode_MIB == 1) && slot_pbch) {
+      int ret;
 
       LOG_D(PHY," ------  Decode MIB: frame.slot %d.%d ------  \n", frame_rx%1024, nr_slot_rx);
-      nr_ue_pbch_procedures(gNB_id, ue, proc, 0);
+      ret = nr_ue_pbch_procedures(gNB_id, ue, proc, 0);
 
-      if (ue->no_timing_correction==0) {
+      if ((ret == 0) && (ue->no_timing_correction==0)) {
         LOG_D(PHY,"start adjust sync slot = %d no timing %d\n", nr_slot_rx, ue->no_timing_correction);
         nr_adjust_synch_ue(fp,
                            ue,
@@ -1674,6 +1688,22 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            nr_slot_rx,
                            0,
                            16384);
+
+          if (ue->UE_mode[0] == PRACH)
+        {
+            g_pbch_pos +=  60*12;
+            g_log_pbch_num++;  
+            /*
+            LOG_I(PHY, "frame %d %d, ue->symbol_offset %d, rxoffset %d  %d  %d, prefix %d %d, highflag %d\n", 
+            frame_rx, nr_slot_rx, ue->symbol_offset, g_rx_offset[ue->symbol_offset+1], g_rx_offset[ue->symbol_offset+2], g_rx_offset[ue->symbol_offset+3], 
+            fp->nb_prefix_samples0, fp->nb_prefix_samples,
+            ue->high_speed_flag) ;    */
+        }
+        if(g_log_pbch_num == 20)
+        {
+          LOG_M("pbch_ch.m", "pbch_ch", g_pbch_ch, g_pbch_pos,1,1);
+              
+        }                           
       }
 
       LOG_D(PHY, "Doing N0 measurements in %s\n", __FUNCTION__);
