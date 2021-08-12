@@ -223,6 +223,7 @@ static void UE_synch(void *arg) {
 
       uint64_t dl_carrier, ul_carrier;
       double rx_gain_off = 0;
+      int resync = 1;
 
       if (nr_initial_sync(&syncD->proc, UE, 2) == 0) {
         freq_offset = UE->common_vars.freq_offset; // frequency offset computed with pss in initial sync
@@ -231,21 +232,24 @@ static void UE_synch(void *arg) {
 
       if (kssb_offset_mib != 0)
       {
-          downlink_frequency[0][0] += kssb_offset_mib * 15000;
+          downlink_frequency[0][0] += (kssb_offset_mib) * 15000 *2;
           kssb_offset_mib = 0;
+          resync = 1;
       }
         nr_get_carrier_frequencies(&UE->frame_parms, &dl_carrier, &ul_carrier);
         // rerun with new cell parameters and frequency-offset
         // todo: the freq_offset computed on DL shall be scaled before being applied to UL
         nr_rf_card_config(&openair0_cfg[UE->rf_map.card], rx_gain_off, ul_carrier, dl_carrier, freq_offset);
 
-        LOG_I(PHY,"Got synch: hw_slot_offset %d, carrier off %d Hz, rxgain %f (DL %f Hz, UL %f Hz), kssb_offset_mib %d\n",
+        LOG_I(PHY,"Got synch: hw_slot_offset %d, carrier off %d Hz, rxgain %f (DL %f Hz, UL %f Hz), kssb_offset_mib %d, ssb_start_subcarrier %d\n",
               hw_slot_offset,
               freq_offset,
               openair0_cfg[UE->rf_map.card].rx_gain[0],
               openair0_cfg[UE->rf_map.card].rx_freq[0],
               openair0_cfg[UE->rf_map.card].tx_freq[0],
-              kssb_offset_mib);
+              kssb_offset_mib,
+              UE->frame_parms.ssb_start_subcarrier);
+
 
         if (UE->mode != loop_through_memory) {
           UE->rfdevice.trx_set_freq_func(&UE->rfdevice,&openair0_cfg[0],0);
@@ -261,8 +265,14 @@ static void UE_synch(void *arg) {
         if (UE->UE_scan_carrier == 1) {
           UE->UE_scan_carrier = 0;
         } else {
+          if(resync == 0)
              UE->is_synchronized = 1;
         }
+
+
+
+
+
       } else {
 
         if (UE->UE_scan_carrier == 1) {

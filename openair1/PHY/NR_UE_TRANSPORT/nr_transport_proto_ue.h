@@ -1468,7 +1468,7 @@ void nr_get_carrier_frequencies(NR_DL_FRAME_PARMS *fp,
                                 uint64_t *dl_Carrier,
                                 uint64_t *ul_Carrier);
 
-void nr_set_carrier_frequencies(NR_DL_FRAME_PARMS *fp, uint64_t dl_carrier);
+void nr_set_carrier_frequencies(NR_DL_FRAME_PARMS *fp, uint64_t dl_carrier, int freq_offset);
 
 /*!
   \brief This function sets the OAI RF card rx/tx params

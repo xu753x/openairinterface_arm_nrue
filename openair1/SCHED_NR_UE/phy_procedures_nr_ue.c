@@ -77,6 +77,10 @@ fifo_dump_emos_UE emos_dump_UE;
 #include "intertask_interface.h"
 #include "T.h"
 
+#include "PHY/TOOLS/tools_defs.h"
+
+int g_ff_offset;
+
 char nr_mode_string[NUM_UE_MODE][20] = {"NOT SYNCHED","PRACH","RAR","RA_WAIT_CR", "PUSCH", "RESYNCH"};
 
 const uint8_t nr_rv_round_map_ue[4] = {0, 2, 1, 3};
@@ -1668,6 +1672,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 #endif
       nr_pbch_channel_estimation(ue,proc,0,nr_slot_rx,(ue->symbol_offset+i)%(fp->symbols_per_slot),i-1,(fp->ssb_index)&7,fp->half_frame_bit);
 
+      
       //if ((g_log_pbch_num < 400) && (g_log_pbch_num > 380))
 
 #if UE_TIMING_TRACE
@@ -1715,7 +1720,66 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
         {
           LOG_M("pbch_ch.m", "pbch_ch", g_pbch_ch, g_pbch_pos,1,1);
               
-        }                      
+        } 
+
+        int16_t ch_conj[480];
+        mult_cpx_conj_vector(&ue->pbch_vars[0]->dl_ch_estimates[0][(ue->symbol_offset+1)*4096],
+                              &ue->pbch_vars[0]->dl_ch_estimates[0][(ue->symbol_offset+2)*4096],
+                              &ch_conj,
+                              48,
+                              15,
+                              0);
+        
+        int sum_real = 0;
+        int sum_imag = 0;
+        
+        float tg;
+        int ff_offset1, ff_offset2;
+        for (int ii=0; ii<48 ; ii++)
+        {
+            sum_real +=ch_conj[ii*2];
+            sum_imag +=ch_conj[ii*2+1];;
+        }
+        mult_cpx_conj_vector(&ue->pbch_vars[0]->dl_ch_estimates[0][(ue->symbol_offset+1)*4096+192],
+                              &ue->pbch_vars[0]->dl_ch_estimates[0][(ue->symbol_offset+2)*4096+192],
+                              &ch_conj,
+                              48,
+                              15,
+                              0);
+        for (int ii=0; ii<48 ; ii++)
+        {
+            sum_real +=ch_conj[ii*2];
+            sum_imag +=ch_conj[ii*2+1];;
+        }
+
+        tg = atan2(sum_imag, sum_real);  // slot0
+        ff_offset1 = 14*tg/M_PI*1000;
+
+        if (abs(ff_offset1) < 5000)
+        {
+            mult_cpx_conj_vector(&ue->pbch_vars[0]->dl_ch_estimates[0][(ue->symbol_offset+1)*4096],
+                              &ue->pbch_vars[0]->dl_ch_estimates[0][(ue->symbol_offset+3)*4096],
+                              &ch_conj,
+                              240,
+                              15,
+                              0);
+            sum_real = 0;
+            sum_imag = 0;
+            for (int ii=0; ii<240 ; ii++)
+            {
+                sum_real +=ch_conj[ii*2];
+                sum_imag +=ch_conj[ii*2+1];;
+            }                  
+            tg = atan2(sum_imag, sum_real);  // slot0
+            ff_offset2 = 7*tg/M_PI*1000;
+            g_ff_offset = ff_offset2;
+        }
+        else
+            g_ff_offset = ff_offset1;
+
+
+
+        LOG_I(PHY, "PHY  frame %d %d, tg %f,  ff_ofset %d %d %d\n", frame_rx, nr_slot_rx, tg, ff_offset1, ff_offset2, g_ff_offset);
       }
 
       LOG_D(PHY, "Doing N0 measurements in %s\n", __FUNCTION__);
@@ -1944,6 +2008,19 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_OUT);
 
  }
+
+  if((frame_rx & 0x7) == 0)
+  if ((g_ff_offset > 200) || (g_ff_offset < -200))
+  {
+      if (g_ff_offset > 1000)
+         g_ff_offset = 1000;
+      else if (g_ff_offset < -1000)
+         g_ff_offset = -1000;
+      ue->common_vars.freq_offset += g_ff_offset;
+      nr_set_carrier_frequencies(&ue->frame_parms, 0, ue->common_vars.freq_offset);
+      
+  }
+  g_ff_offset = 0;
 
 #if UE_TIMING_TRACE
 start_meas(&ue->generic_stat);
