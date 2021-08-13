@@ -140,6 +140,9 @@ extern int sync_var;
 extern uint64_t downlink_frequency[MAX_NUM_CCs][4];
 extern int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
+extern int   point_a_15khz;
+extern int   kssb_15khz;
+
 extern int rx_input_level_dBm;
 extern uint64_t num_missed_slots; // counter for the number of missed slots
 

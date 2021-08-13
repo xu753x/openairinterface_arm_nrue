@@ -127,6 +127,10 @@ uint64_t        downlink_frequency[MAX_NUM_CCs][4];
 int32_t         uplink_frequency_offset[MAX_NUM_CCs][4];
 int             rx_input_level_dBm;
 
+int             point_a_15khz;
+int             kssb_15khz;
+ 
+
 #if MAX_NUM_CCs == 1
 rx_gain_t                rx_gain_mode[MAX_NUM_CCs][4] = {{max_gain,max_gain,max_gain,max_gain}};
 double tx_gain[MAX_NUM_CCs][4] = {{20,0,0,0}};
@@ -488,6 +492,16 @@ int main( int argc, char **argv ) {
       nrUE_config->carrier_config.dl_frequency =  (downlink_frequency[0][0] -(6*UE[CC_id]->frame_parms.N_RB_DL*(15000<<nrUE_config->ssb_config.scs_common)))/1000;
       nrUE_config->carrier_config.uplink_frequency =  (downlink_frequency[0][0] -(6*UE[CC_id]->frame_parms.N_RB_DL*(15000<<nrUE_config->ssb_config.scs_common)))/1000;
       nrUE_config->ssb_table.ssb_offset_point_a = (UE[CC_id]->frame_parms.N_RB_DL - 20)>>1;
+
+      if (point_a_15khz == -1)
+          nrUE_config->ssb_table.ssb_offset_point_a = (UE[CC_id]->frame_parms.N_RB_DL - 20)>>1;
+      else
+          nrUE_config->ssb_table.ssb_offset_point_a =  point_a_15khz>>1; // used as 30kHZ             //(UE[CC_id]->frame_parms.N_RB_DL - 20)>>1;
+      nrUE_config->ssb_table.ssb_subcarrier_offset = kssb_15khz; // used as 15kHZ
+
+      LOG_I(PHY, "freq %d  %d\n", downlink_frequency[0][0]/1000, nrUE_config->carrier_config.dl_frequency);
+
+
 
       // Initialize values, will be updated upon SIB1 reception
       nrUE_config->cell_config.frame_duplex_type = TDD;

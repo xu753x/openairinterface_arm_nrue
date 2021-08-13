@@ -356,8 +356,8 @@ void schedule_control_sib1(module_id_t module_id,
   AssertFatal(gNB_mac->sched_ctrlCommon->cce_index >= 0, "Could not find CCE for coreset0\n");
 
   const uint16_t bwpSize = type0_PDCCH_CSS_config->num_rbs;
-  int rbStart = type0_PDCCH_CSS_config->cset_start_rb;
-
+  //int rbStart = type0_PDCCH_CSS_config->cset_start_rb;
+  int rbStart = 0;
   int startSymbolIndex = 0;
   int nrOfSymbols = 0;
 
@@ -391,10 +391,11 @@ void schedule_control_sib1(module_id_t module_id,
     TBS = nr_compute_tbs(nr_get_Qm_dl(gNB_mac->sched_ctrlCommon->sched_pdsch.mcs, gNB_mac->sched_ctrlCommon->pdsch_semi_static.mcsTableIdx),
                          nr_get_code_rate_dl(gNB_mac->sched_ctrlCommon->sched_pdsch.mcs, gNB_mac->sched_ctrlCommon->pdsch_semi_static.mcsTableIdx),
                          rbSize, nrOfSymbols, N_PRB_DMRS * dmrs_length,0, 0,1) >> 3;
-  } while (rbStart + rbSize < bwpSize && !vrb_map[rbStart + rbSize] && TBS < gNB_mac->sched_ctrlCommon->num_total_bytes);
+//  } while (rbStart + rbSize < bwpSize && !vrb_map[rbStart + rbSize] && TBS < gNB_mac->sched_ctrlCommon->num_total_bytes);
+  } while (rbSize <  bwpSize && !vrb_map[rbStart + rbSize + type0_PDCCH_CSS_config->cset_start_rb] && TBS < gNB_mac->sched_ctrlCommon->num_total_bytes);
 
   gNB_mac->sched_ctrlCommon->sched_pdsch.rbSize = rbSize;
-  gNB_mac->sched_ctrlCommon->sched_pdsch.rbStart = 0;
+  gNB_mac->sched_ctrlCommon->sched_pdsch.rbStart = rbStart;
 
   LOG_D(MAC,"startSymbolIndex = %i\n", startSymbolIndex);
   LOG_D(MAC,"nrOfSymbols = %i\n", nrOfSymbols);
@@ -406,7 +407,8 @@ void schedule_control_sib1(module_id_t module_id,
 
   // Mark the corresponding RBs as used
   for (int rb = 0; rb < gNB_mac->sched_ctrlCommon->sched_pdsch.rbSize; rb++) {
-    vrb_map[rb + rbStart] = 1;
+    //vrb_map[rb + rbStart] = 1;
+    vrb_map[rb + rbStart + type0_PDCCH_CSS_config->cset_start_rb] = 1;
   }
 }
 

@@ -62,6 +62,8 @@
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
+#include "PHY/phy_extern_nr_ue.h"
+
 //#define DEBUG_MIB
 //#define ENABLE_MAC_PAYLOAD_DEBUG 1
 //#define DEBUG_EXTRACT_DCI
@@ -94,7 +96,7 @@ int get_rnti_type(NR_UE_MAC_INST_t *mac, uint16_t rnti){
 
 }
 
-
+int kssb_offset_mib = 0;
 int8_t nr_ue_decode_mib(module_id_t module_id,
                         int cc_id,
                         uint8_t gNB_index,
@@ -156,11 +158,42 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
 
   if (get_softmodem_params()->sa == 1) {
 
+
+    fapi_nr_config_request_t *nrUE_config = &PHY_vars_UE_g[module_id][cc_id]->nrUE_config;
+    NR_DL_FRAME_PARMS * fp = &PHY_vars_UE_g[module_id][cc_id]->frame_parms;
+
+    LOG_I(PHY, "old: ssb offset %d, pointA(30khz) %d , ssb_start_subcarrier %d\n", 
+                nrUE_config->ssb_table.ssb_subcarrier_offset, nrUE_config->ssb_table.ssb_offset_point_a, fp->ssb_start_subcarrier);
+
+    if (ssb_subcarrier_offset != nrUE_config->ssb_table.ssb_subcarrier_offset) 
+    {
+        kssb_offset_mib = (nrUE_config->ssb_table.ssb_subcarrier_offset - ssb_subcarrier_offset);
+        //  if (nrUE_config->ssb_table.ssb_subcarrier_offset * 2 - ssb_subcarrier_offset >= 24)
+        //  {
+        //     nrUE_config->ssb_table.ssb_offset_point_a += 1;
+        //  }
+        //  else if (nrUE_config->ssb_table.ssb_subcarrier_offset - ssb_subcarrier_offset < 0)
+        //  {
+        //     nrUE_config->ssb_table.ssb_offset_point_a -= 1;
+        //  }
+        fp->ssb_start_subcarrier = (12 * nrUE_config->ssb_table.ssb_offset_point_a + ssb_subcarrier_offset/2);
+        nrUE_config->ssb_table.ssb_subcarrier_offset = ssb_subcarrier_offset;
+        LOG_I(PHY, "new: ssb offset %d, pointA(30khz) %d , ssb_start_subcarrier %d\n", 
+                nrUE_config->ssb_table.ssb_subcarrier_offset,  nrUE_config->ssb_table.ssb_offset_point_a, fp->ssb_start_subcarrier);
+    }
+    else
+    {
+        kssb_offset_mib = 0;
+    }
+
+
+
+
     // TODO these values shouldn't be taken from SCC in SA
     uint8_t scs_ssb = get_softmodem_params()->numerology;
     uint32_t band   = get_softmodem_params()->band;
     uint16_t ssb_start_symbol = get_ssb_start_symbol(band,scs_ssb,ssb_index);
-    uint16_t ssb_offset_point_a = (ssb_start_subcarrier - ssb_subcarrier_offset)/12;
+    uint16_t ssb_offset_point_a = (ssb_start_subcarrier - ssb_subcarrier_offset/2)/12;
 
     get_type0_PDCCH_CSS_config_parameters(&mac->type0_PDCCH_CSS_config,
                                           frame,

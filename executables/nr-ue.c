@@ -136,6 +136,8 @@ void init_nr_ue_vars(PHY_VARS_NR_UE *ue,
 
 typedef nr_rxtx_thread_data_t syncData_t;
 
+extern kssb_offset_mib;
+
 static void UE_synch(void *arg) {
   syncData_t *syncD=(syncData_t *) arg;
   int i, hw_slot_offset;
@@ -221,12 +223,20 @@ static void UE_synch(void *arg) {
 
       uint64_t dl_carrier, ul_carrier;
       double rx_gain_off = 0;
-      nr_get_carrier_frequencies(&UE->frame_parms, &dl_carrier, &ul_carrier);
+      //nr_get_carrier_frequencies(&UE->frame_parms, &dl_carrier, &ul_carrier);
 
       if (nr_initial_sync(&syncD->proc, UE, 2) == 0) {
         freq_offset = UE->common_vars.freq_offset; // frequency offset computed with pss in initial sync
         hw_slot_offset = ((UE->rx_offset<<1) / UE->frame_parms.samples_per_subframe * UE->frame_parms.slots_per_subframe) +
                          round((float)((UE->rx_offset<<1) % UE->frame_parms.samples_per_subframe)/UE->frame_parms.samples_per_slot0);
+
+
+      if (kssb_offset_mib != 0)
+      {
+          downlink_frequency[0][0] += kssb_offset_mib * 15000;
+          kssb_offset_mib = 0;
+      }
+        nr_get_carrier_frequencies(&UE->frame_parms, &dl_carrier, &ul_carrier);
 
         // rerun with new cell parameters and frequency-offset
         // todo: the freq_offset computed on DL shall be scaled before being applied to UL

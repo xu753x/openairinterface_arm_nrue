@@ -33,6 +33,8 @@
 #include "nr_transport_proto_ue.h"
 #include "executables/softmodem-common.h"
 
+extern openair0_config_t openair0_cfg[];
+
 void nr_get_carrier_frequencies(NR_DL_FRAME_PARMS *fp, uint64_t *dl_carrier, uint64_t *ul_carrier){
 
   if (get_softmodem_params()->phy_test==1 || get_softmodem_params()->do_ra==1 || !downlink_frequency[0][0]) {
@@ -47,6 +49,55 @@ void nr_get_carrier_frequencies(NR_DL_FRAME_PARMS *fp, uint64_t *dl_carrier, uin
     *ul_carrier = *dl_carrier + fp->ul_CarrierFreq - fp->dl_CarrierFreq;
 
 }
+
+void nr_set_carrier_frequencies(NR_DL_FRAME_PARMS *fp, uint64_t dl_carrier){
+  uint8_t mod_id     = 0;
+  uint8_t cc_id      = 0;
+  PHY_VARS_NR_UE *ue = PHY_vars_UE_g[mod_id][cc_id];
+  int rf_chain       = ue->rf_map.chain;
+  uint64_t ul_carrier;
+  
+  if (get_softmodem_params()->phy_test==1 || get_softmodem_params()->do_ra==1 || !downlink_frequency[0][0]) {
+    fp->dl_CarrierFreq = dl_carrier;
+  } else {
+    downlink_frequency[0][0] = dl_carrier;
+  }
+  LOG_I(PHY, "downlink_frequency %ld,  dl_carrier %ld\n", downlink_frequency[0][0], dl_carrier);
+
+    if (uplink_frequency_offset[0][0])
+    ul_carrier = dl_carrier + uplink_frequency_offset[0][0];
+  else
+    ul_carrier = dl_carrier + fp->ul_CarrierFreq - fp->dl_CarrierFreq;
+
+  for (int i = rf_chain; i < rf_chain + 4; i++) {
+
+    if (i < openair0_cfg->rx_num_channels)
+      openair0_cfg->rx_freq[i + rf_chain] = dl_carrier + ue->common_vars.freq_offset;
+    else
+      openair0_cfg->rx_freq[i] = 0.0;
+
+    if (i < openair0_cfg->tx_num_channels)
+      openair0_cfg->tx_freq[i] = ul_carrier + ue->common_vars.freq_offset;
+    else
+      openair0_cfg->tx_freq[i] = 0.0;
+
+
+    if (i < openair0_cfg->rx_num_channels) {
+      LOG_I(PHY, "new HW: Configuring channel %d (rf_chain %d): setting tx_gain %f, rx_gain %f, tx_freq %f Hz, rx_freq %f Hz\n",
+        i,
+        rf_chain,
+        openair0_cfg->tx_gain[i],
+        openair0_cfg->rx_gain[i],
+        openair0_cfg->tx_freq[i],
+        openair0_cfg->rx_freq[i]);
+    }
+
+    ue->rfdevice.trx_set_freq_func(&ue->rfdevice,&openair0_cfg[0],0);
+
+  }
+
+}
+
 
 void nr_rf_card_config(openair0_config_t *openair0_cfg,
                        double rx_gain_offset,

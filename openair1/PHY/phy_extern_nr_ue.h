@@ -40,6 +40,9 @@ extern unsigned int TX_DMA_BUFFER[4][NB_ANTENNAS_TX];
 extern uint64_t downlink_frequency[MAX_NUM_CCs][4];
 extern int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
+extern int   point_a_15khz;
+extern int   kssb_15khz;
+
 extern const short conjugate[8],conjugate2[8];
 extern int number_of_cards;
 

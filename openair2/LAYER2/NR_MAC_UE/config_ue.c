@@ -231,7 +231,9 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
     uint32_t absolute_diff = (*scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB - scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA);
     cfg->ssb_table.ssb_offset_point_a = absolute_diff/(12*scs_scaling) - 10;
     cfg->ssb_table.ssb_period = *scc->ssb_periodicityServingCell;
-    cfg->ssb_table.ssb_subcarrier_offset = 0; // TODO currently not in RRC?
+    cfg->ssb_table.ssb_subcarrier_offset =( absolute_diff % (12*scs_scaling) )* scs_scaling; // TODO currently not in RRC?
+     
+    LOG_I(PHY, "in config ue scc, point A %d,  ssb_subcarrier_offset is %d\n", cfg->ssb_table.ssb_offset_point_a, cfg->ssb_table.ssb_subcarrier_offset);
 
     switch (scc->ssb_PositionsInBurst->present) {
     case 1 :
@@ -336,6 +338,19 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
                                                       *scc_SIB->downlinkConfigCommon.frequencyInfoDL.frequencyBandList.list.array[0]->freqBandIndicatorNR);
 
   cfg->carrier_config.dl_frequency = downlink_frequency[0][0] - (10+scc_SIB->downlinkConfigCommon.frequencyInfoDL.offsetToPointA)*(15<<scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing); 
+  cfg->carrier_config.dl_frequency = downlink_frequency[0][0] - 
+  (10+scc_SIB->downlinkConfigCommon.frequencyInfoDL.offsetToPointA/2)*(15<<scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing)*12;
+ 
+  LOG_I(PHY, "downlink_frequency old : %ld,  new : %ld\n", downlink_frequency[0][0], cfg->carrier_config.dl_frequency);
+   
+  cfg->carrier_config.halfbw = (15<<scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing)
+                               * scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->carrierBandwidth
+                               * 6;
+  cfg->ssb_table.ssb_subcarrier_offset = 0;
+  
+   
+  // shoule take consider the ssb offset at the end.
+
 
   for (i=0; i<5; i++) {
     if (i==scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing) {
@@ -388,9 +403,18 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
 
   // SSB Table config
 
-  cfg->ssb_table.ssb_offset_point_a = scc_SIB->downlinkConfigCommon.frequencyInfoDL.offsetToPointA;
+  cfg->ssb_table.ssb_offset_point_a = scc_SIB->downlinkConfigCommon.frequencyInfoDL.offsetToPointA / 2;
   cfg->ssb_table.ssb_period = scc_SIB->ssb_PeriodicityServingCell;
-  cfg->ssb_table.ssb_subcarrier_offset = 0; // TODO currently not in RRC?
+  //cfg->ssb_table.ssb_subcarrier_offset = 0; // TODO currently not in RRC?
+
+  LOG_I(PHY, "in SIB, addr %p ssb_offset_point_a %d, ssb_subcarrier_offset %d, bw %d, sibscs %d, freqPointA %ld, bw %d\n", cfg,
+  cfg->ssb_table.ssb_offset_point_a, cfg->ssb_table.ssb_subcarrier_offset,
+  scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->carrierBandwidth,
+  scc_SIB->uplinkConfigCommon->frequencyInfoUL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
+  cfg->carrier_config.dl_frequency,
+  scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->carrierBandwidth
+  );
+
 
   AssertFatal(scc_SIB->ssb_PositionsInBurst.groupPresence==NULL, "Cannot handle more than 8 SSBs for now (%x.%x.%x.%x.%x.%x.%x.%x)\n",
 	      scc_SIB->ssb_PositionsInBurst.groupPresence->buf[0],
@@ -696,9 +720,9 @@ int nr_rrc_mac_config_req_ue(
       mac->mib = mibP;    //  update by every reception
       mac->phy_config.Mod_id = module_id;
       mac->phy_config.CC_id = cc_idP;
-      mac->phy_config.config_req.ssb_table.ssb_subcarrier_offset = 0; // TODO currently not in RRC?
+      //mac->phy_config.config_req.ssb_table.ssb_subcarrier_offset = 0; // TODO currently not in RRC?
       mac->phy_config.config_req.tdd_table.tdd_period_in_slots=5<<get_softmodem_params()->numerology;
-      mac->phy_config.config_req.ssb_table.ssb_offset_point_a = (N_RB_DL-20)>>1;
+      //mac->phy_config.config_req.ssb_table.ssb_offset_point_a = (N_RB_DL-20)>>1;
     }
     AssertFatal(scell_group_config == NULL || cell_group_config == NULL,
 		"both scell_group_config and cell_group_config cannot be non-NULL\n");

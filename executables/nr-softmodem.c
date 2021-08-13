@@ -112,6 +112,10 @@ int8_t threequarter_fs=0;
 uint64_t downlink_frequency[MAX_NUM_CCs][4];
 int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
+int   point_a_15khz;
+int   kssb_15khz;
+
+
 //Temp fix for inexistent NR upper layer
 unsigned char NB_gNB_INST = 1;
 

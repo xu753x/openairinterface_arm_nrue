@@ -1627,7 +1627,7 @@ void nr_fill_rar(uint8_t Mod_idP,
 
   bwp_size = pusch_pdu->bwp_size;
   prb_alloc = PRBalloc_to_locationandbandwidth0(ra->msg3_nb_rb, ra->msg3_first_rb, bwp_size);
-  if (bwp_size>180) {
+  if (bwp_size>273) {
     AssertFatal(1==0,"Initial UBWP larger than 180 currently not supported");
   }
   else {
