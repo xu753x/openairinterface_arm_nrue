@@ -2969,7 +2969,7 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
   }
   padding_len = post_padding;
   // Generate ULSCH PDU
-  if (num_sdus>0) {
+//  if (num_sdus>0) {
   payload_offset = nr_generate_ulsch_pdu(ulsch_sdus,
                                          ulsch_buffer,  // mac header
                                          num_sdus,  // num sdus
@@ -2982,9 +2982,9 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
 										 bsr_l, // long_bsr
 										 post_padding, // post_padding
                                          buflen);  // TBS in bytes
-  } else {
-    return 0;
-  }
+//  } else {
+//    return 0;
+//  }
 
   // Padding: fill remainder of ULSCH with 0
   if (buflen - payload_offset > 0){
@@ -3036,5 +3036,5 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
     mac->BSR_reporting_active = BSR_TRIGGER_NONE;
   }
 
-  return 1;
+  return num_sdus > 0 ? 1 : 0;
 }
