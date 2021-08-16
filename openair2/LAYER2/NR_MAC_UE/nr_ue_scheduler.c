@@ -1209,7 +1209,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
     mac->scheduling_info.SR_pending = 1;
     // Regular BSR trigger
     mac->BSR_reporting_active |=
-      BSR_TRIGGER_REGULAR;
+      NR_BSR_TRIGGER_REGULAR;
     LOG_I(MAC,
           "[UE %d][BSR] Regular BSR Triggered Frame %d slot %d SR for PUSCH is pending\n",
           mod_id, txFrameP, txSlotP);
@@ -1369,7 +1369,7 @@ nr_update_bsr(module_id_t module_idP, frame_t frameP,
       bsr_regular_triggered = TRUE;
 
       if ((mac->BSR_reporting_active &
-           BSR_TRIGGER_REGULAR) == 0) {
+           NR_BSR_TRIGGER_REGULAR) == 0) {
         LOG_I(MAC,
               "[UE %d] PDCCH Tick : MAC BSR Triggered ReTxBSR Timer expiry at frame %d slot %d\n",
               module_idP, frameP, slotP);
@@ -2579,7 +2579,7 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
       && (mac->scheduling_info.periodicBSR_SF == 0)) {
     // Trigger BSR Periodic
     mac->BSR_reporting_active |=
-      BSR_TRIGGER_PERIODIC;
+      NR_BSR_TRIGGER_PERIODIC;
     LOG_D(MAC,
           "[UE %d] MAC BSR Triggered PeriodicBSR Timer expiry at frame%d subframe %d TBS=%d\n",
           module_idP, frameP, subframe, buflen);
@@ -2589,7 +2589,7 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
   //WARNING: if BSR long is computed, it may be changed to BSR short during or after multiplexing if there remains less than 1 LCGROUP with data after Tx
   if (mac->BSR_reporting_active) {
     AssertFatal((mac->BSR_reporting_active &
-                 BSR_TRIGGER_PADDING) == 0,
+                 NR_BSR_TRIGGER_PADDING) == 0,
                 "Inconsistent BSR Trigger=%d !\n",
                 mac->BSR_reporting_active);
 
@@ -2854,7 +2854,7 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
       bsr_header_len = 1;
       // Trigger BSR Padding
       mac->BSR_reporting_active |=
-        BSR_TRIGGER_PADDING;
+        NR_BSR_TRIGGER_PADDING;
     } else if (padding_len >= (1 + sizeof(NR_BSR_SHORT))) {
       bsr_ce_len = sizeof(NR_BSR_SHORT);
       bsr_header_len = 1;
@@ -2893,7 +2893,7 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
 
       // Trigger BSR Padding
       mac->BSR_reporting_active |=
-        BSR_TRIGGER_PADDING;
+        NR_BSR_TRIGGER_PADDING;
     }
 
     bsr_len = bsr_header_len + bsr_ce_len;
@@ -2940,7 +2940,7 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
 
     if ((bsr_t != NULL)
         && (mac->BSR_reporting_active &
-            BSR_TRIGGER_PADDING)) {
+            NR_BSR_TRIGGER_PADDING)) {
       //Truncated BSR
       bsr_s = NULL;
       bsr_t->LcgID = lcg_id_bsr_trunc;
@@ -2992,12 +2992,6 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
                   ulsch_buffer[j] = 0;
   }
 
-  LOG_D(MAC,
-        "[UE %d][SR] Gave SDU to PHY, clearing any scheduling request\n",
-        module_idP);
-  mac->scheduling_info.SR_pending = 0;
-  mac->scheduling_info.SR_COUNTER = 0;
-
 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
   LOG_I(NR_MAC, "Printing UL MAC payload UE side, payload_offset: %d \n", payload_offset);
   for (int i = 0; i < buflen ; i++) {
@@ -3007,6 +3001,40 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
   }
   printf("\n");
 #endif
+
+  LOG_D(MAC,
+        "[UE %d][SR] Gave SDU to PHY, clearing any scheduling request\n",
+        module_idP);
+  mac->scheduling_info.SR_pending = 0;
+  mac->scheduling_info.SR_COUNTER = 0;
+
+  /* Actions when a BSR is sent */
+  if (bsr_ce_len) {
+    LOG_D(MAC,
+          "[UE %d] MAC BSR Sent !! bsr (ce%d,hdr%d) buff_len %d\n",
+          module_idP, bsr_ce_len, bsr_header_len, buflen);
+    // Reset ReTx BSR Timer
+    mac->scheduling_info.retxBSR_SF =
+      nr_get_sf_retxBSRTimer(mac->
+                          scheduling_info.retxBSR_Timer);
+    LOG_D(MAC, "[UE %d] MAC ReTx BSR Timer Reset =%d\n", module_idP,
+          mac->scheduling_info.retxBSR_SF);
+
+    // Reset Periodic Timer except when BSR is truncated
+    if ((bsr_t == NULL)
+        && (mac->scheduling_info.
+            periodicBSR_Timer != NR_BSR_Config__periodicBSR_Timer_infinity)) {
+      mac->scheduling_info.periodicBSR_SF =
+        nr_get_sf_periodicBSRTimer(mac->scheduling_info.
+                                periodicBSR_Timer);
+      LOG_D(MAC, "[UE %d] MAC Periodic BSR Timer Reset =%d\n",
+            module_idP,
+            mac->scheduling_info.periodicBSR_SF);
+    }
+
+    // Reset BSR Trigger flags
+    mac->BSR_reporting_active = BSR_TRIGGER_NONE;
+  }
 
   return 1;
 }

@@ -2272,7 +2272,7 @@ int8_t nr_ue_get_SR(module_id_t module_idP, frame_t frameP, slot_t slot){
       //mac->physicalConfigDedicated = NULL;
       //mac->ul_active = 0;
       mac->BSR_reporting_active =
-        BSR_TRIGGER_NONE;
+        NR_BSR_TRIGGER_NONE;
       LOG_I(MAC, "[UE %d] Release all SRs \n", module_idP);
     }
 

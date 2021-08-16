@@ -758,7 +758,7 @@ int nr_rrc_mac_config_req_ue(
         MAC_UE_BSR_TIMER_NOT_RUNNING;
       mac->scheduling_info.retxBSR_SF =
         MAC_UE_BSR_TIMER_NOT_RUNNING;
-      mac->BSR_reporting_active = BSR_TRIGGER_NONE;
+      mac->BSR_reporting_active = NR_BSR_TRIGGER_NONE;
       LOG_D(MAC, "[UE %d]: periodic BSR %d (SF), retx BSR %d (SF)\n",
 			module_id,
             mac->scheduling_info.periodicBSR_SF,
