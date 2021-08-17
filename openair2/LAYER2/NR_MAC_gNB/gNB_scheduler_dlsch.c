@@ -68,7 +68,7 @@ void calculate_preferred_dl_tda(module_id_t module_id, const NR_BWP_Downlink_t *
   NR_ServingCellConfigCommon_t *scc = nrmac->common_channels->ServingCellConfigCommon;
   const NR_TDD_UL_DL_Pattern_t *tdd =
       scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
-  const int symb_dlMixed = tdd ? (1 << tdd->nrofDownlinkSymbols) - 1 : 0;
+  const int symb_dlMixed = tdd ? (1 << nrmac->flexible_symbols[0]) - 1 : 0;
 
   const int target_ss = bwp ? NR_SearchSpace__searchSpaceType_PR_ue_Specific : NR_SearchSpace__searchSpaceType_PR_common;
   NR_SearchSpace_t *search_space = get_searchspace(scc, bwp ? bwp->bwp_Dedicated : NULL, target_ss);
@@ -122,13 +122,13 @@ void calculate_preferred_dl_tda(module_id_t module_id, const NR_BWP_Downlink_t *
   const int n = slots_per_frame[*scc->ssbSubcarrierSpacing];
   nrmac->preferred_dl_tda[bwp_id] = malloc(n * sizeof(*nrmac->preferred_dl_tda[bwp_id]));
 
-  const int nr_mix_slots = tdd ? tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0 : 0;
-  const int nr_slots_period = tdd ? tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + nr_mix_slots : n;
+  const int nr_mix_slots = tdd ? 1 : 0; // Karim, always we have a mixed slot
+  //const int nr_slots_period = tdd ? tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + nr_mix_slots : n;
   for (int i = 0; i < n; ++i) {
     nrmac->preferred_dl_tda[bwp_id][i] = -1;
-    if (!tdd || i % nr_slots_period < tdd->nrofDownlinkSlots)
+    if (!tdd || nrmac->flexible_slots_per_frame[i]==0)
       nrmac->preferred_dl_tda[bwp_id][i] = 0;
-    else if (tdd && nr_mix_slots && i % nr_slots_period == tdd->nrofDownlinkSlots)
+    else if (tdd && nr_mix_slots && nrmac->flexible_slots_per_frame[i] == 2)
       nrmac->preferred_dl_tda[bwp_id][i] = tdaMi;
     LOG_I(MAC, "slot %d preferred_dl_tda %d\n", i, nrmac->preferred_dl_tda[bwp_id][i]);
   }
@@ -787,7 +787,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
                          frame_t frame,
                          sub_frame_t slot) {
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_id];
-  if (!is_xlsch_in_slot(gNB_mac->dlsch_slot_bitmap[slot / 64], slot))
+  if (!is_xlsch_in_slot_flex(gNB_mac->flexible_slots_per_frame, 0, slot))
     return;
 
   /* PREPROCESSOR */

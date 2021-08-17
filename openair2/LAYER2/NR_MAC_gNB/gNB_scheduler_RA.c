@@ -245,9 +245,9 @@ void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
   nfapi_nr_ul_tti_request_t *UL_tti_req = &RC.nrmac[module_idP]->UL_tti_req_ahead[0][slotP];
   nfapi_nr_config_request_scf_t *cfg = &RC.nrmac[module_idP]->config[0];
-
-  if (is_nr_UL_slot(scc->tdd_UL_DL_ConfigurationCommon, slotP, cc->frame_type)) {
-
+  // KARIM
+  //if (is_nr_UL_slot(scc->tdd_UL_DL_ConfigurationCommon, slotP, cc->frame_type)) {
+    if (is_nr_UL_slot_flex(gNB->flexible_slots_per_frame, slotP, cc->frame_type)) {
     uint8_t config_index = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.prach_ConfigurationIndex;
     uint8_t mu,N_dur,N_t_slot,start_symbol = 0,N_RA_slot;
     uint16_t RA_sfn_index = -1;
@@ -407,13 +407,13 @@ void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
   uint8_t response_window = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.ra_ResponseWindow;
   uint8_t slot_window;
   // number of mixed slot or of last dl slot if there is no mixed slot
-  uint8_t last_dl_slot_period = scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots;
+  uint8_t last_dl_slot_period = RC.nrmac[0]->prefered_slot_msg2; // Karim change later
   // lenght of tdd period in slots
-  uint8_t tdd_period_slot =  scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots + scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
-  if (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols == 0)
-    last_dl_slot_period--;
-  if ((scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols > 0) || (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols > 0))
-    tdd_period_slot++;
+  //uint8_t tdd_period_slot =  scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots + scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
+  /*if (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols == 0)
+    last_dl_slot_period--;*/
+  /*if ((scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols > 0) || (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols > 0))
+    tdd_period_slot++;*/
 
   switch(response_window){
     case NR_RACH_ConfigGeneric__ra_ResponseWindow_sl1:
@@ -453,32 +453,33 @@ void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
 
   int FR = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0] >= 257 ? nr_FR2 : nr_FR1;
 
-  uint8_t start_next_period = (rach_slot-(rach_slot%tdd_period_slot)+tdd_period_slot)%nr_slots_per_frame[mu];
-  *msg2_slot = start_next_period + last_dl_slot_period; // initializing scheduling of slot to next mixed (or last dl) slot
+  //uint8_t start_next_period = (rach_slot-(rach_slot%tdd_period_slot)+tdd_period_slot)%nr_slots_per_frame[mu];
+  *msg2_slot = last_dl_slot_period; // initializing scheduling of slot to next mixed (or last dl) slot
   *msg2_frame = ((*msg2_slot>(rach_slot))? rach_frame : (rach_frame+1))%1024;
 
   // we can't schedule msg2 before sl_ahead since prach
   int eff_slot = *msg2_slot+(*msg2_frame-rach_frame)*nr_slots_per_frame[mu];
   if ((eff_slot-rach_slot)<=sl_ahead) {
-    *msg2_slot = (*msg2_slot+tdd_period_slot)%nr_slots_per_frame[mu];
+    *msg2_slot = (*msg2_slot+20)%nr_slots_per_frame[mu]; // Karim
     *msg2_frame = ((*msg2_slot>(rach_slot))? rach_frame : (rach_frame+1))%1024;
   }
-  if (FR==nr_FR2) {
-    int num_tdd_period = *msg2_slot/tdd_period_slot;
+  if (FR==nr_FR2) { // Karim, manage FR2
+    assert(1==2);
+    /*int num_tdd_period = *msg2_slot/tdd_period_slot;
     while((tdd_beam_association[num_tdd_period]!=-1)&&(tdd_beam_association[num_tdd_period]!=beam_index)) {
       *msg2_slot = (*msg2_slot+tdd_period_slot)%nr_slots_per_frame[mu];
       *msg2_frame = ((*msg2_slot>(rach_slot))? rach_frame : (rach_frame+1))%1024;
       num_tdd_period = *msg2_slot/tdd_period_slot;
     }
     if(tdd_beam_association[num_tdd_period] == -1)
-      tdd_beam_association[num_tdd_period] = beam_index;
+      tdd_beam_association[num_tdd_period] = beam_index;*/
   }
 
   // go to previous slot if the current scheduled slot is beyond the response window
   // and if the slot is not among the PDCCH monitored ones (38.213 10.1)
   while (((*msg2_slot>slot_limit)&&(*msg2_frame>frame_limit)) || ((*msg2_frame*nr_slots_per_frame[mu]+*msg2_slot-monitoring_offset)%monitoring_slot_period !=0))  {
-    if((*msg2_slot%tdd_period_slot) > 0)
-      (*msg2_slot)--;
+    if((*msg2_slot%20) > 0 && RC.nrmac[0]->flexible_slots_per_frame[*msg2_slot]!=1)
+      (*msg2_slot)--;//
     else
       AssertFatal(1==0,"No available DL slot to schedule msg2 has been found");
   }
@@ -712,11 +713,11 @@ void nr_get_Msg3alloc(module_id_t module_id,
       startSymbolAndLength = pusch_TimeDomainAllocationList->list.array[i]->startSymbolAndLength;
       SLIV2SL(startSymbolAndLength, &StartSymbolIndex, &NrOfSymbols);
       // we want to transmit in the uplink symbols of mixed slot
-      if (NrOfSymbols == scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols) {
+      if (NrOfSymbols == RC.nrmac[module_id]->flexible_symbols[1]) {
         k2 = *pusch_TimeDomainAllocationList->list.array[i]->k2;
         temp_slot = current_slot + k2 + DELTA[mu]; // msg3 slot according to 8.3 in 38.213
         ra->Msg3_slot = temp_slot%nr_slots_per_frame[mu];
-        if (is_xlsch_in_slot(RC.nrmac[module_id]->ulsch_slot_bitmap[ra->Msg3_slot / 64], ra->Msg3_slot)) {
+        if (is_xlsch_in_slot_flex(RC.nrmac[module_id]->flexible_slots_per_frame, 1, ra->Msg3_slot)) {
           ra->Msg3_tda_id = i;
           break;
         }
@@ -731,15 +732,17 @@ void nr_get_Msg3alloc(module_id_t module_id,
       ra->Msg3_frame = (current_frame + (temp_slot/nr_slots_per_frame[mu]))%1024;
 
   // beam association for FR2
+  // Karim to manage
   if (*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0] >= 257) {
-    uint8_t tdd_period_slot =  scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots + scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
+    /*uint8_t tdd_period_slot =  scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots + scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
     if ((scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols > 0) || (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols > 0))
       tdd_period_slot++;
     int num_tdd_period = ra->Msg3_slot/tdd_period_slot;
     if((tdd_beam_association[num_tdd_period]!=-1)&&(tdd_beam_association[num_tdd_period]!=ra->beam_id))
       AssertFatal(1==0,"Cannot schedule MSG3\n");
     else
-      tdd_beam_association[num_tdd_period] = ra->beam_id;
+      tdd_beam_association[num_tdd_period] = ra->beam_id;*/
+      assert(1==2);
   }
 
   LOG_D(NR_MAC, "[RAPROC] Msg3 slot %d: current slot %u Msg3 frame %u k2 %u Msg3_tda_id %u start symbol index %u\n", ra->Msg3_slot, current_slot, ra->Msg3_frame, k2,ra->Msg3_tda_id, StartSymbolIndex);

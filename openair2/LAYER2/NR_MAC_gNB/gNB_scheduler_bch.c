@@ -263,10 +263,10 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP) 
               if ((ssb_start_symbol/14) == rel_slot){
                 schedule_ssb(frameP, slotP, scc, dl_req, i_ssb, ssbSubcarrierOffset, offset_pointa, (*(uint32_t*)cc->MIB_pdu.payload) & ((1<<24)-1));
                 fill_ssb_vrb_map(cc, offset_pointa, ssb_start_symbol, CC_id);
-                const NR_TDD_UL_DL_Pattern_t *tdd = &scc->tdd_UL_DL_ConfigurationCommon->pattern1;
-                const int nr_mix_slots = tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0;
-                const int nr_slots_period = tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + nr_mix_slots;
-                num_tdd_period = rel_slot/nr_slots_period;
+                //const NR_TDD_UL_DL_Pattern_t *tdd = &scc->tdd_UL_DL_ConfigurationCommon->pattern1;
+                //const int nr_mix_slots = tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0;
+                //const int nr_slots_period = tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + nr_mix_slots;
+                num_tdd_period = 0;//rel_slot/nr_slots_period;
                 gNB->tdd_beam_association[num_tdd_period]=i_ssb;
                 num_ssb++;
                 AssertFatal(num_ssb<2,"beamforming currently not supported for more than one SSB per slot\n");

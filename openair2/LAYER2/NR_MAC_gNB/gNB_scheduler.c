@@ -345,7 +345,11 @@ bool is_xlsch_in_slot(uint64_t bitmap, sub_frame_t slot) {
   if (slot>=64) return false; //quickfix for FR2 where there are more than 64 slots (bitmap to be removed)
   return (bitmap >> slot) & 0x01;
 }
-
+bool is_xlsch_in_slot_flex(int *flexible_slots, int direction, sub_frame_t slot) {
+  if (slot == 0 || slot == 10) return false;
+  if (flexible_slots[slot] == 2) return true;
+  return flexible_slots[slot] == direction;
+}
 void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
                                frame_t frame,
                                sub_frame_t slot){
@@ -362,11 +366,11 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   if (slot==0 && (*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0]>=257)) {
     const NR_TDD_UL_DL_Pattern_t *tdd = &scc->tdd_UL_DL_ConfigurationCommon->pattern1;
     const int n = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
-    const int nr_mix_slots = tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0;
-    const int nr_slots_period = tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + nr_mix_slots;
-    const int nb_periods_per_frame = n / nr_slots_period;
+    const int nr_mix_slots = 1; // Karim always Mixed slot exist
+    //const int nr_slots_period = tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + nr_mix_slots;
+    //const int nb_periods_per_frame = n / nr_slots_period;
     // re-initialization of tdd_beam_association at beginning of frame (only for FR2)
-    for (int i=0; i<nb_periods_per_frame; i++)
+    for (int i=0; i<1; i++)
       gNB->tdd_beam_association[i] = -1;
   }
 

@@ -383,7 +383,17 @@ void config_common(int Mod_idP, int ssb_SubcarrierOffset, int pdsch_AntennaPorts
   AssertFatal(cfg->carrier_config.num_tx_ant.value > 0,"carrier_config.num_tx_ant.value %d !\n",cfg->carrier_config.num_tx_ant.value );
   cfg->num_tlv++;
   cfg->num_tlv++;
-
+  //TDD config
+  //int flexible_slots_per_frame[20] = {0,0,0,0,0,0,0,2,1,1,0,0,0,0,0,0,0,2,1,1}; original configuration
+  int flexible_slots_per_frame[20] = {0,0,0,2,1,1,1,0,0,0,0,0,0,0,0,2,1,1,1,1};
+  int flexible_symbols[2] = {6,4};
+  RC.nrmac[Mod_idP]->flexible_slots_per_frame = calloc(20,sizeof(int));
+  RC.nrmac[Mod_idP]->flexible_symbols = calloc(2,sizeof(int));
+  for(int i = 0;i < 20; i++) {RC.nrmac[Mod_idP]->flexible_slots_per_frame[i] = flexible_slots_per_frame[i]; }
+  RC.nrmac[Mod_idP]->flexible_symbols[0] = flexible_symbols[0];
+  RC.nrmac[Mod_idP]->flexible_symbols[1] = flexible_symbols[1];
+  RC.nrmac[Mod_idP]->prefered_slot_msg2 = 3;
+  RC.nrmac[Mod_idP]->nb_ul_slots = 4;
   // TDD Table Configuration
   //cfg->tdd_table.tdd_period.value = scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity;
   cfg->tdd_table.tdd_period.tl.tag = NFAPI_NR_CONFIG_TDD_PERIOD_TAG;
@@ -397,12 +407,11 @@ void config_common(int Mod_idP, int ssb_SubcarrierOffset, int pdsch_AntennaPorts
   }
   if(cfg->cell_config.frame_duplex_type.value == TDD){
     LOG_I(NR_MAC,"Setting TDD configuration period to %d\n",cfg->tdd_table.tdd_period.value);
-    int periods_per_frame = set_tdd_config_nr(cfg,
+    // KARIM
+    int periods_per_frame = set_tdd_config_nr_flex(cfg,
                                               scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
-                                              scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots,
-                                              scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols,
-                                              scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots,
-                                              scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols);
+                                              RC.nrmac[Mod_idP]->flexible_slots_per_frame,
+                                              RC.nrmac[Mod_idP]->flexible_symbols);
 
     if (periods_per_frame < 0)
       LOG_E(NR_MAC,"TDD configuration can not be done\n");

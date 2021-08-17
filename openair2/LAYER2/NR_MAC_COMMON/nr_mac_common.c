@@ -2991,9 +2991,9 @@ int is_nr_DL_slot(NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon,slo
   else return(slot_in_period <= slots1+tdd_UL_DL_ConfigurationCommon->pattern2->nrofDownlinkSlots ? 1 : 0);    
 }
 
-int is_nr_UL_slot(NR_TDD_UL_DL_ConfigCommon_t	*tdd_UL_DL_ConfigurationCommon, slot_t slot, lte_frame_type_t frame_type) {
+int is_nr_UL_slot(NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon, slot_t slot, lte_frame_type_t frame_type) {
 
-  int period,period1,period2=0;
+ int period,period1,period2=0;
 
   // Note: condition on frame_type
   // goal: the UL scheduler assumes mode is TDD therefore this hack is needed to make FDD work
@@ -3020,8 +3020,49 @@ int is_nr_UL_slot(NR_TDD_UL_DL_ConfigCommon_t	*tdd_UL_DL_ConfigurationCommon, sl
   int slots1=period1*(1<<scs)/1000;
   int slot_in_period = slot % slots;
   if (slot_in_period < slots1) return(slot_in_period >= tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots ? 1 : 0);
-  else return(slot_in_period >= slots1+tdd_UL_DL_ConfigurationCommon->pattern2->nrofDownlinkSlots ? 1 : 0);    
+  else return(slot_in_period >= slots1+tdd_UL_DL_ConfigurationCommon->pattern2->nrofDownlinkSlots ? 1 : 0);   
 }
+
+//KARIM
+int is_nr_UL_slot_flex(int	*flexible_slots_per_frame, slot_t slot, lte_frame_type_t frame_type) {
+
+  if (frame_type == FDD) {
+    return 1;
+  }
+  if (flexible_slots_per_frame[slot] > 0) return 1;
+  else return 0;
+
+ /* int period,period1,period2=0;
+
+  // Note: condition on frame_type
+  // goal: the UL scheduler assumes mode is TDD therefore this hack is needed to make FDD work
+  if (tdd_UL_DL_ConfigurationCommon == NULL || frame_type == FDD) {
+    return(1);
+  }
+
+  if (tdd_UL_DL_ConfigurationCommon->pattern1.ext1 &&
+      tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530)
+    period1 = 3000+*tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530;
+  else
+    period1 = tdd_period_to_num[tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity];
+			       
+  if (tdd_UL_DL_ConfigurationCommon->pattern2) {
+    if (tdd_UL_DL_ConfigurationCommon->pattern2->ext1 &&
+	      tdd_UL_DL_ConfigurationCommon->pattern2->ext1->dl_UL_TransmissionPeriodicity_v1530)
+      period2 = 3000+*tdd_UL_DL_ConfigurationCommon->pattern2->ext1->dl_UL_TransmissionPeriodicity_v1530;
+    else
+      period2 = tdd_period_to_num[tdd_UL_DL_ConfigurationCommon->pattern2->dl_UL_TransmissionPeriodicity];
+  }    
+  period = period1+period2;
+  int scs=tdd_UL_DL_ConfigurationCommon->referenceSubcarrierSpacing;
+  int slots=period*(1<<scs)/1000;
+  int slots1=period1*(1<<scs)/1000;
+  int slot_in_period = slot % slots;
+  if (slot_in_period < slots1) return(slot_in_period >= tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots ? 1 : 0);
+  else return(slot_in_period >= slots1+tdd_UL_DL_ConfigurationCommon->pattern2->nrofDownlinkSlots ? 1 : 0);    */
+}
+
+
 
 int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols, int startSymbol, int mappingtype_fromDCI) {
 

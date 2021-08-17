@@ -51,6 +51,9 @@ int set_tdd_config_nr(nfapi_nr_config_request_scf_t *cfg, int mu,
                        int nrofDownlinkSlots, int nrofDownlinkSymbols,
                        int nrofUplinkSlots,   int nrofUplinkSymbols);
 
+int set_tdd_config_nr_flex( nfapi_nr_config_request_scf_t *cfg,
+                       int mu,
+                       int *flexible_slots_per_frame, int *flexible_symbols);
 /** \brief This function adds a slot configuration to current dedicated configuration for nr
  *  @param frame_parms NR DL Frame parameters
  *  @param slotIndex

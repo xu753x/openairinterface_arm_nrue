@@ -125,7 +125,7 @@ void nr_schedule_pucch(int Mod_idP,
                        sub_frame_t slotP)
 {
   gNB_MAC_INST *nrmac = RC.nrmac[Mod_idP];
-  if (!is_xlsch_in_slot(nrmac->ulsch_slot_bitmap[slotP / 64], slotP))
+  if (!is_xlsch_in_slot_flex(RC.nrmac[Mod_idP]->flexible_slots_per_frame, 1, slotP))
     return;
 
   NR_UE_info_t *UE_info = &nrmac->UE_info;
@@ -1164,18 +1164,25 @@ int nr_acknack_scheduling(int mod_id,
   const NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon;
   const int n_slots_frame = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
   const NR_TDD_UL_DL_Pattern_t *tdd = &scc->tdd_UL_DL_ConfigurationCommon->pattern1;
-  const int nr_ulmix_slots = tdd->nrofUplinkSlots + (tdd->nrofUplinkSymbols != 0);
-  const int nr_mix_slots = tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0;
-  const int nr_slots_period = tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + nr_mix_slots;
-  const int first_ul_slot_tdd = tdd->nrofDownlinkSlots + nr_slots_period * (slot / nr_slots_period);
+  const int nr_ulmix_slots = RC.nrmac[mod_id]->nb_ul_slots;
+  //const int nr_mix_slots = 1; //karim, always there is a mixed slot
+  //const int nr_slots_period = tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + nr_mix_slots;
+  int first_ul_slot_tdd = 0;
+  for(int i = slot+1; i< n_slots_frame; i++){
+    if (RC.nrmac[mod_id]->flexible_slots_per_frame[i] > 0 ){
+     first_ul_slot_tdd = i;
+     break;
+    }
+  }
+
   const int CC_id = 0;
   NR_sched_pucch_t *csi_pucch;
 
-  AssertFatal(slot < first_ul_slot_tdd + (tdd->nrofUplinkSymbols != 0),
+  /*AssertFatal(slot < first_ul_slot_tdd + (tdd->nrofUplinkSymbols != 0),
               "cannot handle multiple TDD periods (yet): slot %d first_ul_slot_tdd %d nrofUplinkSlots %ld\n",
               slot,
               first_ul_slot_tdd,
-              tdd->nrofUplinkSlots);
+              tdd->nrofUplinkSlots);*/
 
   /* for the moment, we consider:
    * * only pucch_sched[0] holds HARQ (and SR)
@@ -1367,7 +1374,7 @@ int nr_acknack_scheduling(int mod_id,
 void nr_sr_reporting(int Mod_idP, frame_t SFN, sub_frame_t slot)
 {
   gNB_MAC_INST *nrmac = RC.nrmac[Mod_idP];
-  if (!is_xlsch_in_slot(nrmac->ulsch_slot_bitmap[slot / 64], slot))
+  if (!is_xlsch_in_slot_flex(nrmac->flexible_slots_per_frame, 1, slot))
     return;
   NR_ServingCellConfigCommon_t *scc = nrmac->common_channels->ServingCellConfigCommon;
   const int n_slots_frame = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];

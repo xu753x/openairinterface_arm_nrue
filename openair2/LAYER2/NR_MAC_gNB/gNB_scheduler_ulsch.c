@@ -76,7 +76,7 @@ void calculate_preferred_ul_tda(module_id_t module_id, const NR_BWP_Uplink_t *ub
   const NR_TDD_UL_DL_Pattern_t *tdd =
       scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
   /* Uplink symbols are at the end of the slot */
-  const int symb_ulMixed = tdd ? ((1 << tdd->nrofUplinkSymbols) - 1) << (14 - tdd->nrofUplinkSymbols) : 0;
+  const int symb_ulMixed = tdd ? ((1 << nrmac->flexible_symbols[1]) - 1) << (14 - nrmac->flexible_symbols[1]) : 0;
 
   const struct NR_PUCCH_Config__resourceToAddModList *resList = ubwp->bwp_Dedicated->pucch_Config->choice.setup->resourceToAddModList;
   // for the moment, just block any symbol that might hold a PUCCH, regardless
@@ -155,23 +155,23 @@ void calculate_preferred_ul_tda(module_id_t module_id, const NR_BWP_Uplink_t *ub
   const int n = slots_per_frame[*scc->ssbSubcarrierSpacing];
   nrmac->preferred_ul_tda[bwp_id] = malloc(n * sizeof(*nrmac->preferred_ul_tda[bwp_id]));
 
-  const int nr_mix_slots = tdd ? tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0 : 0;
-  const int nr_slots_period = tdd ? tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + nr_mix_slots : n;
+  const int nr_mix_slots = tdd ? 1 : 0; // karim, always mixed slot exist
+  //const int nr_slots_period = tdd ? tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + nr_mix_slots : n;
   for (int slot = 0; slot < n; ++slot) {
     const int sched_slot = (slot + k2) % n;
     nrmac->preferred_ul_tda[bwp_id][slot] = -1;
-    if (!tdd || sched_slot % nr_slots_period >= tdd->nrofDownlinkSlots + nr_mix_slots)
+    if (!tdd || nrmac->flexible_slots_per_frame[sched_slot] == 1)
       nrmac->preferred_ul_tda[bwp_id][slot] = 0;
-    else if (tdd && nr_mix_slots && sched_slot % nr_slots_period == tdd->nrofDownlinkSlots)
+    else if (tdd && nr_mix_slots && nrmac->flexible_slots_per_frame[sched_slot] == 2)
       nrmac->preferred_ul_tda[bwp_id][slot] = tdaMi;
     LOG_I(MAC, "DL slot %d UL slot %d preferred_ul_tda %d\n", slot, sched_slot, nrmac->preferred_ul_tda[bwp_id][slot]);
   }
-
-  if (k2 < tdd->nrofUplinkSlots)
+  // Karim
+  /*if (k2 < tdd->nrofUplinkSlots)
     LOG_W(NR_MAC,
           "k2 %d < tdd->nrofUplinkSlots %ld: not all UL slots can be scheduled\n",
           k2,
-          tdd->nrofUplinkSlots);
+          tdd->nrofUplinkSlots);*/
 }
 
 void nr_process_mac_pdu(module_id_t module_idP,
@@ -1206,11 +1206,10 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   const int sched_frame = frame + (slot + K2 >= nr_slots_per_frame[mu]);
   const int sched_slot = (slot + K2) % nr_slots_per_frame[mu];
 
-  if (!is_xlsch_in_slot(nr_mac->ulsch_slot_bitmap[sched_slot / 64], sched_slot))
+  if (!is_xlsch_in_slot_flex(nr_mac->flexible_slots_per_frame, 1,  sched_slot))
     return false;
 
-  bool is_mixed_slot = is_xlsch_in_slot(nr_mac->dlsch_slot_bitmap[sched_slot / 64], sched_slot) &&
-                        is_xlsch_in_slot(nr_mac->ulsch_slot_bitmap[sched_slot / 64], sched_slot);
+  bool is_mixed_slot = is_xlsch_in_slot_flex(nr_mac->flexible_slots_per_frame, 2, sched_slot);
 
   // FIXME: Avoid mixed slots for initialUplinkBWP
   if (sched_ctrl->active_ubwp==NULL && is_mixed_slot)
@@ -1309,7 +1308,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
   gNB_MAC_INST *nr_mac = RC.nrmac[module_id];
   /* Uplink data ONLY can be scheduled when the current slot is downlink slot,
    * because we have to schedule the DCI0 first before schedule uplink data */
-  if (!is_xlsch_in_slot(nr_mac->dlsch_slot_bitmap[slot / 64], slot)) {
+  if (!is_xlsch_in_slot_flex(nr_mac->flexible_slots_per_frame, 0, slot)) {
     LOG_D(NR_MAC, "Current slot %d is NOT DL slot, cannot schedule DCI0 for UL data\n", slot);
     return;
   }

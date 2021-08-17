@@ -270,7 +270,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
                              frame_t frame,
                              sub_frame_t slot)
 {
-  if (!is_xlsch_in_slot(dlsch_slot_bitmap, slot))
+  if (!is_xlsch_in_slot_flex(RC.nrmac[module_id]->flexible_slots_per_frame, 0, slot))
     return;
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon;
@@ -435,7 +435,7 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
   /* check if slot is UL, and that slot is 8 (assuming K2=6 because of UE
    * limitations).  Note that if K2 or the TDD configuration is changed, below
    * conditions might exclude each other and never be true */
-  if (!is_xlsch_in_slot(ulsch_slot_bitmap, sched_slot))
+  if (!is_xlsch_in_slot_flex(RC.nrmac[module_id]->flexible_slots_per_frame, 1, sched_slot))
     return false;
 
   const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;

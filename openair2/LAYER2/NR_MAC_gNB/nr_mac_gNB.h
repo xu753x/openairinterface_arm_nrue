@@ -750,6 +750,11 @@ typedef struct gNB_MAC_INST_s {
   NR_Type0_PDCCH_CSS_config_t type0_PDCCH_CSS_config[64];
 
   bool first_MIB;
+  //KARIM
+  int *flexible_slots_per_frame;
+  int *flexible_symbols;
+  int nb_ul_slots;
+  int prefered_slot_msg2;
 } gNB_MAC_INST;
 
 #endif /*__LAYER2_NR_MAC_GNB_H__ */
