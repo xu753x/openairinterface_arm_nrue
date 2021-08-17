@@ -70,6 +70,8 @@ void fill_default_coresetZero(NR_ControlResourceSet_t *coreset0, NR_ServingCellC
     coreset0->frequencyDomainResources.buf[1] = 0;
   else
     coreset0->frequencyDomainResources.buf[1] = 0xff;
+  
+  coreset0->frequencyDomainResources.buf[1] = 0;
   coreset0->frequencyDomainResources.buf[2] = 0;
   coreset0->frequencyDomainResources.buf[3] = 0;
   coreset0->frequencyDomainResources.buf[4] = 0;
