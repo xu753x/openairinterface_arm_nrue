@@ -322,9 +322,10 @@ int8_t nr_ue_phy_config_request(nr_phy_config_t *phy_config){
     
   }
    
+  nrUE_config->ssb_table.ssb_subcarrier_offset = kssb; 
   if (freq_changed)
   { 
-      nrUE_config->ssb_table.ssb_subcarrier_offset = kssb;
+      
 
       centreFreq = phy_config->config_req.carrier_config.dl_frequency + phy_config->config_req.carrier_config.halfbw + nrUE_config->ssb_table.ssb_subcarrier_offset * 15;
 

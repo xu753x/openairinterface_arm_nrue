@@ -337,7 +337,7 @@ void nr_ue_measurement_procedures(uint16_t l,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_MEASUREMENT_PROCEDURES, VCD_FUNCTION_OUT);
 }
 
-void nr_ue_pbch_procedures(uint8_t gNB_id,
+int nr_ue_pbch_procedures(uint8_t gNB_id,
 			   PHY_VARS_NR_UE *ue,
 			   UE_nr_rxtx_proc_t *proc,
 			   uint8_t abstraction_flag)
@@ -439,6 +439,8 @@ void nr_ue_pbch_procedures(uint8_t gNB_id,
 	ue->pbch_vars[gNB_id]->pdu_errors_conseq);
 #endif
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_PBCH_PROCEDURES, VCD_FUNCTION_OUT);
+
+  return ret;
 }
 
 
@@ -1705,9 +1707,9 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
     if ((ue->decode_MIB == 1) && slot_pbch) {
 
       LOG_D(PHY," ------  Decode MIB: frame.slot %d.%d ------  \n", frame_rx%1024, nr_slot_rx);
-      nr_ue_pbch_procedures(gNB_id, ue, proc, 0);
+      int ret = nr_ue_pbch_procedures(gNB_id, ue, proc, 0);
 
-      if (ue->no_timing_correction==0) {
+      if ((ue->no_timing_correction==0) && (ret == 0)) {
         LOG_D(PHY,"start adjust sync slot = %d no timing %d\n", nr_slot_rx, ue->no_timing_correction);
         nr_adjust_synch_ue(fp,
                            ue,

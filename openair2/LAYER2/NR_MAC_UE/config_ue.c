@@ -337,16 +337,19 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
                                                       scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->carrierBandwidth,
                                                       *scc_SIB->downlinkConfigCommon.frequencyInfoDL.frequencyBandList.list.array[0]->freqBandIndicatorNR);
 
-  cfg->carrier_config.dl_frequency = downlink_frequency[0][0] - (10+scc_SIB->downlinkConfigCommon.frequencyInfoDL.offsetToPointA)*(15<<scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing); 
-  cfg->carrier_config.dl_frequency = downlink_frequency[0][0] - 
-  (10+scc_SIB->downlinkConfigCommon.frequencyInfoDL.offsetToPointA/2)*(15<<scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing)*12;
+  // cfg->carrier_config.dl_frequency = downlink_frequency[0][0] - (10+scc_SIB->downlinkConfigCommon.frequencyInfoDL.offsetToPointA)*(15<<scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing); 
+  // cfg->carrier_config.dl_frequency = downlink_frequency[0][0] - 
+  // (10+scc_SIB->downlinkConfigCommon.frequencyInfoDL.offsetToPointA/2)*(15<<scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing)*12 +
+  // (15<<scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing)
+  //                              * scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->carrierBandwidth
+  //                              * 6;
  
   LOG_I(PHY, "downlink_frequency old : %ld,  new : %ld\n", downlink_frequency[0][0], cfg->carrier_config.dl_frequency);
    
   cfg->carrier_config.halfbw = (15<<scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing)
                                * scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->carrierBandwidth
                                * 6;
-  cfg->ssb_table.ssb_subcarrier_offset = 0;
+  //cfg->ssb_table.ssb_subcarrier_offset = 0;
   
    
   // shoule take consider the ssb offset at the end.
