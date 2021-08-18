@@ -102,4 +102,34 @@ void dump_pdsch_stats(PHY_VARS_gNB *gNB);
 
 void clear_pdsch_stats(PHY_VARS_gNB *gNB);
 
+int nr_dlsch_encoding_fpga_ldpc(PHY_VARS_gNB *gNB,
+		      unsigned char *a,int frame,
+		      uint8_t slot,
+		      NR_gNB_DLSCH_t *dlsch,
+		      NR_DL_FRAME_PARMS* frame_parms,
+		      time_stats_t *tinput,
+		      time_stats_t *tprep,
+		      time_stats_t *tparity,
+		      time_stats_t *toutput,
+		      time_stats_t *dlsch_rate_matching_stats,
+		      time_stats_t *dlsch_interleaving_stats,
+		      time_stats_t *dlsch_segmentation_stats);
+
+void dl_find_iLS_lsIndex(unsigned int *LDPC_lifting_size, uint32_t *iLS_out, uint32_t *lsIndex_out);
+
+void nr_pdsch_codeword_scrambling_optim_fpga_ldpc(uint8_t *in,
+					uint32_t size,
+					uint8_t q,
+					uint32_t Nid,
+					uint32_t n_RNTI,
+					uint32_t* out);
+
+unsigned char Reverse8U(unsigned char x);
+
+void Byte_Reverse_11(unsigned char *Src, unsigned char *Dest, int Length);
+
+uint8_t nr_generate_pdsch_fpga_ldpc(PHY_VARS_gNB *gNB,
+			  int frame,
+			  int slot);
+
 #endif

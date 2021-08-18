@@ -23,6 +23,7 @@
 #ifndef __NRLDPC_DEFS__H__
 #define __NRLDPC_DEFS__H__
 #include "openair1/PHY/CODING/nrLDPC_decoder/nrLDPC_types.h"
+#include "openair1/PHY/NR_TRANSPORT/ldpc_fpga_entx.h"
 /**
    \brief LDPC encoder
    \param 1 input
@@ -46,6 +47,10 @@ typedef struct {
 }encoder_implemparams_t;
 #define INIT0_LDPCIMPLEMPARAMS {0,0,0,NULL,NULL,NULL,NULL}
 typedef int(*nrLDPC_encoderfunc_t)(unsigned char **,unsigned char **,int,int,short, short, encoder_implemparams_t*);
+// typedef int(*LDPC_FPGA_EnTx_Test)(int , int);
+typedef int(*LDPC_FPGA_HugePage_Init)(int);
+typedef int(*LDPC_FPGA_EnTx)( EncodeInHeadStruct *pHeader, unsigned char * pSrc, unsigned char * pDst );
+typedef int(*LDPC_FPGA_DeTx)( DecodeInHeadStruct *pHeader, unsigned char * pSrc, unsigned char * pDst, unsigned char * pCRC );
 //============================================================================================================================
 // decoder interface
 /**

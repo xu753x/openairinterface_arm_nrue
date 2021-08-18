@@ -80,4 +80,6 @@ void init_nr_prach_tables(int N_ZC);
 /**@}*/
 
 void init_pucch2_luts(void);
+
+void nr_get_E0_E1(uint32_t G, uint8_t C, uint8_t Qm, uint8_t Nl, uint8_t r, uint32_t *E0, uint32_t *E1);
 #endif

@@ -95,3 +95,28 @@ void dump_nr_I0_stats(FILE *fd,PHY_VARS_gNB *gNB);
 void clear_pusch_stats(PHY_VARS_gNB *gNB);
 
 NR_gNB_SCH_STATS_t *get_ulsch_stats(PHY_VARS_gNB *gNB,NR_gNB_ULSCH_t *ulsch);
+
+uint32_t nr_ulsch_decoding_fpga_ldpc(PHY_VARS_gNB *phy_vars_gNB,
+                           uint8_t UE_id,
+                           short *ulsch_llr,
+                           int8_t *ul_llr8,
+                           NR_DL_FRAME_PARMS *frame_parms,
+                           nfapi_nr_pusch_pdu_t *pusch_pdu,
+                           uint32_t frame,
+                           uint8_t nr_tti_rx,
+                           uint8_t harq_pid,
+                           uint32_t G);
+
+void nr_ulsch_unscrambling_optim_fpga_ldpc(int16_t* llr,int8_t* llr8,
+				 uint32_t size,
+				 uint8_t q,
+				 uint32_t Nid,
+				 uint32_t n_RNTI);
+
+void nr_ulsch_procedures_fpga_ldpc(PHY_VARS_gNB *gNB,
+                         int frame_rx,
+                         int slot_rx,
+                         int UE_id,
+                         uint8_t harq_pid);
+
+void  ul_find_iLS_lsIndex(unsigned int *LDPC_lifting_size, uint32_t *iLS_out, uint32_t *lsIndex_out);

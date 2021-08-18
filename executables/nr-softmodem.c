@@ -832,14 +832,14 @@ if(!IS_SOFTMODEM_NOS1)
       p.ru=RC.ru[0];
       load_softscope("nr",&p);
     }
-
+#if 1
     if (NFAPI_MODE != NFAPI_MODE_PNF && NFAPI_MODE != NFAPI_MODE_VNF) {
       printf("Not NFAPI mode - call init_eNB_afterRU()\n");
       init_eNB_afterRU();
     } else {
       printf("NFAPI mode - DO NOT call init_gNB_afterRU()\n");
     }
-
+#endif
     printf("ALL RUs ready - ALL gNBs ready\n");
     // connect the TX/RX buffers
     printf("Sending sync to all threads\n");
