@@ -475,17 +475,29 @@ void syncInFrame(PHY_VARS_NR_UE *UE, openair0_timestamp *timestamp) {
 
 int computeSamplesShift(PHY_VARS_NR_UE *UE) {
 
+int temp_offset;
   // compute TO compensation that should be applied for this frame
   if ( UE->rx_offset < UE->frame_parms.samples_per_frame/2  &&
        UE->rx_offset > 0 ) {
     //LOG_I(PHY,"!!!adjusting -1 samples!!!\n");
-    return -1 ;
+    temp_offset = -UE->rx_offset;
+    if (temp_offset < -50)
+    {
+        temp_offset = -50;
+    }
+    return temp_offset;
+    
   }
 
   if ( UE->rx_offset > UE->frame_parms.samples_per_frame/2 &&
        UE->rx_offset < UE->frame_parms.samples_per_frame ) {
     //LOG_I(PHY,"!!!adjusting +1 samples!!!\n");
-    return 1;
+    temp_offset = UE->frame_parms.samples_per_frame -UE->rx_offset;
+    if (temp_offset > 50)
+    {
+        temp_offset = 50;
+    }
+    return temp_offset;
   }
 
   return 0;
