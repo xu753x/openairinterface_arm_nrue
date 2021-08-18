@@ -753,7 +753,7 @@ typedef struct gNB_MAC_INST_s {
   //KARIM
   int *flexible_slots_per_frame;
   int *flexible_symbols;
-  int nb_ul_slots;
+  int last_ul_slot;
   int prefered_slot_msg2;
 } gNB_MAC_INST;
 

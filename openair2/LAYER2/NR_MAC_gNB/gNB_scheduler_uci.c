@@ -1164,7 +1164,7 @@ int nr_acknack_scheduling(int mod_id,
   const NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon;
   const int n_slots_frame = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
   const NR_TDD_UL_DL_Pattern_t *tdd = &scc->tdd_UL_DL_ConfigurationCommon->pattern1;
-  const int nr_ulmix_slots = RC.nrmac[mod_id]->nb_ul_slots;
+  const int last_ul_slot = RC.nrmac[mod_id]->last_ul_slot;
   //const int nr_mix_slots = 1; //karim, always there is a mixed slot
   //const int nr_slots_period = tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + nr_mix_slots;
   int first_ul_slot_tdd = 0;
@@ -1227,8 +1227,9 @@ int nr_acknack_scheduling(int mod_id,
   /* if the UE's next PUCCH occasion is after the possible UL slots (within the
    * same frame) or wrapped around to the next frame, then we assume there is
    * no possible PUCCH allocation anymore */
+
   if ((pucch->frame == frame
-       && (pucch->ul_slot >= first_ul_slot_tdd + nr_ulmix_slots))
+       && (pucch->ul_slot >= last_ul_slot))
       || (pucch->frame == frame + 1))
     return -1;
 
@@ -1240,6 +1241,7 @@ int nr_acknack_scheduling(int mod_id,
   /* there is a HARQ. Check whether we can use it for this ACKNACK */
   if (pucch->dai_c > 0) {
     /* this UE already has a PUCCH occasion */
+    //printf("frame %d pucch->frame %d pucch->ul_slot %d \n",frame,pucch->frame,pucch->ul_slot);
     DevAssert(pucch->frame == frame);
 
     // Find the right timing_indicator value.

@@ -384,8 +384,11 @@ void config_common(int Mod_idP, int ssb_SubcarrierOffset, int pdsch_AntennaPorts
   cfg->num_tlv++;
   cfg->num_tlv++;
   //TDD config
-  //int flexible_slots_per_frame[20] = {0,0,0,0,0,0,0,2,1,1,0,0,0,0,0,0,0,2,1,1}; original configuration
-  int flexible_slots_per_frame[20] = {0,0,0,2,1,1,1,0,0,0,0,0,0,0,0,2,1,1,1,1};
+  //int flexible_slots_per_frame[20] = {0,0,0,0,0,0,0,2,1,1,0,0,0,0,0,0,0,2,1,1}; //original configuration works
+  //int flexible_slots_per_frame[20] = {0,0,0,0,0,2,1,1,1,1,0,0,2,1,1,1,1,1,1,1};
+  //int flexible_slots_per_frame[20] = {0,0,1,1,0,0,1,1,0,0,2,1,0,0,1,1,0,0,2,1};
+  int flexible_slots_per_frame[20] = {0,0,0,2,1,0,0,0,1,1,0,0,0,1,1,0,0,0,2,1}; // works
+  //int flexible_slots_per_frame[20] = {0,0,0,0,2,1,1,0,0,0,2,1,1,0,0,0,0,2,1,1}; //harq pucch frame != pucch frame
   int flexible_symbols[2] = {6,4};
   RC.nrmac[Mod_idP]->flexible_slots_per_frame = calloc(20,sizeof(int));
   RC.nrmac[Mod_idP]->flexible_symbols = calloc(2,sizeof(int));
@@ -393,7 +396,7 @@ void config_common(int Mod_idP, int ssb_SubcarrierOffset, int pdsch_AntennaPorts
   RC.nrmac[Mod_idP]->flexible_symbols[0] = flexible_symbols[0];
   RC.nrmac[Mod_idP]->flexible_symbols[1] = flexible_symbols[1];
   RC.nrmac[Mod_idP]->prefered_slot_msg2 = 3;
-  RC.nrmac[Mod_idP]->nb_ul_slots = 4;
+  RC.nrmac[Mod_idP]->last_ul_slot = 19;
   // TDD Table Configuration
   //cfg->tdd_table.tdd_period.value = scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity;
   cfg->tdd_table.tdd_period.tl.tag = NFAPI_NR_CONFIG_TDD_PERIOD_TAG;

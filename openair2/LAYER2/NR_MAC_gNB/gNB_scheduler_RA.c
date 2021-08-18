@@ -460,6 +460,13 @@ void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
   // we can't schedule msg2 before sl_ahead since prach
   int eff_slot = *msg2_slot+(*msg2_frame-rach_frame)*nr_slots_per_frame[mu];
   if ((eff_slot-rach_slot)<=sl_ahead) {
+    for(int s=*msg2_slot + 1;s < nr_slots_per_frame[mu] ;s++){
+      if(RC.nrmac[0]->flexible_slots_per_frame[s]==2){
+      *msg2_slot = s;
+      printf("slooot prach%d\n",s);
+      break;
+     }
+    }
     *msg2_slot = (*msg2_slot+20)%nr_slots_per_frame[mu]; // Karim
     *msg2_frame = ((*msg2_slot>(rach_slot))? rach_frame : (rach_frame+1))%1024;
   }
@@ -716,6 +723,7 @@ void nr_get_Msg3alloc(module_id_t module_id,
       if (NrOfSymbols == RC.nrmac[module_id]->flexible_symbols[1]) {
         k2 = *pusch_TimeDomainAllocationList->list.array[i]->k2;
         temp_slot = current_slot + k2 + DELTA[mu]; // msg3 slot according to 8.3 in 38.213
+        printf("ra->Msg3_slot %d temp_slot %d current_slot %d, k2 %d\n",ra->Msg3_slot,temp_slot,current_slot,k2);
         ra->Msg3_slot = temp_slot%nr_slots_per_frame[mu];
         if (is_xlsch_in_slot_flex(RC.nrmac[module_id]->flexible_slots_per_frame, 1, ra->Msg3_slot)) {
           ra->Msg3_tda_id = i;
@@ -911,7 +919,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
   gNB_MAC_INST *nr_mac = RC.nrmac[module_idP];
   NR_COMMON_channels_t *cc = &nr_mac->common_channels[CC_id];
-
+  //printf("%d/%d --- %d/%d\n",frameP,slotP,ra->Msg2_frame,ra->Msg2_slot);
   if ((ra->Msg2_frame == frameP) && (ra->Msg2_slot == slotP)) {
 
     uint8_t time_domain_assignment = 1;
