@@ -162,7 +162,7 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
     fapi_nr_config_request_t *nrUE_config = &PHY_vars_UE_g[module_id][cc_id]->nrUE_config;
     NR_DL_FRAME_PARMS * fp = &PHY_vars_UE_g[module_id][cc_id]->frame_parms;
 
-    LOG_I(PHY, "old: ssb offset %d, pointA(30khz) %d , ssb_start_subcarrier %d\n", 
+    LOG_D(PHY, "old: ssb offset %d, pointA(30khz) %d , ssb_start_subcarrier %d\n", 
                 nrUE_config->ssb_table.ssb_subcarrier_offset, nrUE_config->ssb_table.ssb_offset_point_a, fp->ssb_start_subcarrier);
 
     if (ssb_subcarrier_offset != nrUE_config->ssb_table.ssb_subcarrier_offset) 
