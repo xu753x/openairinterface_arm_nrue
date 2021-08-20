@@ -332,10 +332,10 @@ int main(int argc, char **argv) {
   LTE_DL_FRAME_PARMS *frame_parms;
   double s_re0[30720],s_im0[30720],r_re0[30720],r_im0[30720];
   double s_re1[30720],s_im1[30720],r_re1[30720],r_im1[30720];
-  double r_re2[30720],r_im2[30720];
-  double r_re3[30720],r_im3[30720];
-  double *s_re[2]= {s_re0,s_re1};
-  double *s_im[2]= {s_im0,s_im1};
+  double s_re2[30720],s_im2[30720],r_re2[30720],r_im2[30720];
+  double s_re3[30720],s_im3[30720],r_re3[30720],r_im3[30720];
+  double *s_re[4]= {s_re0,s_re1,s_re2,s_re3};
+  double *s_im[4]= {s_im0,s_im1,s_im2,s_im3};
   double *r_re[4]= {r_re0,r_re1,r_re2,r_re3};
   double *r_im[4]= {r_im0,r_im1,r_im2,r_im3};
   double forgetting_factor=0.0; //in [0,1] 0 means a new channel every time, 1 means keep the same channel
@@ -1084,7 +1084,7 @@ int main(int argc, char **argv) {
           // multipath channel
 
           for (i=0; i<eNB->frame_parms.samples_per_tti; i++) {
-            for (aa=0; aa<1; aa++) {
+            for (aa=0; aa<UE2eNB->nb_tx; aa++) {
               s_re[aa][i] = ((double)(((short *)&UE->common_vars.txdata[aa][eNB->frame_parms.samples_per_tti*subframe]))[(i<<1)]);
               s_im[aa][i] = ((double)(((short *)&UE->common_vars.txdata[aa][eNB->frame_parms.samples_per_tti*subframe]))[(i<<1)+1]);
             }

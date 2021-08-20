@@ -339,7 +339,7 @@ void set_channeldesc_name(channel_desc_t *cdesc,char *modelname);
 int random_channel(channel_desc_t *desc, uint8_t abstraction_flag);
 
 /**\fn void multipath_channel(channel_desc_t *desc,
-           double tx_sig_re[NB_ANTENNAS_TX],
+           double tx_sig_re[],
            double tx_sig_im[NB_ANTENANS_TX],
            double rx_sig_re[NB_ANTENNAS_RX],
            double rx_sig_im[NB_ANTENNAS_RX],

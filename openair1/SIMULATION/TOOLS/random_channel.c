@@ -609,7 +609,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
   chan_desc->channel_offset             = channel_offset;
   chan_desc->path_loss_dB               = path_loss_dB;
   chan_desc->first_run                  = 1;
-  chan_desc->ip                                 = 0.0;
+  chan_desc->ip                         = 0.0;
   chan_desc->noise_power_dB             = noise_power_dB;
   LOG_I(OCM,"Channel Model (inside of new_channel_desc_scm)=%d\n\n", channel_model);
   int tdl_paths=0;

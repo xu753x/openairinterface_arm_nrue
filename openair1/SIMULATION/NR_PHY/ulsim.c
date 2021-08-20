@@ -241,8 +241,8 @@ openair0_config_t openair0_cfg[MAX_CARDS];
 channel_desc_t *UE2gNB[NUMBER_OF_UE_MAX][NUMBER_OF_gNB_MAX];
 double s_re0[122880],s_im0[122880],r_re0[122880],r_im0[122880];
 double s_re1[122880],s_im1[122880],r_re1[122880],r_im1[122880];
-double r_re2[122880],r_im2[122880];
-double r_re3[122880],r_im3[122880];
+double s_re2[122880],s_im2[122880],r_re2[122880],r_im2[122880];
+double s_re3[122880],s_im3[122880],r_re3[122880],r_im3[122880];
 
 
 int main(int argc, char **argv)
@@ -255,8 +255,8 @@ int main(int argc, char **argv)
   uint8_t snr1set = 0;
   int slot = 8, frame = 1;
   FILE *output_fd = NULL;
-  double *s_re[2]= {s_re0,s_re1};
-  double *s_im[2]= {s_im0,s_im1};
+  double *s_re[4]= {s_re0,s_re1,s_re2,s_re3};
+  double *s_im[4]= {s_im0,s_im1,s_im2,s_im3};
   double *r_re[4]= {r_re0,r_re1,r_re2,r_re3};
   double *r_im[4]= {r_im0,r_im1,r_im2,r_im3};
   //uint8_t write_output_file = 0;
@@ -331,7 +331,7 @@ int main(int argc, char **argv)
   /* initialize the sin-cos table */
    InitSinLUT();
 
-  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:i:j:kl:m:n:p:r:s:y:z:F:G:H:M:N:PR:S:T:U:L:Z")) != -1) {
+  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:i:j:kl:m:n:p:r:s:y:z:F:G:H:M:N:PR:S:T:U:L:Z:W:")) != -1) {
     printf("handling optarg %c\n",c);
     switch (c) {
 
@@ -443,6 +443,10 @@ int main(int argc, char **argv)
     case 'm':
       Imcs = atoi(optarg);
       break;
+
+    case 'W':
+      precod_nbr_layers = atoi(optarg);
+      break;
       
     case 'n':
       n_trials = atoi(optarg);
@@ -483,7 +487,7 @@ int main(int argc, char **argv)
     case 'y':
       n_tx = atoi(optarg);
       
-      if ((n_tx == 0) || (n_tx > 2)) {
+      if ((n_tx == 0) || (n_tx > 4)) {
 	printf("Unsupported number of tx antennas %d\n", n_tx);
 	exit(-1);
       }
@@ -493,7 +497,7 @@ int main(int argc, char **argv)
     case 'z':
       n_rx = atoi(optarg);
       
-      if ((n_rx == 0) || (n_rx > 2)) {
+      if ((n_rx == 0) || (n_rx > 4)) {
 	printf("Unsupported number of rx antennas %d\n", n_rx);
 	exit(-1);
       }
@@ -668,8 +672,8 @@ int main(int argc, char **argv)
   frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)
 
 
-  //frame_parms->nb_antennas_tx = n_tx;
-  //frame_parms->nb_antennas_rx = n_rx;
+  frame_parms->nb_antennas_tx = n_tx;
+  frame_parms->nb_antennas_rx = n_rx;
   frame_parms->N_RB_DL = N_RB_DL;
   frame_parms->N_RB_UL = N_RB_UL;
   frame_parms->Ncp = extended_prefix_flag ? EXTENDED : NORMAL;
@@ -854,7 +858,7 @@ int main(int argc, char **argv)
   }
 
 
-  unsigned int available_bits  = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, number_dmrs_symbols, mod_order, 1);
+  unsigned int available_bits  = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, number_dmrs_symbols, mod_order, precod_nbr_layers);
   unsigned int TBS             = nr_compute_tbs(mod_order, code_rate, nb_rb, nb_symb_sch, nb_re_dmrs * number_dmrs_symbols, 0, 0, precod_nbr_layers);
 
   
@@ -1021,12 +1025,20 @@ int main(int argc, char **argv)
       pusch_pdu->qam_mod_order = mod_order;
       pusch_pdu->transform_precoding = transform_precoding;
       pusch_pdu->data_scrambling_id = *scc->physCellId;
-      pusch_pdu->nrOfLayers = 1;
+      pusch_pdu->nrOfLayers = precod_nbr_layers;
       pusch_pdu->ul_dmrs_symb_pos = l_prime_mask;
       pusch_pdu->dmrs_config_type = dmrs_config_type;
       pusch_pdu->ul_dmrs_scrambling_id =  *scc->physCellId;
       pusch_pdu->scid = 0;
-      pusch_pdu->dmrs_ports = 1;
+      if (n_tx==4)
+      {
+        pusch_pdu->dmrs_ports = ((1<<n_tx)-1);
+      }
+      else
+      {
+        pusch_pdu->dmrs_ports = 1;
+      }
+      
       pusch_pdu->num_dmrs_cdm_grps_no_data = msg3_flag == 0 ? 1 : 2;
       pusch_pdu->resource_alloc = 1; 
       pusch_pdu->rb_start = start_rb;
