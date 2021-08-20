@@ -375,7 +375,7 @@ void nr_process_mac_pdu(module_id_t module_idP,
             mac_sdu_len = (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->L;
             mac_subheader_len = 2;
           }
-          LOG_D(NR_MAC, "[UE %d] Frame %d : ULSCH -> UL-DCCH %d (gNB %d, %d bytes), rnti: %d \n", module_idP, frameP, rx_lcid, module_idP, mac_sdu_len, UE_info->rnti[UE_id]);
+          LOG_D(NR_MAC, "[UE %d] Frame %d.%d : ULSCH -> UL-DCCH %d (gNB %d, %d bytes), rnti: %d \n", module_idP, frameP,slot, rx_lcid, module_idP, mac_sdu_len, UE_info->rnti[UE_id]);
           mac_rlc_data_ind(module_idP,
                            UE_info->rnti[UE_id],
                            module_idP,
@@ -443,9 +443,10 @@ void nr_process_mac_pdu(module_id_t module_idP,
             mac_subheader_len = 2;
           }
 
-          LOG_D(NR_MAC, "[UE %d] Frame %d : ULSCH -> UL-%s %d (gNB %d, %d bytes)\n",
+          LOG_I(NR_MAC, "[UE %d] Frame %d.%d : ULSCH -> UL-%s %d (gNB %d, %d bytes)\n",
                 module_idP,
                 frameP,
+                slot,
                 rx_lcid<4?"DCCH":"DTCH",
                 rx_lcid,
                 module_idP,
@@ -602,9 +603,8 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
       T(T_GNB_MAC_UL_PDU_WITH_DATA, T_INT(gnb_mod_idP), T_INT(CC_idP),
         T_INT(rntiP), T_INT(frameP), T_INT(slotP), T_INT(harq_pid),
         T_BUFFER(sduP, sdu_lenP));
-
     UE_info->mac_stats[UE_id].ulsch_total_bytes_rx += sdu_lenP;
-    LOG_D(NR_MAC, "[gNB %d][PUSCH %d] CC_id %d %d.%d Received ULSCH sdu from PHY (rnti %x, UE_id %d) ul_cqi %d TA %d sduP %p\n",
+    LOG_D(NR_MAC, "[gNB %d][PUSCH %d] CC_id %d %d.%d Received ULSCH sdu from PHY (rnti %x, UE_id %d) ul_cqi %d TA %d sduP %p sdu_lenP %d\n",
           gnb_mod_idP,
           harq_pid,
           CC_idP,
@@ -614,7 +614,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
           UE_id,
           ul_cqi,
           timing_advance,
-          sduP);
+          sduP,sdu_lenP);
 
     // if not missed detection (10dB threshold for now)
     if (UE_scheduling_control->raw_rssi < 100 + rssi) {
@@ -977,7 +977,7 @@ void pf_ul(module_id_t module_id,
   gNB_MAC_INST *nrmac = RC.nrmac[module_id];
   NR_ServingCellConfigCommon_t *scc = nrmac->common_channels[CC_id].ServingCellConfigCommon;
   NR_UE_info_t *UE_info = &nrmac->UE_info;
-  const int min_rb = 5;
+  const int min_rb = 8;
   float coeff_ue[MAX_MOBILES_PER_GNB];
   // UEs that could be scheduled
   int ue_array[MAX_MOBILES_PER_GNB];
@@ -1077,7 +1077,8 @@ void pf_ul(module_id_t module_id,
       n_rb_sched -= sched_pusch->rbSize;
       for (int rb = 0; rb < sched_ctrl->sched_pusch.rbSize; rb++)
         rballoc_mask[rb + sched_ctrl->sched_pusch.rbStart] = 0;
-
+          LOG_D(NR_MAC,"##********rbSize %d, TBS %d, est buf %d, sched_ul %d, B %d\n",
+          sched_pusch->rbSize, sched_pusch->tb_size, sched_ctrl->estimated_ul_buffer, sched_ctrl->sched_ul_bytes, B);
       continue;
     }
 
@@ -1170,7 +1171,7 @@ void pf_ul(module_id_t module_id,
                   &rbSize);
     sched_pusch->rbSize = rbSize;
     sched_pusch->tb_size = TBS;
-    LOG_D(NR_MAC,"rbSize %d, TBS %d, est buf %d, sched_ul %d, B %d\n",
+    LOG_W(NR_MAC,"##############rbSize %d, TBS %d, est buf %d, sched_ul %d, B %d\n",
           rbSize, sched_pusch->tb_size, sched_ctrl->estimated_ul_buffer, sched_ctrl->sched_ul_bytes, B);
 
     /* Mark the corresponding RBs as used */

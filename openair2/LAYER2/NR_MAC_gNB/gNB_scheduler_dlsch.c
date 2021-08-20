@@ -701,12 +701,13 @@ void pf_dl(module_id_t module_id,
                   max_rbSize,
                   &TBS,
                   &rbSize);
-    sched_pdsch->rbSize = rbSize;
+    sched_pdsch->rbSize = rbSize; // Karim it was rbSize
     sched_pdsch->rbStart = rbStart;
     sched_pdsch->tb_size = TBS;
 
     /* transmissions: directly allocate */
     n_rb_sched -= sched_pdsch->rbSize;
+    printf("%d.%d want to schedule %d (with oh %d) allooooooocated %d RBs for PDSCH, %d for DMRS\n",frame,slot,sched_ctrl->num_total_bytes,sched_ctrl->num_total_bytes + oh,sched_pdsch->rbSize,ps->N_PRB_DMRS);
     for (int rb = 0; rb < sched_pdsch->rbSize; rb++)
       rballoc_mask[rb + sched_pdsch->rbStart] = 0;
   }
