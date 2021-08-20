@@ -1183,14 +1183,28 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
   //--------------------- Channel estimation ---------------------
   //----------------------------------------------------------
   start_meas(&gNB->ulsch_channel_estimation_stats);
-  for(uint8_t symbol = rel15_ul->start_symbol_index; symbol < (rel15_ul->start_symbol_index + rel15_ul->nr_of_symbols); symbol++) {
+  for(uint8_t symbol = rel15_ul->start_symbol_index; symbol < (rel15_ul->start_symbol_index + rel15_ul->nr_of_symbols); symbol++) 
+  {
     uint8_t dmrs_symbol_flag = (rel15_ul->ul_dmrs_symb_pos >> symbol) & 0x01;
     LOG_D(PHY, "symbol %d, dmrs_symbol_flag :%d\n", symbol, dmrs_symbol_flag);
-    if (dmrs_symbol_flag == 1) {
+    
+    if (dmrs_symbol_flag == 1) 
+    {
       if (gNB->pusch_vars[ulsch_id]->dmrs_symbol == INVALID_VALUE)
         gNB->pusch_vars[ulsch_id]->dmrs_symbol = symbol;
 
       for (int nl=0; nl<rel15_ul->nrOfLayers; nl++)
+      {
+        if (slot==8)
+        { 
+        for (int i=0; i<NR_NB_SC_PER_RB;i++)
+        {
+            printf("rev antenna %d\t l %d \t k %d \t txdataF: %d %d\n",
+                     nl, symbol, bwp_start_subcarrier+i, ((int16_t*)gNB->common_vars.rxdataF[nl])[(2048*symbol+bwp_start_subcarrier + i)<<1],
+                     ((int16_t*)gNB->common_vars.rxdataF[nl])[((2048*symbol + bwp_start_subcarrier + i)<<1) + 1]);
+        }
+        }
+
         nr_pusch_channel_estimation(gNB,
                                     slot,
                                     get_dmrs_port(nl,rel15_ul->dmrs_ports),
@@ -1198,6 +1212,7 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
                                     ulsch_id,
                                     bwp_start_subcarrier,
                                     rel15_ul);
+      }
 
       nr_gnb_measurements(gNB, ulsch_id, harq_pid, symbol,rel15_ul->nrOfLayers);
 
@@ -1226,23 +1241,29 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
 #endif
   uint32_t rxdataF_ext_offset = 0;
 
-  for(uint8_t symbol = rel15_ul->start_symbol_index; symbol < (rel15_ul->start_symbol_index + rel15_ul->nr_of_symbols); symbol++) {
+  for(uint8_t symbol = rel15_ul->start_symbol_index; symbol < (rel15_ul->start_symbol_index + rel15_ul->nr_of_symbols); symbol++) 
+  {
     uint8_t dmrs_symbol_flag = (rel15_ul->ul_dmrs_symb_pos >> symbol) & 0x01;
-    if (dmrs_symbol_flag == 1) {
+    if (dmrs_symbol_flag == 1) 
+    {
       if ((rel15_ul->ul_dmrs_symb_pos >> ((symbol + 1) % frame_parms->symbols_per_slot)) & 0x01)
         AssertFatal(1==0,"Double DMRS configuration is not yet supported\n");
 
       gNB->pusch_vars[ulsch_id]->dmrs_symbol = symbol;
 
-      if (rel15_ul->dmrs_config_type == 0) {
+      if (rel15_ul->dmrs_config_type == 0) 
+      {
         // if no data in dmrs cdm group is 1 only even REs have no data
         // if no data in dmrs cdm group is 2 both odd and even REs have no data
         nb_re_pusch = rel15_ul->rb_size *(12 - (rel15_ul->num_dmrs_cdm_grps_no_data*6));
       }
-      else {
+      else 
+      {
         nb_re_pusch = rel15_ul->rb_size *(12 - (rel15_ul->num_dmrs_cdm_grps_no_data*4));
       }
-    } else {
+    } 
+    else 
+    {
       nb_re_pusch = rel15_ul->rb_size * NR_NB_SC_PER_RB;
     }
 
@@ -1252,8 +1273,8 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
     //----------------------------------------------------------
     //--------------------- RBs extraction ---------------------
     //----------------------------------------------------------
-    if (nb_re_pusch > 0) {
-
+    if (nb_re_pusch > 0) 
+    {
       start_meas(&gNB->ulsch_rbs_extraction_stats);
       nr_ulsch_extract_rbs_single(gNB->common_vars.rxdataF,
                                   gNB->pusch_vars[ulsch_id],
@@ -1321,14 +1342,14 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
                              rel15_ul->rb_size);
       stop_meas(&gNB->ulsch_mrc_stats);
 
-      if (rel15_ul->transform_precoding == transform_precoder_enabled) {
-
-      #ifdef __AVX2__
+      if (rel15_ul->transformPrecoder == transform_precoder_enabled)      
+      {
+         #ifdef __AVX2__
         // For odd number of resource blocks need byte alignment to multiple of 8
         int nb_re_pusch2 = nb_re_pusch + (nb_re_pusch&7);
-      #else
+        #else
         int nb_re_pusch2 = nb_re_pusch;
-      #endif
+        #endif
 
         // perform IDFT operation on the compensated rxdata if transform precoding is enabled
         nr_idft(&gNB->pusch_vars[ulsch_id]->rxdataF_comp[0][symbol * nb_re_pusch2], nb_re_pusch);
@@ -1340,7 +1361,8 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
       //----------------------------------------------------------
       /* In case PTRS is enabled then LLR will be calculated after PTRS symbols are processed *
       * otherwise LLR are calculated for each symbol based upon DMRS channel estimates only. */
-      if (rel15_ul->pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {
+      if (rel15_ul->pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) 
+      {
         start_meas(&gNB->ulsch_ptrs_processing_stats);
         nr_pusch_ptrs_processing(gNB,
                                  frame_parms,

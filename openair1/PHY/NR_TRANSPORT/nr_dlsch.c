@@ -432,12 +432,14 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
     // The Precoding matrix:
     // The Codebook Type I and Type II are not supported yet.
     // We adopt the precoding matrices of PUSCH for 4 layers.
-    for (int ap=0; ap<frame_parms->nb_antennas_tx; ap++) {
-
-      for (int l=rel15->StartSymbolIndex; l<rel15->StartSymbolIndex+rel15->NrOfSymbols; l++) {
+    for (int ap=0; ap<frame_parms->nb_antennas_tx; ap++) 
+    {
+      for (int l=rel15->StartSymbolIndex; l<rel15->StartSymbolIndex+rel15->NrOfSymbols; l++) 
+      {
         uint16_t k = start_sc;
 
-        for (int rb=0; rb<rel15->rbSize; rb++) {
+        for (int rb=0; rb<rel15->rbSize; rb++) 
+        {
           //get pmi info
           uint8_t pmi;
           if (rel15->precodingAndBeamforming.prg_size > 0)
@@ -459,10 +461,12 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
               k -= frame_parms->ofdm_symbol_size;
             }
           }
-          else {
+          else 
+          {
             //get the precoding matrix weights:
             char *W_prec;
-            switch (frame_parms->nb_antennas_tx) {
+            switch (frame_parms->nb_antennas_tx) 
+            {
               case 1://1 antenna port
                 W_prec = nr_W_1l_2p[pmi][ap];
                 break;
@@ -487,17 +491,20 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
                 W_prec = nr_W_1l_2p[pmi][ap];
                 break;
             }
-            for (int i=0; i<NR_NB_SC_PER_RB; i++) {
+
+            for (int i=0; i<NR_NB_SC_PER_RB; i++) 
+            {
               int32_t re_offset = l*frame_parms->ofdm_symbol_size + k;
               int32_t precodatatx_F = nr_layer_precoder(txdataF_precoding, W_prec, rel15->nrOfLayers, re_offset+txdataF_offset);
               ((int16_t*)txdataF[ap])[(re_offset<<1) + (2*txdataF_offset)] = ((int16_t *) &precodatatx_F)[0];
               ((int16_t*)txdataF[ap])[(re_offset<<1) + 1 + (2*txdataF_offset)] = ((int16_t *) &precodatatx_F)[1];
-#ifdef DEBUG_DLSCH_MAPPING
+              #ifdef DEBUG_DLSCH_MAPPING
               printf("antenna %d\t l %d \t k %d \t txdataF: %d %d\n",
                      ap, l, k, ((int16_t*)txdataF[ap])[(re_offset<<1) + (2*txdataF_offset)],
                      ((int16_t*)txdataF[ap])[(re_offset<<1) + 1 + (2*txdataF_offset)]);
-#endif
-              if (++k >= frame_parms->ofdm_symbol_size) {
+              #endif
+              if (++k >= frame_parms->ofdm_symbol_size) 
+              {
                 k -= frame_parms->ofdm_symbol_size;
               }
             }
@@ -518,7 +525,7 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
     // first check if this slot has not already been allocated to another beam
     if (gNB->common_vars.beam_id[0][slot*frame_parms->symbols_per_slot]==255) {
       for (int j=0;j<frame_parms->symbols_per_slot;j++) 
-	gNB->common_vars.beam_id[0][slot*frame_parms->symbols_per_slot+j] = rel15->precodingAndBeamforming.prgs_list[0].dig_bf_interface_list[0].beam_idx;
+	      gNB->common_vars.beam_id[0][slot*frame_parms->symbols_per_slot+j] = rel15->precodingAndBeamforming.prgs_list[0].dig_bf_interface_list[0].beam_idx;
     }
     else {
       LOG_D(PHY,"beam index for PDSCH allocation already taken\n");

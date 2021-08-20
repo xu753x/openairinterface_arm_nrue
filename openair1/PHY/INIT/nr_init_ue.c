@@ -125,6 +125,7 @@ void phy_init_nr_ue_PUSCH(NR_UE_PUSCH *const pusch,
 
   for (int i=0; i<NR_MAX_NB_LAYERS; i++) {
     pusch->txdataF_layers[i] = (int32_t *)malloc16_clear((NR_MAX_PUSCH_ENCODED_LENGTH)*sizeof(int32_t *));
+    pusch->txdataF_precoding[i] = (int32_t *)malloc16_clear((NR_MAX_PUSCH_ENCODED_LENGTH)*sizeof(int32_t *));
   }
 }
 

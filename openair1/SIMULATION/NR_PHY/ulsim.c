@@ -309,7 +309,7 @@ int main(int argc, char **argv)
   uint16_t ptrsSymbPerSlot = 0;
   uint16_t ptrsRePerSymb = 0;
 
-  uint8_t transform_precoding = transform_precoder_disabled; // 0 - ENABLE, 1 - DISABLE
+  uint8_t transformPrecoder = transform_precoder_disabled; // 0 - ENABLE, 1 - DISABLE
   uint8_t num_dmrs_cdm_grps_no_data = 1;
   uint8_t mcs_table = 0;
 
@@ -365,8 +365,8 @@ int main(int argc, char **argv)
       scg_fd = fopen(optarg, "r");
       
       if (scg_fd == NULL) {
-	printf("Error opening %s\n", optarg);
-	exit(-1);
+	      printf("Error opening %s\n", optarg);
+	      exit(-1);
       }
 
       break;
@@ -488,8 +488,8 @@ int main(int argc, char **argv)
       n_tx = atoi(optarg);
       
       if ((n_tx == 0) || (n_tx > 4)) {
-	printf("Unsupported number of tx antennas %d\n", n_tx);
-	exit(-1);
+	      printf("Unsupported number of tx antennas %d\n", n_tx);
+	      exit(-1);
       }
       
       break;
@@ -498,8 +498,8 @@ int main(int argc, char **argv)
       n_rx = atoi(optarg);
       
       if ((n_rx == 0) || (n_rx > 4)) {
-	printf("Unsupported number of rx antennas %d\n", n_rx);
-	exit(-1);
+	      printf("Unsupported number of rx antennas %d\n", n_rx);
+	      exit(-1);
       }
       
       break;
@@ -508,8 +508,8 @@ int main(int argc, char **argv)
       input_fd = fopen(optarg, "r");
       
       if (input_fd == NULL) {
-	printf("Problem with filename %s\n", optarg);
-	exit(-1);
+	      printf("Problem with filename %s\n", optarg);
+	      exit(-1);
       }
       
       break;
@@ -570,11 +570,11 @@ int main(int argc, char **argv)
 
     case 'Z':
 
-      transform_precoding = transform_precoder_enabled; 
+      transformPrecoder = transform_precoder_enabled; 
       num_dmrs_cdm_grps_no_data = 2;
       mcs_table = 3;
       
-      printf("NOTE: TRANSFORM PRECODING (SC-FDMA) is ENABLED in UPLINK (0 - ENABLE, 1 - DISABLE) : %d \n",  transform_precoding);
+      printf("NOTE: TRANSFORM PRECODING (SC-FDMA) is ENABLED in UPLINK (0 - ENABLE, 1 - DISABLE) : %d \n",  transformPrecoder);
 
       break;
 
@@ -644,7 +644,7 @@ int main(int argc, char **argv)
   UE2gNB = new_channel_desc_scm(n_tx, n_rx, channel_model,
                                 sampling_frequency,
                                 bandwidth,
-				DS_TDL,
+				                        DS_TDL,
                                 0, 0, 0, 0);
 
   if (UE2gNB == NULL) {
@@ -843,8 +843,14 @@ int main(int argc, char **argv)
   uint16_t l_prime_mask        = get_l_prime(nb_symb_sch, mapping_type, add_pos, length_dmrs, start_symbol, NR_MIB__dmrs_TypeA_Position_pos2);
   uint16_t number_dmrs_symbols = get_dmrs_symbols_in_slot(l_prime_mask, nb_symb_sch);
   uint8_t  nb_re_dmrs          = (dmrs_config_type == pusch_dmrs_type1) ? 6 : 4;
-
-  if (transform_precoding == transform_precoder_enabled) {  
+  
+  if ((frame_parms->nb_antennas_tx==4)&&(precod_nbr_layers==4))
+  {
+    num_dmrs_cdm_grps_no_data = 2;
+    nb_re_dmrs = nb_re_dmrs * num_dmrs_cdm_grps_no_data;
+  }
+  
+  if (transformPrecoder == transform_precoder_enabled) {  
 
     AssertFatal(enable_ptrs == 0, "PTRS NOT SUPPORTED IF TRANSFORM PRECODING IS ENABLED\n");
 
@@ -1001,19 +1007,21 @@ int main(int argc, char **argv)
       int abwp_start = NRRIV2PRBOFFSET(ubwp->bwp_Common->genericParameters.locationAndBandwidth,275);
       int ibwp_size  = ibwps;
       int ibwp_start = ibwp_rboffset;
-      if (msg3_flag == 1) {
-	if ((ibwp_start < abwp_start) || (ibwp_size > abwp_size))
-	  pusch_pdu->bwp_start = abwp_start;
-	else
-	  pusch_pdu->bwp_start = ibwp_start;
-	pusch_pdu->bwp_size = ibwp_size;
-	start_rb = (ibwp_start - abwp_start);
-	printf("msg3: ibwp_size %d, abwp_size %d, ibwp_start %d, abwp_start %d\n",
-	       ibwp_size,abwp_size,ibwp_start,abwp_start);
+      if (msg3_flag == 1) 
+      {
+	      if ((ibwp_start < abwp_start) || (ibwp_size > abwp_size))
+	        pusch_pdu->bwp_start = abwp_start;
+	      else
+	        pusch_pdu->bwp_start = ibwp_start;
+	      pusch_pdu->bwp_size = ibwp_size;
+	      start_rb = (ibwp_start - abwp_start);
+	      printf("msg3: ibwp_size %d, abwp_size %d, ibwp_start %d, abwp_start %d\n",
+	                ibwp_size,abwp_size,ibwp_start,abwp_start);
       }
-      else {
-	pusch_pdu->bwp_start = abwp_start;
-	pusch_pdu->bwp_size = abwp_size;
+      else 
+      {
+	      pusch_pdu->bwp_start = abwp_start;
+	      pusch_pdu->bwp_size = abwp_size;
       }
 
       pusch_pdu->pusch_data.tb_size = TBS/8;
@@ -1023,7 +1031,7 @@ int main(int argc, char **argv)
       pusch_pdu->mcs_table = mcs_table;
       pusch_pdu->target_code_rate = code_rate;
       pusch_pdu->qam_mod_order = mod_order;
-      pusch_pdu->transform_precoding = transform_precoding;
+      pusch_pdu->transformPrecoder = transformPrecoder;
       pusch_pdu->data_scrambling_id = *scc->physCellId;
       pusch_pdu->nrOfLayers = precod_nbr_layers;
       pusch_pdu->ul_dmrs_symb_pos = l_prime_mask;
@@ -1039,7 +1047,7 @@ int main(int argc, char **argv)
         pusch_pdu->dmrs_ports = 1;
       }
       
-      pusch_pdu->num_dmrs_cdm_grps_no_data = msg3_flag == 0 ? 1 : 2;
+      pusch_pdu->num_dmrs_cdm_grps_no_data = msg3_flag == 0 ? num_dmrs_cdm_grps_no_data : 2;
       pusch_pdu->resource_alloc = 1; 
       pusch_pdu->rb_start = start_rb;
       pusch_pdu->rb_size = nb_rb;
@@ -1057,7 +1065,7 @@ int main(int argc, char **argv)
       pusch_pdu->pusch_ptrs.ptrs_ports_list   = (nfapi_nr_ptrs_ports_t *) malloc(2*sizeof(nfapi_nr_ptrs_ports_t));
       pusch_pdu->pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset = 0;
 
-      if (transform_precoding == transform_precoder_enabled) { 
+      if (transformPrecoder == transform_precoder_enabled) { 
 
         pusch_pdu->dfts_ofdm.low_papr_group_number = *scc->physCellId % 30; // U as defined in 38.211 section 6.4.1.1.1.2 
         pusch_pdu->dfts_ofdm.low_papr_sequence_number = 0;     // V as defined in 38.211 section 6.4.1.1.1.2
@@ -1101,7 +1109,8 @@ int main(int argc, char **argv)
       ul_config.ul_config_list[0].pusch_config_pdu.dmrs_config_type = dmrs_config_type;
       ul_config.ul_config_list[0].pusch_config_pdu.mcs_index = Imcs;
       ul_config.ul_config_list[0].pusch_config_pdu.mcs_table = mcs_table;
-      ul_config.ul_config_list[0].pusch_config_pdu.num_dmrs_cdm_grps_no_data = msg3_flag == 0 ? 1 : 2;
+
+      ul_config.ul_config_list[0].pusch_config_pdu.num_dmrs_cdm_grps_no_data = msg3_flag == 0 ? num_dmrs_cdm_grps_no_data : 2;
       ul_config.ul_config_list[0].pusch_config_pdu.nrOfLayers = precod_nbr_layers;
       ul_config.ul_config_list[0].pusch_config_pdu.absolute_delta_PUSCH = 0;
 
@@ -1115,9 +1124,9 @@ int main(int argc, char **argv)
       ul_config.ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_ports_list   = (nfapi_nr_ue_ptrs_ports_t *) malloc(2*sizeof(nfapi_nr_ue_ptrs_ports_t));
       ul_config.ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset = 0;
 
-      ul_config.ul_config_list[0].pusch_config_pdu.transform_precoding = transform_precoding;
+      ul_config.ul_config_list[0].pusch_config_pdu.transformPrecoder = transformPrecoder;
 
-      if (transform_precoding == transform_precoder_enabled) { 
+      if (transformPrecoder == transform_precoder_enabled) { 
    
         ul_config.ul_config_list[0].pusch_config_pdu.dfts_ofdm.low_papr_group_number = *scc->physCellId % 30;// U as defined in 38.211 section 6.4.1.1.1.2 
         ul_config.ul_config_list[0].pusch_config_pdu.dfts_ofdm.low_papr_sequence_number = 0;// V as defined in 38.211 section 6.4.1.1.1.2
@@ -1215,9 +1224,15 @@ int main(int argc, char **argv)
 	gNB->UL_INFO.rx_ind.number_of_pdus = 0;
 	gNB->UL_INFO.crc_ind.number_crcs = 0;
 
-        phy_procedures_gNB_common_RX(gNB, frame, slot);
+  phy_procedures_gNB_common_RX(gNB, frame, slot);
+       
+  for (ap=0; ap<frame_parms->nb_antennas_rx; ap++)
+  {
+    memcpy(gNB->common_vars.rxdataF[ap], UE->common_vars.txdataF[ap],frame_parms->ofdm_symbol_size*14);
+  }
+  
 
-        ul_proc_error = phy_procedures_gNB_uespec_RX(gNB, frame, slot);
+  ul_proc_error = phy_procedures_gNB_uespec_RX(gNB, frame, slot);
 
 	if (n_trials==1 && round==0) {
 	  LOG_M("rxsig0.m","rx0",&gNB->common_vars.rxdata[0][slot_offset],slot_length,1,1);

@@ -365,8 +365,8 @@ int main(int argc, char **argv)
     snr1 = snr0 + 10;
 
   gNB2UE = new_channel_desc_scm(n_tx,
-		                        n_rx,
-				                channel_model,
+		                            n_rx,
+				                        channel_model,
                                 61.44e6, //N_RB2sampling_rate(N_RB_DL),
                                 40e6, //N_RB2channel_bandwidth(N_RB_DL),
                                 DS_TDL,
@@ -441,6 +441,11 @@ int main(int argc, char **argv)
   nfapi_nr_pusch_pdu_t *rel15_ul = &harq_process_gNB->ulsch_pdu;
 
   NR_UE_ULSCH_t *ulsch_ue = UE->ulsch[0][0][0];
+
+  if ((Nl==4)||(Nl==3))
+  {
+    nb_re_dmrs = nb_re_dmrs*2;
+  }
 
   mod_order = nr_get_Qm_ul(Imcs, 0);
   code_rate = nr_get_code_rate_ul(Imcs, 0);

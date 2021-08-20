@@ -260,9 +260,12 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
   AssertFatal(ue->CC_id == 0, "Transmission on secondary CCs is not supported yet\n");
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX,VCD_FUNCTION_IN);
-
-  memset(ue->common_vars.txdataF[0], 0, sizeof(int)*14*ue->frame_parms.ofdm_symbol_size);
-
+  
+  for(int i=0; i< ue->frame_parms.nb_antennas_tx; ++i)
+  {
+    memset(ue->common_vars.txdataF[i], 0, sizeof(int)*14*ue->frame_parms.ofdm_symbol_size);
+  }
+  
   LOG_D(PHY,"****** start TX-Chain for AbsSubframe %d.%d ******\n", frame_tx, slot_tx);
 
 #if UE_TIMING_TRACE
@@ -1080,7 +1083,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
                                      dlsch1->harq_processes[harq_pid],
                                      frame_rx,
                                      nb_symb_sch,
-				     nr_slot_rx,
+				                             nr_slot_rx,
                                      harq_pid,
                                      pdsch==PDSCH?1:0,
                                      dlsch1->harq_processes[harq_pid]->TBS>256?1:0);
