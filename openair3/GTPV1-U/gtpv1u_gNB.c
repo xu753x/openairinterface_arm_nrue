@@ -27,6 +27,7 @@
  */
 #include <stdio.h>
 #include <errno.h>
+#include <sys/time.h>
 
 #include "mme_config.h"
 #include "intertask_interface.h"
@@ -168,6 +169,12 @@ NwGtpv1uRcT gtpv1u_gNB_process_stack_req(
               gtpv1u_teid_data_p->ue_id,
               gtpv1u_teid_data_p->eps_bearer_id);
 #endif
+  struct timeval t;
+   gettimeofday(&t, NULL);
+        LOG_W(GTPU, "Received T-PDU from gtpv1u stack teid  %u size %d at %lu\n",
+              teid,
+              buffer_len,
+              t.tv_usec);
         //warning "LG eps bearer mapping to DRB id to do (offset -4)"
         PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, gtpv1u_teid_data_p->enb_id, ENB_FLAG_YES,  gtpv1u_teid_data_p->ue_id, 0, 0,gtpv1u_teid_data_p->enb_id);
         MSC_LOG_TX_MESSAGE(
@@ -360,7 +367,7 @@ NwGtpv1uRcT nr_gtpv1u_gNB_process_stack_req(
 
       if (hash_rc == HASH_TABLE_OK) {
 // #if defined(LOG_GTPU) && LOG_GTPU > 0
-        LOG_D(GTPU, "Received T-PDU from gtpv1u stack teid  %u size %d -> gnb module id %u ue module id %u pdu session id %u\n",
+        LOG_W(GTPU, "Received T-PDU from gtpv1u stack teid  %u size %d -> gnb module id %u ue module id %u pdu session id %u\n",
               teid,
               buffer_len,
               gtpv1u_teid_data_p->gnb_id,
@@ -388,7 +395,7 @@ NwGtpv1uRcT nr_gtpv1u_gNB_process_stack_req(
                    buffer,
                    PDCP_TRANSMISSION_MODE_DATA,NULL, NULL
                  );
-
+        printf("buffer at PDCP %d bytes\n",buffer_len); // KARIM GTP
         if ( result == FALSE ) {
           if (ctxt.configured == FALSE )
             LOG_W(GTPU, "gNB node PDCP data request failed, cause: [UE:%x]RB is not configured!\n", ctxt.rnti) ;

@@ -28,7 +28,7 @@
  * @ingroup _mac
  */
 
-
+#include <sys/time.h>
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "executables/softmodem-common.h"
 #include "common/utils/nr/nr_common.h"
@@ -442,15 +442,16 @@ void nr_process_mac_pdu(module_id_t module_idP,
             mac_sdu_len = (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->L;
             mac_subheader_len = 2;
           }
-
-          LOG_I(NR_MAC, "[UE %d] Frame %d.%d : ULSCH -> UL-%s %d (gNB %d, %d bytes)\n",
+  struct timeval t;
+   gettimeofday(&t, NULL);
+          LOG_I(NR_MAC, "[UE %d] Frame %d.%d : ULSCH -> UL-%s %d (gNB %d, %d bytes) at %lu\n",
                 module_idP,
                 frameP,
                 slot,
                 rx_lcid<4?"DCCH":"DTCH",
                 rx_lcid,
                 module_idP,
-                mac_sdu_len);
+                mac_sdu_len,t.tv_usec);
           UE_info->mac_stats[UE_id].lc_bytes_rx[rx_lcid] += mac_sdu_len;
 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
             log_dump(NR_MAC, pdu_ptr + mac_subheader_len, 32, LOG_DUMP_CHAR, "\n");

@@ -772,6 +772,7 @@ void gtpv1uReceiver(int h) {
   socklen_t          from_len;
   struct sockaddr_in addr;
   from_len = (socklen_t)sizeof(struct sockaddr_in);
+  LOG_D(GTPU,"######################################################################################\n" );
 
   if ((udpDataLen = recvfrom(h, udpData, sizeof(udpData), 0,
                              (struct sockaddr *)&addr, &from_len)) < 0) {

@@ -28,6 +28,7 @@
  * @ingroup     _mac
 
  */
+#include <sys/time.h>
 
 /*PHY*/
 #include "PHY/CODING/coding_defs.h"
@@ -416,7 +417,7 @@ void nr_store_dlsch_buffer(module_id_t module_id,
         frame,
         slot,
         lcid,
-        sched_ctrl->num_total_bytes);
+        sched_ctrl->num_total_bytes); // KARIM print
 
     if (sched_ctrl->num_total_bytes == 0
         && !sched_ctrl->ta_apply) /* If TA should be applied, give at least one RB */
@@ -707,7 +708,9 @@ void pf_dl(module_id_t module_id,
 
     /* transmissions: directly allocate */
     n_rb_sched -= sched_pdsch->rbSize;
-    printf("%d.%d want to schedule %d (with oh %d) allooooooocated %d RBs for PDSCH, %d for DMRS\n",frame,slot,sched_ctrl->num_total_bytes,sched_ctrl->num_total_bytes + oh,sched_pdsch->rbSize,ps->N_PRB_DMRS);
+    struct timeval t;
+    gettimeofday(&t, NULL);
+    printf("%d.%d want to schedule %d (with oh %d) allooooooocated %d RBs for PDSCH, %d for DMRS at %lu\n",frame,slot,sched_ctrl->num_total_bytes,sched_ctrl->num_total_bytes + oh,sched_pdsch->rbSize,ps->N_PRB_DMRS,t.tv_usec);
     for (int rb = 0; rb < sched_pdsch->rbSize; rb++)
       rballoc_mask[rb + sched_pdsch->rbStart] = 0;
   }

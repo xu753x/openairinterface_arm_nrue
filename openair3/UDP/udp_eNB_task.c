@@ -25,6 +25,7 @@
 * \company Eurecom
 * \email: lionel.gauthier@eurecom.fr
 */
+#include <sys/time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -235,6 +236,7 @@ udp_eNB_send_to(
 
 void udp_eNB_receiver(struct udp_socket_desc_s *udp_sock_pP)
 {
+  printf("#########################################################################################################3\n");
   uint8_t                   l_buffer[2048];
   int                n;
   socklen_t          from_len;
@@ -264,6 +266,9 @@ void udp_eNB_receiver(struct udp_socket_desc_s *udp_sock_pP)
       udp_data_ind_p->buffer_length = n;
       udp_data_ind_p->peer_port     = htons(addr.sin_port);
       udp_data_ind_p->peer_address  = addr.sin_addr.s_addr;
+      struct timeval t;
+      gettimeofday(&t, NULL);
+      printf("receive %d at %lu \n",n,t.tv_usec); // KARIM TIME
 
 #if defined(LOG_UDP) && LOG_UDP > 0
       LOG_I(UDP_, "Msg of length %d received from %s:%u\n",

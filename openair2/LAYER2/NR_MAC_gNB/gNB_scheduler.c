@@ -384,6 +384,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     void nr_pdcp_tick(int frame, int subframe);
     nr_rlc_tick(frame, slot >> *scc->ssbSubcarrierSpacing);
     nr_pdcp_tick(frame, slot >> *scc->ssbSubcarrierSpacing);
+    //printf("%d.%d slot >> *scc->ssbSubcarrierSpacing %d \n",frame,slot,slot >> *scc->ssbSubcarrierSpacing);
     nr_rrc_trigger(&ctxt, 0 /*CC_id*/, frame, slot >> *scc->ssbSubcarrierSpacing);
   }
 
