@@ -638,6 +638,9 @@ void init_pdcp(void) {
   }
 }
 
+#ifdef WS_SERVER_ON
+extern int ws_thread(int argc, const char **argv);
+#endif
 
 int main( int argc, char **argv ) {
   int ru_id, CC_id = 0;
@@ -705,6 +708,10 @@ int main( int argc, char **argv ) {
 #  define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"
 #endif
   LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
+
+#ifdef WS_SERVER_ON
+  ws_thread(0,NULL);
+#endif
 
   if (RC.nb_nr_L1_inst > 0)
     RCconfig_NR_L1();
