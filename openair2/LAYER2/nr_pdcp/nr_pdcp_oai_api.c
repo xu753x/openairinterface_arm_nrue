@@ -671,9 +671,9 @@ boolean_t pdcp_data_ind(
 
   if (rb != NULL) {
     rb->recv_pdu(rb, (char *)sdu_buffer->data, sdu_buffer_size);
-    struct timeval t;
-    gettimeofday(&t, NULL);
-    LOG_W(PDCP, "%s() called, size %d at %lu \n", __func__, sdu_buffer_size,t.tv_usec); // KARIM TIME
+    //struct timeval t;
+    //gettimeofday(&t, NULL);
+    //LOG_W(PDCP, "%s() called, size %d at %lu \n", __func__, sdu_buffer_size,t.tv_usec); // KARIM TIME KARIM LOG
   } else {
     LOG_E(PDCP, "%s:%d:%s: fatal: no RB found (rb_id %ld, srb_flag %d)\n",
           __FILE__, __LINE__, __FUNCTION__, rb_id, srb_flagP);
@@ -1172,9 +1172,9 @@ static boolean_t pdcp_data_req_drb(
   const sdu_size_t sdu_buffer_size,
   unsigned char *const sdu_buffer)
 {
-  struct timeval t;
-   gettimeofday(&t, NULL);
-  LOG_W(PDCP, "%s() called, size %d at %lu \n", __func__, sdu_buffer_size,t.tv_usec); // KARIM TIME
+  //struct timeval t;
+  // gettimeofday(&t, NULL);
+  //LOG_W(PDCP, "%s() called, size %d at %lu \n", __func__, sdu_buffer_size,t.tv_usec); // KARIM TIME KARIM LOG
   nr_pdcp_ue_t *ue;
   nr_pdcp_entity_t *rb;
   int rnti = ctxt_pP->rnti;

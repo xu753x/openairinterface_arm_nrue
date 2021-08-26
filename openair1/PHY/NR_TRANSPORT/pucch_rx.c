@@ -383,6 +383,8 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
     } else {
       uci_pdu->sr->sr_indication = 0;
     }
+    LOG_D(PHY, "Slot %d.%d SR indication %d with confidence level (0 is good, 1 is bad) %d\n",frame,slot,uci_pdu->sr->sr_indication,uci_pdu->sr->sr_indication);
+
   }
   else if (pucch_pdu->bit_len_harq==1) {
     uci_pdu->harq = calloc(1,sizeof(*uci_pdu->harq));
@@ -395,7 +397,9 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
     if (pucch_pdu->sr_flag == 1) {
       uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));
       uci_pdu->sr->sr_indication = (index>1) ? 1 : 0;
-      uci_pdu->sr->sr_confidence_level = no_conf ? 1 : 0;
+      uci_pdu->sr->sr_indication = no_conf ? 1 : 0;
+      LOG_D(PHY, "Slot %d.%d SR indication %d with confidence level (0 is good, 1 is bad) %d\n",frame,slot,uci_pdu->sr->sr_indication,uci_pdu->sr->sr_indication);
+
       uci_stats->pucch0_positive_SR++;
     }
     uci_stats->pucch01_trials++;
@@ -413,8 +417,11 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
       uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));
       uci_pdu->sr->sr_indication = (index>3) ? 1 : 0;
       uci_pdu->sr->sr_confidence_level = (no_conf) ? 1 : 0;
+      LOG_D(PHY, "Slot %d.%d SR indication %d with confidence level (0 is good, 1 is bad) %d\n",frame,slot,uci_pdu->sr->sr_indication,uci_pdu->sr->sr_indication);
+
     }
   }
+
 }
 
 

@@ -444,14 +444,14 @@ void nr_process_mac_pdu(module_id_t module_idP,
           }
   struct timeval t;
    gettimeofday(&t, NULL);
-          LOG_I(NR_MAC, "[UE %d] Frame %d.%d : ULSCH -> UL-%s %d (gNB %d, %d bytes) at %lu\n",
+          LOG_D(NR_MAC, "[UE %d] Frame %d.%d : ULSCH -> UL-%s %d (gNB %d, %d bytes) at %lu\n",
                 module_idP,
                 frameP,
                 slot,
                 rx_lcid<4?"DCCH":"DTCH",
                 rx_lcid,
                 module_idP,
-                mac_sdu_len,t.tv_usec);
+                mac_sdu_len,t.tv_usec); // KARIM LOG
           UE_info->mac_stats[UE_id].lc_bytes_rx[rx_lcid] += mac_sdu_len;
 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
             log_dump(NR_MAC, pdu_ptr + mac_subheader_len, 32, LOG_DUMP_CHAR, "\n");
@@ -1021,7 +1021,8 @@ void pf_ul(module_id_t module_id,
     const int B = max(0, sched_ctrl->estimated_ul_buffer - sched_ctrl->sched_ul_bytes);
     /* preprocessor computed sched_frame/sched_slot */
     const bool do_sched = nr_UE_is_to_be_scheduled(module_id, 0, UE_id, sched_pusch->frame, sched_pusch->slot);
-
+       LOG_D(NR_MAC,"##rbSize %d, TBS %d, est buf %d, sched_ul %d, B %d\n",
+          sched_pusch->rbSize, sched_pusch->tb_size, sched_ctrl->estimated_ul_buffer, sched_ctrl->sched_ul_bytes, B);
     if (B == 0 && !do_sched)
       continue;
 
@@ -1172,7 +1173,7 @@ void pf_ul(module_id_t module_id,
                   &rbSize);
     sched_pusch->rbSize = rbSize;
     sched_pusch->tb_size = TBS;
-    LOG_W(NR_MAC,"##############rbSize %d, TBS %d, est buf %d, sched_ul %d, B %d\n",
+    LOG_D(NR_MAC,"##############rbSize %d, TBS %d, est buf %d, sched_ul %d, B %d\n",
           rbSize, sched_pusch->tb_size, sched_ctrl->estimated_ul_buffer, sched_ctrl->sched_ul_bytes, B);
 
     /* Mark the corresponding RBs as used */

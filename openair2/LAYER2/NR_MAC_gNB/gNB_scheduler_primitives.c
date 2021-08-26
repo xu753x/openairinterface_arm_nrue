@@ -262,6 +262,7 @@ bool nr_find_nb_rb(uint16_t Qm,
   *nb_rb = hi;
   *tbs = nr_compute_tbs(Qm, R, *nb_rb, nb_symb_sch, nb_dmrs_prb, 0, 0, 1) >> 3;
   /* return whether we could allocate all bytes and stay below nb_rb_max */
+  LOG_D(NR_MAC,"nr find nb rb TBS = %d",*tbs);
   return *tbs >= bytes && *nb_rb <= nb_rb_max;
 }
 

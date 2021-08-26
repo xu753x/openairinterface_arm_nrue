@@ -537,6 +537,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
     const struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList = servingCellConfig->downlinkBWP_ToAddModList;
     if(bwpList) {
       AssertFatal(bwpList->list.count > 0, "downlinkBWP_ToAddModList has no BWPs!\n");
+      assert(1==2);
       for (int i = 0; i < bwpList->list.count; ++i) {
         const NR_BWP_Downlink_t *bwp = bwpList->list.array[i];
         calculate_preferred_dl_tda(Mod_idP, bwp);

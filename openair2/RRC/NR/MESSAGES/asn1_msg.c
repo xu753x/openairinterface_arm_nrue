@@ -1026,7 +1026,8 @@ void fill_initial_SpCellConfig(rnti_t rnti,
   schedulingRequestResourceConfig->schedulingRequestResourceId = 1;
   schedulingRequestResourceConfig->schedulingRequestID= 0;
   schedulingRequestResourceConfig->periodicityAndOffset = calloc(1,sizeof(*schedulingRequestResourceConfig->periodicityAndOffset));
-  schedulingRequestResourceConfig->periodicityAndOffset->present = NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl40;
+
+  //schedulingRequestResourceConfig->periodicityAndOffset->present = NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl40;
   // note: make sure that there is no issue here. Later choose the RNTI accordingly. 
   //       Here we would be limited to 8 UEs on this resource (2 Frames 30 kHz SCS, 5 ms TDD periodicity => slots 8,9,18,19,28,29,38,39). 
   //       This should be a temporary resource until the first RRCReconfiguration gives new pucch resources.
@@ -1035,8 +1036,9 @@ void fill_initial_SpCellConfig(rnti_t rnti,
 	      "SCS != 30kHz\n");
   AssertFatal(scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity==NR_TDD_UL_DL_Pattern__dl_UL_TransmissionPeriodicity_ms5,
 	      "TDD period != 5ms : %ld\n",scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity);*/
-  
-  schedulingRequestResourceConfig->periodicityAndOffset->choice.sl40 = 10*((rnti>>1)&3) + (rnti&2);
+  schedulingRequestResourceConfig->periodicityAndOffset->present = NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl5;
+  schedulingRequestResourceConfig->periodicityAndOffset->choice.sl5 = 3;
+  //schedulingRequestResourceConfig->periodicityAndOffset->choice.sl40 = 10*((rnti>>1)&3) + (rnti&2);
   schedulingRequestResourceConfig->resource = calloc(1,sizeof(*schedulingRequestResourceConfig->resource));
   *schedulingRequestResourceConfig->resource = 0;
   ASN_SEQUENCE_ADD(&pucch_Config->schedulingRequestResourceToAddModList->list,schedulingRequestResourceConfig);
@@ -1149,7 +1151,7 @@ void fill_mastercellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig, NR_CellGr
       rlc_Config_drb->choice.um_Bi_Directional->dl_UM_RLC.sn_FieldLength  = calloc(1, sizeof(*rlc_Config->choice.um_Bi_Directional->dl_UM_RLC.sn_FieldLength));
       *rlc_Config_drb->choice.um_Bi_Directional->dl_UM_RLC.sn_FieldLength = NR_SN_FieldLengthUM_size12;
       rlc_Config_drb->choice.um_Bi_Directional->dl_UM_RLC.t_Reassembly    = NR_T_Reassembly_ms15;
-  /*rlc_Config_drb->present                                          = NR_RLC_Config_PR_am;
+ /* rlc_Config_drb->present                                          = NR_RLC_Config_PR_am;
   rlc_Config_drb->choice.am                                        = calloc(1, sizeof(*rlc_Config_drb->choice.am));
   rlc_Config_drb->choice.am->dl_AM_RLC.sn_FieldLength              = calloc(1, sizeof(NR_SN_FieldLengthAM_t));
   *(rlc_Config_drb->choice.am->dl_AM_RLC.sn_FieldLength)           = NR_SN_FieldLengthAM_size18;

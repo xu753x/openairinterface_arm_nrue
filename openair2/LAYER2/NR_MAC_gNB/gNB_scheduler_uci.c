@@ -25,7 +25,7 @@
  * \version 1.0
  * \company Eurecom
  */
-
+ #include <math.h> 
 #include <softmodem-common.h>
 #include "LAYER2/MAC/mac.h"
 #include "NR_MAC_gNB/nr_mac_gNB.h"
@@ -1407,6 +1407,8 @@ void nr_sr_reporting(int Mod_idP, frame_t SFN, sub_frame_t slot)
       find_period_offest_SR(SchedulingRequestResourceConfig,&SR_period,&SR_offset);
       // convert to int to avoid underflow of uint
       int sfn_sf = SFN * n_slots_frame + slot;
+      LOG_D(MAC, "sfn_sf %d SR_offset %d SR_period %d SFN %d slot %d \n",sfn_sf, SR_offset, SR_period,SFN, slot);
+
       if ((sfn_sf - SR_offset) % SR_period != 0)
         continue;
       LOG_D(MAC, "%4d.%2d Scheduling Request identified\n", SFN, slot);
@@ -1426,12 +1428,16 @@ void nr_sr_reporting(int Mod_idP, frame_t SFN, sub_frame_t slot)
        * resource for AckNack (e.g., the UE has been scheduled often), and we
        * just need to add the SR_flag. Otherwise, just allocate in the internal
        * PUCCH resource, and nr_schedule_pucch() will handle the rest */
+      //LOG_W(MAC,"%4d.%2d adding SR_flag 1 to PUCCH nFAPI SR line 1429\n", SFN, slot);
+
       NR_PUCCH_Resource_t *pucch_res = pucch_Config->resourceToAddModList->list.array[found];
       /* for the moment, can only handle SR on PUCCH Format 0 */
       DevAssert(pucch_res->format.present == NR_PUCCH_Resource__format_PR_format0);
       nfapi_nr_ul_tti_request_t *ul_tti_req = &nrmac->UL_tti_req_ahead[0][slot];
       bool nfapi_allocated = false;
       for (int i = 0; i < ul_tti_req->n_pdus; ++i) {
+        //LOG_W(MAC,"%4d.%2d adding SR_flag 1 to PUCCH nFAPI SR line 1437\n", SFN, slot);
+
         if (ul_tti_req->pdus_list[i].pdu_type != NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE)
           continue;
         nfapi_nr_pucch_pdu_t *pdu = &ul_tti_req->pdus_list[i].pucch_pdu;
@@ -1441,7 +1447,7 @@ void nr_sr_reporting(int Mod_idP, frame_t SFN, sub_frame_t slot)
             && pdu->initial_cyclic_shift == pucch_res->format.choice.format0->initialCyclicShift
             && pdu->nr_of_symbols == pucch_res->format.choice.format0->nrofSymbols
             && pdu->start_symbol_index == pucch_res->format.choice.format0->startingSymbolIndex) {
-          LOG_D(MAC,"%4d.%2d adding SR_flag 1 to PUCCH nFAPI SR for RNTI %04x\n", SFN, slot, pdu->rnti);
+          //LOG_D(MAC,"%4d.%2d adding SR_flag 1 to PUCCH nFAPI SR for RNTI %04x\n", SFN, slot, pdu->rnti);
           pdu->sr_flag = 1;
           nfapi_allocated = true;
           break;
@@ -1453,6 +1459,8 @@ void nr_sr_reporting(int Mod_idP, frame_t SFN, sub_frame_t slot)
 
       /* we did not find it: check if current PUCCH is for the current slot, in
        * which case we add the SR to it; otherwise, allocate SR separately */
+      //LOG_W(MAC,"%4d.%2d adding SR_flag 1 to PUCCH nFAPI SR\n", SFN, slot);
+
       NR_sched_pucch_t *curr_pucch = &sched_ctrl->sched_pucch[0];
       if (curr_pucch->frame == SFN && curr_pucch->ul_slot == slot) {
         if (curr_pucch->resource_indicator != found) {
