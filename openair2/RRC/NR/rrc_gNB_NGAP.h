@@ -168,13 +168,6 @@ nr_rrc_pdcp_config_security(
 );
 
 int
-rrc_gNB_generate_pcch_msg(
-    uint32_t tmsi,
-    uint8_t paging_drx,
-    instance_t instance,
-    uint8_t CC_id);
-
-int
 rrc_gNB_process_PAGING_IND(
     MessageDef *msg_p,
     const char *msg_name,

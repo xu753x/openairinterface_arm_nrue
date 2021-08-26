@@ -33,7 +33,7 @@
 #include "f1ap_du_paging.h"
 #include "conversions.h"
 #include "asn1_conversions.h"
-#include "openair2/RRC/NR/rrc_gNB_NGAP.h"
+#include "openair2/RRC/LTE/rrc_proto.h"
 
 
 int DU_handle_Paging(instance_t       instance,

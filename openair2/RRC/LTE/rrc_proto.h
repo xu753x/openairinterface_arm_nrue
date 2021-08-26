@@ -670,6 +670,13 @@ void openair_rrc_top_init_ue(
   uint8_t HO_active
 );
 
+int
+rrc_gNB_generate_pcch_msg(
+    uint32_t tmsi,
+    uint8_t paging_drx,
+    instance_t instance,
+    uint8_t CC_id);
+
 extern pthread_mutex_t      rrc_release_freelist;
 extern RRC_release_list_t   rrc_release_info;
 extern pthread_mutex_t      lock_ue_freelist;
