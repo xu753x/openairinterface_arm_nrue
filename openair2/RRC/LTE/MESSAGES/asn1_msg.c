@@ -3221,22 +3221,17 @@ uint8_t do_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
   ASN_SEQUENCE_ADD(&dl_dcch_msg.message.choice.c1.choice.ueCapabilityEnquiry.criticalExtensions.choice.c1.choice.ueCapabilityEnquiry_r8.ue_CapabilityRequest.list,
                    &rat);
   LTE_UECapabilityEnquiry_r8_IEs_t *r8 = &dl_dcch_msg.message.choice.c1.choice.ueCapabilityEnquiry.criticalExtensions.choice.c1.choice.ueCapabilityEnquiry_r8;
-  LTE_UECapabilityEnquiry_v8a0_IEs_t r8_a0;
-  LTE_UECapabilityEnquiry_v1180_IEs_t r11_80;
-  LTE_UECapabilityEnquiry_v1310_IEs_t r13_10;
-  LTE_UECapabilityEnquiry_v1430_IEs_t r14_30;
-  LTE_UECapabilityEnquiry_v1510_IEs_t r15_10;
+  LTE_UECapabilityEnquiry_v8a0_IEs_t r8_a0={0};
+  LTE_UECapabilityEnquiry_v1180_IEs_t r11_80={0};
+  LTE_UECapabilityEnquiry_v1310_IEs_t r13_10={0};
+  LTE_UECapabilityEnquiry_v1430_IEs_t r14_30={0};
+  LTE_UECapabilityEnquiry_v1510_IEs_t r15_10={0};
   OCTET_STRING_t req_freq;
+  unsigned char req_freq_buf[1024];
 
   if (nr_band>0) {
 
     /* request NR configuration */
-
-    memset(&r8_a0, 0, sizeof(r8_a0));
-    memset(&r11_80, 0, sizeof(r11_80));
-    memset(&r13_10, 0, sizeof(r13_10));
-    memset(&r14_30, 0, sizeof(r14_30));
-    memset(&r15_10, 0, sizeof(r15_10));
 
     r8->nonCriticalExtension = &r8_a0;
     r8_a0.nonCriticalExtension = &r11_80;
@@ -3264,7 +3259,6 @@ uint8_t do_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
     ASN_SEQUENCE_ADD(&nsa_band_list->list, nsa_band);
 
   //unsigned char req_freq_buf[5] = { 0x00, 0x20, 0x1a, 0x02, 0x68 };  // bands 7 & nr78
-    unsigned char req_freq_buf[1024];
     enc_rval = uper_encode_to_buffer(&asn_DEF_NR_FreqBandList,
                                 NULL,
                                 (void *)nsa_band_list,
