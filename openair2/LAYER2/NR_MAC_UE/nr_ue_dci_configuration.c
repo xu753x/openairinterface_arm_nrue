@@ -164,7 +164,15 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
     rel15->rnti = ra->ra_rnti;
     rel15->BWPSize = NRRIV2BW(initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     if (get_softmodem_params()->sa) {
-      rel15->BWPStart = NRRIV2PRBOFFSET(initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+      if(ss_id>=0)
+      {
+          rel15->BWPStart = NRRIV2PRBOFFSET(initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+      }
+      else
+      {
+          rel15->BWPSize  = mac->type0_PDCCH_CSS_config.num_rbs;
+          rel15->BWPStart = mac->type0_PDCCH_CSS_config.cset_start_rb;
+      }
     } else { // NSA mode is not using the Initial BWP
       rel15->BWPStart = NRRIV2PRBOFFSET(bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     }
@@ -180,8 +188,16 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
       sps = initialDownlinkBWP->genericParameters.cyclicPrefix == NULL ? 14 : 12;
       monitoringSymbolsWithinSlot = (ss->monitoringSymbolsWithinSlot->buf[0]<<(sps-8)) | (ss->monitoringSymbolsWithinSlot->buf[1]>>(16-sps));
       rel15->rnti = ra->t_crnti;
-      rel15->BWPSize = NRRIV2BW(initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-      rel15->BWPStart = NRRIV2PRBOFFSET(initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+      if(ss_id>=0)
+      {
+          rel15->BWPSize = NRRIV2BW(initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+          rel15->BWPStart = NRRIV2PRBOFFSET(initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+      }
+      else
+      {
+          rel15->BWPSize  = mac->type0_PDCCH_CSS_config.num_rbs;
+          rel15->BWPStart = mac->type0_PDCCH_CSS_config.cset_start_rb;
+      }
       rel15->SubcarrierSpacing = initialDownlinkBWP->genericParameters.subcarrierSpacing;
       rel15->dci_length_options[0] = nr_dci_size(initialUplinkBWP, mac->cg, &mac->def_dci_pdu_rel15[rel15->dci_format_options[0]], rel15->dci_format_options[0], NR_RNTI_TC, rel15->BWPSize, bwp_id);
     break;

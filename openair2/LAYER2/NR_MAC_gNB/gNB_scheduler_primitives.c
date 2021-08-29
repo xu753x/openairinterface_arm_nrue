@@ -365,12 +365,21 @@ void nr_set_pusch_semi_static(const NR_ServingCellConfigCommon_t *scc,
 										    : *ps->NR_DMRS_UplinkConfig->dmrs_AdditionalPosition)):2;
   const pusch_maxLength_t pusch_maxLength =
     ps->NR_DMRS_UplinkConfig ? (ps->NR_DMRS_UplinkConfig->maxLength == NULL ? 1 : 2) : 1;
-  ps->ul_dmrs_symb_pos = get_l_prime(ps->nrOfSymbols,
-                                            ps->mapping_type,
-                                            additional_pos,
-                                            pusch_maxLength,
-                                            ps->startSymbolIndex,
-                                            scc->dmrs_TypeA_Position);
+  
+  ps->ul_dmrs_symb_pos = fill_dmrs_mask(NULL,
+                                    scc->dmrs_TypeA_Position,
+                                    ps->nrOfSymbols,
+                                    ps->startSymbolIndex,
+                                    ps->mapping_type);
+
+  LOG_I(PHY, "ul_dmrs_symb_pos 0x%x, position %d, symbols %d, %d, type %d  tda %d, A %d B %d\n", ps->ul_dmrs_symb_pos, 
+                                  scc->dmrs_TypeA_Position,
+                                    ps->nrOfSymbols,
+                                    ps->startSymbolIndex,
+                                    ps->mapping_type,
+                                    tda,
+                                    NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeA,
+                                    NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeB);
   uint8_t num_dmrs_symb = 0;
   for(int i = ps->startSymbolIndex; i < ps->startSymbolIndex + ps->nrOfSymbols; i++)
     num_dmrs_symb += (ps->ul_dmrs_symb_pos >> i) & 1;
@@ -1081,17 +1090,18 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
       fsize = (int)ceil(log2((N_RB * (N_RB + 1)) >> 1));
       pos = fsize;
       *dci_pdu |= (((uint64_t)dci_pdu_rel15->frequency_domain_assignment.val & ((1 << fsize) - 1)) << (dci_size - pos));
-      LOG_D(NR_MAC,
-            "frequency-domain assignment %d (%d bits) N_RB_BWP %d=> %d (0x%lx)\n",
+      LOG_I(NR_MAC,
+            "frequency-domain assignment %d (%d bits) dci size %d N_RB_BWP %d=> %d (0x%lx)\n",
             dci_pdu_rel15->frequency_domain_assignment.val,
             fsize,
+            dci_size,
             N_RB,
             dci_size - pos,
             *dci_pdu);
       // Time domain assignment
       pos += 4;
       *dci_pdu |= (((uint64_t)dci_pdu_rel15->time_domain_assignment.val & 0xf) << (dci_size - pos));
-      LOG_D(NR_MAC,
+      LOG_I(NR_MAC,
             "time-domain assignment %d  (3 bits)=> %d (0x%lx)\n",
             dci_pdu_rel15->time_domain_assignment.val,
             dci_size - pos,
@@ -1099,7 +1109,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
       // VRB to PRB mapping
       pos++;
       *dci_pdu |= ((uint64_t)dci_pdu_rel15->vrb_to_prb_mapping.val & 0x1) << (dci_size - pos);
-      LOG_D(NR_MAC,
+      LOG_I(NR_MAC,
             "vrb to prb mapping %d  (1 bits)=> %d (0x%lx)\n",
             dci_pdu_rel15->vrb_to_prb_mapping.val,
             dci_size - pos,
@@ -1107,15 +1117,15 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
       // MCS
       pos += 5;
       *dci_pdu |= ((uint64_t)dci_pdu_rel15->mcs & 0x1f) << (dci_size - pos);
-#ifdef DEBUG_FILL_DCI
+//#ifdef DEBUG_FILL_DCI
       LOG_I(NR_MAC, "mcs %d  (5 bits)=> %d (0x%lx)\n", dci_pdu_rel15->mcs, dci_size - pos, *dci_pdu);
-#endif
+//#endif
       // TB scaling
       pos += 2;
       *dci_pdu |= ((uint64_t)dci_pdu_rel15->tb_scaling & 0x3) << (dci_size - pos);
-#ifdef DEBUG_FILL_DCI
+//#ifdef DEBUG_FILL_DCI
       LOG_I(NR_MAC, "tb_scaling %d  (2 bits)=> %d (0x%lx)\n", dci_pdu_rel15->tb_scaling, dci_size - pos, *dci_pdu);
-#endif
+//#endif
       break;
 
     case NR_RNTI_C:
