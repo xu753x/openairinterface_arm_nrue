@@ -86,9 +86,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "executables/softmodem-common.h"
 #include "executables/thread-common.h"
 
-#if defined(ITTI_SIM) || defined(RFSIM_NAS)
 #include "nr_nas_msg_sim.h"
-#endif
 
 extern const char *duplex_mode[];
 THREAD_STRUCT thread_struct;
@@ -107,8 +105,6 @@ int config_sync_var=-1;
 
 
 RAN_CONTEXT_t RC;
-volatile int             start_eNB = 0;
-volatile int             start_UE = 0;
 volatile int             oai_exit = 0;
 
 
@@ -196,12 +192,10 @@ int create_tasks_nrue(uint32_t ue_nb) {
       LOG_E(NR_RRC, "Create task for RRC UE failed\n");
       return -1;
     }
-#if defined(ITTI_SIM) || defined(RFSIM_NAS)
   if (itti_create_task (TASK_NAS_NRUE, nas_nrue_task, NULL) < 0) {
     LOG_E(NR_RRC, "Create task for NAS UE failed\n");
     return -1;
   }
-#endif
   }
 
   itti_wait_ready(0);
@@ -365,8 +359,8 @@ void init_openair0(void) {
     openair0_cfg[card].num_rb_dl = frame_parms->N_RB_DL;
     openair0_cfg[card].clock_source = get_softmodem_params()->clock_source;
     openair0_cfg[card].time_source = get_softmodem_params()->timing_source;
-    openair0_cfg[card].tx_num_channels = min(2, frame_parms->nb_antennas_tx);
-    openair0_cfg[card].rx_num_channels = min(2, frame_parms->nb_antennas_rx);
+    openair0_cfg[card].tx_num_channels = min(4, frame_parms->nb_antennas_tx);
+    openair0_cfg[card].rx_num_channels = min(4, frame_parms->nb_antennas_rx);
 
     LOG_I(PHY, "HW: Configuring card %d, sample_rate %f, tx/rx num_channels %d/%d, duplex_mode %s\n",
       card,
@@ -377,7 +371,8 @@ void init_openair0(void) {
 
     nr_get_carrier_frequencies(frame_parms, &dl_carrier, &ul_carrier);
 
-    nr_rf_card_config(&openair0_cfg[card], rx_gain_off, ul_carrier, dl_carrier, freq_off);
+    nr_rf_card_config_freq(&openair0_cfg[card], ul_carrier, dl_carrier, freq_off);
+    nr_rf_card_config_gain(&openair0_cfg[card], rx_gain_off);
 
     openair0_cfg[card].configFilename = get_softmodem_params()->rf_config_file;
 
