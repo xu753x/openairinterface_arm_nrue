@@ -17,6 +17,8 @@
 #include <libwebsockets.h>
 #include <string.h>
 #include <signal.h>
+#include <time.h>
+#include <signal.h>
 
 #define HTTP_BUF 1024
 volatile int  g_force_exit  = 0;
@@ -63,7 +65,15 @@ void sigint_handler(int sig)
 	interrupted = 1;
 }
 
-
+void sig_alarm_handler(int sig_num)
+{
+//    printf("%s, signal number:%d\n", __FUNCTION__, sig_num);
+    if(sig_num = SIGALRM)
+    {
+        int remaing = alarm(1);
+        update_client(nf_status_arr_len,nf_status_arr);
+    }
+}
 
 #ifdef WS_SERVER_ON
 int ws_server(int argc, const char **argv);
@@ -92,6 +102,12 @@ int main(int argc, const char **argv)
 			/* | LLL_DEBUG */;
 
 //	signal(SIGINT, sigint_handler);
+	signal(SIGALRM, sig_alarm_handler);
+//    sighandler_t *pre = signal(SIGALRM, sig_alarm_handler);
+//    printf("signal() return ret address:%p,my sig_alm_handler:%p\n", pre, sig_alarm_handler); //pre应该是空才对。
+    
+    //设定定时器。
+    alarm(1);
 
 	if ((p = lws_cmdline_option(argc, argv, "-d")))
 		logs = atoi(p);
