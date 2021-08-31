@@ -1402,7 +1402,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     sched_ctrl->last_ul_frame = sched_pusch->frame;
     sched_ctrl->last_ul_slot = sched_pusch->slot;
 
-    LOG_D(NR_MAC,
+    LOG_I(NR_MAC,
           "%4d.%2d RNTI %04x UL sched %4d.%2d start %2d RBS %3d startSymbol %2d nb_symbol %2d MCS %2d TBS %4d HARQ PID %2d round %d NDI %d est %6d sched %6d est BSR %6d\n",
           frame,
           slot,
@@ -1565,8 +1565,12 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
       nr_configure_pdcch(pdcch_pdu, ss, coreset, scc, sched_ctrl->active_bwp);
       pdcch_pdu_bwp_coreset[bwpid][coresetid] = pdcch_pdu;
     }
-
-    LOG_D(NR_MAC,"Configuring ULDCI/PDCCH in %d.%d\n", frame,slot);
+    if (coresetid == 0)
+    {
+        pdcch_pdu->BWPSize  = nr_mac->type0_PDCCH_CSS_config[0].num_rbs;
+        pdcch_pdu->BWPStart = nr_mac->type0_PDCCH_CSS_config[0].cset_start_rb;
+    }
+    LOG_I(NR_MAC,"Configuring ULDCI/PDCCH in %d.%d, pdcch bwp %d %d, pusch bwp %d %d\n", frame,slot, pdcch_pdu->BWPStart, pdcch_pdu->BWPSize, pusch_pdu->bwp_start, pusch_pdu->bwp_size);
 
     /* Fill PDCCH DL DCI PDU */
     nfapi_nr_dl_dci_pdu_t *dci_pdu = &pdcch_pdu->dci_pdu[pdcch_pdu->numDlDci];

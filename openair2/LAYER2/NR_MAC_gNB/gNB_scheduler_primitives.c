@@ -366,12 +366,18 @@ void nr_set_pusch_semi_static(const NR_ServingCellConfigCommon_t *scc,
   const pusch_maxLength_t pusch_maxLength =
     ps->NR_DMRS_UplinkConfig ? (ps->NR_DMRS_UplinkConfig->maxLength == NULL ? 1 : 2) : 1;
   
-  ps->ul_dmrs_symb_pos = fill_dmrs_mask(NULL,
+  ps->ul_dmrs_symb_pos = get_l_prime(ps->nrOfSymbols,
+                                            ps->mapping_type,
+                                            additional_pos,
+                                            pusch_maxLength,
+                                            ps->startSymbolIndex,
+                                            scc->dmrs_TypeA_Position);
+  /*ps->ul_dmrs_symb_pos = fill_dmrs_mask(NULL,
                                     scc->dmrs_TypeA_Position,
                                     ps->nrOfSymbols,
                                     ps->startSymbolIndex,
                                     ps->mapping_type);
-
+*/
   LOG_I(PHY, "ul_dmrs_symb_pos 0x%x, position %d, symbols %d, %d, type %d  tda %d, A %d B %d\n", ps->ul_dmrs_symb_pos, 
                                   scc->dmrs_TypeA_Position,
                                     ps->nrOfSymbols,

@@ -894,6 +894,11 @@ void nr_schedule_ue_spec(module_id_t module_id,
       gNB_mac->pdcch_pdu_idx[CC_id][bwpid][coresetid] = pdcch_pdu;
     }
 
+    if (coresetid == 0)
+    {
+        pdcch_pdu->BWPSize  = gNB_mac->type0_PDCCH_CSS_config[0].num_rbs;
+        pdcch_pdu->BWPStart = gNB_mac->type0_PDCCH_CSS_config[0].cset_start_rb;
+    }
     nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdsch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
     memset(dl_tti_pdsch_pdu, 0, sizeof(nfapi_nr_dl_tti_request_pdu_t));
     dl_tti_pdsch_pdu->PDUType = NFAPI_NR_DL_TTI_PDSCH_PDU_TYPE;
@@ -1025,13 +1030,14 @@ void nr_schedule_ue_spec(module_id_t module_id,
     dci_payload.antenna_ports.val = 0;  // nb of cdm groups w/o data 1 and dmrs port 0
     dci_payload.dmrs_sequence_initialization.val = pdsch_pdu->SCID;
     LOG_D(NR_MAC,
-          "%4d.%2d DCI type 1 payload: freq_alloc %d (%d,%d,%d), "
+          "%4d.%2d DCI type 1 payload: freq_alloc %d (RB: %d,%d, BWP: %d, %d), "
           "time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d ndi %d rv %d tpc %d\n",
           frame,
           slot,
           dci_payload.frequency_domain_assignment.val,
           pdsch_pdu->rbStart,
           pdsch_pdu->rbSize,
+          pdcch_pdu->BWPStart,
           pdsch_pdu->BWPSize,
           dci_payload.time_domain_assignment.val,
           dci_payload.vrb_to_prb_mapping.val,
