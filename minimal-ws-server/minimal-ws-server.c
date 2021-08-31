@@ -71,6 +71,9 @@ void sig_alarm_handler(int sig_num)
     if(sig_num = SIGALRM)
     {
         int remaing = alarm(1);
+
+		for(int i=2;i<nf_status_arr_len;i++)
+			nf_status_arr[i] = rand()%10;
         update_client(nf_status_arr_len,nf_status_arr);
     }
 }
@@ -103,11 +106,11 @@ int main(int argc, const char **argv)
 
 //	signal(SIGINT, sigint_handler);
 	signal(SIGALRM, sig_alarm_handler);
-//    sighandler_t *pre = signal(SIGALRM, sig_alarm_handler);
-//    printf("signal() return ret address:%p,my sig_alm_handler:%p\n", pre, sig_alarm_handler); //pre应该是空才对。
-    
-    //设定定时器。
     alarm(1);
+
+	nf_status_arr_len= RB_SIZE*SLOT_IN_FRAME+2;
+	nf_status_arr[0] = RB_SIZE; //rb size
+	nf_status_arr[1] = SLOT_IN_FRAME; //time 
 
 	if ((p = lws_cmdline_option(argc, argv, "-d")))
 		logs = atoi(p);

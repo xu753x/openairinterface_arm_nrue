@@ -63,7 +63,14 @@ __minimal_destroy_message(void *_msg)
 static int first_conn = 0;
 static int notifying = 0;
 struct lws *wsi_client;
-char* nf_status_arr[10000]={0};
+
+
+#define RB_SIZE 		20
+#define MS_IN_FRAME 	10
+#define SLOT_IN_MS 		2
+#define SLOT_IN_FRAME 	(MS_IN_FRAME*SLOT_IN_MS)
+
+char nf_status_arr[10000]={0};
 int nf_status_arr_len=0;
 
 int update_client(int len, const char* payload)
@@ -77,7 +84,7 @@ int update_client(int len, const char* payload)
 		return 0;
 
     notifying = 1;
-	lwsl_user("update_client  size %d. %s.\n",len,payload);
+	lwsl_user("update_client  size %d. %p.\n",len,payload);
 
 	memcpy(sendArr + LWS_PRE, payload, len);
 	/* notice we allowed for LWS_PRE in the payload already */
