@@ -965,6 +965,7 @@ void update_ul_ue_R_Qm(NR_sched_pusch_t *sched_pusch, const NR_pusch_semi_static
 
 float ul_thr_ue[MAX_MOBILES_PER_GNB];
 uint32_t ul_pf_tbs[3][29]; // pre-computed, approximate TBS values for PF coefficient
+extern int g_ul_rb;
 void pf_ul(module_id_t module_id,
            frame_t frame,
            sub_frame_t slot,
@@ -977,12 +978,16 @@ void pf_ul(module_id_t module_id,
   gNB_MAC_INST *nrmac = RC.nrmac[module_id];
   NR_ServingCellConfigCommon_t *scc = nrmac->common_channels[CC_id].ServingCellConfigCommon;
   NR_UE_info_t *UE_info = &nrmac->UE_info;
-  const int min_rb = 5;
+  int min_rb = 5;
   float coeff_ue[MAX_MOBILES_PER_GNB];
   // UEs that could be scheduled
   int ue_array[MAX_MOBILES_PER_GNB];
   NR_list_t UE_sched = { .head = -1, .next = ue_array, .tail = -1, .len = MAX_MOBILES_PER_GNB };
 
+  if (g_ul_rb > 0)
+  {
+    min_rb = g_ul_rb;
+  }
   /* Loop UE_list to calculate throughput and coeff */
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
 
@@ -1570,7 +1575,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
         pdcch_pdu->BWPSize  = nr_mac->type0_PDCCH_CSS_config[0].num_rbs;
         pdcch_pdu->BWPStart = nr_mac->type0_PDCCH_CSS_config[0].cset_start_rb;
     }
-    LOG_I(NR_MAC,"Configuring ULDCI/PDCCH in %d.%d, pdcch bwp %d %d, pusch bwp %d %d\n", frame,slot, pdcch_pdu->BWPStart, pdcch_pdu->BWPSize, pusch_pdu->bwp_start, pusch_pdu->bwp_size);
+    LOG_D(NR_MAC,"Configuring ULDCI/PDCCH in %d.%d, pdcch bwp %d %d, pusch bwp %d %d\n", frame,slot, pdcch_pdu->BWPStart, pdcch_pdu->BWPSize, pusch_pdu->bwp_start, pusch_pdu->bwp_size);
 
     /* Fill PDCCH DL DCI PDU */
     nfapi_nr_dl_dci_pdu_t *dci_pdu = &pdcch_pdu->dci_pdu[pdcch_pdu->numDlDci];

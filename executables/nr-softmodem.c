@@ -115,6 +115,9 @@ int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 int   point_a_15khz;
 int   kssb_15khz;
 
+int g_ul_rb;
+int g_sched_dl_bytes;
+
 
 //Temp fix for inexistent NR upper layer
 unsigned char NB_gNB_INST = 1;

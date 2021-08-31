@@ -512,7 +512,8 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
   A   = (harq_process->TBS)<<3;
 
-  LOG_D(PHY,"ULSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_rb %d, Qm %d, n_layers %d\n",harq_pid,A,G, mcs, n_layers, nb_rb, Qm, n_layers);
+  LOG_D(PHY,"ULSCH Decoding, frame %d %d harq_pid %d TBS %d G %d mcs %d Nl %d nb_rb %d, Qm %d, n_layers %d\n",frame, nr_tti_rx,
+  harq_pid,A,G, mcs, n_layers, nb_rb, Qm, n_layers);
 
   if (R<1024)
     Coderate = (float) R /(float) 1024;

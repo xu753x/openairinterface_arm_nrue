@@ -380,6 +380,7 @@ int nr_write_ce_dlsch_pdu(module_id_t module_idP,
   return offset;
 }
 
+extern int g_sched_dl_bytes;
 void nr_store_dlsch_buffer(module_id_t module_id,
                            frame_t frame,
                            sub_frame_t slot) {
@@ -411,6 +412,7 @@ void nr_store_dlsch_buffer(module_id_t module_id,
                                                       0,
                                                       0);
     sched_ctrl->num_total_bytes += sched_ctrl->rlc_status[lcid].bytes_in_buffer;
+    
     LOG_D(NR_MAC,
         "%d.%d, LCID%d:->DLSCH, RLC status %d bytes. \n",
         frame,
@@ -418,6 +420,10 @@ void nr_store_dlsch_buffer(module_id_t module_id,
         lcid,
         sched_ctrl->num_total_bytes);
 
+    if (g_sched_dl_bytes > 0)
+    {
+      sched_ctrl->num_total_bytes = g_sched_dl_bytes;
+    }
     if (sched_ctrl->num_total_bytes == 0
         && !sched_ctrl->ta_apply) /* If TA should be applied, give at least one RB */
       return;
@@ -522,7 +528,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
    * allocation after CCE alloc fail would be more complex) */
   const int alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot, -1);
   if (alloc<0) {
-    LOG_D(MAC,
+    LOG_E(MAC,
           "%s(): could not find PUCCH for UE %d/%04x@%d.%d\n",
           __func__,
           UE_id,
@@ -530,8 +536,9 @@ bool allocate_dl_retransmission(module_id_t module_id,
           frame,
           slot);
     int cid = sched_ctrl->coreset->controlResourceSetId;
+    int bwp_Id = sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Id : 0;
     UE_info->num_pdcch_cand[UE_id][cid]--;
-    int *cce_list = RC.nrmac[module_id]->cce_list[sched_ctrl->active_bwp->bwp_Id][cid];
+    int *cce_list = RC.nrmac[module_id]->cce_list[bwp_Id][cid];
     for (int i = 0; i < sched_ctrl->aggregation_level; i++)
       cce_list[sched_ctrl->cce_index + i] = 0;
     return false;

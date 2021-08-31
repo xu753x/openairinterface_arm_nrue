@@ -141,6 +141,8 @@ extern int usrp_tx_thread;
     {"CO" ,                  CONFIG_HLP_ULF,          0,              iptr:&(uplink_frequency_offset[0][0]),  defintval:0,   TYPE_INT,      0},              \
     {"pointA" ,              CONFIG_HLP_DLF,          0,              iptr:&point_a_15khz,              defintval:-1,          TYPE_INT,   0},              \
     {"kssb" ,                CONFIG_HLP_DLF,          0,              iptr:&kssb_15khz,                 defintval:0,           TYPE_INT,   0},              \
+    {"ulrb" ,                CONFIG_HLP_DLF,          0,              iptr:&g_ul_rb,                    defintval:0,           TYPE_INT,   0},              \
+    {"dlbytes" ,             CONFIG_HLP_DLF,          0,              iptr:&g_sched_dl_bytes,           defintval:0,           TYPE_INT,   0},              \
     {"a" ,                   CONFIG_HLP_CHOFF,        0,              iptr:&CHAIN_OFFSET,                 defintval:0,           TYPE_INT,    0},                     \
     {"d" ,                   CONFIG_HLP_SOFTS,        PARAMFLAG_BOOL, uptr:(uint32_t *)&do_forms,         defintval:0,           TYPE_INT8,   0},                     \
     {"q" ,                   CONFIG_HLP_STMON,        PARAMFLAG_BOOL, iptr:&opp_enabled,                  defintval:0,           TYPE_INT,    0},                     \
@@ -263,6 +265,8 @@ extern uint64_t downlink_frequency[MAX_NUM_CCs][4];
 extern int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 extern int   point_a_15khz;
 extern int   kssb_15khz;
+extern int g_ul_rb;
+extern int g_sched_dl_bytes;
 
 extern int usrp_tx_thread;
 extern uint16_t sl_ahead;
