@@ -1757,7 +1757,7 @@ rrc_gNB_process_RRCConnectionReestablishmentComplete(
   memset(buffer, 0, RRC_BUF_SIZE);
 
   size = do_RRCReconfiguration(ctxt_pP, buffer,
-                                xid,
+                                next_xid,
                                *SRB_configList2,
                                 DRB_configList,
                                 NULL,
