@@ -2176,27 +2176,27 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
                             MSC_AS_TIME_FMT" CONFIG_REQ UE %x SRB",
                             MSC_AS_TIME_ARGS(ctxt_pP),
                             ue_context_p->ue_context.rnti);
-          // nr_rrc_pdcp_config_asn1_req(ctxt_pP,
-          //                         ue_context_p->ue_context.SRB_configList,
-          //                         NULL,
-          //                         NULL,
-          //                         0xff,
-          //                         NULL,
-          //                         NULL,
-          //                         NULL,
-          //                         NULL,
-          //                         NULL,
-          //                         NULL,
-          //                         NULL);
+          nr_rrc_pdcp_config_asn1_req(ctxt_pP,
+                            ue_context_p->ue_context.SRB_configList,
+                            ue_context_p->ue_context.DRB_configList,
+                            NULL,
+                            0,
+                            NULL,
+                            NULL,
+                            NULL,
+                            NULL,
+                            NULL,
+                            NULL,
+                            get_softmodem_params()->sa ? ue_context_p->ue_context.masterCellGroup->rlc_BearerToAddModList : NULL);
 
-          // if (!NODE_IS_CU(RC.nrrrc[ctxt_pP->module_id]->node_type)) {
-            // nr_rrc_rlc_config_asn1_req(ctxt_pP,
-            //                         ue_context_p->ue_context.SRB_configList,
-            //                         NULL,
-            //                         NULL,
-            //                         NULL,
-            //                         NULL);
-          // }
+          if (!NODE_IS_CU(RC.nrrrc[ctxt_pP->module_id]->node_type)) {
+             nr_rrc_rlc_config_asn1_req(ctxt_pP,
+                                     ue_context_p->ue_context.SRB_configList,
+                                     ue_context_p->ue_context.DRB_configList,
+                                     NULL,
+                                     NULL,
+                                     get_softmodem_params()->sa ? ue_context_p->ue_context.masterCellGroup->rlc_BearerToAddModList : NULL);
+           }
         }
         break;
 
