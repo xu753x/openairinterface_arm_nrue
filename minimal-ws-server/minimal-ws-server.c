@@ -25,8 +25,9 @@ volatile int  g_force_exit  = 0;
 
 #define LWS_PLUGIN_STATIC
 #include "protocol_lws_minimal.c"
-
+#ifdef WS_SERVER_ON
 #include "openair2/LAYER2/NR_MAC_gNB/map.h"
+#endif
 int vrb_map_new[3][20][106];
 int count;
 static struct lws_protocols protocols[] = {
