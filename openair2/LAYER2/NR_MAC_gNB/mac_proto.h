@@ -82,7 +82,8 @@ void schedule_control_sib1(module_id_t module_id,
                            uint8_t mcsTableIdx,
                            uint8_t mcs,
                            uint8_t candidate_idx,
-                           int num_total_bytes);
+                           int num_total_bytes, 
+                           sub_frame_t slotP);
 
 void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP);
 

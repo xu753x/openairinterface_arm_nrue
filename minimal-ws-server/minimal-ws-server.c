@@ -26,7 +26,9 @@ volatile int  g_force_exit  = 0;
 #define LWS_PLUGIN_STATIC
 #include "protocol_lws_minimal.c"
 
-
+#include "openair2/LAYER2/NR_MAC_gNB/map.h"
+int vrb_map_new[3][20][106];
+int count;
 static struct lws_protocols protocols[] = {
 	{ "http", lws_callback_http_dummy, 0, 0, 0, NULL, 0},
 	LWS_PLUGIN_PROTOCOL_MINIMAL,
@@ -43,7 +45,7 @@ static int interrupted;
 static const struct lws_http_mount mount = {
 	/* .mount_next */		NULL,		/* linked-list "next" */
 	/* .mountpoint */		"/",		/* mountpoint URL */
-	/* .origin */			"/home/witcomm/wf/1/minimal-ws-server/mount-origin",  /* serve from dir */
+	/* .origin */			"/home/witcomm/xw/code/ran2/minimal-ws-server/mount-origin",  /* serve from dir */
 	/* .def */			"index.html",	/* default filename */
 	/* .protocol */			NULL,
 	/* .cgienv */			NULL,
@@ -74,6 +76,23 @@ void sig_alarm_handler(int sig_num)
 
 		for(int i=2;i<nf_status_arr_len;i++)
 			nf_status_arr[i] = rand()%10;
+		int index=0;
+		index=count-1;
+		if(index==-1)
+		  index=2;
+		int j=0;
+		int k=0;
+		for(int i=2;i<nf_status_arr_len;i++)
+		{
+		   nf_status_arr[i]=vrb_map_new[index][j][k];
+		   k=k+1;
+           if(k==106)
+		    {
+			   k=0;
+			   j=j+1;
+			}
+			
+		}
         update_client(nf_status_arr_len,nf_status_arr);
     }
 }

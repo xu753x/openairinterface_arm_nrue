@@ -65,7 +65,7 @@ static int notifying = 0;
 struct lws *wsi_client;
 
 
-#define RB_SIZE 		20
+#define RB_SIZE 		106
 #define MS_IN_FRAME 	10
 #define SLOT_IN_MS 		2
 #define SLOT_IN_FRAME 	(MS_IN_FRAME*SLOT_IN_MS)

@@ -58,6 +58,10 @@
 #include <errno.h>
 #include <string.h>
 
+#include "map.h"
+int vrb_map_new[3][20][106];
+int count;
+
 uint16_t nr_pdcch_order_table[6] = { 31, 31, 511, 2047, 2047, 8191 };
 
 void clear_mac_stats(gNB_MAC_INST *gNB) {
@@ -406,16 +410,19 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
   if ((slot == 0) && (frame & 127) == 0) dump_mac_stats(RC.nrmac[module_idP]);
 
-
-  // This schedules MIB
+  count=count+1;
+  if(count==3)
+     count=0;
+  
+  // This schedules MIB     1
   schedule_nr_mib(module_idP, frame, slot);
 
-  // This schedules SIB1
+  // This schedules SIB1    2
   if ( get_softmodem_params()->sa == 1 )
     schedule_nr_sib1(module_idP, frame, slot);
 
 
-  // This schedule PRACH if we are not in phy_test mode
+  // This schedule PRACH if we are not in phy_test mode   3
   if (get_softmodem_params()->phy_test == 0) {
     /* we need to make sure that resources for PRACH are free. To avoid that
        e.g. PUSCH has already been scheduled, make sure we schedule before
@@ -432,11 +439,11 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   // This schedule SR
   nr_sr_reporting(module_idP, frame, slot);
 
-  // Schedule CSI-RS transmission
+  // Schedule CSI-RS transmission    4
   nr_csirs_scheduling(module_idP, frame, slot, nr_slots_per_frame[*scc->ssbSubcarrierSpacing]);
 
-  // Schedule CSI measurement reporting: check in slot 0 for the whole frame
-  if (slot == 0)
+  // Schedule CSI measurement reporting: check in slot 0 for the whole frame   5
+  if (slot == 0)     
     nr_csi_meas_reporting(module_idP, frame, slot);
 
   // This schedule RA procedure if not in phy_test mode
@@ -454,6 +461,10 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   nr_schedule_pucch(module_idP, frame, slot);
 
   stop_meas(&RC.nrmac[module_idP]->eNB_scheduler);
+  //6  msg3
+  //7  msg2
+  //8  msg4
+  //9  nr_acknack_scheduling
   
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ULSCH_SCHEDULER,VCD_FUNCTION_OUT);
 }

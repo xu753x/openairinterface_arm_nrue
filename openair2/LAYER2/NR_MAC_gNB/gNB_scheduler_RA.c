@@ -42,6 +42,11 @@
 #include "SIMULATION/TOOLS/sim.h" // for taus
 
 #include <executables/softmodem-common.h>
+
+#include "map.h"
+extern int vrb_map_new[3][20][106];
+extern int count;
+
 extern RAN_CONTEXT_t RC;
 extern const uint8_t nr_slots_per_frame[5];
 extern uint16_t sl_ahead;
@@ -386,8 +391,10 @@ void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP
           scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
       const int16_t N_RA_RB = get_N_RA_RB(cfg->prach_config.prach_sub_c_spacing.value, mu_pusch);
       uint16_t *vrb_map_UL = &cc->vrb_map_UL[slotP * MAX_BWP_SIZE];
-      for (int i = 0; i < N_RA_RB * fdm; ++i)
+      for (int i = 0; i < N_RA_RB * fdm; ++i){
         vrb_map_UL[rach_ConfigGeneric->msg1_FrequencyStart + i] = 0xff; // all symbols
+        vrb_map_new[count][slotP][rach_ConfigGeneric->msg1_FrequencyStart + i] = 3;
+      }
     }
   }
 }
@@ -788,6 +795,7 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
                 ra->Msg3_frame,
                 ra->Msg3_slot);
     vrb_map_UL[i + ra->msg3_first_rb] = 1;
+    vrb_map_new[count][slotP][i + ra->msg3_first_rb] = 6;
   }
 
   LOG_D(NR_MAC, "[gNB %d][RAPROC] Frame %d, Subframe %d : CC_id %d RA is active, Msg3 in (%d,%d)\n", module_idP, frameP, slotP, CC_id, ra->Msg3_frame, ra->Msg3_slot);
@@ -1157,6 +1165,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     // Mark the corresponding RBs as used
     for (int rb = 0; rb < rbSize; rb++) {
       vrb_map[rb + rbStart] = 1;
+      vrb_map_new[count][slotP][rb + rbStart] = 7;
     }
 
     ra->state = WAIT_Msg3;
@@ -1493,6 +1502,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     // Mark the corresponding RBs as used
     for (int rb = 0; rb < pdsch_pdu_rel15->rbSize; rb++) {
       vrb_map[rb + pdsch_pdu_rel15->rbStart] = 1;
+      vrb_map_new[count][slotP][rb + pdsch_pdu_rel15->rbStart] = 8;
     }
 
     LOG_D(NR_MAC,"BWPSize: %i\n", pdcch_pdu_rel15->BWPSize);

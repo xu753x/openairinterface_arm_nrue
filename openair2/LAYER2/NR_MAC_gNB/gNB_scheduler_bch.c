@@ -51,7 +51,9 @@
 #include "common/ran_context.h"
 
 #include "executables/softmodem-common.h"
-
+#include "map.h"
+extern int vrb_map_new[3][20][106];
+extern int count;
 extern RAN_CONTEXT_t RC;
 
 
@@ -210,6 +212,8 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP) 
               if ((ssb_start_symbol/14) == rel_slot){
                 schedule_ssb(frameP, slotP, scc, dl_req, i_ssb, ssbSubcarrierOffset, offset_pointa, (*(uint32_t*)cc->MIB_pdu.payload) & ((1<<24)-1));
                 fill_ssb_vrb_map(cc, offset_pointa, ssb_start_symbol, CC_id);
+                for (int rb = 0; rb < 20; rb++)
+                  vrb_map_new[count][slotP][offset_pointa + rb] = 1;
                 if (get_softmodem_params()->sa == 1) {
                   get_type0_PDCCH_CSS_config_parameters(&gNB->type0_PDCCH_CSS_config[i_ssb],
                                                         frameP,
@@ -236,6 +240,8 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP) 
               if ((ssb_start_symbol/14) == rel_slot){
                 schedule_ssb(frameP, slotP, scc, dl_req, i_ssb, ssbSubcarrierOffset, offset_pointa, (*(uint32_t*)cc->MIB_pdu.payload) & ((1<<24)-1));
                 fill_ssb_vrb_map(cc, offset_pointa, ssb_start_symbol, CC_id);
+                for (int rb = 0; rb < 20; rb++)
+                  vrb_map_new[count][slotP][offset_pointa + rb] = 1;
                 if (get_softmodem_params()->sa == 1) {
                   get_type0_PDCCH_CSS_config_parameters(&gNB->type0_PDCCH_CSS_config[i_ssb],
                                                         frameP,
@@ -263,6 +269,8 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP) 
               if ((ssb_start_symbol/14) == rel_slot){
                 schedule_ssb(frameP, slotP, scc, dl_req, i_ssb, ssbSubcarrierOffset, offset_pointa, (*(uint32_t*)cc->MIB_pdu.payload) & ((1<<24)-1));
                 fill_ssb_vrb_map(cc, offset_pointa, ssb_start_symbol, CC_id);
+                for (int rb = 0; rb < 20; rb++)
+                  vrb_map_new[count][slotP][offset_pointa + rb] = 1;
                 const NR_TDD_UL_DL_Pattern_t *tdd = &scc->tdd_UL_DL_ConfigurationCommon->pattern1;
                 const int nr_mix_slots = tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0;
                 const int nr_slots_period = tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + nr_mix_slots;
@@ -320,7 +328,8 @@ void schedule_control_sib1(module_id_t module_id,
                            uint8_t mcsTableIdx,
                            uint8_t mcs,
                            uint8_t candidate_idx,
-                           int num_total_bytes) {
+                           int num_total_bytes, 
+                           sub_frame_t slotP) {
 
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_id];
   NR_ServingCellConfigCommon_t *servingcellconfigcommon = gNB_mac->common_channels[CC_id].ServingCellConfigCommon;
@@ -407,6 +416,7 @@ void schedule_control_sib1(module_id_t module_id,
   // Mark the corresponding RBs as used
   for (int rb = 0; rb < gNB_mac->sched_ctrlCommon->sched_pdsch.rbSize; rb++) {
     vrb_map[rb + rbStart] = 1;
+    vrb_map_new[count][slotP][rb + rbStart] = 2;
   }
 }
 
@@ -600,7 +610,7 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
         LOG_D(NR_MAC,"byte %d : %x\n",k,((uint8_t*)sib1_payload)[k]);
 
       // Configure sched_ctrlCommon for SIB1
-      schedule_control_sib1(module_idP, CC_id, type0_PDCCH_CSS_config, time_domain_allocation, mcsTableIdx, mcs, candidate_idx, sib1_sdu_length);
+      schedule_control_sib1(module_idP, CC_id, type0_PDCCH_CSS_config, time_domain_allocation, mcsTableIdx, mcs, candidate_idx, sib1_sdu_length,slotP);
 
       int startSymbolIndex = 0;
       int nrOfSymbols = 0;

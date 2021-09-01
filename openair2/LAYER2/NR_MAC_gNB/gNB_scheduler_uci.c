@@ -34,6 +34,10 @@
 #include "common/ran_context.h"
 #include "nfapi/oai_integration/vendor_ext.h"
 
+#include "map.h"
+extern int vrb_map_new[3][20][106];
+extern int count;
+
 extern RAN_CONTEXT_t RC;
 
 
@@ -544,6 +548,7 @@ void nr_csi_meas_reporting(int Mod_idP,
         // verify resources are free
         for (int i = start; i < start + len; ++i) {
           vrb_map_UL[i] |= mask;
+          vrb_map_new[count][slot][i] = 5;
         }
       }
     }
@@ -1359,6 +1364,7 @@ int nr_acknack_scheduling(int mod_id,
     if ((vrb_map_UL[resource->startingPRB] & symb) != 0)
       LOG_W(MAC, "symbol 0x%x is not free for PUCCH alloc in vrb_map_UL at RB %ld and slot %d.%d\n", symb, resource->startingPRB, pucch->frame, pucch->ul_slot);
     vrb_map_UL[resource->startingPRB] |= symb;
+    vrb_map_new[count][slot][resource->startingPRB] = 9;
   }
   return 0;
 }
