@@ -434,7 +434,6 @@ int main( int argc, char **argv ) {
 
   init_opt() ;
   load_nrLDPClib();
-  load_nrLDPClib_offload();
  
   if (ouput_vcd) {
     vcd_signal_dumper_init("/tmp/openair_dump_nrUE.vcd");

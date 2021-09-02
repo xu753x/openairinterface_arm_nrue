@@ -3159,7 +3159,7 @@ target_link_libraries (nr-softmodem pthread m ${CONFIG_LIB} rt crypt ${CRYPTO_LI
 target_link_libraries (nr-softmodem ${LIB_LMS_LIBRARIES})
 target_link_libraries (nr-softmodem ${T_LIB})
 
-add_dependencies( nr-softmodem ldpc_orig ldpc_optim ldpc_optim8seg ldpc )
+add_dependencies( nr-softmodem ldpc_orig ldpc_optim ldpc_optim8seg ldpc ldpc_offload)
 
 add_executable(ocp-gnb
   ${rrc_h}
