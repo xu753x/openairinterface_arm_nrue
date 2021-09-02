@@ -454,13 +454,13 @@ void nr_store_dlsch_buffer(module_id_t module_id,
                                                       0,
                                                       0);  
                                                 
-     if(sched_ctrl->rlc_status[DL_SCH_LCID_DCCH1].bytes_in_buffer > 0){
-       loop_dcch_dtch = DL_SCH_LCID_DCCH1;
+     if(sched_ctrl->rlc_status[DL_SCH_LCID_DCCH].bytes_in_buffer > 0){
+       loop_dcch_dtch = DL_SCH_LCID_DCCH;
        
      } 
-     else if (sched_ctrl->rlc_status[DL_SCH_LCID_DCCH].bytes_in_buffer > 0)
+     else if (sched_ctrl->rlc_status[DL_SCH_LCID_DCCH1].bytes_in_buffer > 0)
      {
-       loop_dcch_dtch = DL_SCH_LCID_DCCH;
+       loop_dcch_dtch = DL_SCH_LCID_DCCH1;
        
      }else{
        loop_dcch_dtch = DL_SCH_LCID_DTCH;
@@ -479,7 +479,7 @@ void nr_store_dlsch_buffer(module_id_t module_id,
                                                       0,
                                                       0);*/
     sched_ctrl->num_total_bytes += sched_ctrl->rlc_status[loop_dcch_dtch].bytes_in_buffer;
-    LOG_W(NR_MAC,
+    LOG_D(NR_MAC,
         "%d.%d, LCID%d:->DLSCH, RLC status %d bytes. \n",
         frame,
         slot,
@@ -508,7 +508,7 @@ void nr_store_dlsch_buffer(module_id_t module_id,
          sched_ctrl->num_total_bytes += sched_ctrl->rlc_status[lcid].bytes_in_buffer;*/ // Karim
       }
 
-    LOG_W(NR_MAC,
+    LOG_D(NR_MAC,
           "[%s][%d.%d], %s%d->DLSCH, RLC status %d bytes TA %d\n",
           __func__,
           frame,
@@ -959,7 +959,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     harq->is_waiting = true;
     UE_info->mac_stats[UE_id].dlsch_rounds[harq->round]++;
 
-    LOG_D(NR_MAC,
+    LOG_I(NR_MAC,
           "%4d.%2d RNTI %04x start %3d RBs %3d startSymbol %2d nb_symbol %2d MCS %2d TBS %4d HARQ PID %2d round %d NDI %d\n",
           frame,
           slot,
@@ -1165,7 +1165,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
       /* we do not have to do anything, since we do not require to get data
        * from RLC or encode MAC CEs. The TX_req structure is filled below 
        * or copy data to FAPI structures */
-      LOG_D(NR_MAC,
+      LOG_W(NR_MAC,
             "%d.%2d DL retransmission UE %d/RNTI %04x HARQ PID %d round %d NDI %d\n",
             frame,
             slot,
