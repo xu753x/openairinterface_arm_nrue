@@ -111,8 +111,6 @@ const size_t nr_bandtable_size = sizeof(nr_bandtable) / sizeof(nr_bandentry_t);
 int NRRIV2BW(int locationAndBandwidth,int N_RB) {
   int tmp = locationAndBandwidth/N_RB;
   int tmp2 = locationAndBandwidth%N_RB;
-
-
   if (tmp <= ((N_RB>>1)+1) && (tmp+tmp2)<N_RB) return(tmp+1);
   else                      return(N_RB+1-tmp);
 
@@ -121,8 +119,6 @@ int NRRIV2BW(int locationAndBandwidth,int N_RB) {
 int NRRIV2PRBOFFSET(int locationAndBandwidth,int N_RB) {
   int tmp = locationAndBandwidth/N_RB;
   int tmp2 = locationAndBandwidth%N_RB;
-
-
   if (tmp <= ((N_RB>>1)+1) && (tmp+tmp2)<N_RB) return(tmp2);
   else                      return(N_RB-1-tmp2);
 }
@@ -199,6 +195,26 @@ uint32_t nr_get_code_rate(uint8_t Imcs, uint8_t table_idx) {
       break;
   }
 }
+
+
+int get_dmrs_port(int nl, uint16_t dmrs_ports) {
+
+  if (dmrs_ports == 0) return 0; // dci 1_0
+  int p = -1;
+  int found = -1;
+  for (int i=0; i<12; i++) { // loop over dmrs ports
+    if((dmrs_ports>>i)&0x01) { // check if current bit is 1
+      found++;
+      if (found == nl) { // found antenna port number corresponding to current layer
+        p = i;
+        break;
+      }
+    }
+  }
+  AssertFatal(p>-1,"No dmrs port corresponding to layer %d found\n",nl);
+  return p;
+}
+
 
 int get_subband_size(int NPRB,int size) {
   // implements table  5.2.1.4-2 from 36.214
