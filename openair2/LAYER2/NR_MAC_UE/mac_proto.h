@@ -188,6 +188,14 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
 
 void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl_config, frame_t frame, int slot);
 
+void get_bwp_info(NR_UE_MAC_INST_t *mac,
+                  int dl_bwp_id,
+                  int ul_bwp_id,
+                  NR_BWP_DownlinkDedicated_t **bwpd,
+                  NR_BWP_DownlinkCommon_t **bwpc,
+                  NR_BWP_UplinkDedicated_t **ubwpd,
+                  NR_BWP_UplinkCommon_t **ubwpc);
+
 uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
                             uint8_t dci_format,
                             uint8_t dci_length,
@@ -195,16 +203,21 @@ uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
                             uint64_t *dci_pdu,
                             dci_pdu_rel15_t *nr_pdci_info_extracted);
 
+NR_PUSCH_TimeDomainResourceAllocationList_t *choose_ul_tda_list(NR_PUSCH_Config_t *pusch_Config,NR_PUSCH_ConfigCommon_t *pusch_ConfigCommon);
+NR_PDSCH_TimeDomainResourceAllocationList_t *choose_dl_tda_list(NR_PDSCH_Config_t *pdsch_Config,NR_PDSCH_ConfigCommon_t *pdsch_ConfigCommon);
+
 int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
+                                                      NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList,
+                                                      NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList,
                                                       nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu,
                                                       fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu,
                                                       uint8_t time_domain_ind,
+                                                      int default_abc,
                                                       bool use_default);
 
-uint8_t
-nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
-           sub_frame_t subframe, uint8_t eNB_index,
-           uint8_t *ulsch_buffer, uint16_t buflen, uint8_t *access_mode) ;
+uint8_t nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
+                      sub_frame_t subframe, uint8_t eNB_index,
+                      uint8_t *ulsch_buffer, uint16_t buflen, uint8_t *access_mode);
 
 int set_tdd_config_nr_ue(fapi_nr_config_request_t *cfg, int mu,
                          int nrofDownlinkSlots, int nrofDownlinkSymbols,
@@ -218,6 +231,7 @@ void set_harq_status(NR_UE_MAC_INST_t *mac,
                      uint8_t dai,
                      int n_CCE,
                      int N_CCE,
+                     int is_common,
                      frame_t frame,
                      int slot);
 
@@ -304,6 +318,15 @@ void nr_ue_msg3_scheduler(NR_UE_MAC_INST_t *mac,
                           sub_frame_t current_slot,
                           uint8_t Msg3_tda_id);
 
+void nr_ue_sib1_scheduler(module_id_t module_idP,
+                          int cc_id,
+                          uint16_t ssb_start_symbol,
+                          uint16_t frame,
+                          uint8_t ssb_subcarrier_offset,
+                          uint32_t ssb_index,
+                          uint16_t ssb_start_subcarrier,
+                          frequency_range_t frequency_range);
+
 /* \brief Function called by PHY to process the received RAR and check that the preamble matches what was sent by the gNB. It provides the timing advance and t-CRNTI.
 @param Mod_id Index of UE instance
 @param CC_id Index to a component carrier
@@ -369,6 +392,9 @@ int8_t nr_ue_process_dci_freq_dom_resource_assignment(nfapi_nr_ue_pusch_pdu_t *p
                                                       uint16_t n_RB_ULBWP,
                                                       uint16_t n_RB_DLBWP,
                                                       uint16_t riv);
+
+void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15, fapi_nr_dl_config_request_t *dl_config, int rnti_type, int ss_id);
+void fill_dci_search_candidates(NR_SearchSpace_t *ss,fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15);
 
 void get_num_re_dmrs(nfapi_nr_ue_pusch_pdu_t *pusch_pdu,
                      uint8_t *nb_dmrs_re_per_rb,

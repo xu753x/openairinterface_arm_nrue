@@ -649,7 +649,12 @@ void RCconfig_nr_macrlc() {
       RC.nrmac[j]->pucch_target_snrx10                   = *(MacRLC_ParamList.paramarray[j][MACRLC_PUCCHTARGETSNRX10_IDX].iptr);
       RC.nrmac[j]->pucch_failure_thres                   = *(MacRLC_ParamList.paramarray[j][MACRLC_PUCCHFAILURETHRES_IDX].iptr);
       RC.nrmac[j]->pusch_failure_thres                   = *(MacRLC_ParamList.paramarray[j][MACRLC_PUSCHFAILURETHRES_IDX].iptr);
-      
+     
+      LOG_I(NR_MAC,"PUSCH Target %d, PUCCH Target %d, PUCCH Failure %d, PUSCH Failure %d\n",
+	    RC.nrmac[j]->pusch_target_snrx10,
+            RC.nrmac[j]->pucch_target_snrx10,
+            RC.nrmac[j]->pucch_failure_thres,
+            RC.nrmac[j]->pusch_failure_thres); 
       if (strcmp(*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_N_PREFERENCE_IDX].strptr), "local_RRC") == 0) {
   // check number of instances is same as RRC/PDCP
   
@@ -1016,6 +1021,9 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
         NRRRC_CONFIGURATION_REQ (msg_p).pdsch_AntennaPorts = *GNBParamList.paramarray[i][GNB_PDSCH_ANTENNAPORTS_IDX].iptr;
         printf("pusch_AntennaPorts %d\n",*GNBParamList.paramarray[i][GNB_PUSCH_ANTENNAPORTS_IDX].iptr);
         NRRRC_CONFIGURATION_REQ (msg_p).pusch_AntennaPorts = *GNBParamList.paramarray[i][GNB_PUSCH_ANTENNAPORTS_IDX].iptr;
+        printf("minTXRXTIMEpdsch %d\n",*GNBParamList.paramarray[i][GNB_MINRXTXTIMEPDSCH_IDX].iptr);
+        NRRRC_CONFIGURATION_REQ (msg_p).minRXTXTIMEpdsch = *GNBParamList.paramarray[i][GNB_MINRXTXTIMEPDSCH_IDX].iptr;
+        NRRRC_CONFIGURATION_REQ (msg_p).sib1_tda = *GNBParamList.paramarray[i][GNB_SIB1_TDA_IDX].iptr;
         printf("Do CSI-RS %d\n",*GNBParamList.paramarray[i][GNB_DO_CSIRS_IDX].iptr);
         NRRRC_CONFIGURATION_REQ (msg_p).do_CSIRS = *GNBParamList.paramarray[i][GNB_DO_CSIRS_IDX].iptr;
         NRRRC_CONFIGURATION_REQ (msg_p).scc = scc;
@@ -1896,7 +1904,9 @@ void configure_gnb_du_mac(int inst) {
                         rrc->configuration.ssb_SubcarrierOffset,
                         rrc->configuration.pdsch_AntennaPorts,
                         rrc->configuration.pusch_AntennaPorts,
+                        rrc->configuration.sib1_tda,
                         rrc->configuration.scc,
+                        NULL,
                         0,
                         0, // rnti
                         (NR_CellGroupConfig_t *)NULL

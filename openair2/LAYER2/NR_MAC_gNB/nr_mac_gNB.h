@@ -614,6 +614,7 @@ typedef struct {
   int ulsch_total_bytes_scheduled;
   int ulsch_total_bytes_rx;
   int ulsch_current_bytes;
+  int pucch0_DTX;
   int cumul_rsrp;
   uint8_t num_rsrp_meas;
 } NR_mac_stats_t;
@@ -670,6 +671,8 @@ typedef struct gNB_MAC_INST_s {
   int                             pusch_failure_thres;
   /// Subcarrier Offset
   int                             ssb_SubcarrierOffset;
+  /// SIB1 Time domain allocation
+  int                             sib1_tda;
   /// Common cell resources
   NR_COMMON_channels_t common_channels[NFAPI_CC_MAX];
   /// current PDU index (BCH,DLSCH)

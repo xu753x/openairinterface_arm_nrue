@@ -300,6 +300,8 @@ typedef struct {
   /// BeamfailurerecoveryConfig
   NR_BeamFailureRecoveryConfig_t RA_BeamFailureRecoveryConfig;
 
+  /// RA SearchSpace
+  NR_SearchSpace_t *ss;
 } RA_config_t;
 
 typedef struct {
@@ -307,6 +309,7 @@ typedef struct {
   bool ack_received;
   uint8_t  pucch_resource_indicator;
   uint16_t feedback_to_ul;
+  int is_common;
   frame_t dl_frame;
   int dl_slot;
   uint8_t ack;
@@ -333,6 +336,7 @@ typedef struct {
   uint32_t csi_part2_payload;
   int resource_indicator;
   int resource_set_id;
+  int is_common;
   int initial_pucch_id;
   NR_PUCCH_Resource_t *pucch_resource;
   int n_CCE;
@@ -418,6 +422,8 @@ typedef struct {
   NR_SearchSpace_t *search_space_zero;
   NR_ControlResourceSet_t *coreset0;
   frequency_range_t frequency_range;
+  uint16_t nr_band;
+  uint8_t ssb_subcarrier_offset;
 
   dci_pdu_rel15_t def_dci_pdu_rel15[8];
 
