@@ -86,9 +86,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "executables/softmodem-common.h"
 #include "executables/thread-common.h"
 
-#if defined(ITTI_SIM) || defined(RFSIM_NAS)
 #include "nr_nas_msg_sim.h"
-#endif
 
 extern const char *duplex_mode[];
 THREAD_STRUCT thread_struct;
@@ -107,8 +105,6 @@ int config_sync_var=-1;
 
 
 RAN_CONTEXT_t RC;
-volatile int             start_eNB = 0;
-volatile int             start_UE = 0;
 volatile int             oai_exit = 0;
 
 
@@ -196,12 +192,10 @@ int create_tasks_nrue(uint32_t ue_nb) {
       LOG_E(NR_RRC, "Create task for RRC UE failed\n");
       return -1;
     }
-#if defined(ITTI_SIM) || defined(RFSIM_NAS)
   if (itti_create_task (TASK_NAS_NRUE, nas_nrue_task, NULL) < 0) {
     LOG_E(NR_RRC, "Create task for NAS UE failed\n");
     return -1;
   }
-#endif
   }
 
   itti_wait_ready(0);
@@ -259,6 +253,7 @@ void init_tpools(uint8_t nun_dlsch_threads) {
 }
 static void get_options(void) {
 
+  nrUE_params.ofdm_offset_divisor = 8;
   paramdef_t cmdline_params[] =CMDLINE_NRUEPARAMS_DESC ;
   int numparams = sizeof(cmdline_params)/sizeof(paramdef_t);
   config_process_cmdline( cmdline_params,numparams,NULL);
@@ -325,8 +320,8 @@ void set_options(int CC_id, PHY_VARS_NR_UE *UE){
   UE->rf_map.chain         = CC_id + chain_offset;
 
 
-  LOG_I(PHY,"Set UE mode %d, UE_fo_compensation %d, UE_scan_carrier %d, UE_no_timing_correction %d \n",
-  	   UE->mode, UE->UE_fo_compensation, UE->UE_scan_carrier, UE->no_timing_correction);
+  LOG_I(PHY,"Set UE mode %d, UE_fo_compensation %d, UE_scan_carrier %d, UE_no_timing_correction %d \n, do_prb_interpolation %d\n",
+  	   UE->mode, UE->UE_fo_compensation, UE->UE_scan_carrier, UE->no_timing_correction, UE->prb_interpolation);
 
   // Set FP variables
 
@@ -341,6 +336,8 @@ void set_options(int CC_id, PHY_VARS_NR_UE *UE){
 
   LOG_I(PHY, "Set UE N_RB_DL %d\n", N_RB_DL);
   LOG_I(PHY, "Set UE nb_rx_antenna %d, nb_tx_antenna %d, threequarter_fs %d\n", fp->nb_antennas_rx, fp->nb_antennas_tx, fp->threequarter_fs);
+
+  fp->ofdm_offset_divisor = nrUE_params.ofdm_offset_divisor;
 
 }
 
@@ -365,8 +362,8 @@ void init_openair0(void) {
     openair0_cfg[card].num_rb_dl = frame_parms->N_RB_DL;
     openair0_cfg[card].clock_source = get_softmodem_params()->clock_source;
     openair0_cfg[card].time_source = get_softmodem_params()->timing_source;
-    openair0_cfg[card].tx_num_channels = min(2, frame_parms->nb_antennas_tx);
-    openair0_cfg[card].rx_num_channels = min(2, frame_parms->nb_antennas_rx);
+    openair0_cfg[card].tx_num_channels = min(4, frame_parms->nb_antennas_tx);
+    openair0_cfg[card].rx_num_channels = min(4, frame_parms->nb_antennas_rx);
 
     LOG_I(PHY, "HW: Configuring card %d, sample_rate %f, tx/rx num_channels %d/%d, duplex_mode %s\n",
       card,
@@ -377,7 +374,8 @@ void init_openair0(void) {
 
     nr_get_carrier_frequencies(frame_parms, &dl_carrier, &ul_carrier);
 
-    nr_rf_card_config(&openair0_cfg[card], rx_gain_off, ul_carrier, dl_carrier, freq_off);
+    nr_rf_card_config_freq(&openair0_cfg[card], ul_carrier, dl_carrier, freq_off);
+    nr_rf_card_config_gain(&openair0_cfg[card], rx_gain_off);
 
     openair0_cfg[card].configFilename = get_softmodem_params()->rf_config_file;
 
@@ -502,6 +500,7 @@ int main( int argc, char **argv ) {
 			   mac->scc == NULL ? 78 : *mac->scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0]);
 
     init_symbol_rotation(&UE[CC_id]->frame_parms);
+    init_timeshift_rotation(&UE[CC_id]->frame_parms);
     init_nr_ue_vars(UE[CC_id], 0, abstraction_flag);
 
     #ifdef FR2_TEST

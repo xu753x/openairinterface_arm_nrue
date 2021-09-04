@@ -1,12 +1,12 @@
 /*
  * Copyright 2017 Cisco Systems, Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -24,7 +24,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <assert.h>
-
+#include <stdio.h>
 #include "vnf_p7.h"
 
 #ifdef NDEBUG
@@ -41,7 +41,7 @@ void* vnf_p7_malloc(vnf_p7_t* vnf_p7, size_t size)
 	}
 	else
 	{
-		return calloc(1, size); 
+		return calloc(1, size);
 	}
 }
 void vnf_p7_free(vnf_p7_t* vnf_p7, void* ptr)
@@ -55,7 +55,7 @@ void vnf_p7_free(vnf_p7_t* vnf_p7, void* ptr)
 	}
 	else
 	{
-		free(ptr); 
+		free(ptr);
 	}
 }
 
@@ -70,7 +70,7 @@ void vnf_p7_codec_free(vnf_p7_t* vnf_p7, void* ptr)
 	}
 	else
 	{
-		free(ptr); 
+		free(ptr);
 	}
 }
 
@@ -78,7 +78,7 @@ void vnf_p7_connection_info_list_add(vnf_p7_t* vnf_p7, nfapi_vnf_p7_connection_i
 {
 	NFAPI_TRACE(NFAPI_TRACE_INFO, "%s()\n", __FUNCTION__);
 	// todo : add mutex
-	node->next = vnf_p7->p7_connections; 
+	node->next = vnf_p7->p7_connections;
 	vnf_p7->p7_connections = node;
 }
 
@@ -142,11 +142,11 @@ vnf_p7_rx_message_t* vnf_p7_rx_reassembly_queue_add_segment(vnf_p7_t* vnf_p7, vn
 
 		iterator = iterator->next;
 	}
-	
+
 	// if found then copy data to message
 	if(msg != 0)
 	{
-	
+
 		msg->segments[segment_number].buffer = (uint8_t*)vnf_p7_malloc(vnf_p7, data_len);
 		memcpy(msg->segments[segment_number].buffer, data, data_len);
 		msg->segments[segment_number].length = data_len;
@@ -238,7 +238,7 @@ void vnf_p7_rx_reassembly_queue_remove_old_msgs(vnf_p7_t* vnf_p7, vnf_p7_rx_reas
 			{
 				previous->next = iterator->next;
 			}
-			
+
 			NFAPI_TRACE(NFAPI_TRACE_INFO, "Deleting stale reassembly message (%u %u %d)\n", iterator->rx_hr_time, rx_hr_time, delta);
 
 			vnf_p7_rx_message_t* to_delete = iterator;
@@ -292,12 +292,12 @@ uint16_t increment_sfn_sf(uint16_t sfn_sf)
 struct timespec timespec_delta(struct timespec start, struct timespec end)
 {
 	struct timespec temp;
-	if ((end.tv_nsec-start.tv_nsec)<0) 
+	if ((end.tv_nsec-start.tv_nsec)<0)
 	{
 		temp.tv_sec = end.tv_sec-start.tv_sec-1;
 		temp.tv_nsec = 1000000000+end.tv_nsec-start.tv_nsec;
-	} 
-	else 
+	}
+	else
 	{
 		temp.tv_sec = end.tv_sec-start.tv_sec;
 		temp.tv_nsec = end.tv_nsec-start.tv_nsec;
@@ -367,7 +367,7 @@ uint32_t calculate_nr_t1(uint16_t sfn, uint16_t slot, uint32_t slot_start_time_h
 	uint32_t slot_time_us = get_slot_time(now_time_hr, slot_start_time_hr);
 
 	uint32_t t1 = (NFAPI_SFNSLOT2DEC(sfn,slot) * 500) + slot_time_us;
-	
+
 	return t1;
 }
 
@@ -387,7 +387,7 @@ uint32_t calculate_nr_t4(uint32_t now_time_hr, uint16_t sfn, uint16_t slot, uint
 	uint32_t slot_time_us = get_slot_time(now_time_hr, slot_start_time_hr);
 
 	uint32_t t4 = (NFAPI_SFNSLOT2DEC(sfn,slot) * 500) + slot_time_us;
-	
+
 	return t4;
 
 }
@@ -400,7 +400,7 @@ uint32_t calculate_transmit_timestamp(uint16_t sfn, uint16_t slot, uint32_t slot
 	uint32_t slot_time_us = get_slot_time(now_time_hr, slot_start_time_hr);
 
 	uint32_t tt = (NFAPI_SFNSLOT2DEC(sfn, slot) * 500) + slot_time_us;
-	
+
 	return tt;
 }
 
@@ -461,8 +461,8 @@ int send_mac_subframe_indications(vnf_p7_t* vnf_p7)
 
 int vnf_send_p7_msg(vnf_p7_t* vnf_p7, nfapi_vnf_p7_connection_info_t* p7_info, uint8_t* msg, const uint32_t len)
 {
-	int sendto_result = sendto(vnf_p7->socket, msg, len, 0, (struct sockaddr*)&(p7_info->remote_addr), sizeof(p7_info->remote_addr)); 
-	//printf("\nSending p7 message sfn=%d,slot=%d\n",vnf_p7->p7_connections->sfn,vnf_p7->p7_connections->slot);
+	int sendto_result = sendto(vnf_p7->socket, msg, len, 0, (struct sockaddr*)&(p7_info->remote_addr), sizeof(p7_info->remote_addr));
+	//printf("P7 msg sent \n");
 	if(sendto_result != len)
 	{
 		NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() sendto_result %d %d\n", __FUNCTION__, sendto_result, errno);
@@ -481,12 +481,12 @@ int vnf_nr_p7_pack_and_send_p7_msg(vnf_p7_t* vnf_p7, nfapi_p7_message_header_t* 
 		uint8_t  buffer[1024 * 32];
 
 		header->m_segment_sequence = NFAPI_P7_SET_MSS(0, 0, p7_connection->sequence_number);
-		
+
 		int len = nfapi_nr_p7_message_pack(header, buffer, sizeof(buffer), &vnf_p7->_public.codec_config);
-		
+
                 //NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() phy_id:%d nfapi_p7_message_pack()=len=%d vnf_p7->_public.segment_size:%u\n", __FUNCTION__, header->phy_id, len, vnf_p7->_public.segment_size);
 
-		if(len < 0) 
+		if(len < 0)
 		{
 			NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() failed to pack p7 message phy_id:%d\n", __FUNCTION__, header->phy_id);
 			return -1;
@@ -496,12 +496,12 @@ int vnf_nr_p7_pack_and_send_p7_msg(vnf_p7_t* vnf_p7, nfapi_p7_message_header_t* 
 		{
 			// todo : consider replacing with the sendmmsg call
 			// todo : worry about blocking writes?
-		
+
 			// segmenting the transmit
-			int msg_body_len = len - NFAPI_P7_HEADER_LENGTH ; 
-			int seg_body_len = vnf_p7->_public.segment_size - NFAPI_P7_HEADER_LENGTH ; 
-			int segment_count = (msg_body_len / (seg_body_len)) + ((msg_body_len % seg_body_len) ? 1 : 0); 
-				
+			int msg_body_len = len - NFAPI_P7_HEADER_LENGTH ;
+			int seg_body_len = vnf_p7->_public.segment_size - NFAPI_P7_HEADER_LENGTH ;
+			int segment_count = (msg_body_len / (seg_body_len)) + ((msg_body_len % seg_body_len) ? 1 : 0);
+
 			int segment = 0;
 			int offset = NFAPI_P7_HEADER_LENGTH;
 			uint8_t tx_buffer[vnf_p7->_public.segment_size];
@@ -518,7 +518,7 @@ int vnf_nr_p7_pack_and_send_p7_msg(vnf_p7_t* vnf_p7, nfapi_p7_message_header_t* 
 
 				uint16_t segment_size = size + NFAPI_P7_HEADER_LENGTH;
 
-				// Update the header with the m and segement 
+				// Update the header with the m and segement
 				memcpy(&tx_buffer[0], buffer, NFAPI_P7_HEADER_LENGTH);
 
 				// set the segment length
@@ -535,10 +535,11 @@ int vnf_nr_p7_pack_and_send_p7_msg(vnf_p7_t* vnf_p7, nfapi_p7_message_header_t* 
 				{
 					nfapi_p7_update_checksum(tx_buffer, segment_size);
 				}
-			
-				nfapi_p7_update_transmit_timestamp(buffer, calculate_transmit_timestamp(p7_connection->sfn, p7_connection->slot, vnf_p7->slot_start_time_hr));	
+
+				nfapi_p7_update_transmit_timestamp(buffer, calculate_transmit_timestamp(p7_connection->sfn, p7_connection->slot, vnf_p7->slot_start_time_hr));
 
 				send_result = vnf_send_p7_msg(vnf_p7, p7_connection,  &tx_buffer[0], segment_size);
+
 			}
 		}
 		else
@@ -548,14 +549,13 @@ int vnf_nr_p7_pack_and_send_p7_msg(vnf_p7_t* vnf_p7, nfapi_p7_message_header_t* 
 				nfapi_p7_update_checksum(buffer, len);
 			}
 
-			nfapi_p7_update_transmit_timestamp(buffer, calculate_transmit_timestamp(p7_connection->sfn, p7_connection->slot, vnf_p7->slot_start_time_hr));	
+			nfapi_p7_update_transmit_timestamp(buffer, calculate_transmit_timestamp(p7_connection->sfn, p7_connection->slot, vnf_p7->slot_start_time_hr));
 
 			// simple case that the message fits in a single segement
 			send_result = vnf_send_p7_msg(vnf_p7, p7_connection, &buffer[0], len);
 		}
 
 		p7_connection->sequence_number++;
-
 		return send_result;
 	}
 	else
@@ -575,12 +575,12 @@ int vnf_p7_pack_and_send_p7_msg(vnf_p7_t* vnf_p7, nfapi_p7_message_header_t* hea
 		uint8_t  buffer[1024 * 32];
 
 		header->m_segment_sequence = NFAPI_P7_SET_MSS(0, 0, p7_connection->sequence_number);
-		
+
 		int len = nfapi_p7_message_pack(header, buffer, sizeof(buffer), &vnf_p7->_public.codec_config);
-		
+
                 //NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() phy_id:%d nfapi_p7_message_pack()=len=%d vnf_p7->_public.segment_size:%u\n", __FUNCTION__, header->phy_id, len, vnf_p7->_public.segment_size);
 
-		if(len < 0) 
+		if(len < 0)
 		{
 			NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() failed to pack p7 message phy_id:%d\n", __FUNCTION__, header->phy_id);
 			return -1;
@@ -590,12 +590,12 @@ int vnf_p7_pack_and_send_p7_msg(vnf_p7_t* vnf_p7, nfapi_p7_message_header_t* hea
 		{
 			// todo : consider replacing with the sendmmsg call
 			// todo : worry about blocking writes?
-		
+
 			// segmenting the transmit
-			int msg_body_len = len - NFAPI_P7_HEADER_LENGTH ; 
-			int seg_body_len = vnf_p7->_public.segment_size - NFAPI_P7_HEADER_LENGTH ; 
-			int segment_count = (msg_body_len / (seg_body_len)) + ((msg_body_len % seg_body_len) ? 1 : 0); 
-				
+			int msg_body_len = len - NFAPI_P7_HEADER_LENGTH ;
+			int seg_body_len = vnf_p7->_public.segment_size - NFAPI_P7_HEADER_LENGTH ;
+			int segment_count = (msg_body_len / (seg_body_len)) + ((msg_body_len % seg_body_len) ? 1 : 0);
+
 			int segment = 0;
 			int offset = NFAPI_P7_HEADER_LENGTH;
 			uint8_t tx_buffer[vnf_p7->_public.segment_size];
@@ -612,7 +612,7 @@ int vnf_p7_pack_and_send_p7_msg(vnf_p7_t* vnf_p7, nfapi_p7_message_header_t* hea
 
 				uint16_t segment_size = size + NFAPI_P7_HEADER_LENGTH;
 
-				// Update the header with the m and segement 
+				// Update the header with the m and segement
 				memcpy(&tx_buffer[0], buffer, NFAPI_P7_HEADER_LENGTH);
 
 				// set the segment length
@@ -629,8 +629,8 @@ int vnf_p7_pack_and_send_p7_msg(vnf_p7_t* vnf_p7, nfapi_p7_message_header_t* hea
 				{
 					nfapi_p7_update_checksum(tx_buffer, segment_size);
 				}
-			
-				nfapi_p7_update_transmit_timestamp(buffer, calculate_transmit_timestamp(p7_connection->sfn, p7_connection->slot, vnf_p7->slot_start_time_hr));	
+
+				nfapi_p7_update_transmit_timestamp(buffer, calculate_transmit_timestamp(p7_connection->sfn, p7_connection->slot, vnf_p7->slot_start_time_hr));
 
 				send_result = vnf_send_p7_msg(vnf_p7, p7_connection,  &tx_buffer[0], segment_size);
 			}
@@ -642,7 +642,7 @@ int vnf_p7_pack_and_send_p7_msg(vnf_p7_t* vnf_p7, nfapi_p7_message_header_t* hea
 				nfapi_p7_update_checksum(buffer, len);
 			}
 
-			nfapi_p7_update_transmit_timestamp(buffer, calculate_transmit_timestamp(p7_connection->sfn, p7_connection->slot, vnf_p7->slot_start_time_hr));	
+			nfapi_p7_update_transmit_timestamp(buffer, calculate_transmit_timestamp(p7_connection->sfn, p7_connection->slot, vnf_p7->slot_start_time_hr));
 
 			// simple case that the message fits in a single segement
 			send_result = vnf_send_p7_msg(vnf_p7, p7_connection, &buffer[0], len);
@@ -668,12 +668,11 @@ int vnf_build_send_dl_node_sync(vnf_p7_t* vnf_p7, nfapi_vnf_p7_connection_info_t
 	dl_node_sync.t1 = calculate_t1(p7_info->sfn_sf, vnf_p7->sf_start_time_hr);
 	dl_node_sync.delta_sfn_sf = 0;
 
-	return vnf_p7_pack_and_send_p7_msg(vnf_p7, &dl_node_sync.header);	
+	return vnf_p7_pack_and_send_p7_msg(vnf_p7, &dl_node_sync.header);
 }
 
 int vnf_nr_build_send_dl_node_sync(vnf_p7_t* vnf_p7, nfapi_vnf_p7_connection_info_t* p7_info)
-{	
-	
+{
 	nfapi_nr_dl_node_sync_t dl_node_sync;
 	memset(&dl_node_sync, 0, sizeof(dl_node_sync));
 
@@ -683,7 +682,7 @@ int vnf_nr_build_send_dl_node_sync(vnf_p7_t* vnf_p7, nfapi_vnf_p7_connection_inf
 	dl_node_sync.t1 = calculate_nr_t1(p7_info->sfn,p7_info->slot, vnf_p7->slot_start_time_hr);
 	dl_node_sync.delta_sfn_slot = 0;
 
-	return vnf_nr_p7_pack_and_send_p7_msg(vnf_p7, &dl_node_sync.header);	
+	return vnf_nr_p7_pack_and_send_p7_msg(vnf_p7, &dl_node_sync.header);
 }
 
 int vnf_nr_sync(vnf_p7_t* vnf_p7, nfapi_vnf_p7_connection_info_t* p7_info)
@@ -708,7 +707,7 @@ int vnf_nr_sync(vnf_p7_t* vnf_p7, nfapi_vnf_p7_connection_info_t* p7_info)
 		uint16_t sfn_slot_dec = NFAPI_SFNSLOT2DEC(p7_info->sfn, p7_info->slot);
 
 		//if ((((sfn_sf_dec + p7_info->dl_out_sync_offset) % NFAPI_MAX_SFNSFDEC) & dl_sync_period_mask) == 0)
-		if ((((sfn_slot_dec + p7_info->dl_out_sync_offset) % NFAPI_MAX_SFNSLOTDEC) & dl_sync_period_mask) == 0) 
+		if ((((sfn_slot_dec + p7_info->dl_out_sync_offset) % NFAPI_MAX_SFNSLOTDEC) & dl_sync_period_mask) == 0)
 		{
 			vnf_nr_build_send_dl_node_sync(vnf_p7, p7_info);
 		}
@@ -754,7 +753,7 @@ void vnf_handle_harq_indication(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7
 	else
 	{
 		nfapi_harq_indication_t ind;
-	
+
 		if(nfapi_p7_message_unpack(pRecvMsg, recvMsgLen, &ind, sizeof(ind), &vnf_p7->_public.codec_config) < 0)
 		{
 			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: Failed to unpack message\n", __FUNCTION__);
@@ -766,7 +765,7 @@ void vnf_handle_harq_indication(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7
 				(vnf_p7->_public.harq_indication)(&(vnf_p7->_public), &ind);
 			}
 		}
-	
+
 		vnf_p7_codec_free(vnf_p7, ind.harq_indication_body.harq_pdu_list);
 		vnf_p7_codec_free(vnf_p7, ind.vendor_extension);
 	}
@@ -782,7 +781,7 @@ void vnf_handle_crc_indication(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7)
 	else
 	{
 		nfapi_crc_indication_t ind;
-	
+
 		if(nfapi_p7_message_unpack(pRecvMsg, recvMsgLen, &ind, sizeof(ind), &vnf_p7->_public.codec_config) < 0)
 		{
 			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: Failed to message\n", __FUNCTION__);
@@ -794,7 +793,7 @@ void vnf_handle_crc_indication(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7)
 				(vnf_p7->_public.crc_indication)(&(vnf_p7->_public), &ind);
 			}
 		}
-	
+
 		vnf_p7_codec_free(vnf_p7, ind.crc_indication_body.crc_pdu_list);
 		vnf_p7_codec_free(vnf_p7, ind.vendor_extension);
 	}
@@ -810,7 +809,7 @@ void vnf_handle_rx_ulsch_indication(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vn
 	else
 	{
 		nfapi_rx_indication_t ind;
-	
+
 		if(nfapi_p7_message_unpack(pRecvMsg, recvMsgLen, &ind, sizeof(ind), &vnf_p7->_public.codec_config) < 0)
 		{
 			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: Failed to unpack message\n", __FUNCTION__);
@@ -845,7 +844,7 @@ void vnf_handle_rach_indication(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7
 	else
 	{
 		nfapi_rach_indication_t ind;
-	
+
 		if(nfapi_p7_message_unpack(pRecvMsg, recvMsgLen, &ind, sizeof(ind), &vnf_p7->_public.codec_config) < 0)
 		{
 			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: Failed to message\n", __FUNCTION__);
@@ -857,7 +856,7 @@ void vnf_handle_rach_indication(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7
 				(vnf_p7->_public.rach_indication)(&vnf_p7->_public, &ind);
 			}
 		}
-	
+
 		vnf_p7_codec_free(vnf_p7, ind.rach_indication_body.preamble_list);
 		vnf_p7_codec_free(vnf_p7, ind.vendor_extension);
 
@@ -886,9 +885,9 @@ void vnf_handle_srs_indication(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7)
 				(vnf_p7->_public.srs_indication)(&(vnf_p7->_public), &ind);
 			}
 		}
-	
+
 		vnf_p7_codec_free(vnf_p7, ind.srs_indication_body.srs_pdu_list);
-		vnf_p7_codec_free(vnf_p7, ind.vendor_extension);	
+		vnf_p7_codec_free(vnf_p7, ind.vendor_extension);
 	}
 }
 
@@ -902,7 +901,7 @@ void vnf_handle_rx_sr_indication(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p
 	else
 	{
 		nfapi_sr_indication_t ind;
-	
+
 		if(nfapi_p7_message_unpack(pRecvMsg, recvMsgLen, &ind, sizeof(ind), &vnf_p7->_public.codec_config) < 0)
 		{
 			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: Failed to unpack message\n", __FUNCTION__);
@@ -914,9 +913,9 @@ void vnf_handle_rx_sr_indication(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p
 				(vnf_p7->_public.sr_indication)(&(vnf_p7->_public), &ind);
 			}
 		}
-	
+
 		vnf_p7_codec_free(vnf_p7, ind.sr_indication_body.sr_pdu_list);
-		vnf_p7_codec_free(vnf_p7, ind.vendor_extension);	
+		vnf_p7_codec_free(vnf_p7, ind.vendor_extension);
 	}
 }
 void vnf_handle_rx_cqi_indication(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7)
@@ -929,7 +928,7 @@ void vnf_handle_rx_cqi_indication(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_
 	else
 	{
 		nfapi_cqi_indication_t ind;
-	
+
 		if(nfapi_p7_message_unpack(pRecvMsg, recvMsgLen, &ind, sizeof(ind), &vnf_p7->_public.codec_config) < 0)
 		{
 			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: Failed to unpack message\n", __FUNCTION__);
@@ -941,11 +940,11 @@ void vnf_handle_rx_cqi_indication(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_
 				(vnf_p7->_public.cqi_indication)(&(vnf_p7->_public), &ind);
 			}
 		}
-	
+
 		vnf_p7_codec_free(vnf_p7, ind.cqi_indication_body.cqi_pdu_list);
 		vnf_p7_codec_free(vnf_p7, ind.cqi_indication_body.cqi_raw_pdu_list);
-		vnf_p7_codec_free(vnf_p7, ind.vendor_extension);	
-		
+		vnf_p7_codec_free(vnf_p7, ind.vendor_extension);
+
 	}
 
 }
@@ -972,7 +971,7 @@ void vnf_handle_lbt_dl_indication(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_
 				(vnf_p7->_public.lbt_dl_indication)(&(vnf_p7->_public), &ind);
 			}
 		}
-	
+
 		vnf_p7_codec_free(vnf_p7, ind.lbt_dl_indication_body.lbt_indication_pdu_list);
 		vnf_p7_codec_free(vnf_p7, ind.vendor_extension);
 	}
@@ -988,7 +987,7 @@ void vnf_handle_nb_harq_indication(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf
 	else
 	{
 		nfapi_nb_harq_indication_t ind;
-	
+
 		if(nfapi_p7_message_unpack(pRecvMsg, recvMsgLen, &ind, sizeof(ind), &vnf_p7->_public.codec_config) < 0)
 		{
 			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: Failed to unpack message\n", __FUNCTION__);
@@ -1000,7 +999,7 @@ void vnf_handle_nb_harq_indication(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf
 				(vnf_p7->_public.nb_harq_indication)(&(vnf_p7->_public), &ind);
 			}
 		}
-	
+
 		vnf_p7_codec_free(vnf_p7, ind.nb_harq_indication_body.nb_harq_pdu_list);
 		vnf_p7_codec_free(vnf_p7, ind.vendor_extension);
 	}
@@ -1016,7 +1015,7 @@ void vnf_handle_nrach_indication(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p
 	else
 	{
 		nfapi_nrach_indication_t ind;
-	
+
 		if(nfapi_p7_message_unpack(pRecvMsg, recvMsgLen, &ind, sizeof(ind), &vnf_p7->_public.codec_config) < 0)
 		{
 			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: Failed to unpack message\n", __FUNCTION__);
@@ -1028,7 +1027,7 @@ void vnf_handle_nrach_indication(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p
 				(vnf_p7->_public.nrach_indication)(&(vnf_p7->_public), &ind);
 			}
 		}
-	
+
 		vnf_p7_codec_free(vnf_p7, ind.nrach_indication_body.nrach_pdu_list);
 		vnf_p7_codec_free(vnf_p7, ind.vendor_extension);
 	}
@@ -1080,10 +1079,10 @@ void vnf_handle_p7_vendor_extension(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vn
 			if(vnf_p7->_public.vendor_ext)
 				vnf_p7->_public.vendor_ext(&(vnf_p7->_public), msg);
 		}
-		
+
 		if(vnf_p7->_public.deallocate_p7_vendor_ext)
 			vnf_p7->_public.deallocate_p7_vendor_ext(msg);
-		
+
 	}
 }
 
@@ -1121,7 +1120,7 @@ void vnf_handle_ul_node_sync(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7)
 		phy->latency[phy->min_sync_cycle_count] = latency;
 
 		NFAPI_TRACE(NFAPI_TRACE_NOTE, "(%4d/%d) PNF to VNF !sync phy_id:%d (t1/2/3/4:%8u, %8u, %8u, %8u) txrx:%4u procT:%3u latency(us):%4d\n",
-				NFAPI_SFNSF2SFN(phy->sfn_sf), NFAPI_SFNSF2SF(phy->sfn_sf), ind.header.phy_id, ind.t1, ind.t2, ind.t3, t4, 
+				NFAPI_SFNSF2SFN(phy->sfn_sf), NFAPI_SFNSF2SF(phy->sfn_sf), ind.header.phy_id, ind.t1, ind.t2, ind.t3, t4,
 				tx_2_rx, pnf_proc_time, latency);
 	}
 	else
@@ -1168,7 +1167,7 @@ void vnf_handle_ul_node_sync(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7)
 #if 0
 			NFAPI_TRACE(NFAPI_TRACE_INFO, "(%4d/%1d) %d.%d PNF to VNF phy_id:%2d (t1/2/3/4:%8u, %8u, %8u, %8u) txrx:%4u procT:%3u latency(us):%4d(avg:%4d) offset(us):%8d filtered(us):%8d wrap[t1:%u t2:%u]\n",
 					NFAPI_SFNSF2SFN(phy->sfn_sf), NFAPI_SFNSF2SF(phy->sfn_sf), ts.tv_sec, ts.tv_nsec, ind.header.phy_id,
-					ind.t1, ind.t2, ind.t3, t4, 
+					ind.t1, ind.t2, ind.t3, t4,
 					tx_2_rx, pnf_proc_time, latency, phy->average_latency, phy->sf_offset, phy->sf_offset_filtered,
 					(ind.t1<phy->previous_t1), (ind.t2<phy->previous_t2));
 #endif
@@ -1262,7 +1261,7 @@ void vnf_handle_ul_node_sync(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7)
 				}
 			}
 
-			
+
 			int insync_minor_adjustment_1 = phy->sf_offset_trend / 6;
 			int insync_minor_adjustment_2 = phy->sf_offset_trend / 2;
 
@@ -1301,7 +1300,7 @@ void vnf_handle_ul_node_sync(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7)
 					{
 						if(phy->in_sync == 0)
 						{
-							NFAPI_TRACE(NFAPI_TRACE_NOTE, "VNF P7 In Sync with phy (phy_id:%d)\n", phy->phy_id); 
+							//NFAPI_TRACE(NFAPI_TRACE_NOTE, "VNF P7 In Sync with phy (phy_id:%d)\n", phy->phy_id);
 
 							if(vnf_p7->_public.sync_indication)
 								(vnf_p7->_public.sync_indication)(&(vnf_p7->_public), 1);
@@ -1336,14 +1335,14 @@ void vnf_handle_ul_node_sync(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7)
 
 						if(phy->insync_minor_adjustment != 0)
 						{
-							NFAPI_TRACE(NFAPI_TRACE_NOTE, "(%4d/%d) VNF phy_id:%d Apply minor insync adjustment %dus for %d subframes (sf_offset_filtered:%d) %d %d %d NEW:%d CURR:%d adjustment:%d\n", 
+							NFAPI_TRACE(NFAPI_TRACE_NOTE, "(%4d/%d) VNF phy_id:%d Apply minor insync adjustment %dus for %d subframes (sf_offset_filtered:%d) %d %d %d NEW:%d CURR:%d adjustment:%d\n",
 										NFAPI_SFNSF2SFN(phy->sfn_sf), NFAPI_SFNSF2SF(phy->sfn_sf), ind.header.phy_id,
-										phy->insync_minor_adjustment, phy->insync_minor_adjustment_duration, 
-                                                                                phy->sf_offset_filtered, 
+										phy->insync_minor_adjustment, phy->insync_minor_adjustment_duration,
+                                                                                phy->sf_offset_filtered,
                                                                                 insync_minor_adjustment_1, insync_minor_adjustment_2, phy->sf_offset_trend,
                                                                                 NFAPI_SFNSF2DEC(new_sfn_sf),
                                                                                 NFAPI_SFNSF2DEC(curr_sfn_sf),
-                                                                                phy->adjustment); 
+                                                                                phy->adjustment);
 						}
 					}
 				}
@@ -1372,21 +1371,21 @@ void vnf_handle_ul_node_sync(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7)
 									phy->insync_minor_adjustment = -(insync_minor_adjustment_2);
 									phy->insync_minor_adjustment_duration = 2 * ((phy->sf_offset_filtered + 250) / -(insync_minor_adjustment_2));
 								}
-							
+
 							}
 							//else
 							{
 								// out of sync?
 							}
-							
-							NFAPI_TRACE(NFAPI_TRACE_NOTE, "(%4d/%d) VNF phy_id:%d Apply minor insync adjustment %dus for %d subframes (adjustment:%d sf_offset_filtered:%d) %d %d %d NEW:%d CURR:%d adj:%d\n", 
+
+							NFAPI_TRACE(NFAPI_TRACE_NOTE, "(%4d/%d) VNF phy_id:%d Apply minor insync adjustment %dus for %d subframes (adjustment:%d sf_offset_filtered:%d) %d %d %d NEW:%d CURR:%d adj:%d\n",
 										NFAPI_SFNSF2SFN(phy->sfn_sf), NFAPI_SFNSF2SF(phy->sfn_sf), ind.header.phy_id,
 										phy->insync_minor_adjustment, phy->insync_minor_adjustment_duration, phy->adjustment, phy->sf_offset_filtered,
 										insync_minor_adjustment_1, insync_minor_adjustment_2, phy->sf_offset_trend,
                                                                                 NFAPI_SFNSF2DEC(new_sfn_sf),
                                                                                 NFAPI_SFNSF2DEC(curr_sfn_sf),
-                                                                                phy->adjustment); 
-							
+                                                                                phy->adjustment);
+
 						}
 						else if(phy->adjustment < 0)
 						{
@@ -1412,10 +1411,10 @@ void vnf_handle_ul_node_sync(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7)
 								// out of sync?
 							}
 
-							NFAPI_TRACE(NFAPI_TRACE_NOTE, "(%d/%d) VNF phy_id:%d Apply minor insync adjustment %dus for %d subframes (adjustment:%d sf_offset_filtered:%d) %d %d %d\n", 
+							NFAPI_TRACE(NFAPI_TRACE_NOTE, "(%d/%d) VNF phy_id:%d Apply minor insync adjustment %dus for %d subframes (adjustment:%d sf_offset_filtered:%d) %d %d %d\n",
 										NFAPI_SFNSF2SFN(phy->sfn_sf), NFAPI_SFNSF2SF(phy->sfn_sf), ind.header.phy_id,
 										phy->insync_minor_adjustment, phy->insync_minor_adjustment_duration, phy->adjustment, phy->sf_offset_filtered,
-										insync_minor_adjustment_1, insync_minor_adjustment_2, phy->sf_offset_trend); 
+										insync_minor_adjustment_1, insync_minor_adjustment_2, phy->sf_offset_trend);
 						}
 
 						/*
@@ -1443,7 +1442,7 @@ void vnf_handle_ul_node_sync(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7)
 			{
 				/*NFAPI_TRACE(NFAPI_TRACE_NOTE, "***** Adjusting VNF phy_id:%d SFN/SF (%s) from %d to %d (%d) mode:%s zeroCount:%u sync:%s\n",
 					ind.header.phy_id, (phy->in_sync ? "via sfn" : "now"),
-					NFAPI_SFNSF2DEC(curr_sfn_sf), NFAPI_SFNSF2DEC(new_sfn_sf), phy->adjustment, 
+					NFAPI_SFNSF2DEC(curr_sfn_sf), NFAPI_SFNSF2DEC(new_sfn_sf), phy->adjustment,
 					phy->filtered_adjust ? "FILTERED" : "ABSOLUTE",
 					phy->zero_count,
 					phy->in_sync ? "IN_SYNC" : "OUT_OF_SYNC");*/
@@ -1465,8 +1464,163 @@ void vnf_handle_ul_node_sync(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7)
 	}
 }
 
+//NR HANDLES FOR UPLINK MESSAGES
+void vnf_handle_nr_slot_indication(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7)
+{
+	// ensure it's valid
+	if (pRecvMsg == NULL || vnf_p7 == NULL)
+	{
+		NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: NULL parameters\n", __FUNCTION__);
+	}
+	else
+	{
+		nfapi_nr_slot_indication_scf_t ind;
+
+		if(nfapi_nr_p7_message_unpack(pRecvMsg, recvMsgLen, &ind, sizeof(ind), &vnf_p7->_public.codec_config) < 0)
+		{
+			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: Failed to unpack message\n", __FUNCTION__);
+		}
+		else
+		{
+			if(vnf_p7->_public.nr_slot_indication)
+			{
+				(vnf_p7->_public.nr_slot_indication)(&ind);
+			}
+		}
+
+	}
+}
+void vnf_handle_nr_rx_data_indication(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7)
+{
+	// ensure it's valid
+	if (pRecvMsg == NULL || vnf_p7 == NULL)
+	{
+		NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: NULL parameters\n", __FUNCTION__);
+	}
+	else
+	{
+		nfapi_nr_rx_data_indication_t ind;
+
+		if(nfapi_nr_p7_message_unpack(pRecvMsg, recvMsgLen, &ind, sizeof(ind), &vnf_p7->_public.codec_config) < 0)
+		{
+			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: Failed to unpack message\n", __FUNCTION__);
+		}
+		else
+		{
+			if(vnf_p7->_public.nr_rx_data_indication)
+			{
+				(vnf_p7->_public.nr_rx_data_indication)(&ind);
+			}
+		}
+
+	}
+}
+
+void vnf_handle_nr_crc_indication(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7)
+{
+	// ensure it's valid
+	if (pRecvMsg == NULL || vnf_p7 == NULL)
+	{
+		NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: NULL parameters\n", __FUNCTION__);
+	}
+	else
+	{
+		nfapi_nr_crc_indication_t ind;
+
+		if(nfapi_nr_p7_message_unpack(pRecvMsg, recvMsgLen, &ind, sizeof(ind), &vnf_p7->_public.codec_config) < 0)
+		{
+			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: Failed to unpack message\n", __FUNCTION__);
+		}
+		else
+		{
+			if(vnf_p7->_public.nr_crc_indication)
+			{
+				(vnf_p7->_public.nr_crc_indication)(&ind);
+			}
+		}
+
+	}
+}
+
+void vnf_handle_nr_srs_indication(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7)
+{
+	// ensure it's valid
+	if (pRecvMsg == NULL || vnf_p7 == NULL)
+	{
+		NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: NULL parameters\n", __FUNCTION__);
+	}
+	else
+	{
+		nfapi_nr_srs_indication_t ind;
+
+		if(nfapi_nr_p7_message_unpack(pRecvMsg, recvMsgLen, &ind, sizeof(ind), &vnf_p7->_public.codec_config) < 0)
+		{
+			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: Failed to unpack message\n", __FUNCTION__);
+		}
+		else
+		{
+			if(vnf_p7->_public.nr_srs_indication)
+			{
+				(vnf_p7->_public.nr_srs_indication)(&ind);
+			}
+		}
+	}
+}
+
+void vnf_handle_nr_uci_indication(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7)
+{
+	// ensure it's valid
+	if (pRecvMsg == NULL || vnf_p7 == NULL)
+	{
+		NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: NULL parameters\n", __FUNCTION__);
+	}
+	else
+	{
+		nfapi_nr_uci_indication_t ind;
+
+		if(nfapi_nr_p7_message_unpack(pRecvMsg, recvMsgLen, &ind, sizeof(ind), &vnf_p7->_public.codec_config) < 0)
+		{
+			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: Failed to unpack message\n", __FUNCTION__);
+		}
+		else
+		{
+			if(vnf_p7->_public.nr_uci_indication)
+			{
+				(vnf_p7->_public.nr_uci_indication)(&ind);
+			}
+		}
+
+	}
+}
+
+void vnf_handle_nr_rach_indication(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7)
+{
+	// ensure it's valid
+	if (pRecvMsg == NULL || vnf_p7 == NULL)
+	{
+		NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: NULL parameters\n", __FUNCTION__);
+	}
+	else
+	{
+		nfapi_nr_rach_indication_t ind;
+
+		if(nfapi_nr_p7_message_unpack(pRecvMsg, recvMsgLen, &ind, sizeof(ind), &vnf_p7->_public.codec_config) < 0)
+		{
+			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: Failed to unpack message\n", __FUNCTION__);
+		}
+		else
+		{
+			if(vnf_p7->_public.nr_rach_indication)
+			{
+				(vnf_p7->_public.nr_rach_indication)(&ind);
+			}
+		}
+
+	}
+}
+
 void vnf_nr_handle_ul_node_sync(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7)
-{	
+{
 	//printf("received UL Node sync");
 
 	uint32_t now_time_hr = vnf_get_current_time_hr();
@@ -1495,12 +1649,14 @@ void vnf_nr_handle_ul_node_sync(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7
 	// divide by 2 using shift operator
 	uint32_t latency =  (tx_2_rx - pnf_proc_time) >> 1;
 
+	//phy->in_sync = 1;
+
 	if(!(phy->filtered_adjust))
 	{
 		phy->latency[phy->min_sync_cycle_count] = latency;
 
 		//NFAPI_TRACE(NFAPI_TRACE_NOTE, "(%4d/%d) PNF to VNF !sync phy_id:%d (t1/2/3/4:%8u, %8u, %8u, %8u) txrx:%4u procT:%3u latency(us):%4d\n",
-		//		phy->sfn, phy->slot, ind.header.phy_id, ind.t1, ind.t2, ind.t3, t4, 
+		//		phy->sfn, phy->slot, ind.header.phy_id, ind.t1, ind.t2, ind.t3, t4,
 		//		tx_2_rx, pnf_proc_time, latency);
 	}
 	else
@@ -1544,17 +1700,24 @@ void vnf_nr_handle_ul_node_sync(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7
                   struct timespec ts;
                   clock_gettime(CLOCK_MONOTONIC, &ts);
 
-			//NFAPI_TRACE(NFAPI_TRACE_NOTE, "(%4d/%1d) %d.%d PNF to VNF phy_id:%2d (t1/2/3/4:%8u, %8u, %8u, %8u) txrx:%4u procT:%3u latency(us):%4d(avg:%4d) offset(us):%8d filtered(us):%8d wrap[t1:%u t2:%u]\n", 
-			//		phy->sfn, phy->slot, ts.tv_sec, ts.tv_nsec, ind.header.phy_id,
-					// ind.t1, ind.t2, ind.t3, t4, 
-					// tx_2_rx, pnf_proc_time, latency, phy->average_latency, phy->slot_offset, phy->slot_offset_filtered,
-					// (ind.t1<phy->previous_t1), (ind.t2<phy->previous_t2));
+			// NFAPI_TRACE(NFAPI_TRACE_NOTE, "(%4d/%1d) %d.%d PNF to VNF phy_id:%2d (t1/2/3/4:%8u, %8u, %8u, %8u) txrx:%4u procT:%3u latency(us):%4d(avg:%4d) offset(us):%8d filtered(us):%8d wrap[t1:%u t2:%u]\n",
+			// 		phy->sfn, phy->slot, ts.tv_sec, ts.tv_nsec, ind.header.phy_id,
+			// 		ind.t1, ind.t2, ind.t3, t4,
+			// 		tx_2_rx, pnf_proc_time, latency, phy->average_latency, phy->slot_offset, phy->slot_offset_filtered,
+			// 		(ind.t1<phy->previous_t1), (ind.t2<phy->previous_t2));
 		}
 
 	}
 
         if (phy->filtered_adjust && (phy->slot_offset_filtered > 1e6 || phy->slot_offset_filtered < -1e6))
-        {
+        {  struct timespec ts;
+           clock_gettime(CLOCK_MONOTONIC, &ts);
+			NFAPI_TRACE(NFAPI_TRACE_NOTE, "(%4d/%1d) %d.%d PNF to VNF phy_id:%2d (t1/2/3/4:%8u, %8u, %8u, %8u) txrx:%4u procT:%3u latency(us):%4d(avg:%4d) offset(us):%8d filtered(us):%8d wrap[t1:%u t2:%u]\n",
+					phy->sfn, phy->slot, ts.tv_sec, ts.tv_nsec, ind.header.phy_id,
+					ind.t1, ind.t2, ind.t3, t4,
+					tx_2_rx, pnf_proc_time, latency, phy->average_latency, phy->slot_offset, phy->slot_offset_filtered,
+					(ind.t1<phy->previous_t1), (ind.t2<phy->previous_t2));
+
           phy->filtered_adjust = 0;
           phy->zero_count=0;
           phy->min_sync_cycle_count = 2;
@@ -1585,15 +1748,15 @@ void vnf_nr_handle_ul_node_sync(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7
 			phy->slot_offset = ind.t2 - (ind.t1 - phy->average_latency);
 
 			sfn_slot_dec += (phy->slot_offset / 500);
-			
-			NFAPI_TRACE(NFAPI_TRACE_NOTE, "PNF to VNF slot offset:%d sfn :%d slot:%d \n",phy->slot_offset,NFAPI_SFNSLOTDEC2SFN(sfn_slot_dec),NFAPI_SFNSLOTDEC2SLOT(sfn_slot_dec) );
+
+			//NFAPI_TRACE(NFAPI_TRACE_NOTE, "PNF to VNF slot offset:%d sfn :%d slot:%d \n",phy->slot_offset,NFAPI_SFNSLOTDEC2SFN(sfn_slot_dec),NFAPI_SFNSLOTDEC2SLOT(sfn_slot_dec) );
 
 
 		}
 		else
 		{
 			sfn_slot_dec += ((phy->slot_offset_filtered + 250) / 500);	//Round up to go from microsecond to slot
-			
+
 		}
 
 		if(sfn_slot_dec < 0)
@@ -1605,10 +1768,10 @@ void vnf_nr_handle_ul_node_sync(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7
 			sfn_slot_dec -= NFAPI_MAX_SFNSLOTDEC;
 		}
 
-		
+
 		uint16_t new_sfn = NFAPI_SFNSLOTDEC2SFN(sfn_slot_dec);
 		uint16_t new_slot = NFAPI_SFNSLOTDEC2SLOT(sfn_slot_dec);
-	
+
 		{
 			phy->adjustment = NFAPI_SFNSLOT2DEC(new_sfn, new_slot) - NFAPI_SFNSLOT2DEC(curr_sfn, curr_slot);
 
@@ -1644,7 +1807,7 @@ void vnf_nr_handle_ul_node_sync(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7
 				}
 			}
 
-			
+
 			int insync_minor_adjustment_1 = phy->slot_offset_trend / 6;
 			int insync_minor_adjustment_2 = phy->slot_offset_trend / 2;
 
@@ -1683,7 +1846,7 @@ void vnf_nr_handle_ul_node_sync(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7
 					{
 						if(phy->in_sync == 0)
 						{
-							NFAPI_TRACE(NFAPI_TRACE_NOTE, "VNF P7 In Sync with phy (phy_id:%d)\n", phy->phy_id); 
+							NFAPI_TRACE(NFAPI_TRACE_NOTE, "VNF P7 In Sync with phy (phy_id:%d)\n", phy->phy_id);
 
 							if(vnf_p7->_public.sync_indication)
 								(vnf_p7->_public.sync_indication)(&(vnf_p7->_public), 1);
@@ -1718,14 +1881,14 @@ void vnf_nr_handle_ul_node_sync(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7
 
 						if(phy->insync_minor_adjustment != 0)
 						{
-							// NFAPI_TRACE(NFAPI_TRACE_NOTE, "(%4d/%d) VNF phy_id:%d Apply minor insync adjustment %dus for %d slots (slot_offset_filtered:%d) %d %d %d NEW:%d CURR:%d adjustment:%d\n", 
+							// NFAPI_TRACE(NFAPI_TRACE_NOTE, "(%4d/%d) VNF phy_id:%d Apply minor insync adjustment %dus for %d slots (slot_offset_filtered:%d) %d %d %d NEW:%d CURR:%d adjustment:%d\n",
 							// 			phy->sfn, phy->slot, ind.header.phy_id,
-							// 			phy->insync_minor_adjustment, phy->insync_minor_adjustment_duration, 
-                            //                                                     phy->slot_offset_filtered, 
+							// 			phy->insync_minor_adjustment, phy->insync_minor_adjustment_duration,
+                            //                                                     phy->slot_offset_filtered,
                             //                                                     insync_minor_adjustment_1, insync_minor_adjustment_2, phy->slot_offset_trend,
                             //                                                     NFAPI_SFNSLOT2DEC(new_sfn, new_slot),
                             //                                                     NFAPI_SFNSLOT2DEC(curr_sfn, curr_slot),
-                            //                                                     phy->adjustment); 
+                            //                                                     phy->adjustment);
 						}
 					}
 				}
@@ -1754,21 +1917,21 @@ void vnf_nr_handle_ul_node_sync(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7
 									phy->insync_minor_adjustment = -(insync_minor_adjustment_2);
 									phy->insync_minor_adjustment_duration = 2 * ((phy->slot_offset_filtered + 250) / -(insync_minor_adjustment_2));
 								}
-							
+
 							}
 							//else
 							{
 								// out of sync?
 							}
-							
-							// NFAPI_TRACE(NFAPI_TRACE_NOTE, "(%4d/%d) VNF phy_id:%d Apply minor insync adjustment %dus for %d slots (adjustment:%d slot_offset_filtered:%d) %d %d %d NEW:%d CURR:%d adj:%d\n", 
+
+							// NFAPI_TRACE(NFAPI_TRACE_NOTE, "(%4d/%d) VNF phy_id:%d Apply minor insync adjustment %dus for %d slots (adjustment:%d slot_offset_filtered:%d) %d %d %d NEW:%d CURR:%d adj:%d\n",
 							// 			phy->sfn, phy->slot, ind.header.phy_id,
 							// 			phy->insync_minor_adjustment, phy->insync_minor_adjustment_duration, phy->adjustment, phy->slot_offset_filtered,
 							// 			insync_minor_adjustment_1, insync_minor_adjustment_2, phy->slot_offset_trend,
                             //                                                     NFAPI_SFNSLOT2DEC(new_sfn, new_slot),
                             //                                                     NFAPI_SFNSLOT2DEC(curr_sfn, curr_slot),
-                            //                                                     phy->adjustment); 
-							
+                            //                                                     phy->adjustment);
+
 						}
 						else if(phy->adjustment < 0)
 						{
@@ -1794,10 +1957,10 @@ void vnf_nr_handle_ul_node_sync(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7
 								// out of sync?
 							}
 
-							// NFAPI_TRACE(NFAPI_TRACE_NOTE, "(%d/%d) VNF phy_id:%d Apply minor insync adjustment %dus for %d slots (adjustment:%d slot_offset_filtered:%d) %d %d %d\n", 
+							// NFAPI_TRACE(NFAPI_TRACE_NOTE, "(%d/%d) VNF phy_id:%d Apply minor insync adjustment %dus for %d slots (adjustment:%d slot_offset_filtered:%d) %d %d %d\n",
 							// 			phy->sfn, phy->slot, ind.header.phy_id,
 							// 			phy->insync_minor_adjustment, phy->insync_minor_adjustment_duration, phy->adjustment, phy->slot_offset_filtered,
-							// 			insync_minor_adjustment_1, insync_minor_adjustment_2, phy->slot_offset_trend); 
+							// 			insync_minor_adjustment_1, insync_minor_adjustment_2, phy->slot_offset_trend);
 						}
 
 						/*
@@ -1825,7 +1988,7 @@ void vnf_nr_handle_ul_node_sync(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7
 			{
 				/*NFAPI_TRACE(NFAPI_TRACE_NOTE, "***** Adjusting VNF phy_id:%d SFN/SF (%s) from %d to %d (%d) mode:%s zeroCount:%u sync:%s\n",
 					ind.header.phy_id, (phy->in_sync ? "via sfn" : "now"),
-					NFAPI_SFNSF2DEC(curr_sfn_sf), NFAPI_SFNSF2DEC(new_sfn_sf), phy->adjustment, 
+					NFAPI_SFNSF2DEC(curr_sfn_sf), NFAPI_SFNSF2DEC(new_sfn_sf), phy->adjustment,
 					phy->filtered_adjust ? "FILTERED" : "ABSOLUTE",
 					phy->zero_count,
 					phy->in_sync ? "IN_SYNC" : "OUT_OF_SYNC");*/
@@ -1949,23 +2112,23 @@ void vnf_dispatch_p7_message(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7)
 		case NFAPI_TIMING_INFO:
 			vnf_handle_timing_info(pRecvMsg, recvMsgLen, vnf_p7);
 			break;
-			
+
 		case NFAPI_HARQ_INDICATION:
 			vnf_handle_harq_indication(pRecvMsg, recvMsgLen, vnf_p7);
 			break;
-	
+
 		case NFAPI_CRC_INDICATION:
 			vnf_handle_crc_indication(pRecvMsg, recvMsgLen, vnf_p7);
 			break;
-	
+
 		case NFAPI_RX_ULSCH_INDICATION:
 			vnf_handle_rx_ulsch_indication(pRecvMsg, recvMsgLen, vnf_p7);
 			break;
-	
+
 		case NFAPI_RACH_INDICATION:
 			vnf_handle_rach_indication(pRecvMsg, recvMsgLen, vnf_p7);
 			break;
-	
+
 		case NFAPI_SRS_INDICATION:
 			vnf_handle_srs_indication(pRecvMsg, recvMsgLen, vnf_p7);
 			break;
@@ -1977,18 +2140,18 @@ void vnf_dispatch_p7_message(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7)
 		case NFAPI_RX_CQI_INDICATION:
 			vnf_handle_rx_cqi_indication(pRecvMsg, recvMsgLen, vnf_p7);
 			break;
-			
+
 		case NFAPI_LBT_DL_INDICATION:
 			vnf_handle_lbt_dl_indication(pRecvMsg, recvMsgLen, vnf_p7);
 			break;
-			
+
 		case NFAPI_NB_HARQ_INDICATION:
 			vnf_handle_nb_harq_indication(pRecvMsg, recvMsgLen, vnf_p7);
 			break;
-			
+
 		case NFAPI_NRACH_INDICATION:
 			vnf_handle_nrach_indication(pRecvMsg, recvMsgLen, vnf_p7);
-			break;			
+			break;
 
 		case NFAPI_UE_RELEASE_RESPONSE:
 			vnf_handle_ue_release_resp(pRecvMsg, recvMsgLen, vnf_p7);
@@ -2044,46 +2207,30 @@ void vnf_nr_dispatch_p7_message(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7
 		case NFAPI_TIMING_INFO:
 			vnf_nr_handle_timing_info(pRecvMsg, recvMsgLen, vnf_p7);
 			break;
-			
-		case NFAPI_HARQ_INDICATION:
-			vnf_handle_harq_indication(pRecvMsg, recvMsgLen, vnf_p7);
-			break;
-	
-		case NFAPI_CRC_INDICATION:
-			vnf_handle_crc_indication(pRecvMsg, recvMsgLen, vnf_p7);
-			break;
-	
-		case NFAPI_RX_ULSCH_INDICATION:
-			vnf_handle_rx_ulsch_indication(pRecvMsg, recvMsgLen, vnf_p7);
-			break;
-	
-		case NFAPI_RACH_INDICATION:
-			vnf_handle_rach_indication(pRecvMsg, recvMsgLen, vnf_p7);
-			break;
-	
-		case NFAPI_SRS_INDICATION:
-			vnf_handle_srs_indication(pRecvMsg, recvMsgLen, vnf_p7);
+
+		case NFAPI_NR_PHY_MSG_TYPE_SLOT_INDICATION:
+			vnf_handle_nr_slot_indication(pRecvMsg, recvMsgLen, vnf_p7);
 			break;
 
-		case NFAPI_RX_SR_INDICATION:
-			vnf_handle_rx_sr_indication(pRecvMsg, recvMsgLen, vnf_p7);
+		case NFAPI_NR_PHY_MSG_TYPE_RX_DATA_INDICATION:
+			vnf_handle_nr_rx_data_indication(pRecvMsg, recvMsgLen, vnf_p7);
 			break;
 
-		case NFAPI_RX_CQI_INDICATION:
-			vnf_handle_rx_cqi_indication(pRecvMsg, recvMsgLen, vnf_p7);
+		case NFAPI_NR_PHY_MSG_TYPE_CRC_INDICATION:
+			vnf_handle_nr_crc_indication(pRecvMsg, recvMsgLen, vnf_p7);
 			break;
-			
-		case NFAPI_LBT_DL_INDICATION:
-			vnf_handle_lbt_dl_indication(pRecvMsg, recvMsgLen, vnf_p7);
+
+		case NFAPI_NR_PHY_MSG_TYPE_UCI_INDICATION:
+			vnf_handle_nr_uci_indication(pRecvMsg, recvMsgLen, vnf_p7);
 			break;
-			
-		case NFAPI_NB_HARQ_INDICATION:
-			vnf_handle_nb_harq_indication(pRecvMsg, recvMsgLen, vnf_p7);
+
+		case NFAPI_NR_PHY_MSG_TYPE_SRS_INDICATION:
+			vnf_handle_nr_srs_indication(pRecvMsg, recvMsgLen, vnf_p7);
 			break;
-			
-		case NFAPI_NRACH_INDICATION:
-			vnf_handle_nrach_indication(pRecvMsg, recvMsgLen, vnf_p7);
-			break;			
+
+		case NFAPI_NR_PHY_MSG_TYPE_RACH_INDICATION:
+			vnf_handle_nr_rach_indication(pRecvMsg, recvMsgLen, vnf_p7);
+			break;
 
 		case NFAPI_UE_RELEASE_RESPONSE:
 			vnf_handle_ue_release_resp(pRecvMsg, recvMsgLen, vnf_p7);
@@ -2105,7 +2252,7 @@ void vnf_nr_dispatch_p7_message(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7
 	}
 }
 
-void vnf_handle_p7_message(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7) 
+void vnf_handle_p7_message(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7)
 {
 	nfapi_p7_message_header_t messageHeader;
 
@@ -2223,7 +2370,7 @@ void vnf_handle_p7_message(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7)
 	}
 }
 
-void vnf_nr_handle_p7_message(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7) 
+void vnf_nr_handle_p7_message(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7)
 {
 	nfapi_p7_message_header_t messageHeader;
 
@@ -2366,7 +2513,7 @@ int vnf_nr_p7_read_dispatch_message(vnf_p7_t* vnf_p7)
 			// resize the buffer if we have a large segment
 			if(header.message_length > vnf_p7->rx_message_buffer_size)
 			{
-				NFAPI_TRACE(NFAPI_TRACE_NOTE, "reallocing rx buffer %d\n", header.message_length); 
+				NFAPI_TRACE(NFAPI_TRACE_NOTE, "reallocing rx buffer %d\n", header.message_length);
 				vnf_p7->rx_message_buffer = realloc(vnf_p7->rx_message_buffer, header.message_length);
 				vnf_p7->rx_message_buffer_size = header.message_length;
 			}
@@ -2382,13 +2529,13 @@ int vnf_nr_p7_read_dispatch_message(vnf_p7_t* vnf_p7)
 			}
 			else if(recvfrom_result != header.message_length)
 			{
-				NFAPI_TRACE(NFAPI_TRACE_NOTE, "did not receive the entire message %d %d\n", recvfrom_result, header.message_length); 
-				
+				NFAPI_TRACE(NFAPI_TRACE_NOTE, "did not receive the entire message %d %d\n", recvfrom_result, header.message_length);
+
 				recvfrom_result += recvfrom(vnf_p7->socket, &vnf_p7->rx_message_buffer[recvfrom_result], header.message_length - recvfrom_result, MSG_WAITALL, (struct sockaddr*)&remote_addr, &remote_addr_size);
-	
+
 			}
-			
-			
+
+
 			if(recvfrom_result > 0)
 			{
 				vnf_nr_handle_p7_message(vnf_p7->rx_message_buffer, recvfrom_result, vnf_p7);
@@ -2442,7 +2589,7 @@ int vnf_p7_read_dispatch_message(vnf_p7_t* vnf_p7)
 			// resize the buffer if we have a large segment
 			if(header.message_length > vnf_p7->rx_message_buffer_size)
 			{
-				NFAPI_TRACE(NFAPI_TRACE_NOTE, "reallocing rx buffer %d\n", header.message_length); 
+				NFAPI_TRACE(NFAPI_TRACE_NOTE, "reallocing rx buffer %d\n", header.message_length);
 				vnf_p7->rx_message_buffer = realloc(vnf_p7->rx_message_buffer, header.message_length);
 				vnf_p7->rx_message_buffer_size = header.message_length;
 			}
@@ -2459,12 +2606,12 @@ int vnf_p7_read_dispatch_message(vnf_p7_t* vnf_p7)
 			else if(recvfrom_result != -1 && recvfrom_result != header.message_length)
 			{
 				NFAPI_TRACE(NFAPI_TRACE_ERROR, "Received unexpected number of bytes %d %d\n", recvfrom_result, header.message_length);
-				
+
 				recvfrom_result += recvfrom(vnf_p7->socket, &vnf_p7->rx_message_buffer[recvfrom_result], header.message_length - recvfrom_result, MSG_WAITALL, (struct sockaddr*)&remote_addr, &remote_addr_size);
-	
+
 			}
-			
-			
+
+
 			if(recvfrom_result > 0)
 			{
 				vnf_handle_p7_message(vnf_p7->rx_message_buffer, recvfrom_result, vnf_p7);
@@ -2542,13 +2689,12 @@ void vnf_p7_release_msg(vnf_p7_t* vnf_p7, nfapi_p7_message_header_t* header)
 			}
 			break;
 	}
-				
+
 	vnf_p7_free(vnf_p7, header);
-	
+
 }
 
 void vnf_p7_release_pdu(vnf_p7_t* vnf_p7, void* pdu)
 {
 	vnf_p7_free(vnf_p7, pdu);
 }
-

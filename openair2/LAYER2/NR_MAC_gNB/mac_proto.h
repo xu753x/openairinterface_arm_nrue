@@ -124,6 +124,8 @@ void nr_get_Msg3alloc(module_id_t module_id,
                       NR_RA_t *ra,
                       int16_t *tdd_beam_association);
 
+void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP, NR_RA_t *ra);
+
 /* \brief Function in gNB to fill RAR pdu when requested by PHY.
 @param ra Instance of RA resources of gNB
 @param dlsch_buffer Pointer to RAR input buffer
@@ -133,6 +135,15 @@ void nr_fill_rar(uint8_t Mod_idP,
                  NR_RA_t * ra,
                  uint8_t * dlsch_buffer,
                  nfapi_nr_pusch_pdu_t  *pusch_pdu);
+
+void fill_msg3_pusch_pdu(nfapi_nr_pusch_pdu_t *pusch_pdu,
+                         NR_ServingCellConfigCommon_t *scc,
+                         int round,
+                         int startSymbolAndLength,
+                         rnti_t rnti, int scs,
+                         int bwp_size, int bwp_start,
+                         int mappingtype, int fh,
+                         int msg3_first_rb, int msg3_nb_rb);
 
 
 void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP);
@@ -178,8 +189,10 @@ void nr_schedule_pucch(int Mod_idP,
                        frame_t frameP,
                        sub_frame_t slotP);
 
-void csi_period_offset(const NR_CSI_ReportConfig_t *csirep,
-                       int *period, int *offset);
+void nr_csirs_scheduling(int Mod_idP,
+                         frame_t frame,
+                         sub_frame_t slot,
+                         int n_slots_frame);
 
 void nr_csi_meas_reporting(int Mod_idP,
                            frame_t frameP,
@@ -327,15 +340,6 @@ int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
                      int m,
                      int nr_of_candidates);
 
-uint16_t compute_pucch_prb_size(uint8_t format,
-                                uint8_t nr_prbs,
-                                uint16_t O_tot,
-                                uint16_t O_csi,
-                                NR_PUCCH_MaxCodeRate_t *maxCodeRate,
-                                uint8_t Qm,
-                                uint8_t n_symb,
-                                uint8_t n_re_ctrl);
-
 int nr_get_default_pucch_res(int pucch_ResourceCommon);
 
 void compute_csi_bitlen(NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_info_t *UE_info, int UE_id, module_id_t Mod_idP);
@@ -395,7 +399,8 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
                const uint8_t ul_cqi,
                const uint16_t rssi);
 
-void handle_nr_ul_harq(module_id_t mod_id,
+void handle_nr_ul_harq(const int CC_idP,
+                       module_id_t mod_id,
                        frame_t frame,
                        sub_frame_t slot,
                        const nfapi_nr_crc_t *crc_pdu);
@@ -424,9 +429,5 @@ bool nr_find_nb_rb(uint16_t Qm,
                    uint16_t *nb_rb);
 
 void nr_sr_reporting(int Mod_idP, frame_t frameP, sub_frame_t slotP);
-
-void periodicity__SRR (NR_SchedulingRequestResourceConfig_t *SchedulingReqRecconf,
-                       int *period,
-                       int *offset);
 
 #endif /*__LAYER2_NR_MAC_PROTO_H__*/

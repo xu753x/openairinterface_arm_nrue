@@ -84,15 +84,19 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
                                      NR_CellGroupConfig_t *secondaryCellGroup,
                                      int scg_id,
                                      int servCellIndex,
-                                     int n_physical_antenna_ports,
+                                     int dl_antenna_ports,
+                                     int do_csirs,
                                      int initial_csi_index,
                                      int uid);
+
+void config_csirs(NR_ServingCellConfigCommon_t *servingcellconfigcommon, NR_CSI_MeasConfig_t *csi_MeasConfig, int dl_antenna_ports, int do_csirs);
 
 void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
                            NR_ServingCellConfig_t *servingcellconfigdedicated,
                            NR_RRCReconfiguration_IEs_t *reconfig,
                            NR_CellGroupConfig_t *secondaryCellGroup,
-                           int n_physical_antenna_ports,
+                           int dl_antenna_ports,
+                           int do_csirs,
                            int initial_csi_index,
                            int uid);
 
@@ -105,6 +109,13 @@ int generate_CG_Config(gNB_RRC_INST *rrc,
 		       NR_CG_Config_t *cg_Config,
 		       NR_RRCReconfiguration_t *reconfig,
 		       NR_RadioBearerConfig_t *rbconfig);
+
+void apply_macrlc_config(gNB_RRC_INST *rrc,
+                         rrc_gNB_ue_context_t         *const ue_context_pP,
+                         const protocol_ctxt_t        *const ctxt_pP );
+
+void apply_pdcp_config(rrc_gNB_ue_context_t         *const ue_context_pP,
+                       const protocol_ctxt_t        *const ctxt_pP );
 
 void
 rrc_gNB_generate_RRCSetup(
