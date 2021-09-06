@@ -400,7 +400,28 @@ void apply_macrlc_config(gNB_RRC_INST *rrc,
                                  get_softmodem_params()->sa ? ue_context_pP->ue_context.masterCellGroup->rlc_BearerToAddModList : NULL);
 
 }
+void apply_macrlc_config_reest(gNB_RRC_INST *rrc,
+                         rrc_gNB_ue_context_t         *const ue_context_pP,
+                         const protocol_ctxt_t        *const ctxt_pP,
+                         int rnti) {
 
+      rrc_mac_config_req_gNB(rrc->module_id,
+                             rrc->carrier.ssb_SubcarrierOffset,
+                             rrc->carrier.pdsch_AntennaPorts,
+                             rrc->carrier.pusch_AntennaPorts,
+                             NULL,
+                             0,
+                             rnti,
+                             get_softmodem_params()->sa ? ue_context_pP->ue_context.masterCellGroup : (NR_CellGroupConfig_t *)NULL);
+
+      nr_rrc_rlc_config_asn1_req(ctxt_pP,
+                                 ue_context_pP->ue_context.SRB_configList,
+                                 NULL,
+                                 NULL,
+                                 NULL,
+                                 get_softmodem_params()->sa ? ue_context_pP->ue_context.masterCellGroup->rlc_BearerToAddModList : NULL);
+
+}
 void apply_pdcp_config(rrc_gNB_ue_context_t         *const ue_context_pP,
                        const protocol_ctxt_t        *const ctxt_pP ) {
 
@@ -1470,6 +1491,8 @@ void
 rrc_gNB_generate_RRCReestablishment(
   const protocol_ctxt_t *const ctxt_pP,
   rrc_gNB_ue_context_t  *const ue_context_pP,
+  OCTET_STRING_t               *masterCellGroup_from_DU,
+  NR_ServingCellConfigCommon_t *scc,
   const int             CC_id)
 //-----------------------------------------------------------------------------
 {
@@ -1494,8 +1517,9 @@ rrc_gNB_generate_RRCReestablishment(
       buffer,
       //(uint8_t) carrier->p_gNB, // at this point we do not have the UE capability information, so it can only be TM1 or TM2
       rrc_gNB_get_next_transaction_identifier(module_id),
-      SRB_configList
-      //&(ue_context->physicalConfigDedicated)
+      SRB_configList,
+      masterCellGroup_from_DU,
+      scc
       );
 
   /* Configure SRB1 for UE */
@@ -1547,6 +1571,10 @@ rrc_gNB_generate_RRCReestablishment(
     GNB_RRC_DCCH_DATA_IND (message_p).size  = size;
     itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
 #else
+    if (!NODE_IS_CU(RC.nrrrc[ctxt_pP->module_id]->node_type)) {
+      apply_macrlc_config_reest(RC.nrrrc[ctxt_pP->module_id],ue_context_pP,ctxt_pP,ctxt_pP->rnti);
+    }
+    apply_pdcp_config(ue_context_pP,ctxt_pP);
     nr_rrc_data_req(ctxt_pP,
                 DCCH,
                 rrc_gNB_mui++,
@@ -2164,7 +2192,11 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
                 &DCCH_LCHAN_DESC,
                 LCHAN_DESC_SIZE);
 
-          rrc_gNB_generate_RRCReestablishment(ctxt_pP, ue_context_p, CC_id);
+          rrc_gNB_generate_RRCReestablishment(ctxt_pP,
+                                              ue_context_p,
+                                              du_to_cu_rrc_container,
+                                              gnb_rrc_inst->carrier.servingcellconfigcommon,
+                                              CC_id);
 
           LOG_I(NR_RRC, PROTOCOL_NR_RRC_CTXT_UE_FMT"CALLING RLC CONFIG SRB1 (rbid %d)\n",
                 PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
@@ -2176,27 +2208,6 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
                             MSC_AS_TIME_FMT" CONFIG_REQ UE %x SRB",
                             MSC_AS_TIME_ARGS(ctxt_pP),
                             ue_context_p->ue_context.rnti);
-          nr_rrc_pdcp_config_asn1_req(ctxt_pP,
-                            ue_context_p->ue_context.SRB_configList,
-                            ue_context_p->ue_context.DRB_configList,
-                            NULL,
-                            0,
-                            NULL,
-                            NULL,
-                            NULL,
-                            NULL,
-                            NULL,
-                            NULL,
-                            get_softmodem_params()->sa ? ue_context_p->ue_context.masterCellGroup->rlc_BearerToAddModList : NULL);
-
-          if (!NODE_IS_CU(RC.nrrrc[ctxt_pP->module_id]->node_type)) {
-             nr_rrc_rlc_config_asn1_req(ctxt_pP,
-                                     ue_context_p->ue_context.SRB_configList,
-                                     ue_context_p->ue_context.DRB_configList,
-                                     NULL,
-                                     NULL,
-                                     get_softmodem_params()->sa ? ue_context_p->ue_context.masterCellGroup->rlc_BearerToAddModList : NULL);
-           }
         }
         break;
 

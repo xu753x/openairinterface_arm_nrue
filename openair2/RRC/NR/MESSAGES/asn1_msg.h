@@ -165,14 +165,15 @@ uint8_t do_RRCReestablishmentRequest(uint8_t Mod_id, uint8_t *buffer, uint16_t c
 
 uint8_t
 do_RRCReestablishment(
-  const protocol_ctxt_t     *const ctxt_pP,
-  rrc_gNB_ue_context_t      *const ue_context_pP,
-  int                              CC_id,
-  uint8_t                   *const buffer,
-  //const uint8_t                    transmission_mode,
-  const uint8_t                    Transaction_id,
-  NR_SRB_ToAddModList_t               **SRB_configList
-);
+    const protocol_ctxt_t     *const ctxt_pP,
+    rrc_gNB_ue_context_t      *const ue_context_pP,
+    int                              CC_id,
+    uint8_t                   *const buffer,
+    //const uint8_t                    transmission_mode,
+    const uint8_t                    Transaction_id,
+    NR_SRB_ToAddModList_t               **SRB_configList,
+    OCTET_STRING_t               *masterCellGroup_from_DU,
+    NR_ServingCellConfigCommon_t *scc);
 
 uint8_t 
 do_RRCReestablishmentComplete(

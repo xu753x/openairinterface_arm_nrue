@@ -284,7 +284,10 @@ int8_t mac_rrc_nr_data_req(const module_id_t Mod_idP,
     struct rrc_gNB_ue_context_s *ue_context_p = rrc_gNB_get_ue_context(RC.nrrrc[Mod_idP], rnti);
 
     LOG_D(NR_RRC,"[gNB %d] Frame %d CCCH request (Srb_id %ld)\n", Mod_idP, frameP, Srb_id);
-
+    if(ue_context_p==NULL){
+      LOG_I(NR_RRC,"[gNB %d] Frame %d CCCH request but no ue_context\n", Mod_idP, frameP);
+      return 0;
+    }
     AssertFatal(ue_context_p!=NULL,"failed to get ue_context\n");
     char payload_size = ue_context_p->ue_context.Srb0.Tx_buffer.payload_size;
 

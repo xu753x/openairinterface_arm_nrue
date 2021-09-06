@@ -1947,12 +1947,16 @@ int                              CC_id,
 uint8_t                   *const buffer,
 //const uint8_t                    transmission_mode,
 const uint8_t                    Transaction_id,
-NR_SRB_ToAddModList_t               **SRB_configList
+NR_SRB_ToAddModList_t               **SRB_configList,
+OCTET_STRING_t               *masterCellGroup_from_DU,
+NR_ServingCellConfigCommon_t *scc
 ) {
     asn_enc_rval_t enc_rval;
     //long *logicalchannelgroup = NULL;
     struct NR_SRB_ToAddMod *SRB1_config = NULL;
     struct NR_SRB_ToAddMod *SRB2_config = NULL;
+    NR_CellGroupConfig_t *cellGroupConfig = NULL;
+    char masterCellGroup_buf[1000];
     //gNB_RRC_INST *nrrrc               = RC.nrrrc[ctxt_pP->module_id];
     NR_DL_DCCH_Message_t dl_dcch_msg;
     NR_RRCReestablishment_t *rrcReestablishment = NULL;
@@ -1960,6 +1964,7 @@ NR_SRB_ToAddModList_t               **SRB_configList
     ue_context_pP->ue_context.reestablishment_xid = Transaction_id;
     NR_SRB_ToAddModList_t **SRB_configList2 = NULL;
     SRB_configList2 = &ue_context_pP->ue_context.SRB_configList2[Transaction_id];
+    gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
 
     if (*SRB_configList2) {
       free(*SRB_configList2);
@@ -2007,7 +2012,34 @@ NR_SRB_ToAddModList_t               **SRB_configList
 
     *SRB_configList = CALLOC(1, sizeof(LTE_SRB_ToAddModList_t));
     ASN_SEQUENCE_ADD(&(*SRB_configList)->list,SRB1_config);
+    /****************************** masterCellGroup ******************************/
+    if (masterCellGroup_from_DU) {
+      // decode masterCellGroup OCTET_STRING received from DU and place in ue context
+      uper_decode(NULL,
+		  &asn_DEF_NR_CellGroupConfig,   //might be added prefix later
+		  (void **)&cellGroupConfig,
+		  (uint8_t *)masterCellGroup_from_DU->buf,
+		  masterCellGroup_from_DU->size, 0, 0); 
+      
+      xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)cellGroupConfig);
+    }
+    else {
+      cellGroupConfig = calloc(1, sizeof(NR_CellGroupConfig_t));
+      fill_initial_cellGroupConfig(ue_context_pP->ue_context.rnti,cellGroupConfig,scc);
 
+      enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig,
+				       NULL,
+				       (void *)cellGroupConfig,
+				       masterCellGroup_buf,
+				       1000);
+      
+      if(enc_rval.encoded == -1) {
+        LOG_E(NR_RRC, "ASN1 message CellGroupConfig encoding failed (%s, %lu)!\n",
+	      enc_rval.failed_type->name, enc_rval.encoded);
+        return -1;
+      }
+    }
+    ue_p->masterCellGroup = cellGroupConfig;
     rrcReestablishment->rrc_TransactionIdentifier = Transaction_id;
     rrcReestablishment->criticalExtensions.present = NR_RRCReestablishment__criticalExtensions_PR_rrcReestablishment;
     rrcReestablishment->criticalExtensions.choice.rrcReestablishment = CALLOC(1,sizeof(NR_RRCReestablishment_IEs_t));
