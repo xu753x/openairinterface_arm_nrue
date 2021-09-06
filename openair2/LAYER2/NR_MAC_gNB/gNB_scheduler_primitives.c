@@ -1993,6 +1993,7 @@ void nr_mac_remove_ra_rnti(module_id_t mod_id, rnti_t rnti) {
 }
 
 uint8_t nr_get_tpc(int target, uint8_t cqi, int incr) {
+  return 1;
   // al values passed to this function are x10
   int snrx10 = (cqi*5) - 640;
   if (snrx10 > target + incr) return 0; // decrease 1dB

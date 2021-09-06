@@ -842,9 +842,14 @@ void nr_schedule_ue_spec(module_id_t module_id,
     if (current_harq_pid < 0) {
       /* PP has not selected a specific HARQ Process, get a new one */
       current_harq_pid = sched_ctrl->available_dl_harq.head;
-      AssertFatal(current_harq_pid >= 0,
-                  "no free HARQ process available for UE %d\n",
-                  UE_id);
+    //  AssertFatal(current_harq_pid >= 0,
+    //              "no free HARQ process available for UE %d\n",
+    //              UE_id);
+      if (current_harq_pid < 0)
+      {           
+            LOG_I(PHY, "no free HARQ process available for UE %d\n", UE_id);
+          continue;
+      }
       remove_front_nr_list(&sched_ctrl->available_dl_harq);
       sched_pdsch->dl_harq_pid = current_harq_pid;
     } else {
@@ -865,10 +870,12 @@ void nr_schedule_ue_spec(module_id_t module_id,
     harq->is_waiting = true;
     UE_info->mac_stats[UE_id].dlsch_rounds[harq->round]++;
 
-    LOG_D(NR_MAC,
-          "%4d.%2d RNTI %04x start %3d RBs %3d startSymbol %2d nb_symbol %2d MCS %2d TBS %4d HARQ PID %2d round %d NDI %d\n",
+    LOG_I(NR_MAC,
+          "%4d.%2d feedback %d %d . RNTI %04x start %3d RBs %3d startSymbol %2d nb_symbol %2d MCS %2d TBS %4d HARQ PID %2d round %d NDI %d\n",
           frame,
           slot,
+          harq->feedback_frame,
+          harq->feedback_slot,
           rnti,
           sched_pdsch->rbStart,
           sched_pdsch->rbSize,
