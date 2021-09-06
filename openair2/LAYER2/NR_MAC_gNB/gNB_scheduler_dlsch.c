@@ -513,7 +513,7 @@ void nr_store_dlsch_buffer(module_id_t module_id,
          sched_ctrl->num_total_bytes += sched_ctrl->rlc_status[lcid].bytes_in_buffer;*/ // Karim
       }
 
-    LOG_W(NR_MAC,
+    LOG_D(NR_MAC,
           "[%s][%d.%d], %s%d->DLSCH, RLC status %d bytes TA %d\n",
           __func__,
           frame,
@@ -813,9 +813,9 @@ void pf_dl(module_id_t module_id,
 
     /* transmissions: directly allocate */
     n_rb_sched -= sched_pdsch->rbSize;
-    struct timeval t;
-    gettimeofday(&t, NULL); //KARIM LOG
-    printf("%d.%d want to schedule %d (with oh %d) allooooooocated %d RBs for PDSCH with TBS %d, max rb size %d, %d for DMRS at %lu\n",frame,slot,sched_ctrl->num_total_bytes,sched_ctrl->num_total_bytes + oh,sched_pdsch->rbSize,TBS,max_rbSize,ps->N_PRB_DMRS,t.tv_usec);
+    //struct timeval t;
+    //gettimeofday(&t, NULL); //KARIM LOG
+    //printf("%d.%d want to schedule %d (with oh %d) allooooooocated %d RBs for PDSCH with TBS %d, max rb size %d, %d for DMRS at %lu\n",frame,slot,sched_ctrl->num_total_bytes,sched_ctrl->num_total_bytes + oh,sched_pdsch->rbSize,TBS,max_rbSize,ps->N_PRB_DMRS,t.tv_usec);
     for (int rb = 0; rb < sched_pdsch->rbSize; rb++)
       rballoc_mask[rb + sched_pdsch->rbStart] = 0;
   }
@@ -982,7 +982,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     harq->is_waiting = true;
     UE_info->mac_stats[UE_id].dlsch_rounds[harq->round]++;
 
-    LOG_I(NR_MAC,
+    LOG_D(NR_MAC,
           "%4d.%2d [DLSCH/PDSCH/PUCCH] UE %d RNTI %04x start %3d RBs %3d startSymbol %2d nb_symbol %2d dmrspos %x MCS %2d TBS %4d HARQ PID %2d round %d RV %d NDI %d dl_data_to_ULACK %d (%d.%d) TPC %d\n",
           frame,
           slot,
@@ -1022,7 +1022,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
       dl_tti_pdcch_pdu->PDUSize = (uint8_t)(2+sizeof(nfapi_nr_dl_tti_pdcch_pdu));
       dl_req->nPDUs += 1;
       pdcch_pdu = &dl_tti_pdcch_pdu->pdcch_pdu.pdcch_pdu_rel15;
-      LOG_I(NR_MAC,"Trying to configure DL pdcch for UE %d, bwp %d, cs %d\n",UE_id,bwpid,coresetid);
+      LOG_D(NR_MAC,"Trying to configure DL pdcch for UE %d, bwp %d, cs %d\n",UE_id,bwpid,coresetid);
       NR_SearchSpace_t *ss = (bwp||bwpd) ? sched_ctrl->search_space:gNB_mac->sched_ctrlCommon->search_space;
       NR_ControlResourceSet_t *coreset = (bwp||bwpd)? sched_ctrl->coreset:gNB_mac->sched_ctrlCommon->coreset;
       nr_configure_pdcch(pdcch_pdu, ss, coreset, scc, genericParameters, NULL);
