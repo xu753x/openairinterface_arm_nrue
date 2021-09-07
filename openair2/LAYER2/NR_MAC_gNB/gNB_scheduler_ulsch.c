@@ -490,8 +490,9 @@ int nr_process_mac_pdu(module_id_t module_idP,
                            NULL);
 
           /* Updated estimated buffer when receiving data */
-          if (sched_ctrl->estimated_ul_buffer >= mac_sdu_len)
+          if (sched_ctrl->estimated_ul_buffer >= mac_sdu_len){
             sched_ctrl->estimated_ul_buffer -= mac_sdu_len;
+            LOG_I(NR_MAC,"slot %d.%d sched_ctrl->estimated_ul_buffer %d\n",frameP,slot,sched_ctrl->estimated_ul_buffer);}
           else
             sched_ctrl->estimated_ul_buffer = 0;
           break;
@@ -1124,7 +1125,7 @@ void pf_ul(module_id_t module_id,
         rballoc_mask[rb + sched_ctrl->sched_pusch.rbStart] = 0;
           LOG_D(NR_MAC,"##********rbSize %d, TBS %d, est buf %d, sched_ul %d, B %d\n",
           sched_pusch->rbSize, sched_pusch->tb_size, sched_ctrl->estimated_ul_buffer, sched_ctrl->sched_ul_bytes, B);
-      continue;
+      //continue;
     }
 
     /* Create UE_sched for UEs eligibale for new data transmission*/
@@ -1220,8 +1221,8 @@ void pf_ul(module_id_t module_id,
     sched_pusch->rbSize = rbSize;
     sched_pusch->tb_size = TBS;
 
-    LOG_I(NR_MAC,"rbSize %d, TBS %d, est buf %d, sched_ul %d, B %d, CCE %d, num_dmrs_symb %d, N_PRB_DMRS %d\n",
-          rbSize, sched_pusch->tb_size, sched_ctrl->estimated_ul_buffer, sched_ctrl->sched_ul_bytes, B,sched_ctrl->cce_index,ps->num_dmrs_symb,ps->N_PRB_DMRS);
+    LOG_D(NR_MAC,"slot %d.%d rbSize %d, max_rbSize %d, TBS %d, est buf %d, sched_ul %d, B %d, CCE %d, num_dmrs_symb %d, N_PRB_DMRS %d\n",
+          frame,slot,rbSize,max_rbSize, sched_pusch->tb_size, sched_ctrl->estimated_ul_buffer, sched_ctrl->sched_ul_bytes, B,sched_ctrl->cce_index,ps->num_dmrs_symb,ps->N_PRB_DMRS);
 
     /* Mark the corresponding RBs as used */
     n_rb_sched -= sched_pusch->rbSize;
@@ -1439,7 +1440,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
       cur_harq->sched_pusch.time_domain_allocation = ps->time_domain_allocation;
       sched_ctrl->sched_ul_bytes += sched_pusch->tb_size;
     } else {
-      LOG_D(NR_MAC,
+      LOG_W(NR_MAC,
             "%d.%2d UL retransmission RNTI %04x sched %d.%2d HARQ PID %d round %d NDI %d\n",
             frame,
             slot,
