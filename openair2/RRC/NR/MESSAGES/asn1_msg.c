@@ -2045,28 +2045,18 @@ NR_ServingCellConfigCommon_t *scc
     rrcReestablishment->criticalExtensions.choice.rrcReestablishment = CALLOC(1,sizeof(NR_RRCReestablishment_IEs_t));
 
     uint8_t KgNB_star[32] = { 0 };
-    /** TODO
-    uint16_t pci = nrrrc->carrier[CC_id].physCellId;
-    uint32_t earfcn_dl = (uint32_t)freq_to_arfcn10(RC.mac[ctxt_pP->module_id]->common_channels[CC_id].eutra_band,
-                         nrrrc->carrier[CC_id].dl_CarrierFreq);
-    bool     is_rel8_only = true;
+    uint16_t pci = RC.nrrrc[ctxt_pP->module_id]->carrier.physCellId;
+    uint32_t nr_arfcn_dl = (uint64_t)scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA;
     
-    if (earfcn_dl > 65535) {
-      is_rel8_only = false;
-    }
-    LOG_D(NR_RRC, "pci=%d, eutra_band=%d, downlink_frequency=%d, earfcn_dl=%u, is_rel8_only=%s\n",
+    LOG_I(NR_RRC, "Reestablishment update key pci=%d, earfcn_dl=%u\n",
           pci,
-          RC.mac[ctxt_pP->module_id]->common_channels[CC_id].eutra_band,
-          nrrrc->carrier[CC_id].dl_CarrierFreq,
-          earfcn_dl,
-          is_rel8_only == true ? "true": "false");
-    */
+          nr_arfcn_dl);
     
     if (ue_context_pP->ue_context.nh_ncc >= 0) {
-      //TODO derive_keNB_star(ue_context_pP->ue_context.nh, pci, earfcn_dl, is_rel8_only, KgNB_star);
+      nr_derive_kngran_star(pci, nr_arfcn_dl, ue_context_pP->ue_context.nh, &KgNB_star);
       rrcReestablishment->criticalExtensions.choice.rrcReestablishment->nextHopChainingCount = ue_context_pP->ue_context.nh_ncc;
     } else { // first HO
-      //TODO derive_keNB_star (ue_context_pP->ue_context.kgnb, pci, earfcn_dl, is_rel8_only, KgNB_star);
+      nr_derive_kngran_star(pci, nr_arfcn_dl, ue_context_pP->ue_context.kgnb, &KgNB_star);
       // LG: really 1
       rrcReestablishment->criticalExtensions.choice.rrcReestablishment->nextHopChainingCount = 0;
     }

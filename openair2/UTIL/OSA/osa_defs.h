@@ -90,6 +90,9 @@ int nr_derive_key(algorithm_type_dist_t alg_type, uint8_t alg_id,
 #define nr_derive_key_up_int(aLGiD, kEY, kUP)  \
     nr_derive_key(UP_INT_ALG, aLGiD, kEY, kUP)
 
+int nr_derive_kngran_star(uint16_t pci, uint64_t nr_arfcn_dl,
+               const uint8_t key[32], uint8_t **out);
+
 typedef struct {
   uint8_t  *key;
   uint32_t  key_length;

@@ -1571,10 +1571,70 @@ rrc_gNB_generate_RRCReestablishment(
     GNB_RRC_DCCH_DATA_IND (message_p).size  = size;
     itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
 #else
+#ifndef PHYSIM
+    uint8_t *kRRCenc = NULL;
+    uint8_t *kRRCint = NULL;
+    uint8_t *kUPenc = NULL;
+    uint8_t *k_kdf = NULL;
+
+    /* Derive the keys from kgnb */
+    if (SRB_configList != NULL) {
+      k_kdf = NULL;
+      nr_derive_key_up_enc(ue_context_pP->ue_context.ciphering_algorithm,
+                           ue_context_pP->ue_context.kgnb,
+                           &k_kdf);
+      /* kUPenc: last 128 bits of key derivation function which returns 256 bits */
+      kUPenc = malloc(16);
+      if (kUPenc == NULL) exit(1);
+      memcpy(kUPenc, k_kdf+16, 16);
+      free(k_kdf);
+    }
+
+    k_kdf = NULL;
+    nr_derive_key_rrc_enc(ue_context_pP->ue_context.ciphering_algorithm,
+                          ue_context_pP->ue_context.kgnb,
+                          &k_kdf);
+    /* kRRCenc: last 128 bits of key derivation function which returns 256 bits */
+    kRRCenc = malloc(16);
+    if (kRRCenc == NULL) exit(1);
+    memcpy(kRRCenc, k_kdf+16, 16);
+    free(k_kdf);
+
+    k_kdf = NULL;
+    nr_derive_key_rrc_int(ue_context_pP->ue_context.integrity_algorithm,
+                          ue_context_pP->ue_context.kgnb,
+                          &k_kdf);
+    /* kRRCint: last 128 bits of key derivation function which returns 256 bits */
+    kRRCint = malloc(16);
+    if (kRRCint == NULL) exit(1);
+    memcpy(kRRCint, k_kdf+16, 16);
+    free(k_kdf);
+#endif
+    nr_rrc_pdcp_config_asn1_req(ctxt_pP,
+                                  ue_context_pP->ue_context.SRB_configList,
+                                  NULL,
+                                  NULL,
+                                  0xff,
+                                  NULL,
+                                  NULL,
+                                  NULL,
+                                  NULL,
+                                  NULL,
+                                  NULL,
+                                  get_softmodem_params()->sa ? ue_context_pP->ue_context.masterCellGroup->rlc_BearerToAddModList : NULL);
+    pdcp_config_set_security(
+        ctxt_pP,
+        NULL,      /* pdcp_pP not used anymore in NR */
+        DCCH,
+        DCCH+2,
+        (ue_context_pP->ue_context.ciphering_algorithm )         |
+        (ue_context_pP->ue_context.integrity_algorithm << 4),
+        kRRCenc,
+        kRRCint,
+        kUPenc);
     if (!NODE_IS_CU(RC.nrrrc[ctxt_pP->module_id]->node_type)) {
       apply_macrlc_config_reest(RC.nrrrc[ctxt_pP->module_id],ue_context_pP,ctxt_pP,ctxt_pP->rnti);
     }
-    apply_pdcp_config(ue_context_pP,ctxt_pP);
     nr_rrc_data_req(ctxt_pP,
                 DCCH,
                 rrc_gNB_mui++,
@@ -1582,7 +1642,6 @@ rrc_gNB_generate_RRCReestablishment(
                 size,
                 buffer,
                 PDCP_TRANSMISSION_MODE_CONTROL);
-    // rrc_pdcp_config_asn1_req
 #endif
 }
 
