@@ -728,11 +728,11 @@ rrc_gNB_generate_defaultRRCReconfiguration(
 {
   uint8_t                       buffer[RRC_BUF_SIZE];
   uint16_t                      size;
-  /*NR_SRB_ToAddModList_t        **SRB_configList2 = NULL;
+  NR_SRB_ToAddModList_t        **SRB_configList2 = NULL;
   NR_SRB_ToAddModList_t        *SRB_configList  = ue_context_pP->ue_context.SRB_configList;
-  NR_DRB_ToAddModList_t        **DRB_configList  = NULL;
-  NR_DRB_ToAddModList_t        **DRB_configList2 = NULL;
   NR_SRB_ToAddMod_t            *SRB2_config     = NULL;
+  /*NR_DRB_ToAddModList_t        **DRB_configList  = NULL;
+  NR_DRB_ToAddModList_t        **DRB_configList2 = NULL;
   NR_DRB_ToAddMod_t            *DRB_config      = NULL;
   NR_SDAP_Config_t             *sdap_config     = NULL;*/
   struct NR_RRCReconfiguration_v1530_IEs__dedicatedNAS_MessageList
@@ -742,6 +742,17 @@ rrc_gNB_generate_defaultRRCReconfiguration(
   uint8_t xid = rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id);
 
   /******************** Radio Bearer Config ********************/
+
+  /* Configure SRB2 */
+  SRB_configList2 = &ue_context_pP->ue_context.SRB_configList2[xid];
+  if (*SRB_configList2 == NULL) {
+    *SRB_configList2 = CALLOC(1, sizeof(**SRB_configList2));
+    memset(*SRB_configList2, 0, sizeof(**SRB_configList2));
+    SRB2_config = CALLOC(1, sizeof(*SRB2_config));
+    SRB2_config->srb_Identity = 2;
+    ASN_SEQUENCE_ADD(&(*SRB_configList2)->list, SRB2_config);
+    ASN_SEQUENCE_ADD(&SRB_configList->list, SRB2_config);
+  }
   /* Configure SRB2 */
   /*SRB_configList2 = &ue_context_pP->ue_context.SRB_configList2[xid];
   if (*SRB_configList2) {
@@ -839,7 +850,7 @@ rrc_gNB_generate_defaultRRCReconfiguration(
   memset(buffer, 0, RRC_BUF_SIZE);
   size = do_RRCReconfiguration(ctxt_pP, buffer,
                                 xid,
-                                NULL, //*SRB_configList2,
+                                *SRB_configList2,
                                 NULL, //*DRB_configList,
                                 NULL,
                                 NULL,
