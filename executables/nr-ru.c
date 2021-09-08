@@ -301,15 +301,20 @@ void fh_if4p5_south_out(RU_t *ru, int frame, int slot, uint64_t timestamp) {
 /* Input Fronthaul from south RCC/RAU                        */
 
 // Synchronous if5 from south
+
+uint64_t ts_rx[20];
 void fh_if5_south_in(RU_t *ru,
                      int *frame,
                      int *tti) {
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
   RU_proc_t *proc = &ru->proc;
   recv_IF5(ru, &proc->timestamp_rx, *tti, IF5_RRH_GW_UL);
-  proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_subframe*10))&1023;
-  uint32_t idx_sf = proc->timestamp_rx / fp->samples_per_subframe;
-  proc->tti_rx = (idx_sf * fp->slots_per_subframe + (int)round((float)(proc->timestamp_rx % fp->samples_per_subframe) / fp->samples_per_slot0))%(fp->slots_per_frame);
+  if (proc->first_rx == 1) ru->ts_offset = proc->timestamp_rx;
+  proc->frame_rx    = ((proc->timestamp_rx-ru->ts_offset) / (fp->samples_per_subframe*10))&1023;
+  proc->tti_rx = fp->get_slot_from_timestamp(proc->timestamp_rx-ru->ts_offset,fp);
+//(idx_sf * fp->slots_per_subframe + (int)round((float)(proc->timestamp_rx % fp->samples_per_subframe) / fp->samples_per_slot0))%(fp->slots_per_frame);
+  ts_rx[*tti] = proc->timestamp_rx;
+  LOG_D(PHY,"IF5 %d.%d => RX %d.%d first_rx %d\n",*frame,*tti,proc->frame_rx,proc->tti_rx,proc->first_rx); 
 
   if (proc->first_rx == 0) {
     if (proc->tti_rx != *tti) {
@@ -318,7 +323,7 @@ void fh_if5_south_in(RU_t *ru,
     }
 
     if (proc->frame_rx != *frame) {
-      LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->frame_rx %d frame %d)\n",proc->frame_rx,*frame);
+      LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->frame_rx %d frame %d proc->tti_rx %d tti %d)\n",proc->frame_rx,*frame,proc->tti_rx,*tti);
       exit_fun("Exiting");
     }
   } else {
@@ -698,7 +703,7 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
   nfapi_nr_config_request_scf_t *cfg = &ru->config;
   void *txp[ru->nb_tx];
   unsigned int txs;
-  int i,txsymb;
+  int i,txsymb=fp->symbols_per_slot;
   T(T_ENB_PHY_OUTPUT_SIGNAL, T_INT(0), T_INT(0), T_INT(frame), T_INT(slot),
     T_INT(0), T_BUFFER(&ru->common.txdata[0][fp->get_samples_slot_timestamp(slot,fp,0)], fp->samples_per_subframe * 4));
   int slot_type         = nr_slot_select(cfg,frame,slot%fp->slots_per_frame);
@@ -765,20 +770,20 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
 
     for (i=0; i<ru->nb_tx; i++)
       txp[i] = (void *)&ru->common.txdata[i][fp->get_samples_slot_timestamp(slot,fp,0)-sf_extension];
-
+    
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (timestamp-ru->openair0_cfg.tx_sample_advance)&0xffffffff );
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
-    // prepare tx buffer pointers
+      // prepare tx buffer pointers
     txs = ru->rfdevice.trx_write_func(&ru->rfdevice,
                                       timestamp+ru->ts_offset-ru->openair0_cfg.tx_sample_advance-sf_extension,
                                       txp,
                                       siglen+sf_extension,
                                       ru->nb_tx,
                                       flags);
-    LOG_D(PHY,"[TXPATH] RU %d tx_rf, writing to TS %llu, frame %d, unwrapped_frame %d, slot %di, returned %d\n",ru->idx,
-          (long long unsigned int)timestamp,frame,proc->frame_tx_unwrap,slot, txs);
+    LOG_D(PHY,"[TXPATH] RU %d aa %d tx_rf, writing to TS %llu, frame %d, unwrapped_frame %d, slot %d, returned %d, E %f\n",ru->idx,i,
+	  (long long unsigned int)timestamp,frame,proc->frame_tx_unwrap,slot, txs,10*log10((double)signal_energy(txp[0],siglen+sf_extension)));
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
-    //AssertFatal(txs == 0,"trx write function error %d\n", txs);
+      //AssertFatal(txs == 0,"trx write function error %d\n", txs);
   }
 }
 
@@ -793,79 +798,86 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
 
   if (mu == NR_MU_0) {
     switch(N_RB) {
-      case 270:
-        if (fp->threequarter_fs) {
-          cfg->sample_rate=92.16e6;
-          cfg->samples_per_frame = 921600;
-          cfg->tx_bw = 50e6;
-          cfg->rx_bw = 50e6;
-        } else {
-          cfg->sample_rate=61.44e6;
-          cfg->samples_per_frame = 614400;
-          cfg->tx_bw = 50e6;
-          cfg->rx_bw = 50e6;
-        }
-
-      case 216:
-        if (fp->threequarter_fs) {
-          cfg->sample_rate=46.08e6;
-          cfg->samples_per_frame = 460800;
-          cfg->tx_bw = 40e6;
-          cfg->rx_bw = 40e6;
-        } else {
-          cfg->sample_rate=61.44e6;
-          cfg->samples_per_frame = 614400;
-          cfg->tx_bw = 40e6;
-          cfg->rx_bw = 40e6;
-        }
-
-        break;
-
-      case 106:
-        if (fp->threequarter_fs) {
-          cfg->sample_rate=23.04e6;
-          cfg->samples_per_frame = 230400;
-          cfg->tx_bw = 20e6;
-          cfg->rx_bw = 20e6;
-        } else {
-          cfg->sample_rate=30.72e6;
-          cfg->samples_per_frame = 307200;
-          cfg->tx_bw = 20e6;
-          cfg->rx_bw = 20e6;
-        }
-
-        break;
-
-      case 52:
-        if (fp->threequarter_fs) {
-          cfg->sample_rate=11.52e6;
-          cfg->samples_per_frame = 115200;
-          cfg->tx_bw = 10e6;
-          cfg->rx_bw = 10e6;
-        } else {
-          cfg->sample_rate=15.36e6;
-          cfg->samples_per_frame = 153600;
-          cfg->tx_bw = 10e6;
-          cfg->rx_bw = 10e6;
-        }
-
-      case 25:
-        if (fp->threequarter_fs) {
-          cfg->sample_rate=5.76e6;
-          cfg->samples_per_frame = 57600;
-          cfg->tx_bw = 5e6;
-          cfg->rx_bw = 5e6;
-        } else {
-          cfg->sample_rate=7.68e6;
-          cfg->samples_per_frame = 76800;
-          cfg->tx_bw = 5e6;
-          cfg->rx_bw = 5e6;
-        }
-
-        break;
-
-      default:
-        AssertFatal(0==1,"N_RB %d not yet supported for numerology %d\n",N_RB,mu);
+    case 270:
+      if (fp->threequarter_fs) {
+        cfg->sample_rate=92.16e6;
+        cfg->samples_per_frame = 921600;
+        cfg->tx_bw = 50e6;
+        cfg->rx_bw = 50e6;
+      } else {
+        cfg->sample_rate=61.44e6;
+        cfg->samples_per_frame = 614400;
+        cfg->tx_bw = 50e6;
+        cfg->rx_bw = 50e6;
+      }
+    case 216:
+      if (fp->threequarter_fs) {
+        cfg->sample_rate=46.08e6;
+        cfg->samples_per_frame = 460800;
+        cfg->tx_bw = 40e6;
+        cfg->rx_bw = 40e6;
+      }
+      else {
+        cfg->sample_rate=61.44e6;
+        cfg->samples_per_frame = 614400;
+        cfg->tx_bw = 40e6;
+        cfg->rx_bw = 40e6;
+      }
+      break; 
+    case 160: //30 MHz
+    case 133: //25 MHz
+      if (fp->threequarter_fs) {
+        AssertFatal(1==0,"N_RB %d cannot use 3/4 sampling\n",N_RB);
+      }
+      else {
+        cfg->sample_rate=30.72e6;
+        cfg->samples_per_frame = 307200;
+        cfg->tx_bw = 20e6;
+        cfg->rx_bw = 20e6;
+      }
+    case 106:
+      if (fp->threequarter_fs) {
+        cfg->sample_rate=23.04e6;
+        cfg->samples_per_frame = 230400;
+        cfg->tx_bw = 20e6;
+        cfg->rx_bw = 20e6;
+      }
+      else {
+        cfg->sample_rate=30.72e6;
+        cfg->samples_per_frame = 307200;
+        cfg->tx_bw = 20e6;
+        cfg->rx_bw = 20e6;
+      }
+      break;
+    case 52:
+      if (fp->threequarter_fs) {
+        cfg->sample_rate=11.52e6;
+        cfg->samples_per_frame = 115200;
+        cfg->tx_bw = 10e6;
+        cfg->rx_bw = 10e6;
+      }
+      else {
+        cfg->sample_rate=15.36e6;
+        cfg->samples_per_frame = 153600;
+        cfg->tx_bw = 10e6;
+        cfg->rx_bw = 10e6;
+      }
+    case 25:
+      if (fp->threequarter_fs) {
+        cfg->sample_rate=5.76e6;
+        cfg->samples_per_frame = 57600;
+        cfg->tx_bw = 5e6;
+        cfg->rx_bw = 5e6;
+      }
+      else {
+        cfg->sample_rate=7.68e6;
+        cfg->samples_per_frame = 76800;
+        cfg->tx_bw = 5e6;
+        cfg->rx_bw = 5e6;
+      }
+      break;
+    default:
+      AssertFatal(0==1,"N_RB %d not yet supported for numerology %d\n",N_RB,mu);
     }
   } else if (mu == NR_MU_1) {
     switch(N_RB) {
@@ -896,6 +908,19 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
         cfg->rx_bw = 80e6;
       }
       break;
+    case 162 :
+      if (fp->threequarter_fs) {
+        AssertFatal(1==0,"N_RB %d cannot use 3/4 sampling\n",N_RB);
+      }
+      else {
+        cfg->sample_rate=61.44e6;
+        cfg->samples_per_frame = 614400;
+        cfg->tx_bw = 60e6;
+        cfg->rx_bw = 60e6;
+      }
+
+      break;
+
     case 133 :
       if (fp->threequarter_fs) {
 	AssertFatal(1==0,"N_RB %d cannot use 3/4 sampling\n",N_RB);
@@ -1236,22 +1261,25 @@ void *ru_thread( void *param ) {
       exit(-1);
     }
   } else {
+    nr_init_frame_parms(&ru->config, fp);
+    nr_dump_frame_parms(fp);
+    fill_rf_config(ru,ru->rf_config_file);
+    nr_phy_init_RU(ru);
+
     // Start IF device if any
     if (ru->nr_start_if) {
       LOG_I(PHY,"Starting IF interface for RU %d\n",ru->idx);
       AssertFatal(ru->nr_start_if(ru,NULL) == 0, "Could not start the IF device\n");
 
-      if (ru->if_south == LOCAL_RF) ret = connect_rau(ru);
-      else ret = attach_rru(ru);
+      if (ru->has_ctrl_prt > 0) {
+        if (ru->if_south == LOCAL_RF) ret = connect_rau(ru);
+        else ret = attach_rru(ru);
+  
+        AssertFatal(ret==0,"Cannot connect to remote radio\n");
+      }
 
-      AssertFatal(ret==0,"Cannot connect to remote radio\n");
     }
-
-    if (ru->if_south == LOCAL_RF) { // configure RF parameters only
-      nr_init_frame_parms(&ru->config, fp);
-      nr_dump_frame_parms(fp);
-      fill_rf_config(ru,ru->rf_config_file);
-      nr_phy_init_RU(ru);
+    else if (ru->if_south == LOCAL_RF) { // configure RF parameters only
       ret = openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
       AssertFatal(ret==0,"Cannot connect to local radio\n");
     }
@@ -1336,12 +1364,13 @@ void *ru_thread( void *param ) {
         ru->feprx(ru,proc->tti_rx);
         //LOG_M("rxdata.m","rxs",ru->common.rxdata[0],1228800,1,1);
         LOG_D(PHY,"RU proc: frame_rx = %d, tti_rx = %d\n", proc->frame_rx, proc->tti_rx);
+/*
         LOG_D(PHY,"Copying rxdataF from RU to gNB\n");
 
         for (aa=0; aa<ru->nb_rx; aa++)
           memcpy((void *)RC.gNB[0]->common_vars.rxdataF[aa],
                  (void *)ru->common.rxdataF[aa], fp->symbols_per_slot*fp->ofdm_symbol_size*sizeof(int32_t));
-
+*/
         if (IS_SOFTMODEM_DOSCOPE && RC.gNB[0]->scopeData)
           ((scopeData_t *)RC.gNB[0]->scopeData)->slotFunc(ru->common.rxdataF[0],proc->tti_rx, RC.gNB[0]->scopeData);
 
@@ -1410,6 +1439,11 @@ void *ru_thread( void *param ) {
   delNotifiedFIFO_elt(msgRUTx);
   ru_thread_status = 0;
   return &ru_thread_status;
+}
+
+int start_streaming(RU_t *ru) {
+  LOG_I(PHY,"Starting streaming on third-party RRU\n");
+  return(ru->ifdevice.thirdparty_startstreaming(&ru->ifdevice));
 }
 
 int nr_start_if(struct RU_t_s *ru, struct PHY_VARS_gNB_s *gNB) {
@@ -1757,7 +1791,7 @@ void set_function_spec_param(RU_t *ru) {
       ru->fh_south_in            = fh_if5_south_in;     // synchronous IF5 reception
       ru->fh_south_out           = fh_if5_south_out;    // synchronous IF5 transmission
       ru->fh_south_asynch_in     = NULL;                // no asynchronous UL
-      ru->start_rf               = NULL;                // no local RF
+      ru->start_rf               = ru->eth_params.transp_preference == ETH_UDP_IF5_ECPRI_MODE ? start_streaming : NULL;
       ru->stop_rf                = NULL;
       ru->start_write_thread     = NULL;
       ru->nr_start_if            = nr_start_if;         // need to start if interface for IF5
@@ -2030,6 +2064,12 @@ static void NRRCconfig_RU(void) {
           RC.ru[j]->if_south                     = REMOTE_IF5;
           RC.ru[j]->function                     = NGFI_RAU_IF5;
           RC.ru[j]->eth_params.transp_preference = ETH_UDP_MODE;
+        } else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "udp_ecpri_if5") == 0) {
+          RC.ru[j]->if_south                     = REMOTE_IF5;
+          RC.ru[j]->function                     = NGFI_RAU_IF5;
+          RC.ru[j]->eth_params.transp_preference = ETH_UDP_IF5_ECPRI_MODE;
+        } else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "udp_ecpri_if5") == 0) {
+          RC.ru[j]->if_south                     = REMOTE_IF5;
         } else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "raw") == 0) {
           RC.ru[j]->if_south                     = REMOTE_IF5;
           RC.ru[j]->function                     = NGFI_RAU_IF5;

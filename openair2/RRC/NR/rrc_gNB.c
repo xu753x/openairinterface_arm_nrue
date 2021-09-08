@@ -240,6 +240,7 @@ static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration
 			   rrc->carrier.pusch_AntennaPorts,
                            rrc->carrier.sib1_tda,
 			   (NR_ServingCellConfigCommon_t *)rrc->carrier.servingcellconfigcommon,
+			   &rrc->carrier.mib,
 			   0,
 			   0, // WIP hardcoded rnti
 			   (NR_CellGroupConfig_t *)NULL
@@ -331,6 +332,7 @@ char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigu
   rrc->carrier.ssb_SubcarrierOffset = configuration->ssb_SubcarrierOffset;
   rrc->carrier.pdsch_AntennaPorts = configuration->pdsch_AntennaPorts;
   rrc->carrier.pusch_AntennaPorts = configuration->pusch_AntennaPorts;
+  rrc->carrier.minRXTXTIMEpdsch = configuration->minRXTXTIMEpdsch;
   rrc->carrier.sib1_tda = configuration->sib1_tda;
   rrc->carrier.do_CSIRS = configuration->do_CSIRS;
    /// System Information INIT
@@ -391,6 +393,7 @@ void apply_macrlc_config(gNB_RRC_INST *rrc,
 			     rrc->carrier.pusch_AntennaPorts,
 			     rrc->carrier.sib1_tda,
 			     NULL,
+                             NULL,
 			     0,
 			     ue_context_pP->ue_context.rnti,
 			     get_softmodem_params()->sa ? ue_context_pP->ue_context.masterCellGroup : (NR_CellGroupConfig_t *)NULL);
@@ -433,7 +436,7 @@ rrc_gNB_generate_RRCSetup(
 )
 //-----------------------------------------------------------------------------
 {
-  LOG_I(NR_RRC, "rrc_gNB_generate_RRCSetup \n");
+  LOG_D(NR_RRC, "rrc_gNB_generate_RRCSetup \n");
   MessageDef                    *message_p;
 
   // T(T_GNB_RRC_SETUP,
@@ -442,17 +445,18 @@ rrc_gNB_generate_RRCSetup(
   //   T_INT(ctxt_pP->subframe),
   //   T_INT(ctxt_pP->rnti));
   gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
+  gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
   ue_p->Srb0.Tx_buffer.payload_size = do_RRCSetup(ue_context_pP,
 						  (uint8_t *) ue_p->Srb0.Tx_buffer.Payload,
 						  rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id),
 						  masterCellGroup_from_DU,
-						  scc);
+						  scc,&rrc->carrier);
 
   LOG_DUMPMSG(NR_RRC, DEBUG_RRC,
               (char *)(ue_p->Srb0.Tx_buffer.Payload),
               ue_p->Srb0.Tx_buffer.payload_size,
               "[MSG] RRC Setup\n");
-  gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
+
   switch (rrc->node_type) {
     case ngran_gNB_CU:
       // create an ITTI message
@@ -565,7 +569,7 @@ rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(
 						  (uint8_t *) ue_p->Srb0.Tx_buffer.Payload,
 						  rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id),
 						  NULL,
-						  scc);
+						  scc,&rrc_instance_p->carrier);
 
   LOG_DUMPMSG(NR_RRC, DEBUG_RRC,
               (char *)(ue_p->Srb0.Tx_buffer.Payload),
@@ -582,6 +586,7 @@ rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(
                          rrc_instance_p->carrier.pusch_AntennaPorts,
                          rrc_instance_p->carrier.sib1_tda,
                          (NR_ServingCellConfigCommon_t *)rrc_instance_p->carrier.servingcellconfigcommon,
+                         &rrc_instance_p->carrier.mib,
                          0,
                          ue_context_pP->ue_context.rnti,
                          (NR_CellGroupConfig_t *)NULL
@@ -1330,6 +1335,7 @@ rrc_gNB_process_RRCReconfigurationComplete(
                            rrc->carrier.pdsch_AntennaPorts,
                            rrc->carrier.pusch_AntennaPorts,
                            rrc->carrier.sib1_tda,
+                           NULL,
                            NULL,
                            0,
                            ue_context_pP->ue_context.rnti,
@@ -3078,7 +3084,7 @@ void nr_rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
                    ctxt_pP->module_id,
                    ue_context_p,
                    NGAP_CAUSE_RADIO_NETWORK,
-                   30);
+                   NGAP_CAUSE_RADIO_NETWORK_RADIO_CONNECTION_WITH_UE_LOST);
         }
 
         // Remove here the MAC and RRC context when RRC is not connected or gNB is not connected to CN5G

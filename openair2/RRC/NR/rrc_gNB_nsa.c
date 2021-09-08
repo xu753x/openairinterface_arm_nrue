@@ -355,6 +355,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
 			   rrc->carrier.pusch_AntennaPorts,
                            rrc->carrier.sib1_tda,
                            rrc->carrier.servingcellconfigcommon,
+                           &rrc->carrier.mib,
                            1, // add_ue flag
                            ue_context_p->ue_id_rnti,
                            ue_context_p->ue_context.secondaryCellGroup);
@@ -364,6 +365,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
                            rrc->carrier.pdsch_AntennaPorts,
                            rrc->carrier.pusch_AntennaPorts,
                            rrc->carrier.sib1_tda,
+                           NULL,
                            NULL,
                            1, // add_ue flag
                            ue_context_p->ue_id_rnti,
