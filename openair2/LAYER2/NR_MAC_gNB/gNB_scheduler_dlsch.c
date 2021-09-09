@@ -464,7 +464,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
   const uint8_t num_dmrs_cdm_grps_no_data = sched_ctrl->active_bwp ? (f ? 1 : (ps->nrOfSymbols == 2 ? 1 : 2)) : (ps->nrOfSymbols == 2 ? 1 : 2);
 
   int rbSize = 0;
-  const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] : 1;
+  const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] : 0;
   if (tda == retInfo->time_domain_allocation) {
     /* Check that there are enough resources for retransmission */
     while (rbSize < retInfo->rbSize) {
@@ -560,6 +560,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
 float thr_ue[MAX_MOBILES_PER_GNB];
 uint32_t pf_tbs[3][29]; // pre-computed, approximate TBS values for PF coefficient
 
+int g_dl_mcs = 9;
 void pf_dl(module_id_t module_id,
            frame_t frame,
            sub_frame_t slot,
@@ -609,7 +610,7 @@ void pf_dl(module_id_t module_id,
         continue;
 
       /* Calculate coeff */
-      sched_pdsch->mcs = 9;
+      sched_pdsch->mcs = g_dl_mcs;
       sched_pdsch->nrOfLayers = 1;
       uint32_t tbs = pf_tbs[ps->mcsTableIdx][sched_pdsch->mcs];
       coeff_ue[UE_id] = (float) tbs / thr_ue[UE_id];
@@ -686,7 +687,7 @@ void pf_dl(module_id_t module_id,
       max_rbSize++;
 
     /* MCS has been set above */
-    const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] : 1;
+    const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] : 0;
     NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
     NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
     const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;

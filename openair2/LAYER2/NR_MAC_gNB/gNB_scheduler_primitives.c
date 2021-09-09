@@ -378,7 +378,7 @@ void nr_set_pusch_semi_static(const NR_ServingCellConfigCommon_t *scc,
                                     ps->startSymbolIndex,
                                     ps->mapping_type);
 */
-  LOG_I(PHY, "ul_dmrs_symb_pos 0x%x, position %d, symbols %d, %d, type %d  tda %d, A %d B %d\n", ps->ul_dmrs_symb_pos, 
+  LOG_D(PHY, "ul_dmrs_symb_pos 0x%x, position %d, symbols %d, %d, type %d  tda %d, A %d B %d\n", ps->ul_dmrs_symb_pos, 
                                   scc->dmrs_TypeA_Position,
                                     ps->nrOfSymbols,
                                     ps->startSymbolIndex,

@@ -64,6 +64,8 @@ struct timespec nr_t[10];
 
 #define NR_TIMESPEC_TO_DOUBLE_US( nr_t )    ( ( (double)nr_t.tv_sec * 1000000 ) + ( (double)nr_t.tv_nsec / 1000 ) )
 
+int g_fpag_ldpc = 0;
+
 struct timespec  nr_get_timespec_diff(
               struct timespec *start,
               struct timespec *stop )
@@ -216,8 +218,10 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   for (int i=0; i<gNB->num_pdsch_rnti[slot]; i++) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,1);
     LOG_D(PHY, "PDSCH generation started (%d) in frame %d.%d\n", gNB->num_pdsch_rnti[slot],frame,slot);
-    nr_generate_pdsch(gNB,frame, slot);
-    // nr_generate_pdsch_fpga_ldpc(gNB,frame, slot); //上面是OAI的代码，fpga_ldpc的encode切换到该行即可
+    if (g_fpag_ldpc==0)
+       nr_generate_pdsch(gNB,frame, slot);
+    else
+       nr_generate_pdsch_fpga_ldpc(gNB,frame, slot); //上面是OAI的代码，fpga_ldpc的encode切换到该行即可
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,0);
   }
 
@@ -617,7 +621,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
 
           offset = pucch_pdu->start_symbol_index*gNB->frame_parms.ofdm_symbol_size + (gNB->frame_parms.first_carrier_offset+pucch_pdu->prb_start*12);
           power_rxF = signal_energy_nodc(&gNB->common_vars.rxdataF[0][offset],12);
-          LOG_D(PHY,"frame %d, slot %d: PUCCH signal energy %d\n",frame_rx,slot_rx,power_rxF);
+          LOG_I(PHY,"frame %d, slot %d: PUCCH signal energy %d\n",frame_rx,slot_rx,power_rxF);
 
           nr_decode_pucch0(gNB,
 	                         frame_rx,
@@ -730,7 +734,10 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
              if (stats) stats->DTX++;
              return 1;
           } else gNB->pusch_vars[ULSCH_id]->DTX=0;
-
+          LOG_I(PHY, "PUSCH ok in %d.%d (%d,%d,%d)\n",frame_rx,slot_rx,
+                   dB_fixed_x10(gNB->pusch_vars[ULSCH_id]->ulsch_power_tot),
+                   dB_fixed_x10(gNB->pusch_vars[ULSCH_id]->ulsch_noise_power_tot),gNB->pusch_thres);
+                   
           stop_meas(&gNB->rx_pusch_stats);
           VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_RX_PUSCH,0);
           //LOG_M("rxdataF_comp.m","rxF_comp",gNB->pusch_vars[0]->rxdataF_comp[0],6900,1,1);

@@ -143,6 +143,8 @@ extern int usrp_tx_thread;
     {"kssb" ,                CONFIG_HLP_DLF,          0,              iptr:&kssb_15khz,                 defintval:0,           TYPE_INT,   0},              \
     {"ulrb" ,                CONFIG_HLP_DLF,          0,              iptr:&g_ul_rb,                    defintval:0,           TYPE_INT,   0},              \
     {"dlbytes" ,             CONFIG_HLP_DLF,          0,              iptr:&g_sched_dl_bytes,           defintval:0,           TYPE_INT,   0},              \
+    {"dlmcs" ,             CONFIG_HLP_DLF,          0,              iptr:&g_dl_mcs,                     defintval:9,           TYPE_INT,   0},              \
+    {"fpgaldpc",             CONFIG_HLP_SA,           PARAMFLAG_BOOL, iptr:&g_fpag_ldpc,                defintval:0,           TYPE_INT,    0},                     \
     {"a" ,                   CONFIG_HLP_CHOFF,        0,              iptr:&CHAIN_OFFSET,                 defintval:0,           TYPE_INT,    0},                     \
     {"d" ,                   CONFIG_HLP_SOFTS,        PARAMFLAG_BOOL, uptr:(uint32_t *)&do_forms,         defintval:0,           TYPE_INT8,   0},                     \
     {"q" ,                   CONFIG_HLP_STMON,        PARAMFLAG_BOOL, iptr:&opp_enabled,                  defintval:0,           TYPE_INT,    0},                     \
@@ -267,6 +269,8 @@ extern int   point_a_15khz;
 extern int   kssb_15khz;
 extern int g_ul_rb;
 extern int g_sched_dl_bytes;
+extern int g_dl_mcs;
+extern int g_fpag_ldpc;
 
 extern int usrp_tx_thread;
 extern uint16_t sl_ahead;
