@@ -463,12 +463,10 @@ typedef enum {
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /* security configuration                                                                                                                                                           */
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-#define CONFIG_STRING_SECURITY             "security"
+#define CONFIG_STRING_SECURITY      "security"
 
-#define SECURITY_CONFIG_CIPHERING          "ciphering_algorithms"
-#define SECURITY_CONFIG_INTEGRITY          "integrity_algorithms"
-#define SECURITY_CONFIG_DO_DRB_CIPHERING   "drb_ciphering"
-#define SECURITY_CONFIG_DO_DRB_INTEGRITY   "drb_integrity"
+#define SECURITY_CONFIG_CIPHERING   "ciphering_algorithms"
+#define SECURITY_CONFIG_INTEGRITY   "integrity_algorithms"
 
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*   security configuration                                                                                                                                                         */
@@ -477,15 +475,10 @@ typedef enum {
 #define SECURITY_GLOBALPARAMS_DESC { \
     {SECURITY_CONFIG_CIPHERING,            "preferred ciphering algorithms\n",            0,                strlistptr:NULL,      defstrlistval:NULL,       TYPE_STRINGLIST,  0}, \
     {SECURITY_CONFIG_INTEGRITY,            "preferred integrity algorithms\n",            0,                strlistptr:NULL,      defstrlistval:NULL,       TYPE_STRINGLIST,  0}, \
-    {SECURITY_CONFIG_DO_DRB_CIPHERING,     "use ciphering for DRBs",                      0,                strptr:NULL,          defstrval:"yes",          TYPE_STRING,      0}, \
-    {SECURITY_CONFIG_DO_DRB_INTEGRITY,     "use integrity for DRBs",                      0,                strptr:NULL,          defstrval:"no",           TYPE_STRING,      0}, \
 }
 
-#define SECURITY_CONFIG_CIPHERING_IDX          0
-#define SECURITY_CONFIG_INTEGRITY_IDX          1
-#define SECURITY_CONFIG_DO_DRB_CIPHERING_IDX   2
-#define SECURITY_CONFIG_DO_DRB_INTEGRITY_IDX   3
-
+#define SECURITY_CONFIG_CIPHERING_IDX   0
+#define SECURITY_CONFIG_INTEGRITY_IDX   1
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 
 #endif
