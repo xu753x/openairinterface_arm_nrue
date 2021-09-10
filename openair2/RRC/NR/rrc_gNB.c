@@ -848,19 +848,17 @@ rrc_gNB_generate_defaultRRCReconfiguration(
   }
 
   memset(buffer, 0, RRC_BUF_SIZE);
-  NR_CellGroupConfig_t *cellGroupConfig = calloc(1, sizeof(NR_CellGroupConfig_t));
-  fill_mastercellGroupConfig(cellGroupConfig, ue_context_pP->ue_context.masterCellGroup, false);
   size = do_RRCReconfiguration(ctxt_pP, buffer,
-                               xid,
-                               *SRB_configList2,
-                               NULL,
-                               NULL,
-                               NULL,
-                               NULL,
-                               NULL,
-                               dedicatedNAS_MessageList,
-                               NULL,
-                               cellGroupConfig);
+                                xid,
+                                *SRB_configList2,
+                                NULL, //*DRB_configList,
+                                NULL,
+                                NULL,
+                                NULL,
+                                NULL,
+                                dedicatedNAS_MessageList,
+                                NULL,
+                                NULL);
 
   free(ue_context_pP->ue_context.nas_pdu.buffer);
 
@@ -1119,7 +1117,7 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
 
   memset(buffer, 0, RRC_BUF_SIZE);
   cellGroupConfig = calloc(1, sizeof(NR_CellGroupConfig_t));
-  fill_mastercellGroupConfig(cellGroupConfig, ue_context_pP->ue_context.masterCellGroup, true);
+  fill_mastercellGroupConfig(cellGroupConfig, ue_context_pP->ue_context.masterCellGroup);
   size = do_RRCReconfiguration(ctxt_pP, buffer,
                                 xid,
                                 *SRB_configList2,
