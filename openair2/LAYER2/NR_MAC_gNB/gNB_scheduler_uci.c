@@ -574,6 +574,7 @@ static void handle_dl_harq(module_id_t mod_id,
     add_tail_nr_list(&UE_info->UE_sched_ctrl[UE_id].retrans_dl_harq, harq_pid);
     harq->round++;
   }
+  LOG_I(PHY, "dl harq isok %d, round %d, harqid %d\n", success, harq->round, harq_pid);
 }
 
 int checkTargetSSBInFirst64TCIStates_pdschConfig(int ssb_index_t, int Mod_idP, int UE_id) {
