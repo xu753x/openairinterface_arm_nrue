@@ -293,7 +293,7 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
   G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs,mod_order,rel15->nrOfLayers);
 
   if ( dlsch->rnti != SI_RNTI )
-  LOG_I(NR_PHY,"dlsch coding frame %d %d A %d G %d (nb_rb %d, nb_symb_sch %d, nb_re_dmrs %d, length_dmrs %d, mod_order %d)\n", 
+  LOG_D(NR_PHY,"dlsch coding frame %d %d A %d G %d (nb_rb %d, nb_symb_sch %d, nb_re_dmrs %d, length_dmrs %d, mod_order %d)\n", 
   frame, slot, A,G, nb_rb,nb_symb_sch,nb_re_dmrs,length_dmrs,mod_order);
 
   if (A > 3824) {

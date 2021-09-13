@@ -151,7 +151,15 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame,int slot,nfapi_nr_
                    n_hf, frame, cfg, fp);
 }
 
+#define TIME_ESTIMATION
 
+#ifdef TIME_ESTIMATION
+struct timespec tx_time_start[20];
+struct timespec tx_time_stop[20];
+struct timespec code_time_start[20];
+struct timespec code_time_stop[20];
+int log_cnt =0;
+#endif
 void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
                            int frame,int slot,
                            int do_meas) {
@@ -167,6 +175,12 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_TX+offset,1);
 
   if (do_meas==1) start_meas(&gNB->phy_proc_tx);
+
+#ifdef TIME_ESTIMATION
+  if (slot == 0)
+      log_cnt++;
+  clock_gettime(CLOCK_REALTIME, &tx_time_start[slot]);
+#endif
 
   // clear the transmit data array and beam index for the current slot
   for (aa=0; aa<cfg->carrier_config.num_tx_ant.value; aa++) {
@@ -215,6 +229,9 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
     if (ul_pdcch_pdu_id >= 0) gNB->ul_pdcch_pdu[ul_pdcch_pdu_id].frame = -1;
   }
  
+#ifdef TIME_ESTIMATION
+  clock_gettime(CLOCK_REALTIME, &code_time_start[slot]);
+#endif 
   for (int i=0; i<gNB->num_pdsch_rnti[slot]; i++) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,1);
     LOG_D(PHY, "PDSCH generation started (%d) in frame %d.%d\n", gNB->num_pdsch_rnti[slot],frame,slot);
@@ -224,6 +241,10 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
        nr_generate_pdsch_fpga_ldpc(gNB,frame, slot); //上面是OAI的代码，fpga_ldpc的encode切换到该行即可
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,0);
   }
+
+#ifdef TIME_ESTIMATION
+  clock_gettime(CLOCK_REALTIME, &code_time_stop[slot]);
+#endif
 
   for (int i=0;i<NUMBER_OF_NR_CSIRS_MAX;i++){
     NR_gNB_CSIRS_t *csirs = &gNB->csirs_pdu[i];
@@ -245,6 +266,23 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   for (aa=0; aa<cfg->carrier_config.num_tx_ant.value; aa++) {
 	  apply_nr_rotation(fp,(int16_t*) &gNB->common_vars.txdataF[aa][txdataF_offset],slot,0,fp->Ncp==EXTENDED?12:14,fp->ofdm_symbol_size);
   }
+
+#ifdef TIME_ESTIMATION
+  clock_gettime(CLOCK_REALTIME, &tx_time_stop[slot]);
+  if ((log_cnt == 20) && (slot == 17))
+  {
+      double code_clock_gettime_cur, tx_clock_gettime_cur;
+
+    for (int ii=0; ii<slot; ii++)
+    {
+        code_clock_gettime_cur = NR_TIMESPEC_TO_DOUBLE_US(nr_get_timespec_diff(&code_time_start[ii], &code_time_stop[ii])); // us
+        tx_clock_gettime_cur = NR_TIMESPEC_TO_DOUBLE_US(nr_get_timespec_diff(&tx_time_start[ii], &tx_time_stop[ii])); // us
+        
+        LOG_I(PHY, "frame %d %d, code time %lf, tx time %lf\n", frame, ii, code_clock_gettime_cur, tx_clock_gettime_cur);
+    }
+    log_cnt = 0;
+  }
+#endif
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_TX+offset,0);
 }
@@ -300,7 +338,7 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
       ulsch_harq->round  = 0;
       ulsch->harq_mask &= ~(1 << rdata->harq_pid);
 
-      LOG_I(PHY, "ULSCH received ok \n");
+      LOG_D(PHY, "ULSCH received ok \n");
       nr_fill_indication(gNB,ulsch_harq->frame, ulsch_harq->slot, rdata->ulsch_id, rdata->harq_pid, 0);
     } else {
       LOG_I(PHY,"[gNB %d] ULSCH: Setting NAK for SFN/SF %d/%d (pid %d, status %d, round %d, TBS %d) r %d\n",
@@ -621,7 +659,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
 
           offset = pucch_pdu->start_symbol_index*gNB->frame_parms.ofdm_symbol_size + (gNB->frame_parms.first_carrier_offset+pucch_pdu->prb_start*12);
           power_rxF = signal_energy_nodc(&gNB->common_vars.rxdataF[0][offset],12);
-          LOG_I(PHY,"frame %d, slot %d: PUCCH signal energy %d\n",frame_rx,slot_rx,power_rxF);
+          LOG_D(PHY,"frame %d, slot %d: PUCCH signal energy %d\n",frame_rx,slot_rx,power_rxF);
 
           nr_decode_pucch0(gNB,
 	                         frame_rx,
@@ -734,7 +772,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
              if (stats) stats->DTX++;
              return 1;
           } else gNB->pusch_vars[ULSCH_id]->DTX=0;
-          LOG_I(PHY, "PUSCH ok in %d.%d (%d,%d,%d)\n",frame_rx,slot_rx,
+          LOG_D(PHY, "PUSCH ok in %d.%d (%d,%d,%d)\n",frame_rx,slot_rx,
                    dB_fixed_x10(gNB->pusch_vars[ULSCH_id]->ulsch_power_tot),
                    dB_fixed_x10(gNB->pusch_vars[ULSCH_id]->ulsch_noise_power_tot),gNB->pusch_thres);
                    

@@ -91,11 +91,21 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
   NR_ControlResourceSet_t *coreset;
   if(ss_id>=0) {
     ss = mac->SSpace[bwp_id - 1][coreset_id - 1][ss_id];
-    coreset = mac->coreset[bwp_id - 1][coreset_id - 1];
-    rel15->coreset.CoreSetType = NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG;
+    coreset_id = ss->controlResourceSetId;
+    if (coreset_id == 0)
+    {
+      coreset = mac->coreset0;
+      rel15->coreset.CoreSetType = NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG_CSET_0;
+    }
+    else
+    {
+      coreset = mac->coreset[bwp_id - 1][coreset_id - 1];
+      rel15->coreset.CoreSetType = NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG;
+    }
   } else {
     ss = mac->search_space_zero;
     coreset = mac->coreset0;
+    coreset_id = 0;
     if(rnti_type == NR_RNTI_SI) {
       rel15->coreset.CoreSetType = NFAPI_NR_CSET_CONFIG_MIB_SIB1;
     } else {
@@ -155,6 +165,11 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
     }
     for (int i = 0; i < rel15->num_dci_options; i++) {
       rel15->dci_length_options[i] = nr_dci_size(initialUplinkBWP, mac->cg, &mac->def_dci_pdu_rel15[rel15->dci_format_options[i]], rel15->dci_format_options[i], NR_RNTI_C, rel15->BWPSize, bwp_id);
+    }
+    if (coreset_id == 0)
+    {
+      rel15->BWPSize  = mac->type0_PDCCH_CSS_config.num_rbs;
+      rel15->BWPStart = mac->type0_PDCCH_CSS_config.cset_start_rb;
     }
     break;
     case NR_RNTI_RA:

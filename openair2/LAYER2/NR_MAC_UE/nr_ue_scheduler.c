@@ -831,13 +831,8 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     rnti_types[rnti_type]);
 
    pusch_config_pdu->ul_dmrs_symb_pos = l_prime_mask;
-   pusch_config_pdu->ul_dmrs_symb_pos = fill_dmrs_mask(NULL,
-                                                        mac->mib->dmrs_TypeA_Position,
-                                                        pusch_config_pdu->nr_of_symbols,
-                                                        pusch_config_pdu->start_symbol_index,
-               mappingtype);
-
-   LOG_I(PHY, "ul_dmrs_symb_pos 0x%x, position %d, symbols %d, %d, typoe %d\n", pusch_config_pdu->ul_dmrs_symb_pos, 
+   
+   LOG_D(PHY, "ul_dmrs_symb_pos 0x%x, position %d, symbols %d, %d, typoe %d\n", pusch_config_pdu->ul_dmrs_symb_pos, 
                                   mac->mib->dmrs_TypeA_Position,
                                   pusch_config_pdu->nr_of_symbols,
                                   pusch_config_pdu->start_symbol_index,

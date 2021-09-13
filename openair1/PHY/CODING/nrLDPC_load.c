@@ -80,6 +80,8 @@ struct timespec ulsch_start;
 struct timespec ulsch_stop;
 #endif
 
+extern int g_fpag_ldpc;
+
 int load_nrLDPClib(void) {
 	 char *ptr = (char*)config_get_if();
      if ( ptr==NULL )  {// phy simulators, config module possibly not loaded
@@ -107,31 +109,32 @@ int load_nrLDPClib(void) {
      //      dlclose(handle);
      //      return -1;
      // }
-#if 1
-     HugePage_Init = (LDPC_FPGA_HugePage_Init) dlsym(handle, "HugePage_Init");
-     if(!HugePage_Init){
-          printf("FPGA loading HugePage_Init error!\n");
-          dlclose(handle);
-          return -1;
+     if (g_fpag_ldpc == 1)
+     {
+          HugePage_Init = (LDPC_FPGA_HugePage_Init) dlsym(handle, "HugePage_Init");
+          if(!HugePage_Init){
+               printf("FPGA loading HugePage_Init error!\n");
+               dlclose(handle);
+               return -1;
+          }
+          int HP = HugePage_Init(1);
+          if(HP != 0){
+               printf("HugePage_Init error!\n");
+          }
+          LOG_D(PHY,"load_nrLDPClib \n");
+          encoder_load = (LDPC_FPGA_EnTx) dlsym(handle, "encoder_load");
+          if(!encoder_load){
+               printf("FPGA loading encoder_load error!\n");
+               dlclose(handle);
+               return -1;
+          }
+          decoder_load = (LDPC_FPGA_DeTx) dlsym(handle, "decoder_load");
+          if(!decoder_load){
+               printf("FPGA loading decoder_load error!\n");
+               dlclose(handle);
+               return -1;
+          }
      }
-     int HP = HugePage_Init(1);
-     if(HP != 0){
-          printf("HugePage_Init error!\n");
-     }
-     LOG_D(PHY,"load_nrLDPClib \n");
-     encoder_load = (LDPC_FPGA_EnTx) dlsym(handle, "encoder_load");
-     if(!encoder_load){
-          printf("FPGA loading encoder_load error!\n");
-          dlclose(handle);
-          return -1;
-     }
-     decoder_load = (LDPC_FPGA_DeTx) dlsym(handle, "decoder_load");
-     if(!decoder_load){
-          printf("FPGA loading decoder_load error!\n");
-          dlclose(handle);
-          return -1;
-     }
-#endif
 
 return 0;
 }

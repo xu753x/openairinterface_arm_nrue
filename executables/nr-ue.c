@@ -101,6 +101,12 @@ typedef enum {
   si = 2
 } sync_mode_t;
 
+
+int g_ul_rb;
+int g_sched_dl_bytes;
+int g_dl_mcs;
+int g_fpag_ldpc;
+
 void init_nr_ue_vars(PHY_VARS_NR_UE *ue,
                      uint8_t UE_id,
                      uint8_t abstraction_flag)
