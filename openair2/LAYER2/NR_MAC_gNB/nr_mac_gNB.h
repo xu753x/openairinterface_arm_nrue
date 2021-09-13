@@ -93,8 +93,9 @@ typedef enum {
   RA_IDLE = 0,
   Msg2 = 1,
   WAIT_Msg3 = 2,
-  Msg4 = 3,
-  WAIT_Msg4_ACK = 4
+  Msg3_retransmission = 3,
+  Msg4 = 4,
+  WAIT_Msg4_ACK = 5
 } RA_gNB_state_t;
 
 typedef struct NR_preamble_ue {
@@ -156,6 +157,8 @@ typedef struct {
   int msg4_TBsize;
   /// MCS used for Msg4
   int msg4_mcs;
+  /// MAC PDU length for Msg4
+  int mac_pdu_length;
   /// RA search space
   NR_SearchSpace_t *ra_ss;
   // Beam index
@@ -365,9 +368,9 @@ typedef struct NR_pdsch_semi_static {
 
   int startSymbolIndex;
   int nrOfSymbols;
-
+  uint8_t nrOfLayers;
   uint8_t mcsTableIdx;
-
+  uint8_t dmrs_ports_id;
   uint8_t N_PRB_DMRS;
   uint8_t N_DMRS_SLOT;
   uint16_t dl_dmrs_symb_pos;
@@ -383,7 +386,6 @@ typedef struct NR_sched_pdsch {
   uint8_t mcs;
 
   /// TBS-related info
-  uint8_t nrOfLayers;
   uint16_t R;
   uint8_t Qm;
   uint32_t tb_size;
@@ -527,7 +529,8 @@ typedef struct {
   /// corresponding to the sched_pusch/sched_pdsch structures below
   int cce_index;
   uint8_t aggregation_level;
-
+  /// maximum aggregation level for UE, can be used to select level
+  int maxL;
   /// PUCCH scheduling information. Array of two: HARQ+SR in the first field,
   /// CSI in second.  This order is important for nr_acknack_scheduling()!
   NR_sched_pucch_t sched_pucch[2];
@@ -561,6 +564,7 @@ typedef struct {
   mac_rlc_status_resp_t rlc_status[MAX_NUM_LCID];
 
   int lcid_mask;
+  int lcid_to_schedule;
   uint16_t ta_frame;
   int16_t ta_update;
   bool ta_apply;

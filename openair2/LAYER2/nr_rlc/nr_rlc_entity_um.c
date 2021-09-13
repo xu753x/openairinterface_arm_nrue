@@ -148,9 +148,8 @@ static void reassemble_and_deliver(nr_rlc_entity_um_t *entity, int sn)
       bad_sdu = 1;
     }
     if (!bad_sdu && len > 0) {
-      //memcpy(sdu + so, pdu->data, len);
-      memcpy(sdu + so, pdu->data + so - pdu->so, len);
 
+      memcpy(sdu + so, pdu->data + so - pdu->so, len);
       so += len;
     }
     free(pdu->data);

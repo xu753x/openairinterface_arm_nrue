@@ -188,59 +188,63 @@ void calculate_preferred_ul_tda(module_id_t module_id, const NR_BWP_Uplink_t *ub
           tdd->nrofUplinkSlots);*/
 }
 
+//  For both UL-SCH except:
+//   - UL-SCH: fixed-size MAC CE(known by LCID)
+//   - UL-SCH: padding
+//   - UL-SCH: MSG3 48-bits
+//  |0|1|2|3|4|5|6|7|  bit-wise
+//  |R|F|   LCID    |
+//  |       L       |
+//  |0|1|2|3|4|5|6|7|  bit-wise
+//  |R|F|   LCID    |
+//  |       L       |
+//  |       L       |
+//
+//  For:
+//   - UL-SCH: fixed-size MAC CE(known by LCID)
+//   - UL-SCH: padding, for single/multiple 1-oct padding CE(s)
+//   - UL-SCH: MSG3 48-bits
+//  |0|1|2|3|4|5|6|7|  bit-wise
+//  |R|R|   LCID    |
+//
+//  LCID: The Logical Channel ID field identifies the logical channel instance of the corresponding MAC SDU or the type of the corresponding MAC CE or padding as described in Tables 6.2.1-1 and 6.2.1-2 for the DL-SCH and UL-SCH respectively. There is one LCID field per MAC subheader. The LCID field size is 6 bits;
+//  L: The Length field indicates the length of the corresponding MAC SDU or variable-sized MAC CE in bytes. There is one L field per MAC subheader except for subheaders corresponding to fixed-sized MAC CEs and padding. The size of the L field is indicated by the F field;
+//  F: length of L is 0:8 or 1:16 bits wide
+//  R: Reserved bit, set to zero.
+
 int nr_process_mac_pdu(module_id_t module_idP,
-                       int UE_id,
-                       uint8_t CC_id,
-                       frame_t frameP,
-                       sub_frame_t slot,
-                       uint8_t *pduP,
-                       uint16_t mac_pdu_len)
+                        int UE_id,
+                        uint8_t CC_id,
+                        frame_t frameP,
+                        sub_frame_t slot,
+                        uint8_t *pduP,
+                        int pdu_len)
 {
 
-    // This function is adapting code from the old
-    // parse_header(...) and ue_send_sdu(...) functions of OAI LTE
-
-    uint8_t *pdu_ptr = pduP, rx_lcid, done = 0;
-    int pdu_len = mac_pdu_len;
-    uint16_t mac_ce_len, mac_subheader_len, mac_sdu_len;
+    uint8_t rx_lcid;
+    uint8_t done = 0;
+    uint16_t mac_ce_len;
+    uint16_t mac_subheader_len;
+    uint16_t mac_sdu_len;
 
     NR_UE_info_t *UE_info = &RC.nrmac[module_idP]->UE_info;
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
     if ( pduP[0] != UL_SCH_LCID_PADDING )
-      trace_NRpdu(DIRECTION_UPLINK, pduP, mac_pdu_len ,UE_id, WS_C_RNTI, UE_info->rnti[UE_id], frameP, 0, 0, 0);
+      trace_NRpdu(DIRECTION_UPLINK, pduP, pdu_len, UE_id, WS_C_RNTI, UE_info->rnti[UE_id], frameP, 0, 0, 0);
 
-    //  For both DL/UL-SCH
-    //  Except:
-    //   - UL/DL-SCH: fixed-size MAC CE(known by LCID)
-    //   - UL/DL-SCH: padding
-    //   - UL-SCH:    MSG3 48-bits
-    //  |0|1|2|3|4|5|6|7|  bit-wise
-    //  |R|F|   LCID    |
-    //  |       L       |
-    //  |0|1|2|3|4|5|6|7|  bit-wise
-    //  |R|F|   LCID    |
-    //  |       L       |
-    //  |       L       |
+    #ifdef ENABLE_MAC_PAYLOAD_DEBUG
+    LOG_I(NR_MAC, "In %s: dumping MAC PDU in %d.%d:\n", __func__, frameP, slot);
+    log_dump(NR_MAC, pduP, pdu_len, LOG_DUMP_CHAR, "\n");
+    #endif
 
-    //  For both DL/UL-SCH
-    //  For:
-    //   - UL/DL-SCH: fixed-size MAC CE(known by LCID)
-    //   - UL/DL-SCH: padding, for single/multiple 1-oct padding CE(s)
-    //   - UL-SCH:    MSG3 48-bits
-    //  |0|1|2|3|4|5|6|7|  bit-wise
-    //  |R|R|   LCID    |
-    //  LCID: The Logical Channel ID field identifies the logical channel instance of the corresponding MAC SDU or the type of the corresponding MAC CE or padding as described in Tables 6.2.1-1 and 6.2.1-2 for the DL-SCH and UL-SCH respectively. There is one LCID field per MAC subheader. The LCID field size is 6 bits;
-    //  L: The Length field indicates the length of the corresponding MAC SDU or variable-sized MAC CE in bytes. There is one L field per MAC subheader except for subheaders corresponding to fixed-sized MAC CEs and padding. The size of the L field is indicated by the F field;
-    //  F: lenght of L is 0:8 or 1:16 bits wide
-    //  R: Reserved bit, set to zero.
     while (!done && pdu_len > 0){
         mac_ce_len = 0;
-        mac_subheader_len = 1; //  default to fixed-length subheader = 1-oct
+        mac_subheader_len = sizeof(NR_MAC_SUBHEADER_FIXED);
         mac_sdu_len = 0;
-        rx_lcid = ((NR_MAC_SUBHEADER_FIXED *)pdu_ptr)->LCID;
+        rx_lcid = ((NR_MAC_SUBHEADER_FIXED *)pduP)->LCID;
 
-        LOG_D(NR_MAC, "LCID received at gNB side: %d \n", rx_lcid);
+        LOG_D(NR_MAC, "In %s: received UL-SCH sub-PDU with LCID 0x%x in %d.%d (remaining PDU length %d)\n", __func__, rx_lcid, frameP, slot, pdu_len);
 
         unsigned char *ce_ptr;
         int n_Lcg = 0;
@@ -249,7 +253,7 @@ int nr_process_mac_pdu(module_id_t module_idP,
             //  MAC CE
 
             /*#ifdef DEBUG_HEADER_PARSING
-              LOG_D(NR_MAC, "[UE] LCID %d, PDU length %d\n", ((NR_MAC_SUBHEADER_FIXED *)pdu_ptr)->LCID, pdu_len);
+              LOG_D(NR_MAC, "[UE] LCID %d, PDU length %d\n", ((NR_MAC_SUBHEADER_FIXED *)pduP)->LCID, pdu_len);
             #endif*/
         case UL_SCH_LCID_RECOMMENDED_BITRATE_QUERY:
               // 38.321 Ch6.1.3.20
@@ -265,7 +269,7 @@ int nr_process_mac_pdu(module_id_t module_idP,
                //fixed length
                mac_ce_len =1;
                /* Extract short BSR value */
-               ce_ptr = &pdu_ptr[mac_subheader_len];
+               ce_ptr = &pduP[mac_subheader_len];
                NR_BSR_SHORT *bsr_s = (NR_BSR_SHORT *) ce_ptr;
                sched_ctrl->estimated_ul_buffer = 0;
                sched_ctrl->estimated_ul_buffer = NR_SHORT_BSR_TABLE[bsr_s->Buffer_size];
@@ -283,14 +287,14 @@ int nr_process_mac_pdu(module_id_t module_idP,
         case UL_SCH_LCID_L_TRUNCATED_BSR:
         	//38.321 section 6.1.3.1
         	//variable length
-        	mac_ce_len |= (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->L;
+        	mac_ce_len |= (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pduP)->L;
         	mac_subheader_len = 2;
-        	if(((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->F){
-        		mac_ce_len |= (uint16_t)(((NR_MAC_SUBHEADER_LONG *)pdu_ptr)->L2)<<8;
+        	if(((NR_MAC_SUBHEADER_SHORT *)pduP)->F){
+        		mac_ce_len |= (uint16_t)(((NR_MAC_SUBHEADER_LONG *)pduP)->L2)<<8;
         		mac_subheader_len = 3;
         	}
         	/* Extract long BSR value */
-               ce_ptr = &pdu_ptr[mac_subheader_len];
+               ce_ptr = &pduP[mac_subheader_len];
                NR_BSR_LONG *bsr_l = (NR_BSR_LONG *) ce_ptr;
                sched_ctrl->estimated_ul_buffer = 0;
 
@@ -303,18 +307,18 @@ int nr_process_mac_pdu(module_id_t module_idP,
 
                for (int n = 0; n < n_Lcg; n++){
                  LOG_D(NR_MAC, "LONG BSR, %d/%d (n/n_Lcg), BS Index %d, BS value < %d",
-                       n, n_Lcg, pdu_ptr[mac_subheader_len + 1 + n],
-                       NR_LONG_BSR_TABLE[pdu_ptr[mac_subheader_len + 1 + n]]);
+                       n, n_Lcg, pduP[mac_subheader_len + 1 + n],
+                       NR_LONG_BSR_TABLE[pduP[mac_subheader_len + 1 + n]]);
                  sched_ctrl->estimated_ul_buffer +=
-                       NR_LONG_BSR_TABLE[pdu_ptr[mac_subheader_len + 1 + n]];
+                       NR_LONG_BSR_TABLE[pduP[mac_subheader_len + 1 + n]];
                  LOG_D(NR_MAC,
                        "LONG BSR at %4d.%2d, %d/%d (n/n_Lcg), BS Index %d, BS value < %d, total %d\n",
                        frameP,
                        slot,
                        n,
                        n_Lcg,
-                       pdu_ptr[mac_subheader_len + 1 + n],
-                       NR_LONG_BSR_TABLE[pdu_ptr[mac_subheader_len + 1 + n]],
+                       pduP[mac_subheader_len + 1 + n],
+                       NR_LONG_BSR_TABLE[pduP[mac_subheader_len + 1 + n]],
                        sched_ctrl->estimated_ul_buffer);
                }
 
@@ -332,7 +336,7 @@ int nr_process_mac_pdu(module_id_t module_idP,
         	//fixed length
         	mac_ce_len = 2;
         	/* Extract SINGLE ENTRY PHR elements for PHR calculation */
-        	ce_ptr = &pdu_ptr[mac_subheader_len];
+        	ce_ptr = &pduP[mac_subheader_len];
         	NR_SINGLE_ENTRY_PHR_MAC_CE *phr = (NR_SINGLE_ENTRY_PHR_MAC_CE *) ce_ptr;
         	/* Save the phr info */
         	const int PH = phr->PH;
@@ -351,10 +355,10 @@ int nr_process_mac_pdu(module_id_t module_idP,
         case UL_SCH_LCID_MULTI_ENTRY_PHR_1_OCT:
         	//38.321 section 6.1.3.9
         	//  varialbe length
-        	mac_ce_len |= (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->L;
+        	mac_ce_len |= (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pduP)->L;
         	mac_subheader_len = 2;
-        	if(((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->F){
-        		mac_ce_len |= (uint16_t)(((NR_MAC_SUBHEADER_LONG *)pdu_ptr)->L2)<<8;
+        	if(((NR_MAC_SUBHEADER_SHORT *)pduP)->F){
+        		mac_ce_len |= (uint16_t)(((NR_MAC_SUBHEADER_LONG *)pduP)->L2)<<8;
         		mac_subheader_len = 3;
         	}
         	/* Extract MULTI ENTRY PHR elements from single octet bitmap for PHR calculation */
@@ -363,10 +367,10 @@ int nr_process_mac_pdu(module_id_t module_idP,
         case UL_SCH_LCID_MULTI_ENTRY_PHR_4_OCT:
         	//38.321 section 6.1.3.9
         	//  varialbe length
-        	mac_ce_len |= (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->L;
+        	mac_ce_len |= (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pduP)->L;
         	mac_subheader_len = 2;
-        	if(((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->F){
-        		mac_ce_len |= (uint16_t)(((NR_MAC_SUBHEADER_LONG *)pdu_ptr)->L2)<<8;
+        	if(((NR_MAC_SUBHEADER_SHORT *)pduP)->F){
+        		mac_ce_len |= (uint16_t)(((NR_MAC_SUBHEADER_LONG *)pduP)->L2)<<8;
         		mac_subheader_len = 3;
         	}
         	/* Extract MULTI ENTRY PHR elements from four octets bitmap for PHR calculation */
@@ -379,13 +383,13 @@ int nr_process_mac_pdu(module_id_t module_idP,
 
         case UL_SCH_LCID_SRB1:
         case UL_SCH_LCID_SRB2:
-          if(((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->F){
-            //mac_sdu_len |= (uint16_t)(((NR_MAC_SUBHEADER_LONG *)pdu_ptr)->L2)<<8;
+          if(((NR_MAC_SUBHEADER_SHORT *)pduP)->F){
+            //mac_sdu_len |= (uint16_t)(((NR_MAC_SUBHEADER_LONG *)pduP)->L2)<<8;
             mac_subheader_len = 3;
-            mac_sdu_len = ((uint16_t)(((NR_MAC_SUBHEADER_LONG *) pdu_ptr)->L1 & 0x7f) << 8)
-                | ((uint16_t)((NR_MAC_SUBHEADER_LONG *) pdu_ptr)->L2 & 0xff);
+            mac_sdu_len = ((uint16_t)(((NR_MAC_SUBHEADER_LONG *) pduP)->L1 & 0x7f) << 8)
+                | ((uint16_t)((NR_MAC_SUBHEADER_LONG *) pduP)->L2 & 0xff);
           } else {
-            mac_sdu_len = (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->L;
+            mac_sdu_len = (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pduP)->L;
             mac_subheader_len = 2;
           }
 
@@ -398,15 +402,13 @@ int nr_process_mac_pdu(module_id_t module_idP,
                              ENB_FLAG_YES,
                              MBMS_FLAG_NO,
                              rx_lcid,
-                             (char *) (pdu_ptr + mac_subheader_len),
+                             (char *) (pduP + mac_subheader_len),
                              mac_sdu_len,
                              1,
                              NULL);
           } else {
-            LOG_W(NR_MAC,"[UE %d] Frame/Slot %d.%d : Received LCID %d which is not configured, dropping packet\n",UE_id,frameP,slot,rx_lcid);
-            return -1;
+            AssertFatal(1==0,"[UE %d] Frame/Slot %d.%d : Received LCID %d which is not configured, dropping packet\n",UE_id,frameP,slot,rx_lcid);
           }
-
           break;
         case UL_SCH_LCID_SRB3:
               // todo
@@ -424,7 +426,7 @@ int nr_process_mac_pdu(module_id_t module_idP,
             // Check if it is a valid CCCH1 message, we get all 00's messages very often
             int i = 0;
             for(i=0; i<(mac_subheader_len+mac_sdu_len); i++) {
-              if(pdu_ptr[i] != 0) {
+              if(pduP[i] != 0) {
                 break;
               }
             }
@@ -445,26 +447,27 @@ int nr_process_mac_pdu(module_id_t module_idP,
                               0,
                               UE_info->rnti[UE_id],
                               CCCH,
-                              pdu_ptr+mac_subheader_len,
+                              pduP + mac_subheader_len,
                               mac_sdu_len,
                               0);
           break;
 
         case UL_SCH_LCID_DTCH:
           //  check if LCID is valid at current time.
-          if (((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->F) {
-            // mac_sdu_len |= (uint16_t)(((NR_MAC_SUBHEADER_LONG *)pdu_ptr)->L2)<<8;
+          if (((NR_MAC_SUBHEADER_SHORT *)pduP)->F) {
+            // mac_sdu_len |= (uint16_t)(((NR_MAC_SUBHEADER_LONG *)pduP)->L2)<<8;
             mac_subheader_len = 3;
-            mac_sdu_len = ((uint16_t)(((NR_MAC_SUBHEADER_LONG *)pdu_ptr)->L1 & 0x7f) << 8)
-                          | ((uint16_t)((NR_MAC_SUBHEADER_LONG *)pdu_ptr)->L2 & 0xff);
+            mac_sdu_len = ((uint16_t)(((NR_MAC_SUBHEADER_LONG *)pduP)->L1 & 0x7f) << 8)
+                          | ((uint16_t)((NR_MAC_SUBHEADER_LONG *)pduP)->L2 & 0xff);
 
           } else {
-            mac_sdu_len = (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->L;
+            mac_sdu_len = (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pduP)->L;
             mac_subheader_len = 2;
           }
   struct timeval t;
    gettimeofday(&t, NULL);
           LOG_D(NR_MAC, "[UE %d] Frame %d.%d : ULSCH -> UL-%s %d (gNB %d, %d bytes) at %lu\n",
+
                 module_idP,
                 frameP,
                 slot,
@@ -473,9 +476,6 @@ int nr_process_mac_pdu(module_id_t module_idP,
                 module_idP,
                 mac_sdu_len,t.tv_usec); // KARIM LOG
           UE_info->mac_stats[UE_id].lc_bytes_rx[rx_lcid] += mac_sdu_len;
-#if defined(ENABLE_MAC_PAYLOAD_DEBUG)
-            log_dump(NR_MAC, pdu_ptr + mac_subheader_len, 32, LOG_DUMP_CHAR, "\n");
-#endif
 
           mac_rlc_data_ind(module_idP,
                            UE_info->rnti[UE_id],
@@ -484,7 +484,7 @@ int nr_process_mac_pdu(module_id_t module_idP,
                            ENB_FLAG_YES,
                            MBMS_FLAG_NO,
                            rx_lcid,
-                           (char *)(pdu_ptr + mac_subheader_len),
+                           (char *)(pduP + mac_subheader_len),
                            mac_sdu_len,
                            1,
                            NULL);
@@ -502,14 +502,27 @@ int nr_process_mac_pdu(module_id_t module_idP,
           return -1;
           break;
         }
-        pdu_ptr += ( mac_subheader_len + mac_ce_len + mac_sdu_len );
+
+        #ifdef ENABLE_MAC_PAYLOAD_DEBUG
+        if (rx_lcid < 45 || rx_lcid == 52 || rx_lcid == 63) {
+          LOG_I(NR_MAC, "In %s: dumping UL MAC SDU sub-header with length %d (LCID = 0x%02x):\n", __func__, mac_subheader_len, rx_lcid);
+          log_dump(NR_MAC, pduP, mac_subheader_len, LOG_DUMP_CHAR, "\n");
+          LOG_I(NR_MAC, "In %s: dumping UL MAC SDU with length %d (LCID = 0x%02x):\n", __func__, mac_sdu_len, rx_lcid);
+          log_dump(NR_MAC, pduP + mac_subheader_len, mac_sdu_len, LOG_DUMP_CHAR, "\n");
+        } else {
+          LOG_I(NR_MAC, "In %s: dumping UL MAC CE with length %d (LCID = 0x%02x):\n", __func__, mac_ce_len, rx_lcid);
+          log_dump(NR_MAC, pduP + mac_subheader_len + mac_sdu_len, mac_ce_len, LOG_DUMP_CHAR, "\n");
+        }
+        #endif
+
+        pduP += ( mac_subheader_len + mac_ce_len + mac_sdu_len );
         pdu_len -= ( mac_subheader_len + mac_ce_len + mac_sdu_len );
 
         if (pdu_len < 0) {
-          LOG_E(NR_MAC, "%s() residual mac pdu length < 0!, pdu_len: %d\n", __func__, pdu_len);
+          LOG_E(NR_MAC, "In %s: residual UL MAC PDU in %d.%d with length < 0!, pdu_len %d \n", __func__, frameP, slot, pdu_len);
           LOG_E(NR_MAC, "MAC PDU ");
           for (int i = 0; i < 20; i++) // Only printf 1st - 20nd bytes
-            printf("%02x ", pdu_ptr[i]);
+            printf("%02x ", pduP[i]);
           printf("\n");
           return 0;
         }
@@ -535,19 +548,26 @@ void abort_nr_ul_harq(module_id_t mod_id, int UE_id, int8_t harq_pid)
     sched_ctrl->sched_ul_bytes = 0;
 }
 
-void handle_nr_ul_harq(module_id_t mod_id,
+void handle_nr_ul_harq(const int CC_idP,
+                       module_id_t mod_id,
                        frame_t frame,
                        sub_frame_t slot,
                        const nfapi_nr_crc_t *crc_pdu)
 {
+  gNB_MAC_INST *gNB_mac = RC.nrmac[mod_id];
   int UE_id = find_nr_UE_id(mod_id, crc_pdu->rnti);
   if (UE_id < 0) {
+    for (int i = 0; i < NR_NB_RA_PROC_MAX; ++i) {
+      NR_RA_t *ra = &gNB_mac->common_channels[CC_idP].ra[i];
+      if (ra->state >= WAIT_Msg3 &&
+          ra->rnti == crc_pdu->rnti)
+        return;
+    }
     LOG_E(NR_MAC, "%s(): unknown RNTI %04x in PUSCH\n", __func__, crc_pdu->rnti);
     return;
   }
   NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-
   int8_t harq_pid = sched_ctrl->feedback_ul_harq.head;
   while (crc_pdu->harq_id != harq_pid || harq_pid < 0) {
     LOG_W(NR_MAC,
@@ -610,6 +630,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
                const uint16_t timing_advance,
                const uint8_t ul_cqi,
                const uint16_t rssi){
+
   gNB_MAC_INST *gNB_mac = RC.nrmac[gnb_mod_idP];
   NR_UE_info_t *UE_info = &gNB_mac->UE_info;
 
@@ -802,10 +823,10 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
           memcpy(ra->cont_res_id, &sduP[1], sizeof(uint8_t) * 6);
 
           if (nr_process_mac_pdu(gnb_mod_idP, UE_id, CC_idP, frameP, slotP, sduP, sdu_lenP) == 0) {
-             ra->state = Msg4;
-             ra->Msg4_frame = ( frameP +2 ) % 1024;
-             ra->Msg4_slot = 1;
-             LOG_I(NR_MAC, "Scheduling RA-Msg4 for TC_RNTI %04x (state %d, frame %d, slot %d)\n", ra->rnti, ra->state, ra->Msg4_frame, ra->Msg4_slot);
+            ra->state = Msg4;
+            ra->Msg4_frame = (frameP + 2) % 1024;
+            ra->Msg4_slot = 1;
+            LOG_I(NR_MAC, "Scheduling RA-Msg4 for TC_RNTI %04x (state %d, frame %d, slot %d)\n", ra->rnti, ra->state, ra->Msg4_frame, ra->Msg4_slot);
           }
           else {
              nr_mac_remove_ra_rnti(gnb_mod_idP, ra->rnti);
@@ -821,9 +842,19 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
       if (ra->state != WAIT_Msg3)
         continue;
 
-      LOG_W(NR_MAC, "Random Access %i failed at state %i (state is not WAIT_Msg3)\n", i, ra->state);
-      nr_mac_remove_ra_rnti(gnb_mod_idP, ra->rnti);
-      nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
+      if( (frameP!=ra->Msg3_frame) || (slotP!=ra->Msg3_slot))
+        continue;
+
+      if (ra->msg3_round >= MAX_HARQ_ROUNDS - 1) {
+        LOG_W(NR_MAC, "Random Access %i failed at state %i (Reached msg3 max harq rounds)\n", i, ra->state);
+        nr_mac_remove_ra_rnti(gnb_mod_idP, ra->rnti);
+        nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
+        return;
+      }
+
+      LOG_W(NR_MAC, "Random Access %i Msg3 CRC did not pass)\n", i);
+      ra->msg3_round++;
+      ra->state = Msg3_retransmission;
     }
   }
 }
@@ -900,6 +931,7 @@ bool allocate_ul_retransmission(module_id_t module_id,
   const uint8_t num_dmrs_cdm_grps_no_data = (sched_ctrl->active_bwp || ubwpd) ? 1 : 2;
   const int tda = sched_ctrl->active_ubwp ? RC.nrmac[module_id]->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot] : 0;
   LOG_D(NR_MAC,"retInfo->time_domain_allocation = %d, tda = %d\n", retInfo->time_domain_allocation, tda);
+  LOG_D(NR_MAC,"num_dmrs_cdm_grps_no_data %d, tbs %d\n",num_dmrs_cdm_grps_no_data, retInfo->tb_size);
   if (tda == retInfo->time_domain_allocation) {
     /* Check the resource is enough for retransmission */
     while (rbStart < bwpSize && !rballoc_mask[rbStart])
@@ -1015,7 +1047,7 @@ void pf_ul(module_id_t module_id,
   gNB_MAC_INST *nrmac = RC.nrmac[module_id];
   NR_ServingCellConfigCommon_t *scc = nrmac->common_channels[CC_id].ServingCellConfigCommon;
   NR_UE_info_t *UE_info = &nrmac->UE_info;
-  const int min_rb = 5;
+  const int min_rb = 80;
   float coeff_ue[MAX_MOBILES_PER_GNB];
   // UEs that could be scheduled
   int ue_array[MAX_MOBILES_PER_GNB];
@@ -1223,6 +1255,7 @@ void pf_ul(module_id_t module_id,
 
     LOG_I(NR_MAC,"slot %d.%d rbSize %d, max_rbSize %d, TBS %d, est buf %d, sched_ul %d, B %d, CCE %d, num_dmrs_symb %d, N_PRB_DMRS %d\n",
           frame,slot,rbSize,max_rbSize, sched_pusch->tb_size, sched_ctrl->estimated_ul_buffer, sched_ctrl->sched_ul_bytes, B,sched_ctrl->cce_index,ps->num_dmrs_symb,ps->N_PRB_DMRS);
+
 
     /* Mark the corresponding RBs as used */
     n_rb_sched -= sched_pusch->rbSize;
@@ -1462,6 +1495,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
           rnti,
           sched_pusch->frame,
           sched_pusch->slot,
+          sched_ctrl->aggregation_level,
           sched_pusch->rbStart,
           sched_pusch->rbSize,
           ps->startSymbolIndex,
@@ -1520,8 +1554,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     pusch_pdu->mcs_index = sched_pusch->mcs;
     pusch_pdu->mcs_table = ps->mcs_table;
     pusch_pdu->transform_precoding = ps->transform_precoding;
-    if (ps->pusch_Config &&
-	ps->pusch_Config->dataScramblingIdentityPUSCH)
+    if (ps->pusch_Config && ps->pusch_Config->dataScramblingIdentityPUSCH)
       pusch_pdu->data_scrambling_id = *ps->pusch_Config->dataScramblingIdentityPUSCH;
     else
       pusch_pdu->data_scrambling_id = *scc->physCellId;
@@ -1652,7 +1685,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     int n_ubwp=1;
     if (cg->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList)
         n_ubwp = cg->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.count;
-    
+
     config_uldci(sched_ctrl->active_ubwp,
                  ubwpd,
                  scc,

@@ -60,6 +60,8 @@
 
 uint16_t nr_pdcch_order_table[6] = { 31, 31, 511, 2047, 2047, 8191 };
 
+uint8_t vnf_first_sched_entry = 1;
+
 void clear_mac_stats(gNB_MAC_INST *gNB) {
   memset((void*)gNB->UE_info.mac_stats,0,MAX_MOBILES_PER_GNB*sizeof(NR_mac_stats_t));
 }
@@ -74,17 +76,7 @@ void dump_mac_stats(gNB_MAC_INST *gNB)
   memset(output,0,MACSTATSSTRLEN);
   int stroff=0;
   for (int UE_id = UE_info->list.head; UE_id >= 0; UE_id = UE_info->list.next[UE_id]) {
-    stroff = sprintf(output,"UE ID %d RNTI %04x (%d/%d)\n", UE_id, UE_info->rnti[UE_id], num++, UE_info->num_UEs,
-                     UE_info->UE_sched_ctrl[UE_id].ph,
-                     UE_info->UE_sched_ctrl[UE_id].pcmax);
 
-    LOG_D(NR_MAC, "UE ID %d RNTI %04x (%d/%d) PH %d dB PCMAX %d dBm\n",
-      UE_id,
-      UE_info->rnti[UE_id],
-      num++,
-      UE_info->num_UEs,
-      UE_info->UE_sched_ctrl[UE_id].ph,
-      UE_info->UE_sched_ctrl[UE_id].pcmax);
     stroff+=sprintf(output+stroff,"UE ID %d RNTI %04x (%d/%d) PH %d dB PCMAX %d dBm\n",
       UE_id,
       UE_info->rnti[UE_id],
@@ -92,6 +84,14 @@ void dump_mac_stats(gNB_MAC_INST *gNB)
       UE_info->num_UEs,
       UE_info->UE_sched_ctrl[UE_id].ph,
       UE_info->UE_sched_ctrl[UE_id].pcmax);
+
+    LOG_I(NR_MAC, "UE ID %d RNTI %04x (%d/%d) PH %d dB PCMAX %d dBm\n",
+          UE_id,
+          UE_info->rnti[UE_id],
+          num++,
+          UE_info->num_UEs,
+          UE_info->UE_sched_ctrl[UE_id].ph,
+          UE_info->UE_sched_ctrl[UE_id].pcmax);
 
     NR_mac_stats_t *stats = &UE_info->mac_stats[UE_id];
     const int avg_rsrp = stats->num_rsrp_meas > 0 ? stats->cumul_rsrp / stats->num_rsrp_meas : 0;
@@ -101,12 +101,10 @@ void dump_mac_stats(gNB_MAC_INST *gNB)
           stats->dlsch_rounds[2], stats->dlsch_rounds[3], stats->dlsch_errors,
           stats->pucch0_DTX,
           avg_rsrp, stats->num_rsrp_meas);
-    LOG_D(NR_MAC, "UE %d: dlsch_rounds %d/%d/%d/%d, dlsch_errors %d, pucch0_DTX %d, average RSRP %d (%d meas)\n",
+    LOG_I(NR_MAC, "UE %d: dlsch_rounds %d/%d/%d/%d, dlsch_errors %d\n",
       UE_id,
       stats->dlsch_rounds[0], stats->dlsch_rounds[1],
-      stats->dlsch_rounds[2], stats->dlsch_rounds[3], stats->dlsch_errors,
-      stats->pucch0_DTX,
-      avg_rsrp, stats->num_rsrp_meas);
+      stats->dlsch_rounds[2], stats->dlsch_rounds[3], stats->dlsch_errors);
     stats->num_rsrp_meas = 0;
     stats->cumul_rsrp = 0 ;
     stroff+=sprintf(output+stroff,"UE %d: dlsch_total_bytes %d\n", UE_id, stats->dlsch_total_bytes);
@@ -120,15 +118,14 @@ void dump_mac_stats(gNB_MAC_INST *gNB)
                     "UE %d: ulsch_total_bytes_scheduled %d, ulsch_total_bytes_received %d\n",
                     UE_id,
                     stats->ulsch_total_bytes_scheduled, stats->ulsch_total_bytes_rx);
-    LOG_D(NR_MAC, "UE %d: dlsch_total_bytes %d\n", UE_id, stats->dlsch_total_bytes);
-    LOG_D(NR_MAC, "UE %d: ulsch_rounds %d/%d/%d/%d, ulsch_DTX %d, ulsch_errors %d\n",
+    LOG_I(NR_MAC, "UE %d: dlsch_total_bytes %d\n", UE_id, stats->dlsch_total_bytes);
+    LOG_I(NR_MAC, "UE %d: ulsch_rounds %d/%d/%d/%d, ulsch_errors %d\n",
           UE_id,
           stats->ulsch_rounds[0], stats->ulsch_rounds[1],
           stats->ulsch_rounds[2], stats->ulsch_rounds[3],
-          stats->ulsch_DTX,
           stats->ulsch_errors);
-    LOG_D(NR_MAC,
-          "UE %d: ulsch_total_bytes_scheduled %d, ulsch_total_bytes_received %d\n",
+    LOG_I(NR_MAC,
+          "UE %d: ulsch_total_bytes (scheduled/received): %d / %d\n",
           UE_id,
           stats->ulsch_total_bytes_scheduled, stats->ulsch_total_bytes_rx);
     for (int lc_id = 0; lc_id < 63; lc_id++) {
@@ -163,34 +160,32 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
 
   gNB->pdu_index[CC_idP] = 0;
 
-  if (NFAPI_MODE == NFAPI_MONOLITHIC || NFAPI_MODE == NFAPI_MODE_PNF) { // monolithic or PNF
+  DL_req[CC_idP].SFN                                   = frameP;
+  DL_req[CC_idP].Slot                                  = slotP;
+  DL_req[CC_idP].dl_tti_request_body.nPDUs             = 0;
+  DL_req[CC_idP].dl_tti_request_body.nGroup            = 0;
+  //DL_req[CC_idP].dl_tti_request_body.transmission_power_pcfich           = 6000;
+  memset(pdcch, 0, sizeof(**pdcch) * MAX_NUM_BWP * MAX_NUM_CORESET);
 
-    DL_req[CC_idP].SFN                                   = frameP;
-    DL_req[CC_idP].Slot                                  = slotP;
-    DL_req[CC_idP].dl_tti_request_body.nPDUs             = 0;
-    DL_req[CC_idP].dl_tti_request_body.nGroup            = 0;
-    //DL_req[CC_idP].dl_tti_request_body.transmission_power_pcfich           = 6000;
-    memset(pdcch, 0, sizeof(**pdcch) * MAX_NUM_BWP * MAX_NUM_CORESET);
+  UL_dci_req[CC_idP].SFN                         = frameP;
+  UL_dci_req[CC_idP].Slot                        = slotP;
+  UL_dci_req[CC_idP].numPdus                     = 0;
 
-    UL_dci_req[CC_idP].SFN                         = frameP;
-    UL_dci_req[CC_idP].Slot                        = slotP;
-    UL_dci_req[CC_idP].numPdus                     = 0;
+  /* advance last round's future UL_tti_req to be ahead of current frame/slot */
+  future_ul_tti_req->SFN = (slotP == 0 ? frameP : frameP + 1) % 1024;
+  LOG_D(MAC,"Future_ul_tti SFN = %d for slot %d \n", future_ul_tti_req->SFN, (slotP + num_slots - 1) % num_slots);
+  /* future_ul_tti_req->Slot is fixed! */
+  future_ul_tti_req->n_pdus = 0;
+  future_ul_tti_req->n_ulsch = 0;
+  future_ul_tti_req->n_ulcch = 0;
+  future_ul_tti_req->n_group = 0;
 
-    /* advance last round's future UL_tti_req to be ahead of current frame/slot */
-    future_ul_tti_req->SFN = (slotP == 0 ? frameP : frameP + 1) % 1024;
-    /* future_ul_tti_req->Slot is fixed! */
-    future_ul_tti_req->n_pdus = 0;
-    future_ul_tti_req->n_ulsch = 0;
-    future_ul_tti_req->n_ulcch = 0;
-    future_ul_tti_req->n_group = 0;
+  /* UL_tti_req is a simple pointer into the current UL_tti_req_ahead, i.e.,
+   * it walks over UL_tti_req_ahead in a circular fashion */
+  gNB->UL_tti_req[CC_idP] = &gNB->UL_tti_req_ahead[CC_idP][slotP];
 
-    /* UL_tti_req is a simple pointer into the current UL_tti_req_ahead, i.e.,
-     * it walks over UL_tti_req_ahead in a circular fashion */
-    gNB->UL_tti_req[CC_idP] = &gNB->UL_tti_req_ahead[CC_idP][slotP];
+  TX_req[CC_idP].Number_of_PDUs                  = 0;
 
-    TX_req[CC_idP].Number_of_PDUs                  = 0;
-
-  }
 }
 /*
 void check_nr_ul_failure(module_id_t module_idP,
@@ -422,6 +417,22 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     memset(&vrb_map_UL[last_slot * MAX_BWP_SIZE], 0, sizeof(uint16_t) * MAX_BWP_SIZE);
 
     clear_nr_nfapi_information(RC.nrmac[module_idP], CC_id, frame, slot);
+
+    /*VNF first entry into scheduler. Since frame numbers for future_ul_tti_req of some future slots 
+    will not be set before we encounter them, set them here */
+
+    if (NFAPI_MODE == NFAPI_MODE_VNF){
+      if(vnf_first_sched_entry == 1)
+      {
+        for (int i = 0; i<num_slots; i++){
+          if(i < slot)
+            gNB->UL_tti_req_ahead[CC_id][i].SFN = (frame + 1) % 1024;
+          else
+            gNB->UL_tti_req_ahead[CC_id][i].SFN = frame;
+        }
+        vnf_first_sched_entry = 0;
+      }
+    }
   }
 
 
@@ -450,7 +461,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     schedule_nr_prach(module_idP, f, s);
   }
 
-  // This schedule SR
+    // This schedule SR
   nr_sr_reporting(module_idP, frame, slot);
 
   // Schedule CSI-RS transmission

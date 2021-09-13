@@ -343,18 +343,25 @@ int nas_config(int interface_id, int thirdOctet, int fourthOctet, char *ifname) 
   else
     LOG_E(OIP,"Interface %s couldn't be configured (ip address %s, mask %s broadcast address %s)\n",
           interfaceName, ipAddress, netMask, broadcastAddress);
-             int res;
-             char command_line[500];
-             res = sprintf(command_line,
-                            "ip rule add from %s/32 table %d && "
-                            "ip rule add to %s/32 table %d && "
-                            "ip route add default dev %s%d table %d",
-                            ipAddress, interface_id - 1 + 10000,
-                            ipAddress, interface_id - 1 + 10000,
-                            UE_NAS_USE_TUN ? "oaitun_ue" : "oip",
-                            interface_id, interface_id - 1 + 10000);
 
-             background_system(command_line);
+
+  int res2;
+  char command_line2[500];
+  res2 = sprintf(command_line2,
+    "ip rule add from %s/32 table %d && "
+    "ip rule add to %s/32 table %d && "
+    "ip route add default dev %s%d table %d",
+    ipAddress, interface_id - 1 + 10000,
+    ipAddress, interface_id - 1 + 10000,
+    UE_NAS_USE_TUN ? "oaitun_ue" : "oip",
+    interface_id, interface_id - 1 + 10000);
+
+  if (res2 < 0) {
+    LOG_E(OIP,"Could not create ip rule/route commands string\n");
+    return res2;
+  }
+
+  background_system(command_line2);
 
   return returnValue;
 }

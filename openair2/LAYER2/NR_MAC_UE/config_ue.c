@@ -540,6 +540,7 @@ void config_control_ue(NR_UE_MAC_INST_t *mac){
   NR_BWP_Id_t dl_bwp_id = mac->DL_BWP_Id;
   NR_BWP_Id_t ul_bwp_id = mac->UL_BWP_Id;
   NR_ServingCellConfig_t *scd = mac->cg->spCellConfig->spCellConfigDedicated;
+  if (dl_bwp_id==0) AssertFatal(mac->scc_SIB,"dl_bwp_id 0 (DL %d,UL %d) means mac->scc_SIB should exist here!\n",(int)mac->DL_BWP_Id,(int)mac->UL_BWP_Id);
   NR_BWP_DownlinkCommon_t *bwp_Common = dl_bwp_id>0 ? scd->downlinkBWP_ToAddModList->list.array[dl_bwp_id - 1]->bwp_Common :
                                                       &mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP;
 
@@ -604,7 +605,7 @@ void config_control_ue(NR_UE_MAC_INST_t *mac){
   for (int css_id = 0; css_id < commonSearchSpaceList->list.count; css_id++) {
     NR_SearchSpace_t *css = commonSearchSpaceList->list.array[css_id];
     AssertFatal(css->controlResourceSetId != NULL, "ss->controlResourceSetId is null\n");
-    AssertFatal(*css->controlResourceSetId == 0 || *css->controlResourceSetId == mac->coreset[dl_bwp_id][coreset_id - 1]->controlResourceSetId, "css->controlResourceSetId %d is unknown, mac->coreset[%d][%d]->controlResourceSetId %d\n",*css->controlResourceSetId,dl_bwp_id,coreset_id-1,mac->coreset[dl_bwp_id][coreset_id - 1]->controlResourceSetId);
+    AssertFatal(*css->controlResourceSetId == 0 || *css->controlResourceSetId == mac->coreset[dl_bwp_id][coreset_id - 1]->controlResourceSetId, "css->controlResourceSetId %ld is unknown, mac->coreset[%ld][%d]->controlResourceSetId %ld\n",*css->controlResourceSetId,dl_bwp_id,coreset_id-1,mac->coreset[dl_bwp_id][coreset_id - 1]->controlResourceSetId);
  
     AssertFatal(css->searchSpaceType != NULL, "css->searchSpaceType is null\n");
     AssertFatal(css->monitoringSymbolsWithinSlot != NULL, "css->monitoringSymbolsWithinSlot is null\n");
@@ -655,6 +656,9 @@ int nr_rrc_mac_config_req_ue(
     if(scell_group_config != NULL ){
       mac->cg = scell_group_config;
       mac->servCellIndex = *scell_group_config->spCellConfig->servCellIndex;
+      mac->DL_BWP_Id=mac->cg->spCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id ? *mac->cg->spCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id : 0;
+      mac->UL_BWP_Id=mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id ? *mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id : 0;
+
       config_control_ue(mac);
       if (scell_group_config->spCellConfig->reconfigurationWithSync) {
         if (scell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated) {

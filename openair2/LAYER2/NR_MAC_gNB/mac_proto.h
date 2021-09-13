@@ -54,10 +54,9 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                            int sib1_tda,
                            NR_ServingCellConfigCommon_t *scc,
                            NR_BCCH_BCH_Message_t *mib,
-		           int add_ue,
-			   uint32_t rnti,
-			   NR_CellGroupConfig_t *CellGroup
-                           );
+		                       int add_ue,
+			                     uint32_t rnti,
+                           NR_CellGroupConfig_t *CellGroup);
 
 void clear_nr_nfapi_information(gNB_MAC_INST * gNB, 
                                 int CC_idP,
@@ -127,6 +126,8 @@ void nr_get_Msg3alloc(module_id_t module_id,
                       NR_RA_t *ra,
                       int16_t *tdd_beam_association);
 
+void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP, NR_RA_t *ra);
+
 /* \brief Function in gNB to fill RAR pdu when requested by PHY.
 @param ra Instance of RA resources of gNB
 @param dlsch_buffer Pointer to RAR input buffer
@@ -136,6 +137,15 @@ void nr_fill_rar(uint8_t Mod_idP,
                  NR_RA_t * ra,
                  uint8_t * dlsch_buffer,
                  nfapi_nr_pusch_pdu_t  *pusch_pdu);
+
+void fill_msg3_pusch_pdu(nfapi_nr_pusch_pdu_t *pusch_pdu,
+                         NR_ServingCellConfigCommon_t *scc,
+                         int round,
+                         int startSymbolAndLength,
+                         rnti_t rnti, int scs,
+                         int bwp_size, int bwp_start,
+                         int mappingtype, int fh,
+                         int msg3_first_rb, int msg3_nb_rb);
 
 
 void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP);
@@ -276,14 +286,14 @@ long get_K2(NR_ServingCellConfigCommon_t *scc, NR_BWP_Uplink_t *ubwp, int time_d
 void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
                               const NR_CellGroupConfig_t *secondaryCellGroup,
                               const NR_BWP_Downlink_t *bwp,
-                              const NR_BWP_DownlinkDedicated_t *bwpd,
+                              const NR_BWP_DownlinkDedicated_t *bwpd0,
                               int tda,
-                              uint8_t num_dmrs_cdm_grps_no_data,
+                              const long dci_format,
                               NR_pdsch_semi_static_t *ps);
 
 void nr_set_pusch_semi_static(const NR_ServingCellConfigCommon_t *scc,
                               const NR_BWP_Uplink_t *ubwp,
-			      const NR_BWP_UplinkDedicated_t *ubwpd,
+			                        const NR_BWP_UplinkDedicated_t *ubwpd,
                               long dci_format,
                               int tda,
                               uint8_t num_dmrs_cdm_grps_no_data,
@@ -398,7 +408,8 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
                const uint8_t ul_cqi,
                const uint16_t rssi);
 
-void handle_nr_ul_harq(module_id_t mod_id,
+void handle_nr_ul_harq(const int CC_idP,
+                       module_id_t mod_id,
                        frame_t frame,
                        sub_frame_t slot,
                        const nfapi_nr_crc_t *crc_pdu);
@@ -411,6 +422,8 @@ int16_t ssb_index_from_prach(module_id_t module_idP,
                              uint8_t symbol);
 
 void find_SSB_and_RO_available(module_id_t module_idP);
+
+void set_dl_dmrs_ports(NR_pdsch_semi_static_t *ps);
 
 void calculate_preferred_dl_tda(module_id_t module_id, const NR_BWP_Downlink_t *bwp);
 void calculate_preferred_ul_tda(module_id_t module_id, const NR_BWP_Uplink_t *ubwp);

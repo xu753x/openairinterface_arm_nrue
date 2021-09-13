@@ -48,6 +48,7 @@
 
 /*Softmodem params*/
 #include "executables/softmodem-common.h"
+#include "../../../nfapi/oai_integration/vendor_ext.h"
 
 ////////////////////////////////////////////////////////
 /////* DLSCH MAC PDU generation (6.1.2 TS 38.321) */////
@@ -64,6 +65,7 @@ void calculate_preferred_dl_tda(module_id_t module_id, const NR_BWP_Downlink_t *
   const int bwp_id = bwp ? bwp->bwp_Id : 0;
   if (nrmac->preferred_dl_tda[bwp_id])
     return;
+
   /* there is a mixed slot only when in TDD */
   NR_ServingCellConfigCommon_t *scc = nrmac->common_channels->ServingCellConfigCommon;
   const NR_TDD_UL_DL_Pattern_t *tdd =
@@ -453,7 +455,7 @@ void nr_store_dlsch_buffer(module_id_t module_id,
         return;
       }
 
-    LOG_D(NR_MAC,
+    LOG_I(NR_MAC,
           "[%s][%d.%d], %s%d->DLSCH, RLC status %d bytes TA %d\n",
           __func__,
           frame,
@@ -489,9 +491,8 @@ bool allocate_dl_retransmission(module_id_t module_id,
   int rbStart = 0;
   int bwpStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
-  const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
+  const long f = (sched_ctrl->active_bwp ||bwpd) ? sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats : 0;
   const uint8_t num_dmrs_cdm_grps_no_data = (sched_ctrl->active_bwp ||bwpd) ? (f ? 1 : (ps->nrOfSymbols == 2 ? 1 : 2)) : (ps->nrOfSymbols == 2 ? 1 : 2);
-
   int rbSize = 0;
   const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] : (RC.nrmac[module_id]->flexible_slots_per_frame[slot] ? 1 : 0 );
 
@@ -512,8 +513,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
     /* check whether we need to switch the TDA allocation since the last
      * (re-)transmission */
     if (ps->time_domain_allocation != tda || ps->numDmrsCdmGrpsNoData != num_dmrs_cdm_grps_no_data)
-      nr_set_pdsch_semi_static(
-          scc, cg, sched_ctrl->active_bwp,bwpd, tda, num_dmrs_cdm_grps_no_data, ps);
+      nr_set_pdsch_semi_static(scc, cg, sched_ctrl->active_bwp, bwpd, tda, f, ps);
   } else {
     /* the retransmission will use a different time domain allocation, check
      * that we have enough resources */
@@ -522,8 +522,8 @@ bool allocate_dl_retransmission(module_id_t module_id,
     while (rbStart + rbSize < bwpSize && rballoc_mask[rbStart + rbSize])
       rbSize++;
     NR_pdsch_semi_static_t temp_ps;
-    nr_set_pdsch_semi_static(
-        scc, cg, sched_ctrl->active_bwp, bwpd, tda, num_dmrs_cdm_grps_no_data, &temp_ps);
+    temp_ps.nrOfLayers = 1;
+    nr_set_pdsch_semi_static(scc, cg, sched_ctrl->active_bwp, bwpd, tda, f, &temp_ps);
     uint32_t new_tbs;
     uint16_t new_rbSize;
     bool success = nr_find_nb_rb(retInfo->Qm,
@@ -556,7 +556,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
 
   /* Find PUCCH occasion: if it fails, undo CCE allocation (undoing PUCCH
    * allocation after CCE alloc fail would be more complex) */
-  const int alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot, -1,0);
+  const int alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot, -1, 0);
   if (alloc<0) {
     LOG_E(MAC,
           "%s(): could not find PUCCH for UE %d/%04x@%d.%d\n",
@@ -615,10 +615,6 @@ void pf_dl(module_id_t module_id,
     /* get the PID of a HARQ process awaiting retrnasmission, or -1 otherwise */
     sched_pdsch->dl_harq_pid = sched_ctrl->retrans_dl_harq.head;
 
-    NR_CellGroupConfig_t *cg = UE_info->CellGroup[UE_id];
-    NR_BWP_DownlinkDedicated_t *bwpd= cg ? cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP:NULL;
-
-
     /* Calculate Throughput */
     const float a = 0.0005f; // corresponds to 200ms window
     const uint32_t b = UE_info->mac_stats[UE_id].dlsch_current_bytes;
@@ -643,7 +639,7 @@ void pf_dl(module_id_t module_id,
 
       /* Calculate coeff */
       sched_pdsch->mcs = 9;
-      sched_pdsch->nrOfLayers = 1;
+      ps->nrOfLayers = 1;
       uint32_t tbs = pf_tbs[ps->mcsTableIdx][sched_pdsch->mcs];
       coeff_ue[UE_id] = (float) tbs / thr_ue[UE_id];
       LOG_D(NR_MAC,"b %d, thr_ue[%d] %f, tbs %d, coeff_ue[%d] %f\n",
@@ -728,11 +724,10 @@ void pf_dl(module_id_t module_id,
 
     NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
     NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
-    const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
+    const long f = (sched_ctrl->active_bwp || bwpd) ? sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats : 0;
     const uint8_t num_dmrs_cdm_grps_no_data = (sched_ctrl->active_bwp || bwpd) ? (f ? 1 : (ps->nrOfSymbols == 2 ? 1 : 2)) : (ps->nrOfSymbols == 2 ? 1 : 2);
     if (ps->time_domain_allocation != tda || ps->numDmrsCdmGrpsNoData != num_dmrs_cdm_grps_no_data)
-      nr_set_pdsch_semi_static(
-          scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, bwpd, tda, num_dmrs_cdm_grps_no_data, ps);
+      nr_set_pdsch_semi_static(scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, bwpd, tda, f, ps);
     sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
     sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, ps->mcsTableIdx);
     sched_pdsch->pucch_allocation = alloc;
@@ -846,7 +841,6 @@ void nr_schedule_ue_spec(module_id_t module_id,
   if (!is_xlsch_in_slot_flex(gNB_mac->flexible_slots_per_frame, 0, slot))
     return;
 
-
   /* PREPROCESSOR */
   //LOG_W(NR_MAC,"call preprocessor DL for %d.%d\n",frame,slot);                     
 
@@ -884,16 +878,16 @@ void nr_schedule_ue_spec(module_id_t module_id,
 
     const rnti_t rnti = UE_info->rnti[UE_id];
 
-    /* POST processing */
-    const uint8_t nrOfLayers = sched_pdsch->nrOfLayers;
-    const uint16_t R = sched_pdsch->R;
-    const uint8_t Qm = sched_pdsch->Qm;
-    const uint32_t TBS = sched_pdsch->tb_size;
-
     /* pre-computed PDSCH values that only change if time domain
      * allocation/DMRS parameters change. Updated in the preprocessor through
      * nr_set_pdsch_semi_static() */
     NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
+
+    /* POST processing */
+    const uint8_t nrOfLayers = ps->nrOfLayers;
+    const uint16_t R = sched_pdsch->R;
+    const uint8_t Qm = sched_pdsch->Qm;
+    const uint32_t TBS = sched_pdsch->tb_size;
 
     int8_t current_harq_pid = sched_pdsch->dl_harq_pid;
     if (current_harq_pid < 0) {
@@ -922,17 +916,18 @@ void nr_schedule_ue_spec(module_id_t module_id,
     harq->is_waiting = true;
     UE_info->mac_stats[UE_id].dlsch_rounds[harq->round]++;
 
-    LOG_I(NR_MAC,
-          "%4d.%2d [DLSCH/PDSCH/PUCCH] UE %d RNTI %04x start %3d RBs %3d startSymbol %2d nb_symbol %2d dmrspos %x MCS %2d TBS %4d HARQ PID %2d round %d RV %d NDI %d dl_data_to_ULACK %d (%d.%d) TPC %d\n",
+    LOG_D(NR_MAC,
+          "%4d.%2d [DLSCH/PDSCH/PUCCH] UE %d RNTI %04x DCI L %d start %3d RBs %3d startSymbol %2d nb_symbol %2d dmrspos %x MCS %2d TBS %4d HARQ PID %2d round %d RV %d NDI %d dl_data_to_ULACK %d (%d.%d) TPC %d\n",
           frame,
           slot,
           UE_id,
           rnti,
+          sched_ctrl->aggregation_level,
           sched_pdsch->rbStart,
           sched_pdsch->rbSize,
           ps->startSymbolIndex,
           ps->nrOfSymbols,
-          ps->dl_dmrs_symb_pos, 
+          ps->dl_dmrs_symb_pos,
           sched_pdsch->mcs,
           TBS,
           current_harq_pid,
@@ -1012,7 +1007,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     pdsch_pdu->dlDmrsScramblingId = *scc->physCellId;
     pdsch_pdu->SCID = 0;
     pdsch_pdu->numDmrsCdmGrpsNoData = ps->numDmrsCdmGrpsNoData;
-    pdsch_pdu->dmrsPorts = 1;
+    pdsch_pdu->dmrsPorts = (1<<nrOfLayers)-1;  // FIXME with a better implementation
 
     // Pdsch Allocation in frequency domain
     pdsch_pdu->resourceAlloc = 1;
@@ -1094,7 +1089,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     dci_payload.tpc = sched_ctrl->tpc1; // TPC for PUCCH: table 7.2.1-1 in 38.213
     dci_payload.pucch_resource_indicator = pucch->resource_indicator;
     dci_payload.pdsch_to_harq_feedback_timing_indicator.val = pucch->timing_indicator; // PDSCH to HARQ TI
-    dci_payload.antenna_ports.val = 0;  // nb of cdm groups w/o data 1 and dmrs port 0
+    dci_payload.antenna_ports.val = ps->dmrs_ports_id;
     dci_payload.dmrs_sequence_initialization.val = pdsch_pdu->SCID;
     LOG_D(NR_MAC,
           "%4d.%2d DCI type 1 payload: freq_alloc %d (%d,%d,%d), "
@@ -1120,7 +1115,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     }
     else {
        dci_format = NR_DL_DCI_FORMAT_1_0;
-    } 
+    }
     const int rnti_type = NR_RNTI_C;
 
     fill_dci_pdu_rel15(scc,
@@ -1175,7 +1170,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
       /* next, get RLC data */
 
       // const int lcid = DL_SCH_LCID_DTCH;
-      const int lcid = loop_dcch_dtch;
+      const int lcid = sched_ctrl->lcid_to_schedule;
       int dlsch_total_bytes = 0;
       if (sched_ctrl->num_total_bytes > 0) {
         tbs_size_t len = 0;

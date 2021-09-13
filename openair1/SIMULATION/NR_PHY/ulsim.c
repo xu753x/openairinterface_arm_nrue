@@ -212,6 +212,11 @@ int oai_nfapi_dl_tti_req(nfapi_nr_dl_tti_request_t *dl_config_req) { return(0); 
 int oai_nfapi_tx_data_req(nfapi_nr_tx_data_request_t *tx_data_req){ return(0);  }
 int oai_nfapi_ul_dci_req(nfapi_nr_ul_dci_request_t *ul_dci_req){ return(0);  }
 int oai_nfapi_ul_tti_req(nfapi_nr_ul_tti_request_t *ul_tti_req){ return(0);  }
+int oai_nfapi_nr_rx_data_indication(nfapi_nr_rx_data_indication_t *ind) { return(0);  }
+int oai_nfapi_nr_crc_indication(nfapi_nr_crc_indication_t *ind) { return(0);  }
+int oai_nfapi_nr_srs_indication(nfapi_nr_srs_indication_t *ind) { return(0);  }
+int oai_nfapi_nr_uci_indication(nfapi_nr_uci_indication_t *ind) { return(0);  }
+int oai_nfapi_nr_rach_indication(nfapi_nr_rach_indication_t *ind) { return(0);  }
 
 int nr_derive_key(int alg_type, uint8_t alg_id,
                const uint8_t key[32], uint8_t **out)
@@ -238,11 +243,6 @@ openair0_config_t openair0_cfg[MAX_CARDS];
 //const uint8_t nr_rv_round_map[4] = {0, 2, 1, 3}; 
 
 channel_desc_t *UE2gNB[NUMBER_OF_UE_MAX][NUMBER_OF_gNB_MAX];
-double s_re0[122880],s_im0[122880],r_re0[122880],r_im0[122880];
-double s_re1[122880],s_im1[122880],r_re1[122880],r_im1[122880];
-double r_re2[122880],r_im2[122880];
-double r_re3[122880],r_im3[122880];
-
 
 int main(int argc, char **argv)
 {
@@ -254,10 +254,7 @@ int main(int argc, char **argv)
   uint8_t snr1set = 0;
   int slot = 8, frame = 1;
   FILE *output_fd = NULL;
-  double *s_re[2]= {s_re0,s_re1};
-  double *s_im[2]= {s_im0,s_im1};
-  double *r_re[4]= {r_re0,r_re1,r_re2,r_re3};
-  double *r_im[4]= {r_im0,r_im1,r_im2,r_im3};
+  double **s_re,**s_im,**r_re,**r_im;
   //uint8_t write_output_file = 0;
   int trial, n_trials = 1, n_false_positive = 0, delay = 0;
   double maxDoppler = 0.0;
@@ -293,10 +290,12 @@ int main(int argc, char **argv)
   cpuf = get_cpu_freq_GHz();
   int msg3_flag = 0;
   int rv_index = 0;
-  float roundStats[50];
-  float effRate; 
+  float roundStats[100];
+  double effRate[100]; 
+  double effTP[100]; 
   //float eff_tp_check = 0.7;
   uint8_t snrRun;
+  int prb_inter = 0;
 
   int enable_ptrs = 0;
   int modify_dmrs = 0;
@@ -309,7 +308,7 @@ int main(int argc, char **argv)
   uint16_t ptrsRePerSymb = 0;
 
   uint8_t transform_precoding = 1; // 0 - ENABLE, 1 - DISABLE
-  uint8_t num_dmrs_cdm_grps_no_data = 1;
+  uint8_t num_dmrs_cdm_grps_no_data = 2;
   uint8_t mcs_table = 0;
 
   UE_nr_rxtx_proc_t UE_proc;
@@ -330,7 +329,7 @@ int main(int argc, char **argv)
   /* initialize the sin-cos table */
    InitSinLUT();
 
-  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:i:j:kl:m:n:p:r:s:y:z:F:G:H:M:N:PR:S:T:U:L:Z")) != -1) {
+  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:ikl:m:n:p:r:s:u:w:y:z:F:G:H:M:N:PR:S:T:U:L:Z")) != -1) {
     printf("handling optarg %c\n",c);
     switch (c) {
 
@@ -422,14 +421,10 @@ int main(int argc, char **argv)
       
       break;
       
-      /*case 'i':
-        interf1 = atoi(optarg);
-        break;
+    case 'i':
+      prb_inter=1;
+      break;
 	
-	case 'j':
-        interf2 = atoi(optarg);
-        break;*/
-
     case 'k':
       printf("Setting threequarter_fs_flag\n");
       openair0_cfg[0].threequarter_fs= 1;
@@ -458,6 +453,14 @@ int main(int argc, char **argv)
     case 's':
       snr0 = atof(optarg);
       printf("Setting SNR0 to %f\n", snr0);
+      break;
+
+    case 'u':
+      mu = atoi(optarg);
+      break;
+
+    case 'w':
+      start_rb = atoi(optarg);
       break;
 
 /*
@@ -492,7 +495,7 @@ int main(int argc, char **argv)
     case 'z':
       n_rx = atoi(optarg);
       
-      if ((n_rx == 0) || (n_rx > 2)) {
+      if ((n_rx == 0) || (n_rx > 8)) {
 	printf("Unsupported number of rx antennas %d\n", n_rx);
 	exit(-1);
       }
@@ -581,13 +584,15 @@ int main(int argc, char **argv)
       printf("-f Number of frames to simulate\n");
       printf("-g [A,B,C,D,E,F,G] Use 3GPP SCM (A,B,C,D) or 36-101 (E-EPA,F-EVA,G-ETU) models (ignores delay spread and Ricean factor)\n");
       printf("-h This message\n");
-      //printf("-i Relative strength of first intefering eNB (in dB) - cell_id mod 3 = 1\n");
+      printf("-i Activate PRB based averaging for channel estimation. Frequncy domain interpolation by default.\n");
       //printf("-j Relative strength of second intefering eNB (in dB) - cell_id mod 3 = 2\n");
       printf("-s Starting SNR, runs from SNR0 to SNR0 + 10 dB if ending SNR isn't given\n");
       printf("-m MCS value\n");
       printf("-n Number of trials to simulate\n");
       printf("-p Use extended prefix mode\n");
       printf("-t Delay spread for multipath channel\n");
+      printf("-u Set the numerology\n");
+      printf("-w Start PRB for PUSCH\n");
       //printf("-x Transmission mode (1,2,6 for the moment)\n");
       printf("-y Number of TX antennas used in eNB\n");
       printf("-z Number of RX antennas used in UE\n");
@@ -628,10 +633,12 @@ int main(int argc, char **argv)
 
   if (N_RB_UL >= 217) sampling_frequency = 122.88;
   else if (N_RB_UL >= 106) sampling_frequency = 61.44;
+  else if (N_RB_UL >= 32) sampling_frequency = 32.72;
   else { printf("Need at least 106 PRBs\b"); exit(-1); }
   if (N_RB_UL == 273) bandwidth = 100;
   else if (N_RB_UL == 217) bandwidth = 80;
   else if (N_RB_UL == 106) bandwidth = 40;
+  else if (N_RB_UL == 32) bandwidth = 50;
   else { printf("Add N_RB_UL %d\n",N_RB_UL); exit(-1); }
 			   
   if (openair0_cfg[0].threequarter_fs == 1) sampling_frequency*=.75;
@@ -652,10 +659,11 @@ int main(int argc, char **argv)
   RC.gNB = (PHY_VARS_gNB **) malloc(sizeof(PHY_VARS_gNB *));
   RC.gNB[0] = calloc(1,sizeof(PHY_VARS_gNB));
   gNB = RC.gNB[0];
+  gNB->ofdm_offset_divisor = UINT_MAX;
   gNB->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
   gNB->respDecode = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
   char tp_param[] = "n";
-  initTpool(tp_param, gNB->threadPool, true);
+  initTpool(tp_param, gNB->threadPool, false);
   initNotifiedFIFO(gNB->respDecode);
   //gNB_config = &gNB->gNB_config;
 
@@ -664,15 +672,18 @@ int main(int argc, char **argv)
   gNB->UL_INFO.crc_ind.crc_list = (nfapi_nr_crc_t *)malloc(NB_UE_INST*sizeof(nfapi_nr_crc_t));
   gNB->UL_INFO.rx_ind.number_of_pdus = 0;
   gNB->UL_INFO.crc_ind.number_crcs = 0;
+  gNB->prb_interpolation = prb_inter;
   frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)
 
 
-  //frame_parms->nb_antennas_tx = n_tx;
-  //frame_parms->nb_antennas_rx = n_rx;
   frame_parms->N_RB_DL = N_RB_DL;
   frame_parms->N_RB_UL = N_RB_UL;
   frame_parms->Ncp = extended_prefix_flag ? EXTENDED : NORMAL;
 
+  s_re = malloc(n_tx*sizeof(double*));
+  s_im = malloc(n_tx*sizeof(double*));
+  r_re = malloc(n_rx*sizeof(double*));
+  r_im = malloc(n_rx*sizeof(double*));
 
   RC.nb_nr_macrlc_inst = 1;
   RC.nb_nr_mac_CC = (int*)malloc(RC.nb_nr_macrlc_inst*sizeof(int));
@@ -707,9 +718,15 @@ int main(int argc, char **argv)
 
   gNB->if_inst->NR_PHY_config_req      = nr_phy_config_request;
   // common configuration
-  rrc_mac_config_req_gNB(0,0, n_tx, n_tx, 0, scc, 0, 0, NULL);
+  rrc_mac_config_req_gNB(0,0, n_tx, n_rx, 0, scc, &rrc.carrier.mib,0, 0, NULL);
   // UE dedicated configuration
-  rrc_mac_config_req_gNB(0,0, n_tx, n_tx, 0, scc, 1, secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity,secondaryCellGroup);
+  rrc_mac_config_req_gNB(0,0, n_tx, n_rx, 0, scc, &rrc.carrier.mib,1, secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity,secondaryCellGroup);
+  frame_parms->nb_antennas_tx = n_tx;
+  frame_parms->nb_antennas_rx = n_rx;
+  nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
+  cfg->carrier_config.num_tx_ant.value = n_tx;
+  cfg->carrier_config.num_rx_ant.value = n_rx;
+  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,0,0x01);
   phy_init_nr_gNB(gNB,0,1);
   N_RB_DL = gNB->frame_parms.N_RB_DL;
 
@@ -752,7 +769,18 @@ int main(int argc, char **argv)
   }
   */
   
-  nr_l2_init_ue(NULL);
+
+
+
+  //Configure UE
+  NR_UE_RRC_INST_t rrcue;
+  memset(&rrcue,0,sizeof(NR_UE_RRC_INST_t));
+  rrc.carrier.MIB = (uint8_t*) malloc(4);
+  rrc.carrier.sizeof_MIB = do_MIB_NR(&rrc,0);
+  rrcue.mib = rrc.carrier.mib.message.choice.mib;
+  rrcue.scell_group_config=secondaryCellGroup;
+  nr_l2_init_ue(&rrcue);
+
   NR_UE_MAC_INST_t* UE_mac = get_mac_inst(0);
   
   UE->if_inst = nr_ue_if_module_init(0);
@@ -763,11 +791,7 @@ int main(int argc, char **argv)
   
   UE_mac->if_module = nr_ue_if_module_init(0);
 
-  //Configure UE
-  rrc.carrier.MIB = (uint8_t*) malloc(4);
-  rrc.carrier.sizeof_MIB = do_MIB_NR(&rrc,0);
-
-  nr_rrc_mac_config_req_ue(0,0,0,rrc.carrier.mib.message.choice.mib, NULL, NULL, secondaryCellGroup);
+//  nr_rrc_mac_config_req_ue(0,0,0,rrc.carrier.mib.message.choice.mib, NULL, NULL, secondaryCellGroup);
 
   nr_ue_phy_config_request(&UE_mac->phy_config);
 
@@ -796,7 +820,11 @@ int main(int argc, char **argv)
   nr_scheduled_response_t scheduled_response;
   fapi_nr_ul_config_request_t ul_config;
   fapi_nr_tx_request_t tx_req;
-  
+
+  memset(&scheduled_response, 0, sizeof(scheduled_response));
+  memset(&ul_config, 0, sizeof(ul_config));
+  memset(&tx_req, 0, sizeof(tx_req));
+
   uint8_t ptrs_mcs1 = 2;
   uint8_t ptrs_mcs2 = 4;
   uint8_t ptrs_mcs3 = 10;
@@ -831,12 +859,13 @@ int main(int argc, char **argv)
     {
       add_pos = dmrs_arg[1];
     }
-    printf("NOTE: DMRS config is modified with Mapping Type %d , Additional Position %d \n", mapping_type, add_pos );
   }
+  printf("NOTE: DMRS config is modified with Mapping Type %d , Additional Position %d \n", mapping_type, add_pos );
 
   uint8_t  length_dmrs         = pusch_len1;
   uint16_t l_prime_mask        = get_l_prime(nb_symb_sch, mapping_type, add_pos, length_dmrs, start_symbol, NR_MIB__dmrs_TypeA_Position_pos2);
   uint16_t number_dmrs_symbols = get_dmrs_symbols_in_slot(l_prime_mask, nb_symb_sch);
+  printf("num dmrs sym %d\n",number_dmrs_symbols);
   uint8_t  nb_re_dmrs          = (dmrs_config_type == pusch_dmrs_type1) ? 6 : 4;
 
   // if transform precoding is enabled
@@ -848,11 +877,11 @@ int main(int argc, char **argv)
 	  AssertFatal(index >= 0, "Num RBs not configured according to 3GPP 38.211 section 6.3.1.4. For PUSCH with transform precoding, num RBs cannot be multiple of any other primenumber other than 2,3,5\n");
     
     dmrs_config_type = pusch_dmrs_type1;
-	  nb_re_dmrs   = nb_re_dmrs * num_dmrs_cdm_grps_no_data;
 
     printf("[ULSIM]: TRANSFORM PRECODING ENABLED. Num RBs: %d, index for DMRS_SEQ: %d\n", nb_rb, index);
   }
 
+  nb_re_dmrs   = nb_re_dmrs * num_dmrs_cdm_grps_no_data;
 
   unsigned int available_bits  = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, number_dmrs_symbols, mod_order, 1);
   unsigned int TBS             = nr_compute_tbs(mod_order, code_rate, nb_rb, nb_symb_sch, nb_re_dmrs * number_dmrs_symbols, 0, 0, precod_nbr_layers);
@@ -894,12 +923,23 @@ int main(int argc, char **argv)
     printf("NOTE: PTRS Enabled with L %d, K %d \n", ptrs_time_density, ptrs_freq_density );
   }
 
-  if (input_fd != NULL) max_rounds=1;
+  if (input_fd != NULL || n_trials == 1) max_rounds=1;
 
   if(1<<ptrs_time_density >= nb_symb_sch)
     pdu_bit_map &= ~PUSCH_PDU_BITMAP_PUSCH_PTRS; // disable PUSCH PTRS
 
   printf("\n");
+
+  int frame_length_complex_samples = frame_parms->samples_per_subframe*NR_NUMBER_OF_SUBFRAMES_PER_FRAME;
+  for (int aatx=0; aatx<n_tx; aatx++) {
+    s_re[aatx] = calloc(1,frame_length_complex_samples*sizeof(double));
+    s_im[aatx] = calloc(1,frame_length_complex_samples*sizeof(double));
+  }
+
+  for (int aarx=0; aarx<n_rx; aarx++) {
+    r_re[aarx] = calloc(1,frame_length_complex_samples*sizeof(double));
+    r_im[aarx] = calloc(1,frame_length_complex_samples*sizeof(double));
+  }
 
   //for (int i=0;i<16;i++) printf("%f\n",gaussdouble(0.0,1.0));
   snrRun = 0;
@@ -942,21 +982,37 @@ int main(int argc, char **argv)
     sizeof(int16_t),
     slot_length<<1,
     input_fd);
-    if (read_errors==0) exit(1);
+    if (read_errors==0) {
+      printf("error reading file\n");
+      exit(1);
+    }
     for (int i=0;i<16;i+=2) printf("slot_offset %d : %d,%d\n",
-           slot_offset,
-           ((int16_t*)&gNB->common_vars.rxdata[0][slot_offset])[i],
-           ((int16_t*)&gNB->common_vars.rxdata[0][slot_offset])[1+i]);
+				   slot_offset,
+				   ((int16_t*)&gNB->common_vars.rxdata[0][slot_offset])[i],
+				   ((int16_t*)&gNB->common_vars.rxdata[0][slot_offset])[1+i]);
+
+    mod_order = nr_get_Qm_ul(Imcs, mcs_table);
+    code_rate = nr_get_code_rate_ul(Imcs, mcs_table);
   }
   
+  uint32_t errors_scrambling[4][100];
+  int n_errors[4][100];
+  int round_trials[4][100];
+  double blerStats[4][100];
+  double berStats[4][100];
+  double snrStats[100];
+  memset(errors_scrambling, 0, sizeof(uint32_t)*4*100);
+  memset(n_errors, 0, sizeof(int)*4*100);
+  memset(round_trials, 0, sizeof(int)*4*100);
+  memset(blerStats, 0, sizeof(double)*4*100);
+  memset(berStats, 0, sizeof(double)*4*100);
+  memset(snrStats, 0, sizeof(double)*100);
   for (SNR = snr0; SNR < snr1; SNR += snr_step) {
     varArray_t *table_rx=initVarArray(1000,sizeof(double));
     int error_flag = 0;
     n_false_positive = 0;
-    effRate = 0;
-    int n_errors[4] = {0,0,0,0};;
-    int round_trials[4]={0,0,0,0};
-    uint32_t errors_scrambling[4] = {0,0,0,0};
+    effRate[snrRun] = 0;
+    effTP[snrRun] = 0;
     reset_meas(&gNB->phy_proc_rx);
     reset_meas(&gNB->rx_pusch_stats);
     reset_meas(&gNB->ulsch_decoding_stats);
@@ -968,6 +1024,10 @@ int main(int argc, char **argv)
     reset_meas(&gNB->ulsch_llr_stats);
     reset_meas(&gNB->ulsch_channel_compensation_stats);
     reset_meas(&gNB->ulsch_rbs_extraction_stats);
+    reset_meas(&UE->ulsch_ldpc_encoding_stats);
+    reset_meas(&UE->ulsch_rate_matching_stats);
+    reset_meas(&UE->ulsch_interleaving_stats);
+    reset_meas(&UE->ulsch_encoding_stats);
 
     clear_pusch_stats(gNB);
     for (trial = 0; trial < n_trials; trial++) {
@@ -977,7 +1037,7 @@ int main(int argc, char **argv)
     errors_decoding    = 0;
     memset((void*)roundStats,0,50*sizeof(roundStats[0]));
     while (round<max_rounds && crc_status) {
-      round_trials[round]++;
+      round_trials[round][snrRun]++;
       ulsch_ue[0]->harq_processes[harq_pid]->round = round;
       gNB->ulsch[0][0]->harq_processes[harq_pid]->round = round;
       rv_index = nr_rv_round_map[round];
@@ -1027,7 +1087,7 @@ int main(int argc, char **argv)
       pusch_pdu->ul_dmrs_scrambling_id =  *scc->physCellId;
       pusch_pdu->scid = 0;
       pusch_pdu->dmrs_ports = 1;
-      pusch_pdu->num_dmrs_cdm_grps_no_data = msg3_flag == 0 ? 1 : 2;
+      pusch_pdu->num_dmrs_cdm_grps_no_data = num_dmrs_cdm_grps_no_data;
       pusch_pdu->resource_alloc = 1; 
       pusch_pdu->rb_start = start_rb;
       pusch_pdu->rb_size = nb_rb;
@@ -1090,7 +1150,7 @@ int main(int argc, char **argv)
       ul_config.ul_config_list[0].pusch_config_pdu.dmrs_config_type = dmrs_config_type;
       ul_config.ul_config_list[0].pusch_config_pdu.mcs_index = Imcs;
       ul_config.ul_config_list[0].pusch_config_pdu.mcs_table = mcs_table;
-      ul_config.ul_config_list[0].pusch_config_pdu.num_dmrs_cdm_grps_no_data = msg3_flag == 0 ? 1 : 2;
+      ul_config.ul_config_list[0].pusch_config_pdu.num_dmrs_cdm_grps_no_data = num_dmrs_cdm_grps_no_data;
       ul_config.ul_config_list[0].pusch_config_pdu.nrOfLayers = precod_nbr_layers;
       ul_config.ul_config_list[0].pusch_config_pdu.absolute_delta_PUSCH = 0;
 
@@ -1160,7 +1220,7 @@ int main(int argc, char **argv)
                                 frame_parms->ofdm_symbol_size/(12*nb_rb));
 
         for (i=0; i<slot_length; i++) {
-          for (int aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
+          for (int aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
             s_re[aa][i] = ((double)(((short *)&UE->common_vars.txdata[aa][slot_offset]))[(i<<1)]);
             s_im[aa][i] = ((double)(((short *)&UE->common_vars.txdata[aa][slot_offset]))[(i<<1)+1]);
           }
@@ -1228,11 +1288,65 @@ int main(int argc, char **argv)
 		&gNB->pusch_vars[0]->rxdataF_ext[0][start_symbol*NR_NB_SC_PER_RB * pusch_pdu->rb_size],nb_symb_sch*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
 	  LOG_M("chestF0.m","chF0",
 		&gNB->pusch_vars[0]->ul_ch_estimates[0][start_symbol*frame_parms->ofdm_symbol_size],frame_parms->ofdm_symbol_size,1,1);
+	  LOG_M("chestT0.m","chT0",
+		&gNB->pusch_vars[0]->ul_ch_estimates_time[0][0],frame_parms->ofdm_symbol_size,1,1);
 	  LOG_M("chestF0_ext.m","chF0_ext",
 		&gNB->pusch_vars[0]->ul_ch_estimates_ext[0][(start_symbol+1)*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size))],
 		(nb_symb_sch-1)*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
 	  LOG_M("rxsigF0_comp.m","rxsF0_comp",
 		&gNB->pusch_vars[0]->rxdataF_comp[0][start_symbol*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size))],nb_symb_sch*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
+    LOG_M("chmagF0.m","chmF0",
+    &gNB->pusch_vars[0]->ul_ch_mag[0][start_symbol*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size))],nb_symb_sch*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
+    LOG_M("chmagbF0.m","chmbF0",
+    &gNB->pusch_vars[0]->ul_ch_magb[0][start_symbol*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size))],nb_symb_sch*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
+    if (n_rx == 2) {
+      LOG_MM("rxsigF0_comp.m","rxsF1_comp",
+      &gNB->pusch_vars[0]->rxdataF_comp[1][start_symbol*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size))],nb_symb_sch*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
+      LOG_MM("rxsigF0_ext.m","rxsF1_ext",
+      &gNB->pusch_vars[0]->rxdataF_ext[1][start_symbol*NR_NB_SC_PER_RB * pusch_pdu->rb_size],nb_symb_sch*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
+      LOG_MM("chestF0_ext.m","chF1_ext",
+      &gNB->pusch_vars[0]->ul_ch_estimates_ext[1][(start_symbol+1)*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size))],
+      (nb_symb_sch-1)*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
+      LOG_MM("chmagF0.m","chmF1",
+      &gNB->pusch_vars[0]->ul_ch_mag[1][start_symbol*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size))],nb_symb_sch*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
+      LOG_MM("chmagbF0.m","chmbF1",
+      &gNB->pusch_vars[0]->ul_ch_magb[1][start_symbol*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size))],nb_symb_sch*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
+    } else if (n_rx == 4) {
+      LOG_MM("rxsigF0_comp.m","rxsF1_comp",
+      &gNB->pusch_vars[0]->rxdataF_comp[1][start_symbol*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size))],nb_symb_sch*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
+      LOG_MM("rxsigF0_comp.m","rxsF2_comp",
+      &gNB->pusch_vars[0]->rxdataF_comp[2][start_symbol*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size))],nb_symb_sch*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
+      LOG_MM("rxsigF0_comp.m","rxsF3_comp",
+      &gNB->pusch_vars[0]->rxdataF_comp[3][start_symbol*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size))],nb_symb_sch*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
+      LOG_MM("rxsigF0_ext.m","rxsF1_ext",
+      &gNB->pusch_vars[0]->rxdataF_ext[1][start_symbol*NR_NB_SC_PER_RB * pusch_pdu->rb_size],nb_symb_sch*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
+      LOG_MM("rxsigF0_ext.m","rxsF2_ext",
+      &gNB->pusch_vars[0]->rxdataF_ext[2][start_symbol*NR_NB_SC_PER_RB * pusch_pdu->rb_size],nb_symb_sch*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
+      LOG_MM("rxsigF0_ext.m","rxsF3_ext",
+      &gNB->pusch_vars[0]->rxdataF_ext[3][start_symbol*NR_NB_SC_PER_RB * pusch_pdu->rb_size],nb_symb_sch*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
+      LOG_MM("chestF0_ext.m","chF1_ext",
+      &gNB->pusch_vars[0]->ul_ch_estimates_ext[1][(start_symbol+1)*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size))],
+      (nb_symb_sch-1)*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
+      LOG_MM("chestF0_ext.m","chF2_ext",
+      &gNB->pusch_vars[0]->ul_ch_estimates_ext[2][(start_symbol+1)*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size))],
+      (nb_symb_sch-1)*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
+      LOG_MM("chestF0_ext.m","chF3_ext",
+      &gNB->pusch_vars[0]->ul_ch_estimates_ext[3][(start_symbol+1)*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size))],
+      (nb_symb_sch-1)*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
+      LOG_MM("chmagF0.m","chmF1",
+      &gNB->pusch_vars[0]->ul_ch_mag[1][start_symbol*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size))],nb_symb_sch*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
+      LOG_MM("chmagF0.m","chmF2",
+      &gNB->pusch_vars[0]->ul_ch_mag[2][start_symbol*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size))],nb_symb_sch*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
+      LOG_MM("chmagF0.m","chmF3",
+      &gNB->pusch_vars[0]->ul_ch_mag[3][start_symbol*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size))],nb_symb_sch*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
+      LOG_MM("chmagbF0.m","chmbF1",
+      &gNB->pusch_vars[0]->ul_ch_magb[1][start_symbol*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size))],nb_symb_sch*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
+      LOG_MM("chmagbF0.m","chmbF2",
+      &gNB->pusch_vars[0]->ul_ch_magb[2][start_symbol*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size))],nb_symb_sch*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
+      LOG_MM("chmagbF0.m","chmbF3",
+      &gNB->pusch_vars[0]->ul_ch_magb[3][start_symbol*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size))],nb_symb_sch*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
+    }
+
 	  LOG_M("rxsigF0_llr.m","rxsF0_llr",
 		&gNB->pusch_vars[0]->llr[0],(nb_symb_sch-1)*NR_NB_SC_PER_RB * pusch_pdu->rb_size * mod_order,1,0);
 	}
@@ -1241,7 +1355,7 @@ int main(int argc, char **argv)
 	if ((gNB->ulsch[0][0]->last_iteration_cnt >=
 	    gNB->ulsch[0][0]->max_ldpc_iterations+1) || ul_proc_error == 1) {
 	  error_flag = 1; 
-	  n_errors[round]++;
+	  n_errors[round][snrRun]++;
 	  crc_status = 1;
 	} else {
 	  crc_status = 0;
@@ -1269,15 +1383,15 @@ int main(int argc, char **argv)
 	    {
 	      /*if(errors_scrambling == 0)
 		printf("\x1B[34m" "[frame %d][trial %d]\t1st bit in error in unscrambling = %d\n" "\x1B[0m", frame, trial, i);*/
-	      errors_scrambling[round]++;
+	      errors_scrambling[round][snrRun]++;
 	    }
 	}
 	round++;
 
     } // round
     
-    if (n_trials == 1 && errors_scrambling[0] > 0) {
-      printf("\x1B[31m""[frame %d][trial %d]\tnumber of errors in unscrambling = %u\n" "\x1B[0m", frame, trial, errors_scrambling[0]);
+    if (n_trials == 1 && errors_scrambling[0][snrRun] > 0) {
+      printf("\x1B[31m""[frame %d][trial %d]\tnumber of errors in unscrambling = %u\n" "\x1B[0m", frame, trial, errors_scrambling[0][snrRun]);
     }
     
     for (i = 0; i < TBS; i++) {
@@ -1294,8 +1408,8 @@ int main(int argc, char **argv)
     if (n_trials == 1) {
       for (int r=0;r<ulsch_ue[0]->harq_processes[harq_pid]->C;r++) 
 	for (int i=0;i<ulsch_ue[0]->harq_processes[harq_pid]->K>>3;i++) {
-	  /*if ((ulsch_ue[0]->harq_processes[harq_pid]->c[r][i]^ulsch_gNB->harq_processes[harq_pid]->c[r][i]) != 0) printf("************");
-	    printf("r %d: in[%d] %x, out[%d] %x (%x)\n",r,
+	  if ((ulsch_ue[0]->harq_processes[harq_pid]->c[r][i]^ulsch_gNB->harq_processes[harq_pid]->c[r][i]) != 0) printf("************");
+	    /*printf("r %d: in[%d] %x, out[%d] %x (%x)\n",r,
 	    i,ulsch_ue[0]->harq_processes[harq_pid]->c[r][i],
 	    i,ulsch_gNB->harq_processes[harq_pid]->c[r][i],
 	    ulsch_ue[0]->harq_processes[harq_pid]->c[r][i]^ulsch_gNB->harq_processes[harq_pid]->c[r][i]);*/
@@ -1307,26 +1421,36 @@ int main(int argc, char **argv)
 	printf("\x1B[31m""[frame %d][trial %d]\tnumber of errors in decoding     = %u\n" "\x1B[0m", frame, trial, errors_decoding);
     } 
     roundStats[snrRun] += ((float)round);
-    if (!crc_status) effRate += ((float)TBS)/round;
+    if (!crc_status) effRate[snrRun] += ((double)TBS)/(double)round;
     } // trial loop
     
     roundStats[snrRun]/=((float)n_trials);
-    effRate /= n_trials;
+    effRate[snrRun] /= (double)n_trials;
     
     printf("*****************************************\n");
-    printf("SNR %f: n_errors (%d/%d,%d/%d,%d/%d,%d/%d) (negative CRC), false_positive %d/%d, errors_scrambling (%u/%u,%u/%u,%u/%u,%u/%u\n", SNR, n_errors[0], round_trials[0],n_errors[1], round_trials[1],n_errors[2], round_trials[2],n_errors[3], round_trials[3], n_false_positive, n_trials, errors_scrambling[0],available_bits*n_trials,errors_scrambling[1],available_bits*n_trials,errors_scrambling[2],available_bits*n_trials,errors_scrambling[3],available_bits*n_trials);
+    printf("SNR %f: n_errors (%d/%d,%d/%d,%d/%d,%d/%d) (negative CRC), false_positive %d/%d, errors_scrambling (%u/%u,%u/%u,%u/%u,%u/%u\n", SNR, n_errors[0][snrRun], round_trials[0][snrRun],n_errors[1][snrRun], round_trials[1][snrRun],n_errors[2][snrRun], round_trials[2][snrRun],n_errors[3][snrRun], round_trials[3][snrRun], n_false_positive, n_trials, errors_scrambling[0][snrRun],available_bits*n_trials,errors_scrambling[1][snrRun],available_bits*n_trials,errors_scrambling[2][snrRun],available_bits*n_trials,errors_scrambling[3][snrRun],available_bits*n_trials);
     printf("\n");
+    blerStats[0][snrRun] = (double)n_errors[0][snrRun]/round_trials[0][snrRun];
+    blerStats[1][snrRun] = (double)n_errors[1][snrRun]/round_trials[1][snrRun];
+    blerStats[2][snrRun] = (double)n_errors[2][snrRun]/round_trials[2][snrRun];
+    blerStats[3][snrRun] = (double)n_errors[3][snrRun]/round_trials[3][snrRun];
+
+    berStats[0][snrRun] = (double)errors_scrambling[0][snrRun]/available_bits/round_trials[0][snrRun];
+    berStats[1][snrRun] = (double)errors_scrambling[1][snrRun]/available_bits/round_trials[1][snrRun];
+    berStats[2][snrRun] = (double)errors_scrambling[2][snrRun]/available_bits/round_trials[2][snrRun];
+    berStats[3][snrRun] = (double)errors_scrambling[3][snrRun]/available_bits/round_trials[3][snrRun];
+    effTP[snrRun] = effRate[snrRun]/(double)TBS*(double)100;
     printf("SNR %f: Channel BLER (%e,%e,%e,%e), Channel BER (%e,%e,%e,%e) Avg round %.2f, Eff Rate %.4f bits/slot, Eff Throughput %.2f, TBS %u bits/slot\n", 
 	   SNR,
-	   (double)n_errors[0]/round_trials[0],
-	   (double)n_errors[1]/round_trials[0],
-	   (double)n_errors[2]/round_trials[0],
-	   (double)n_errors[3]/round_trials[0],
-	   (double)errors_scrambling[0]/available_bits/round_trials[0],
-	   (double)errors_scrambling[1]/available_bits/round_trials[0],
-	   (double)errors_scrambling[2]/available_bits/round_trials[0],
-	   (double)errors_scrambling[3]/available_bits/round_trials[0],
-	   roundStats[snrRun],effRate,effRate/TBS*100,TBS);
+     blerStats[0][snrRun],
+     blerStats[1][snrRun],
+     blerStats[2][snrRun],
+     blerStats[3][snrRun],
+     berStats[0][snrRun],
+     berStats[1][snrRun],
+     berStats[2][snrRun],
+     berStats[3][snrRun],
+	   roundStats[snrRun],effRate[snrRun],effTP[snrRun],TBS);
 
     FILE *fd=fopen("nr_ulsim.log","w");
     dump_pusch_stats(fd,gNB);
@@ -1345,6 +1469,11 @@ int main(int argc, char **argv)
       printStatIndent2(&gNB->ulsch_llr_stats,"ULSCH llr computation");
       printStatIndent(&gNB->ulsch_unscrambling_stats,"ULSCH unscrambling");
       printStatIndent(&gNB->ulsch_decoding_stats,"ULSCH total decoding time");
+      printStatIndent(&UE->ulsch_encoding_stats,"ULSCH total encoding time");
+      printStatIndent2(&UE->ulsch_segmentation_stats,"ULSCH segmentation time");
+      printStatIndent2(&UE->ulsch_ldpc_encoding_stats,"ULSCH LDPC encoder time");
+      printStatIndent2(&UE->ulsch_rate_matching_stats,"ULSCH rate-matching time");
+      printStatIndent2(&UE->ulsch_interleaving_stats,"ULSCH interleaving time");
       //printStatIndent2(&gNB->ulsch_deinterleaving_stats,"ULSCH deinterleaving");
       //printStatIndent2(&gNB->ulsch_rate_unmatching_stats,"ULSCH rate matching rx");
       //printStatIndent2(&gNB->ulsch_ldpc_decoding_stats,"ULSCH ldpc decoding");
@@ -1354,18 +1483,47 @@ int main(int argc, char **argv)
     if(n_trials==1)
       break;
 
-    if ((float)n_errors[0]/(float)n_trials <= target_error_rate) {
+    if ((float)n_errors[0][snrRun]/(float)n_trials <= target_error_rate) {
       printf("*************\n");
       printf("PUSCH test OK\n");
       printf("*************\n");
-      break;
+      //break;
     }
 
+    snrStats[snrRun] = SNR;
     snrRun++;
-    n_errs = n_errors[0];
+    n_errs = n_errors[0][snrRun];
   } // SNR loop
   printf("\n");
 
+  printf( "Num RB:\t%d\n"
+          "Num symbols:\t%d\n"
+          "MCS:\t%d\n"
+          "DMRS config type:\t%d\n"
+          "DMRS add pos:\t%d\n"
+          "PUSCH mapping type:\t%d\n"
+          "DMRS length:\t%d\n"
+          "DMRS CDM gr w/o data:\t%d\n",
+          nb_rb,
+          nb_symb_sch,
+          Imcs,
+          dmrs_config_type,
+          add_pos,
+          mapping_type,
+          length_dmrs,
+          num_dmrs_cdm_grps_no_data);
+              
+  LOG_M("ulsimStats.m","SNR",snrStats,snrRun,1,7);
+  LOG_MM("ulsimStats.m","BLER_round0",blerStats[0],snrRun,1,7);
+  LOG_MM("ulsimStats.m","BLER_round1",blerStats[1],snrRun,1,7);
+  LOG_MM("ulsimStats.m","BLER_round2",blerStats[2],snrRun,1,7);
+  LOG_MM("ulsimStats.m","BLER_round3",blerStats[3],snrRun,1,7);
+  LOG_MM("ulsimStats.m","BER_round0",berStats[0],snrRun,1,7);
+  LOG_MM("ulsimStats.m","BER_round1",berStats[1],snrRun,1,7);
+  LOG_MM("ulsimStats.m","BER_round2",berStats[2],snrRun,1,7);
+  LOG_MM("ulsimStats.m","BER_round3",berStats[3],snrRun,1,7);
+  LOG_MM("ulsimStats.m","EffRate",effRate,snrRun,1,7);
+  LOG_MM("ulsimStats.m","EffTP",effTP,snrRun,1,7);
   free(test_input_bit);
   free(estimated_output_bit);
 

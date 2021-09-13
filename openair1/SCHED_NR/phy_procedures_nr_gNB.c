@@ -147,14 +147,14 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_COMMON_TX,1);
-  if (NFAPI_MODE == NFAPI_MONOLITHIC || NFAPI_MODE == NFAPI_MODE_PNF) { 
-    for (int i=0; i<fp->Lmax; i++) {
-      if (gNB->ssb[i].active) {
-        nr_common_signal_procedures(gNB,frame,slot,gNB->ssb[i].ssb_pdu);
-        gNB->ssb[i].active = false;
-      }
+
+  for (int i=0; i<fp->Lmax; i++) {
+    if (gNB->ssb[i].active) {
+      nr_common_signal_procedures(gNB,frame,slot,gNB->ssb[i].ssb_pdu);
+      gNB->ssb[i].active = false;
     }
   }
+  
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_COMMON_TX,0);
 
   int pdcch_pdu_id=find_nr_pdcch(frame,slot,gNB,SEARCH_EXIST);
@@ -261,19 +261,19 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
     }
   }
 
-  int dumpsig=0;
+  //int dumpsig=0;
   // if all segments are done 
   if (rdata->nbSegments == ulsch_harq->processedSegments) {
     if (decodeSuccess) {
-      LOG_D(PHY,"[gNB %d] ULSCH: Setting ACK for SFN/SF %d.%d (pid %d, ndi %d, status %d, round %d, TBS %d)\n",
-            gNB->Mod_id,ulsch_harq->frame,ulsch_harq->slot,rdata->harq_pid,pusch_pdu->pusch_data.new_data_indicator,ulsch_harq->status,ulsch_harq->round,ulsch_harq->TBS);
+      LOG_D(PHY,"[gNB %d] ULSCH: Setting ACK for SFN/SF %d.%d (pid %d, ndi %d, status %d, round %d, TBS %d, Max interation (all seg) %d)\n",
+            gNB->Mod_id,ulsch_harq->frame,ulsch_harq->slot,rdata->harq_pid,pusch_pdu->pusch_data.new_data_indicator,ulsch_harq->status,ulsch_harq->round,ulsch_harq->TBS,rdata->decodeIterations);
       ulsch_harq->status = SCH_IDLE;
       ulsch_harq->round  = 0;
       ulsch->harq_mask &= ~(1 << rdata->harq_pid);
 
       LOG_D(PHY, "ULSCH received ok \n");
       nr_fill_indication(gNB,ulsch_harq->frame, ulsch_harq->slot, rdata->ulsch_id, rdata->harq_pid, 0,0);
-      dumpsig=1;
+      //dumpsig=1;
     } else {
       // Karim Debug UL
       LOG_I(PHY,"[gNB %d] ULSCH: Setting NAK for SFN/SF %d/%d (pid %d, ndi %d, status %d, round %d, RV %d, TBS %d) r %d\n",
@@ -422,7 +422,13 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
 
   // scale the 16 factor in N_TA calculation in 38.213 section 4.2 according to the used FFT size
   uint16_t bw_scaling = 16 * gNB->frame_parms.ofdm_symbol_size / 2048;
-  timing_advance_update = sync_pos / bw_scaling;
+  int sync_pos_rounded;
+  // do some integer rounding to improve TA accuracy
+  if (sync_pos > 0)
+    sync_pos_rounded = sync_pos + (bw_scaling / 2) - 1;
+  else
+    sync_pos_rounded = sync_pos - (bw_scaling / 2) - 1;
+  timing_advance_update = sync_pos_rounded / bw_scaling;
 
   // put timing advance command in 0..63 range
   timing_advance_update += 31;
@@ -593,7 +599,7 @@ void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
 
   uint8_t symbol;
   unsigned char aa;
-  int offset = (slot_rx&3) * (gNB->frame_parms.symbols_per_slot * gNB->frame_parms.ofdm_symbol_size);
+
   for(symbol = 0; symbol < (gNB->frame_parms.Ncp==EXTENDED?12:14); symbol++) {
     for (aa = 0; aa < gNB->frame_parms.nb_antennas_rx; aa++) {
       nr_slot_fep_ul(&gNB->frame_parms,
@@ -794,6 +800,10 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
     }
   }
   stop_meas(&gNB->phy_proc_rx);
+  // figure out a better way to choose slot_rx, 19 is ok for a particular TDD configuration with 30kHz SCS
+  if ((frame_rx&127) == 0 && slot_rx==19) {
+    LOG_I(NR_PHY, "Number of bad PUCCH received: %lu\n", gNB->bad_pucch);
+  }
 
   if (pucch_decode_done || pusch_decode_done) {
     T(T_GNB_PHY_PUCCH_PUSCH_IQ, T_INT(frame_rx), T_INT(slot_rx), T_BUFFER(&gNB->common_vars.rxdataF[0][0], gNB->frame_parms.symbols_per_slot * gNB->frame_parms.ofdm_symbol_size * 4));
