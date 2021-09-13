@@ -1176,17 +1176,17 @@ void fill_initial_SpCellConfig(rnti_t rnti,
     schedulingRequestResourceConfig->schedulingRequestResourceId = 1;
     schedulingRequestResourceConfig->schedulingRequestID= 0;
     schedulingRequestResourceConfig->periodicityAndOffset = calloc(1,sizeof(*schedulingRequestResourceConfig->periodicityAndOffset));
-    schedulingRequestResourceConfig->periodicityAndOffset->present = NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl40;
+    schedulingRequestResourceConfig->periodicityAndOffset->present = NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl5;
     // note: make sure that there is no issue here. Later choose the RNTI accordingly. 
     //       Here we would be limited to 3 UEs on this resource (1 1/2 Frames 30 kHz SCS, 5 ms TDD periodicity => slots 7,8,9). 
     //       This should be a temporary resource until the first RRCReconfiguration gives new pucch resources.
     // Check for above configuration and exit for now if it is not the case
-    AssertFatal(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.subcarrierSpacing==NR_SubcarrierSpacing_kHz30,
+    /*AssertFatal(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.subcarrierSpacing==NR_SubcarrierSpacing_kHz30,
   	      "SCS != 30kHz\n");
     AssertFatal(scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity==NR_TDD_UL_DL_Pattern__dl_UL_TransmissionPeriodicity_ms5,
-  	      "TDD period != 5ms : %ld\n",scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity);
+  	      "TDD period != 5ms : %ld\n",scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity);*/
   
-    schedulingRequestResourceConfig->periodicityAndOffset->choice.sl40 =  8+(10*((rnti>>1)&3)) + (rnti&1);
+    schedulingRequestResourceConfig->periodicityAndOffset->choice.sl5 =  3;
     schedulingRequestResourceConfig->resource = calloc(1,sizeof(*schedulingRequestResourceConfig->resource));
     *schedulingRequestResourceConfig->resource = 0;
     ASN_SEQUENCE_ADD(&pucch_Config->schedulingRequestResourceToAddModList->list,schedulingRequestResourceConfig);
@@ -1699,7 +1699,7 @@ uint8_t do_RRCSetup(rrc_gNB_ue_context_t         *const ue_context_pP,
 
     ue_p->masterCellGroup = cellGroupConfig;
 
-    if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+    if ( 1 ) {
       xer_fprint(stdout, &asn_DEF_NR_DL_CCCH_Message, (void *)&dl_ccch_msg);
     }
     enc_rval = uper_encode_to_buffer(&asn_DEF_NR_DL_CCCH_Message,
@@ -1713,7 +1713,7 @@ uint8_t do_RRCSetup(rrc_gNB_ue_context_t         *const ue_context_pP,
 	    enc_rval.failed_type->name, enc_rval.encoded);
       return -1;
     }
-    
+
     LOG_D(NR_RRC,"RRCSetup Encoded %zd bits (%zd bytes)\n",
             enc_rval.encoded,(enc_rval.encoded+7)/8);
     return((enc_rval.encoded+7)/8);

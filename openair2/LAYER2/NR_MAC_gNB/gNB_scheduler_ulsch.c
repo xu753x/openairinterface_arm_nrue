@@ -1219,9 +1219,9 @@ void pf_ul(module_id_t module_id,
                   &TBS,
                   &rbSize);
     sched_pusch->rbSize = rbSize;
-    sched_pusch->tb_size = TBS;
+    sched_pusch->tb_size =TBS;// nr_compute_tbs(sched_pusch->Qm, sched_pusch->R, sched_pusch->rbSize, ps->nrOfSymbols, ps->N_PRB_DMRS * ps->num_dmrs_symb, 0, 0, 1) >> 3;;
 
-    LOG_D(NR_MAC,"slot %d.%d rbSize %d, max_rbSize %d, TBS %d, est buf %d, sched_ul %d, B %d, CCE %d, num_dmrs_symb %d, N_PRB_DMRS %d\n",
+    LOG_I(NR_MAC,"slot %d.%d rbSize %d, max_rbSize %d, TBS %d, est buf %d, sched_ul %d, B %d, CCE %d, num_dmrs_symb %d, N_PRB_DMRS %d\n",
           frame,slot,rbSize,max_rbSize, sched_pusch->tb_size, sched_ctrl->estimated_ul_buffer, sched_ctrl->sched_ul_bytes, B,sched_ctrl->cce_index,ps->num_dmrs_symb,ps->N_PRB_DMRS);
 
     /* Mark the corresponding RBs as used */
@@ -1455,7 +1455,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     sched_ctrl->last_ul_frame = sched_pusch->frame;
     sched_ctrl->last_ul_slot = sched_pusch->slot;
 
-    LOG_D(NR_MAC,
+    LOG_I(NR_MAC,
           "ULSCH/PUSCH: %4d.%2d RNTI %04x UL sched %4d.%2d start %2d RBS %3d startSymbol %2d nb_symbol %2d dmrs_pos %x MCS %2d TBS %4d HARQ PID %2d round %d RV %d NDI %d est %6d sched %6d est BSR %6d TPC %d\n",
           frame,
           slot,

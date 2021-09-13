@@ -276,6 +276,7 @@ void clean_gNB_ulsch(NR_gNB_ULSCH_t *ulsch)
     }
   }
 }
+  static uint32_t prnt_crc_cnt = 0;
 
 #ifdef PRINT_CRC_CHECK
   static uint32_t prnt_crc_cnt = 0;
@@ -428,11 +429,14 @@ void nr_processULSegment(void* arg) {
                                      p_procTime);
 
   if (check_crc((uint8_t*)llrProcBuf,length_dec,ulsch_harq->F,crc_type)) {
+      LOG_I(PHY, "Segment %d CRC OK\n",r);
+
 #ifdef PRINT_CRC_CHECK
       LOG_I(PHY, "Segment %d CRC OK\n",r);
 #endif
     rdata->decodeIterations = no_iteration_ldpc;
   } else {
+    LOG_I(PHY, "CRC NOK\n");
 #ifdef PRINT_CRC_CHECK
       LOG_I(PHY, "CRC NOK\n");
 #endif
@@ -463,6 +467,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   int kc;
   int Tbslbrm;
   int E;
+  prnt_crc_cnt++;
 
 #ifdef PRINT_CRC_CHECK
   prnt_crc_cnt++;
@@ -509,7 +514,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
  
   A   = (harq_process->TBS)<<3;
 
-  LOG_D(PHY,"ULSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_rb %d, Qm %d, n_layers %d\n",harq_pid,A,G, mcs, n_layers, nb_rb, Qm, n_layers);
+  LOG_I(PHY,"ULSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_rb %d, Qm %d, n_layers %d\n",harq_pid,A,G, mcs, n_layers, nb_rb, Qm, n_layers);
 
   if (R<1024)
     Coderate = (float) R /(float) 1024;
@@ -609,6 +614,8 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     LOG_E(PHY,"Illegal harq_process->C %d > %d\n",harq_process->C,a_segments);
     return 1;
   }
+  printf("Segmentation: C %d, K %d\n",harq_process->C,harq_process->K);
+
 #ifdef DEBUG_ULSCH_DECODING
   printf("Segmentation: C %d, K %d\n",harq_process->C,harq_process->K);
 #endif
@@ -645,7 +652,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     rdata->ulsch_id = ULSCH_id;
     pushTpool(phy_vars_gNB->threadPool,req);
     phy_vars_gNB->nbDecode++;
-    LOG_D(PHY,"Added a block to decode, in pipe: %d\n",phy_vars_gNB->nbDecode);
+    LOG_I(PHY,"Added a block to decode, in pipe: %d Kr_bytes %d, F %d\n",phy_vars_gNB->nbDecode,rdata->Kr_bytes,harq_process->F);
     r_offset += E;
     offset += (Kr_bytes - (harq_process->F>>3) - ((harq_process->C>1)?3:0));
     //////////////////////////////////////////////////////////////////////////////////////////

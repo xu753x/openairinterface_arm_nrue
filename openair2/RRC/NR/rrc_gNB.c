@@ -436,7 +436,7 @@ rrc_gNB_generate_RRCSetup(
 )
 //-----------------------------------------------------------------------------
 {
-  LOG_D(NR_RRC, "rrc_gNB_generate_RRCSetup \n");
+  LOG_I(NR_RRC, "rrc_gNB_generate_RRCSetup \n");
   MessageDef                    *message_p;
 
   // T(T_GNB_RRC_SETUP,
@@ -456,6 +456,7 @@ rrc_gNB_generate_RRCSetup(
               (char *)(ue_p->Srb0.Tx_buffer.Payload),
               ue_p->Srb0.Tx_buffer.payload_size,
               "[MSG] RRC Setup\n");
+  log_dump(NR_RRC, (char *)(ue_p->Srb0.Tx_buffer.Payload), ue_p->Srb0.Tx_buffer.payload_size, LOG_DUMP_CHAR, "[MSG] RRC Setup\n")  ;
 
   switch (rrc->node_type) {
     case ngran_gNB_CU:

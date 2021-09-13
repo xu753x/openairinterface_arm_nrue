@@ -622,6 +622,7 @@ void config_uldci(const NR_BWP_Uplink_t *ubwp,
 
   dci_pdu_rel15->frequency_domain_assignment.val =
       PRBalloc_to_locationandbandwidth0(pusch_pdu->rb_size, pusch_pdu->rb_start, bw);
+  LOG_I(NR_MAC,"UL DCI FREQ %d PRB %d start %d BW %d\n",dci_pdu_rel15->frequency_domain_assignment.val,pusch_pdu->rb_size,pusch_pdu->rb_start,bw);    
   dci_pdu_rel15->time_domain_assignment.val = time_domain_assignment;
   dci_pdu_rel15->frequency_hopping_flag.val = pusch_pdu->frequency_hopping;
   dci_pdu_rel15->mcs = pusch_pdu->mcs_index;
@@ -1930,8 +1931,8 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
 				       "no pdsch-ServingCellConfig found for UE %d\n",
 				       UE_id);
     const NR_PDSCH_ServingCellConfig_t *pdsch = servingCellConfig ? servingCellConfig->pdsch_ServingCellConfig->choice.setup : NULL;
-    const int nrofHARQ = pdsch ? (pdsch->nrofHARQ_ProcessesForPDSCH ?
-				  get_nrofHARQ_ProcessesForPDSCH(*pdsch->nrofHARQ_ProcessesForPDSCH) : 8) : 8;
+    const int nrofHARQ = 8;/* pdsch ? (pdsch->nrofHARQ_ProcessesForPDSCH ?
+				  get_nrofHARQ_ProcessesForPDSCH(*pdsch->nrofHARQ_ProcessesForPDSCH) : 8) : 8;*/
     // add all available DL HARQ processes for this UE
     create_nr_list(&sched_ctrl->available_dl_harq, nrofHARQ);
     for (int harq = 0; harq < nrofHARQ; harq++)
@@ -1940,11 +1941,11 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
     create_nr_list(&sched_ctrl->retrans_dl_harq, nrofHARQ);
 
     // add all available UL HARQ processes for this UE
-    create_nr_list(&sched_ctrl->available_ul_harq, 16);
-    for (int harq = 0; harq < 16; harq++)
+    create_nr_list(&sched_ctrl->available_ul_harq, 8);
+    for (int harq = 0; harq < 8; harq++)
       add_tail_nr_list(&sched_ctrl->available_ul_harq, harq);
-    create_nr_list(&sched_ctrl->feedback_ul_harq, 16);
-    create_nr_list(&sched_ctrl->retrans_ul_harq, 16);
+    create_nr_list(&sched_ctrl->feedback_ul_harq, 8);
+    create_nr_list(&sched_ctrl->retrans_ul_harq, 8);
     LOG_D(NR_MAC, "[gNB %d] Add NR UE_id %d : rnti %x\n",
           mod_idP,
           UE_id,

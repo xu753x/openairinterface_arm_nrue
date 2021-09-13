@@ -398,32 +398,7 @@ void nr_store_dlsch_buffer(module_id_t module_id,
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
     sched_ctrl->num_total_bytes = 0;
-    /*if ((sched_ctrl->lcid_mask&(1<<4)) > 0 && internal_loop_dcch_dtch == DL_SCH_LCID_DCCH1){
-      loop_dcch_dtch = DL_SCH_LCID_DTCH;
-      internal_loop_dcch_dtch = DL_SCH_LCID_DTCH;
-    }
-    else if ((sched_ctrl->lcid_mask&(1<<1)) > 0 && internal_loop_dcch_dtch == DL_SCH_LCID_DTCH){
-      loop_dcch_dtch = DL_SCH_LCID_DCCH;
-      internal_loop_dcch_dtch = DL_SCH_LCID_DCCH;
-    }
-    else if ((sched_ctrl->lcid_mask&(1<<2)) > 0 && internal_loop_dcch_dtch == DL_SCH_LCID_DCCH){
-      loop_dcch_dtch = DL_SCH_LCID_DCCH1;
-      internal_loop_dcch_dtch = DL_SCH_LCID_DCCH1;
-    }*/
-    /*if ((sched_ctrl->lcid_mask&(1<<4)) > 0 && internal_loop_dcch_dtch == DL_SCH_LCID_DCCH1){
-      loop_dcch_dtch = DL_SCH_LCID_DTCH;
-      internal_loop_dcch_dtch = DL_SCH_LCID_DTCH;
-    }
-    else if ((sched_ctrl->lcid_mask&(1<<1)) > 0 && internal_loop_dcch_dtch == DL_SCH_LCID_DTCH){
-      loop_dcch_dtch = DL_SCH_LCID_DCCH;
-      internal_loop_dcch_dtch = DL_SCH_LCID_DCCH;
-    }
-    else if ((sched_ctrl->lcid_mask&(1<<2)) > 0 && internal_loop_dcch_dtch == DL_SCH_LCID_DCCH){
-      loop_dcch_dtch = DL_SCH_LCID_DCCH1;
-      internal_loop_dcch_dtch = DL_SCH_LCID_DCCH1;
-    }   */
     int lcid = loop_dcch_dtch;
-
      //const int lcid = DL_SCH_LCID_DTCH;
     const uint16_t rnti = UE_info->rnti[UE_id];
     sched_ctrl->rlc_status[DL_SCH_LCID_DCCH1] = mac_rlc_status_ind(module_id,
@@ -446,8 +421,6 @@ void nr_store_dlsch_buffer(module_id_t module_id,
                                                       DL_SCH_LCID_DCCH,
                                                       0,
                                                       0);
-
-   
     sched_ctrl->rlc_status[DL_SCH_LCID_DTCH] = mac_rlc_status_ind(module_id,
                                                       rnti,
                                                       module_id,
@@ -460,29 +433,15 @@ void nr_store_dlsch_buffer(module_id_t module_id,
                                                       0);  
                                                 
      if(sched_ctrl->rlc_status[DL_SCH_LCID_DCCH].bytes_in_buffer > 0){
-       loop_dcch_dtch = DL_SCH_LCID_DCCH;
-       
+       loop_dcch_dtch = DL_SCH_LCID_DCCH;       
      } 
      else if (sched_ctrl->rlc_status[DL_SCH_LCID_DCCH1].bytes_in_buffer > 0)
      {
-       loop_dcch_dtch = DL_SCH_LCID_DCCH1;
-       
+       loop_dcch_dtch = DL_SCH_LCID_DCCH1;       
      }else{
-       loop_dcch_dtch = DL_SCH_LCID_DTCH;
-       
+       loop_dcch_dtch = DL_SCH_LCID_DTCH;       
      }
                                                       
-                                                                                           
-    /*sched_ctrl->rlc_status[lcid] = mac_rlc_status_ind(module_id,
-                                                      rnti,
-                                                      module_id,
-                                                      frame,
-                                                      slot,
-                                                      ENB_FLAG_YES,
-                                                      MBMS_FLAG_NO,
-                                                      lcid,
-                                                      0,
-                                                      0);*/
     sched_ctrl->num_total_bytes += sched_ctrl->rlc_status[loop_dcch_dtch].bytes_in_buffer;
     LOG_D(NR_MAC,
         "%d.%d, LCID%d:->DLSCH, RLC status %d bytes. \n",
@@ -490,27 +449,8 @@ void nr_store_dlsch_buffer(module_id_t module_id,
         slot,
         loop_dcch_dtch,
         sched_ctrl->num_total_bytes); // KARIM print
-
-    /*if (sched_ctrl->num_total_bytes == 0
-        && !sched_ctrl->ta_apply){
-         return;// If TA should be applied, give at least one RB
-        } */
       if (sched_ctrl->num_total_bytes == 0 && !sched_ctrl->ta_apply){
         return;
-         /*loop_dcch_dtch = DL_SCH_LCID_DTCH;
-         lcid = loop_dcch_dtch;
-
-         sched_ctrl->rlc_status[lcid] = mac_rlc_status_ind(module_id,
-                                                      rnti,
-                                                      module_id,
-                                                      frame,
-                                                      slot,
-                                                      ENB_FLAG_YES,
-                                                      MBMS_FLAG_NO,
-                                                      lcid,
-                                                      0,
-                                                      0);
-         sched_ctrl->num_total_bytes += sched_ctrl->rlc_status[lcid].bytes_in_buffer;*/ // Karim
       }
 
     LOG_D(NR_MAC,
@@ -982,7 +922,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     harq->is_waiting = true;
     UE_info->mac_stats[UE_id].dlsch_rounds[harq->round]++;
 
-    LOG_D(NR_MAC,
+    LOG_I(NR_MAC,
           "%4d.%2d [DLSCH/PDSCH/PUCCH] UE %d RNTI %04x start %3d RBs %3d startSymbol %2d nb_symbol %2d dmrspos %x MCS %2d TBS %4d HARQ PID %2d round %d RV %d NDI %d dl_data_to_ULACK %d (%d.%d) TPC %d\n",
           frame,
           slot,
