@@ -139,12 +139,13 @@ extern int usrp_tx_thread;
     {"single-thread-enable", CONFIG_HLP_NOSNGLT,      PARAMFLAG_BOOL, iptr:&SINGLE_THREAD_FLAG,           defintval:0,           TYPE_INT,    0},                     \
     {"C" ,                   CONFIG_HLP_DLF,          0,              u64ptr:&(downlink_frequency[0][0]),     defuintval:3619200000,  TYPE_UINT64,   0},              \
     {"CO" ,                  CONFIG_HLP_ULF,          0,              iptr:&(uplink_frequency_offset[0][0]),  defintval:0,   TYPE_INT,      0},              \
-    {"pointA" ,              CONFIG_HLP_DLF,          0,              iptr:&point_a_15khz,              defintval:-1,          TYPE_INT,   0},              \
-    {"kssb" ,                CONFIG_HLP_DLF,          0,              iptr:&kssb_15khz,                 defintval:0,           TYPE_INT,   0},              \
-    {"ulrb" ,                CONFIG_HLP_DLF,          0,              iptr:&g_ul_rb,                    defintval:0,           TYPE_INT,   0},              \
-    {"dlbytes" ,             CONFIG_HLP_DLF,          0,              iptr:&g_sched_dl_bytes,           defintval:0,           TYPE_INT,   0},              \
-    {"dlmcs" ,             CONFIG_HLP_DLF,          0,              iptr:&g_dl_mcs,                     defintval:9,           TYPE_INT,   0},              \
-    {"fpgaldpc",             CONFIG_HLP_SA,           PARAMFLAG_BOOL, iptr:&g_fpag_ldpc,                defintval:0,           TYPE_INT,    0},                     \
+    {"pointA" ,              CONFIG_HLP_DLF,          0,               iptr:&point_a_15khz,                defintval:-1,          TYPE_INT,   0},              \
+    {"kssb" ,                CONFIG_HLP_DLF,          0,             iptr:&kssb_15khz,                   defintval:0,           TYPE_INT,   0},              \
+    {"ulrb" ,                CONFIG_HLP_DLF,          0,             iptr:&g_ul_rb,                      defintval:0,           TYPE_INT,   0},              \
+    {"dlbytes" ,             CONFIG_HLP_DLF,          0,           iptr:&g_sched_dl_bytes,             defintval:0,           TYPE_INT,   0},              \
+    {"dlmcs" ,               CONFIG_HLP_DLF,          0,            iptr:&g_dl_mcs,                     defintval:9,           TYPE_INT,   0},              \
+    {"ulmcs" ,               CONFIG_HLP_DLF,          0,            iptr:&g_ul_mcs,                     defintval:9,           TYPE_INT,   0},              \
+    {"fpgaldpc",             CONFIG_HLP_DLF,           0,            iptr:&g_fpag_ldpc,                  defintval:0,           TYPE_INT,    0},                     \
     {"a" ,                   CONFIG_HLP_CHOFF,        0,              iptr:&CHAIN_OFFSET,                 defintval:0,           TYPE_INT,    0},                     \
     {"d" ,                   CONFIG_HLP_SOFTS,        PARAMFLAG_BOOL, uptr:(uint32_t *)&do_forms,         defintval:0,           TYPE_INT8,   0},                     \
     {"q" ,                   CONFIG_HLP_STMON,        PARAMFLAG_BOOL, iptr:&opp_enabled,                  defintval:0,           TYPE_INT,    0},                     \
@@ -268,6 +269,7 @@ extern int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 extern int   point_a_15khz;
 extern int   kssb_15khz;
 extern int g_ul_rb;
+extern int g_ul_mcs;
 extern int g_sched_dl_bytes;
 extern int g_dl_mcs;
 extern int g_fpag_ldpc;

@@ -247,7 +247,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   for (int i=0; i<gNB->num_pdsch_rnti[slot]; i++) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,1);
     LOG_D(PHY, "PDSCH generation started (%d) in frame %d.%d\n", gNB->num_pdsch_rnti[slot],frame,slot);
-    if (g_fpag_ldpc==0)
+    if (g_fpag_ldpc!=1)
        nr_generate_pdsch(gNB,frame, slot);
     else
        nr_generate_pdsch_fpga_ldpc(gNB,frame, slot); //上面是OAI的代码，fpga_ldpc的encode切换到该行即可
@@ -809,12 +809,15 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
 #ifdef TIME_ESTIMATION
   clock_gettime(CLOCK_REALTIME, &nb_ulsch_time_start[slot_rx]);
 #endif 
-          nr_ulsch_procedures(gNB, frame_rx, slot_rx, ULSCH_id, harq_pid);
+if (g_fpag_ldpc != 2)
+      nr_ulsch_procedures(gNB, frame_rx, slot_rx, ULSCH_id, harq_pid);
+else           
+      nr_ulsch_procedures_fpga_ldpc(gNB, frame_rx, slot_rx, ULSCH_id, harq_pid); //上面是OAI的代码，fpga_ldpc的decode切换到该行即可
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_ULSCH_PROCEDURES_RX,0);
 #ifdef TIME_ESTIMATION
   clock_gettime(CLOCK_REALTIME, &nb_ulsch_time_stop[slot_rx]);
-#endif           
-          // nr_ulsch_procedures_fpga_ldpc(gNB, frame_rx, slot_rx, ULSCH_id, harq_pid); //上面是OAI的代码，fpga_ldpc的decode切换到该行即可
-          VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_ULSCH_PROCEDURES_RX,0);
+#endif
+      LOG_I(PHY, "g_fpag_ldpc is %d\n", g_fpag_ldpc);
           break;
         }
       }

@@ -966,6 +966,7 @@ void update_ul_ue_R_Qm(NR_sched_pusch_t *sched_pusch, const NR_pusch_semi_static
 float ul_thr_ue[MAX_MOBILES_PER_GNB];
 uint32_t ul_pf_tbs[3][29]; // pre-computed, approximate TBS values for PF coefficient
 extern int g_ul_rb;
+int g_ul_mcs;
 void pf_ul(module_id_t module_id,
            frame_t frame,
            sub_frame_t slot,
@@ -1064,7 +1065,7 @@ void pf_ul(module_id_t module_id,
           || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data)
         nr_set_pusch_semi_static(scc, sched_ctrl->active_ubwp, dci_format, tda, num_dmrs_cdm_grps_no_data, ps);
       NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
-      sched_pusch->mcs = 9;
+      sched_pusch->mcs = g_ul_mcs;
       update_ul_ue_R_Qm(sched_pusch, ps);
       sched_pusch->rbStart = rbStart;
       sched_pusch->rbSize = min_rb;
@@ -1090,7 +1091,7 @@ void pf_ul(module_id_t module_id,
     add_tail_nr_list(&UE_sched, UE_id);
 
     /* Calculate coefficient*/
-    sched_pusch->mcs = 9;
+    sched_pusch->mcs = g_ul_mcs;
     const uint32_t tbs = ul_pf_tbs[ps->mcs_table][sched_pusch->mcs];
     coeff_ue[UE_id] = (float) tbs / ul_thr_ue[UE_id];
     LOG_D(NR_MAC,"b %d, ul_thr_ue[%d] %f, tbs %d, coeff_ue[%d] %f\n",

@@ -109,7 +109,7 @@ int load_nrLDPClib(void) {
      //      dlclose(handle);
      //      return -1;
      // }
-     if (g_fpag_ldpc == 1)
+     if (g_fpag_ldpc >= 1)
      {
           HugePage_Init = (LDPC_FPGA_HugePage_Init) dlsym(handle, "HugePage_Init");
           if(!HugePage_Init){

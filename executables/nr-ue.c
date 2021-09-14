@@ -105,6 +105,7 @@ typedef enum {
 int g_ul_rb;
 int g_sched_dl_bytes;
 int g_dl_mcs;
+int g_ul_mcs;
 int g_fpag_ldpc;
 
 void init_nr_ue_vars(PHY_VARS_NR_UE *ue,
