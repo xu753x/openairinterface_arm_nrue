@@ -87,6 +87,47 @@ extern uint64_t downlink_frequency[MAX_NUM_CCs][4];
 
 unsigned int gain_table[31] = {100,112,126,141,158,178,200,224,251,282,316,359,398,447,501,562,631,708,794,891,1000,1122,1258,1412,1585,1778,1995,2239,2512,2818,3162};
 
+#define TIME_ESTIMATION
+#ifdef TIME_ESTIMATION
+struct timespec ue_rx_time_start[20];
+struct timespec ue_rx_time_stop[20];
+struct timespec ue_pdsch_time_start[20];
+struct timespec ue_pdsch_time_stop[20];
+struct timespec ue_dlsch_time_start[20];
+struct timespec ue_dlsch_time_stop[20];
+int log_ue_dl_cnt =0;
+
+struct timespec ue_tx_time_start[20];
+struct timespec ue_tx_time_stop[20];
+struct timespec ue_code_time_start[20];
+struct timespec ue_code_time_stop[20];
+struct timespec ue_pusch_time_start[20];
+struct timespec ue_pusch_time_stop[20];
+int log_ue_ul_cnt =0;
+
+#endif
+
+#define NR_TIMESPEC_TO_DOUBLE_US( nr_t )    ( ( (double)nr_t.tv_sec * 1000000 ) + ( (double)nr_t.tv_nsec / 1000 ) )
+
+struct timespec  nr_get_timespec_diff(
+              struct timespec *start,
+              struct timespec *stop )
+{
+  struct timespec   result;
+
+  if ( ( stop->tv_nsec - start->tv_nsec ) < 0 ) {
+    result.tv_sec = stop->tv_sec - start->tv_sec - 1;
+    result.tv_nsec = stop->tv_nsec - start->tv_nsec + 1000000000;
+  }
+  else {
+    result.tv_sec = stop->tv_sec - start->tv_sec;
+    result.tv_nsec = stop->tv_nsec - start->tv_nsec;
+  }
+
+  return result;
+}
+
+
 void nr_fill_dl_indication(nr_downlink_indication_t *dl_ind,
                            fapi_nr_dci_indication_t *dci_ind,
                            fapi_nr_rx_indication_t *rx_ind,
@@ -257,6 +298,12 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
   int slot_tx = proc->nr_slot_tx;
   int frame_tx = proc->frame_tx;
 
+#ifdef TIME_ESTIMATION
+  if (slot_tx == 7)
+      log_ue_ul_cnt++;
+  clock_gettime(CLOCK_REALTIME, &ue_tx_time_start[slot_tx]);
+#endif
+
   AssertFatal(ue->CC_id == 0, "Transmission on secondary CCs is not supported yet\n");
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX,VCD_FUNCTION_IN);
@@ -282,6 +329,28 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
 #if UE_TIMING_TRACE
   stop_meas(&ue->phy_proc_tx);
 #endif
+
+#ifdef TIME_ESTIMATION
+  clock_gettime(CLOCK_REALTIME, &ue_tx_time_stop[slot_tx]);
+#endif
+
+#ifdef TIME_ESTIMATION
+  if ((log_ue_ul_cnt == 20) && (slot_tx == 19))
+  {
+      double ue_tx_clock_gettime_cur, ue_pusch_clock_gettime_cur, ue_code_clock_gettime_cur;
+
+    for (int ii=0; ii<=slot_tx; ii++)
+    {
+        ue_code_clock_gettime_cur = NR_TIMESPEC_TO_DOUBLE_US(nr_get_timespec_diff(&ue_code_time_start[ii], &ue_code_time_stop[ii])); // us
+        ue_pusch_clock_gettime_cur = NR_TIMESPEC_TO_DOUBLE_US(nr_get_timespec_diff(&ue_pusch_time_start[ii], &ue_pusch_time_stop[ii])); // us
+        ue_tx_clock_gettime_cur = NR_TIMESPEC_TO_DOUBLE_US(nr_get_timespec_diff(&ue_tx_time_start[ii], &ue_tx_time_stop[ii])); // us
+        
+        LOG_I(PHY, "frame %d %d, ue code time(outside) %lf, ue pusch time %lf, uetx time %lf\n", frame_tx, ii, ue_code_clock_gettime_cur, ue_pusch_clock_gettime_cur, ue_tx_clock_gettime_cur);
+    }
+    log_ue_ul_cnt = 0;
+  }
+#endif
+
 
 }
 
@@ -1668,6 +1737,12 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 
   LOG_D(PHY," ****** start RX-Chain for Frame.Slot %d.%d ******  \n", frame_rx%1024, nr_slot_rx);
 
+#ifdef TIME_ESTIMATION
+  if (nr_slot_rx == 0)
+      log_ue_dl_cnt++;
+  clock_gettime(CLOCK_REALTIME, &ue_rx_time_start[nr_slot_rx]);
+#endif
+
   /*
   uint8_t next1_thread_id = proc->thread_id== (RX_NB_TH-1) ? 0:(proc->thread_id+1);
   uint8_t next2_thread_id = next1_thread_id== (RX_NB_TH-1) ? 0:(next1_thread_id+1);
@@ -1822,6 +1897,9 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   int ret_pdsch = 0;
   if (ue->dlsch[proc->thread_id][gNB_id][0]->active == 1) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_C, VCD_FUNCTION_IN);
+#ifdef TIME_ESTIMATION
+  clock_gettime(CLOCK_REALTIME, &ue_pdsch_time_start[nr_slot_rx]);
+#endif    
     ret_pdsch = nr_ue_pdsch_procedures(ue,
 			   proc,
 			   gNB_id,
@@ -1829,6 +1907,9 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 			   ue->dlsch[proc->thread_id][gNB_id][0],
 			   NULL);
 
+#ifdef TIME_ESTIMATION
+  clock_gettime(CLOCK_REALTIME, &ue_pdsch_time_stop[nr_slot_rx]);
+#endif  
     nr_ue_measurement_procedures(2, ue, proc, gNB_id, nr_slot_rx);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_C, VCD_FUNCTION_OUT);
   }
@@ -1917,6 +1998,9 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
     start_meas(&ue->dlsch_procedures_stat[proc->thread_id]);
 #endif
 
+#ifdef TIME_ESTIMATION
+  clock_gettime(CLOCK_REALTIME, &ue_dlsch_time_start[nr_slot_rx]);
+#endif  
     if (ret_pdsch >= 0)
       nr_ue_dlsch_procedures(ue,
 			   proc,
@@ -1926,7 +2010,9 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 			   ue->dlsch[proc->thread_id][gNB_id][1],
 			   &ue->dlsch_errors[gNB_id],
 			   dlsch_parallel);
-
+#ifdef TIME_ESTIMATION
+  clock_gettime(CLOCK_REALTIME, &ue_dlsch_time_stop[nr_slot_rx]);
+#endif 
 
 #if UE_TIMING_TRACE
   stop_meas(&ue->dlsch_procedures_stat[proc->thread_id]);
@@ -2038,6 +2124,28 @@ LOG_D(PHY, "------FULL RX PROC [SFN %d]: %5.2f ------\n",nr_slot_rx,ue->phy_proc
 //#endif //pdsch
 
 LOG_D(PHY," ****** end RX-Chain  for AbsSubframe %d.%d ******  \n", frame_rx%1024, nr_slot_rx);
+
+#ifdef TIME_ESTIMATION
+  clock_gettime(CLOCK_REALTIME, &ue_rx_time_stop[nr_slot_rx]);
+#endif 
+#ifdef TIME_ESTIMATION
+  if ((log_ue_dl_cnt == 20) && (nr_slot_rx == 17))
+  {
+      double ue_pdsch_clock_gettime_cur, ue_rx_clock_gettime_cur, ue_dlsch_clock_gettime_cur;
+
+    for (int ii=0; ii<=nr_slot_rx; ii++)
+    {
+        ue_dlsch_clock_gettime_cur = NR_TIMESPEC_TO_DOUBLE_US(nr_get_timespec_diff(&ue_dlsch_time_start[ii], &ue_dlsch_time_stop[ii])); // us
+        ue_pdsch_clock_gettime_cur = NR_TIMESPEC_TO_DOUBLE_US(nr_get_timespec_diff(&ue_pdsch_time_start[ii], &ue_pdsch_time_stop[ii])); // us
+        ue_rx_clock_gettime_cur = NR_TIMESPEC_TO_DOUBLE_US(nr_get_timespec_diff(&ue_rx_time_start[ii], &ue_rx_time_stop[ii])); // us
+        
+        LOG_I(PHY, "frame %d %d, ue dlsch time %lf, pdsch time %lf, rx time %lf\n", frame_rx, ii, ue_dlsch_clock_gettime_cur, ue_pdsch_clock_gettime_cur, ue_rx_clock_gettime_cur);
+    }
+    log_ue_dl_cnt = 0;
+  }
+#endif
+
+
 return (0);
 }
 

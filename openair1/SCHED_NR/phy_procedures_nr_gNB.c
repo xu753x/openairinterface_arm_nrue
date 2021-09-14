@@ -62,6 +62,26 @@ int8_t ul_de_llr8[0x40000];
 
 struct timespec nr_t[10];
 
+#define TIME_ESTIMATION
+#ifdef TIME_ESTIMATION
+struct timespec nb_tx_time_start[20];
+struct timespec nb_tx_time_stop[20];
+struct timespec nb_pdsch_time_start[20];
+struct timespec nb_pdsch_time_stop[20];
+struct timespec nb_code_time_start[20];
+struct timespec nb_code_time_stop[20];
+int log_nb_dl_cnt =0;
+
+struct timespec nb_rx_time_start[20];
+struct timespec nb_rx_time_stop[20];
+struct timespec nb_pusch_time_start[20];
+struct timespec nb_pusch_time_stop[20];
+struct timespec nb_ulsch_time_start[20];
+struct timespec nb_ulsch_time_stop[20];
+int log_nb_ul_cnt =0;
+
+#endif
+
 #define NR_TIMESPEC_TO_DOUBLE_US( nr_t )    ( ( (double)nr_t.tv_sec * 1000000 ) + ( (double)nr_t.tv_nsec / 1000 ) )
 
 int g_fpag_ldpc = 0;
@@ -151,15 +171,7 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame,int slot,nfapi_nr_
                    n_hf, frame, cfg, fp);
 }
 
-#define TIME_ESTIMATION
 
-#ifdef TIME_ESTIMATION
-struct timespec tx_time_start[20];
-struct timespec tx_time_stop[20];
-struct timespec code_time_start[20];
-struct timespec code_time_stop[20];
-int log_cnt =0;
-#endif
 void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
                            int frame,int slot,
                            int do_meas) {
@@ -178,8 +190,8 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
 
 #ifdef TIME_ESTIMATION
   if (slot == 0)
-      log_cnt++;
-  clock_gettime(CLOCK_REALTIME, &tx_time_start[slot]);
+      log_nb_dl_cnt++;
+  clock_gettime(CLOCK_REALTIME, &nb_tx_time_start[slot]);
 #endif
 
   // clear the transmit data array and beam index for the current slot
@@ -230,7 +242,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   }
  
 #ifdef TIME_ESTIMATION
-  clock_gettime(CLOCK_REALTIME, &code_time_start[slot]);
+  clock_gettime(CLOCK_REALTIME, &nb_pdsch_time_start[slot]);
 #endif 
   for (int i=0; i<gNB->num_pdsch_rnti[slot]; i++) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,1);
@@ -243,7 +255,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   }
 
 #ifdef TIME_ESTIMATION
-  clock_gettime(CLOCK_REALTIME, &code_time_stop[slot]);
+  clock_gettime(CLOCK_REALTIME, &nb_pdsch_time_stop[slot]);
 #endif
 
   for (int i=0;i<NUMBER_OF_NR_CSIRS_MAX;i++){
@@ -268,19 +280,20 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   }
 
 #ifdef TIME_ESTIMATION
-  clock_gettime(CLOCK_REALTIME, &tx_time_stop[slot]);
-  if ((log_cnt == 20) && (slot == 17))
+  clock_gettime(CLOCK_REALTIME, &nb_tx_time_stop[slot]);
+  if ((log_nb_dl_cnt == 20) && (slot == 17))
   {
-      double code_clock_gettime_cur, tx_clock_gettime_cur;
+      double nb_pdsch_clock_gettime_cur, nb_tx_clock_gettime_cur, nb_code_clock_gettime_cur;
 
-    for (int ii=0; ii<slot; ii++)
+    for (int ii=0; ii<=slot; ii++)
     {
-        code_clock_gettime_cur = NR_TIMESPEC_TO_DOUBLE_US(nr_get_timespec_diff(&code_time_start[ii], &code_time_stop[ii])); // us
-        tx_clock_gettime_cur = NR_TIMESPEC_TO_DOUBLE_US(nr_get_timespec_diff(&tx_time_start[ii], &tx_time_stop[ii])); // us
+        nb_code_clock_gettime_cur = NR_TIMESPEC_TO_DOUBLE_US(nr_get_timespec_diff(&nb_code_time_start[ii], &nb_code_time_stop[ii])); // us
+        nb_pdsch_clock_gettime_cur = NR_TIMESPEC_TO_DOUBLE_US(nr_get_timespec_diff(&nb_pdsch_time_start[ii], &nb_pdsch_time_stop[ii])); // us
+        nb_tx_clock_gettime_cur = NR_TIMESPEC_TO_DOUBLE_US(nr_get_timespec_diff(&nb_tx_time_start[ii], &nb_tx_time_stop[ii])); // us
         
-        LOG_I(PHY, "frame %d %d, code time %lf, tx time %lf\n", frame, ii, code_clock_gettime_cur, tx_clock_gettime_cur);
+        LOG_I(PHY, "frame %d %d, nb code time %lf, pdsch time %lf, tx time %lf\n", frame, ii, nb_code_clock_gettime_cur, nb_pdsch_clock_gettime_cur, nb_tx_clock_gettime_cur);
     }
-    log_cnt = 0;
+    log_nb_dl_cnt = 0;
   }
 #endif
 
@@ -616,6 +629,12 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_UESPEC_RX,1);
   LOG_D(PHY,"phy_procedures_gNB_uespec_RX frame %d, slot %d\n",frame_rx,slot_rx);
 
+#ifdef TIME_ESTIMATION
+  if (slot_rx == 7)
+      log_nb_ul_cnt++;
+  clock_gettime(CLOCK_REALTIME, &nb_rx_time_start[slot_rx]);
+#endif
+
   if (gNB->frame_parms.frame_type == TDD)
     fill_ul_rb_mask(gNB, frame_rx, slot_rx);
 
@@ -745,7 +764,13 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
 
           VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_RX_PUSCH,1);
 	        start_meas(&gNB->rx_pusch_stats);
+#ifdef TIME_ESTIMATION
+  clock_gettime(CLOCK_REALTIME, &nb_pusch_time_start[slot_rx]);
+#endif 
           no_sig = nr_rx_pusch(gNB, ULSCH_id, frame_rx, slot_rx, harq_pid);
+#ifdef TIME_ESTIMATION
+  clock_gettime(CLOCK_REALTIME, &nb_pusch_time_stop[slot_rx]);
+#endif 
           if (no_sig) {
             LOG_I(PHY, "PUSCH not detected in frame %d, slot %d\n", frame_rx, slot_rx);
             nr_fill_indication(gNB, frame_rx, slot_rx, ULSCH_id, harq_pid, 1);
@@ -781,7 +806,13 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
           //LOG_M("rxdataF_comp.m","rxF_comp",gNB->pusch_vars[0]->rxdataF_comp[0],6900,1,1);
           //LOG_M("rxdataF_ext.m","rxF_ext",gNB->pusch_vars[0]->rxdataF_ext[0],6900,1,1);
           VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_ULSCH_PROCEDURES_RX,1);
+#ifdef TIME_ESTIMATION
+  clock_gettime(CLOCK_REALTIME, &nb_ulsch_time_start[slot_rx]);
+#endif 
           nr_ulsch_procedures(gNB, frame_rx, slot_rx, ULSCH_id, harq_pid);
+#ifdef TIME_ESTIMATION
+  clock_gettime(CLOCK_REALTIME, &nb_ulsch_time_stop[slot_rx]);
+#endif           
           // nr_ulsch_procedures_fpga_ldpc(gNB, frame_rx, slot_rx, ULSCH_id, harq_pid); //上面是OAI的代码，fpga_ldpc的decode切换到该行即可
           VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_ULSCH_PROCEDURES_RX,0);
           break;
@@ -800,6 +831,28 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_UESPEC_RX,0);
+
+#ifdef TIME_ESTIMATION
+  clock_gettime(CLOCK_REALTIME, &nb_rx_time_stop[slot_rx]);
+#endif 
+
+#ifdef TIME_ESTIMATION
+  if ((log_nb_ul_cnt == 20) && (slot_rx == 19))
+  {
+      double nb_pusch_clock_gettime_cur, nb_rx_clock_gettime_cur, nb_ulsch_clock_gettime_cur;
+
+    for (int ii=7; ii<=slot_rx; ii++)
+    {
+        nb_ulsch_clock_gettime_cur = NR_TIMESPEC_TO_DOUBLE_US(nr_get_timespec_diff(&nb_ulsch_time_start[ii], &nb_ulsch_time_stop[ii])); // us
+        nb_pusch_clock_gettime_cur = NR_TIMESPEC_TO_DOUBLE_US(nr_get_timespec_diff(&nb_pusch_time_start[ii], &nb_pusch_time_stop[ii])); // us
+        nb_rx_clock_gettime_cur = NR_TIMESPEC_TO_DOUBLE_US(nr_get_timespec_diff(&nb_rx_time_start[ii], &nb_rx_time_stop[ii])); // us
+        
+        LOG_I(PHY, "frame %d %d, nb ulsch time %lf, pusch time %lf, rx time %lf\n", frame_rx, ii, nb_ulsch_clock_gettime_cur, nb_pusch_clock_gettime_cur, nb_rx_clock_gettime_cur);
+    }
+    log_nb_ul_cnt = 0;
+  }
+#endif
+
   return 0;
 }
 

@@ -42,6 +42,13 @@
 //#define DEBUG_DLSCH
 //#define DEBUG_DLSCH_MAPPING
 
+#define TIME_ESTIMATION
+
+#ifdef TIME_ESTIMATION
+extern struct timespec nb_code_time_start[];
+extern struct timespec nb_code_time_stop[];
+#endif
+
 void nr_pdsch_codeword_scrambling(uint8_t *in,
                                   uint32_t size,
                                   uint8_t q,
@@ -181,11 +188,17 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
     /// CRC, coding, interleaving and rate matching
     AssertFatal(harq->pdu!=NULL,"harq->pdu is null\n");
     start_meas(dlsch_encoding_stats);
+#ifdef TIME_ESTIMATION
+  clock_gettime(CLOCK_REALTIME, &nb_code_time_start[slot]);
+#endif     
     nr_dlsch_encoding(gNB,
 		      harq->pdu, frame, slot, dlsch, frame_parms,tinput,tprep,tparity,toutput,
 		      dlsch_rate_matching_stats,
 		      dlsch_interleaving_stats,
 		      dlsch_segmentation_stats);
+#ifdef TIME_ESTIMATION
+  clock_gettime(CLOCK_REALTIME, &nb_code_time_stop[slot]);
+#endif 
     stop_meas(dlsch_encoding_stats);
 #ifdef DEBUG_DLSCH
     printf("PDSCH encoding:\nPayload:\n");
@@ -686,11 +699,17 @@ uint8_t nr_generate_pdsch_fpga_ldpc(PHY_VARS_gNB *gNB,
     /// CRC, coding, interleaving and rate matching
     AssertFatal(harq->pdu!=NULL,"harq->pdu is null\n");
     start_meas(dlsch_encoding_stats);
+#ifdef TIME_ESTIMATION
+  clock_gettime(CLOCK_REALTIME, &nb_code_time_start[slot]);
+#endif 
     nr_dlsch_encoding_fpga_ldpc(gNB,
 		      harq->pdu, frame, slot, dlsch, frame_parms,tinput,tprep,tparity,toutput,
 		      dlsch_rate_matching_stats,
 		      dlsch_interleaving_stats,
 		      dlsch_segmentation_stats);
+#ifdef TIME_ESTIMATION
+  clock_gettime(CLOCK_REALTIME, &nb_code_time_stop[slot]);
+#endif           
     stop_meas(dlsch_encoding_stats);
 #ifdef DEBUG_DLSCH
     printf("PDSCH encoding:\nPayload:\n");

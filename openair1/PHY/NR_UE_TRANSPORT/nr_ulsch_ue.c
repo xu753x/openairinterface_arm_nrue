@@ -54,6 +54,15 @@
 
 //extern int32_t uplink_counter;
 
+#define TIME_ESTIMATION
+#ifdef TIME_ESTIMATION
+extern struct timespec ue_code_time_start[];
+extern struct timespec ue_code_time_stop[];
+extern struct timespec ue_pusch_time_start[];
+extern struct timespec ue_pusch_time_stop[];
+#endif
+
+
 void nr_pusch_codeword_scrambling(uint8_t *in,
                          uint32_t size,
                          uint32_t Nid,
@@ -158,9 +167,14 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
     unsigned int G = nr_get_G(nb_rb, number_of_symbols,
                               nb_dmrs_re_per_rb, number_dmrs_symbols, mod_order, Nl);
     
-
+#ifdef TIME_ESTIMATION
+  clock_gettime(CLOCK_REALTIME, &ue_code_time_start[slot]);
+#endif
     nr_ulsch_encoding(ulsch_ue, frame_parms, harq_pid, G);
-
+#ifdef TIME_ESTIMATION
+  clock_gettime(CLOCK_REALTIME, &ue_code_time_stop[slot]);
+  ue_pusch_time_start[slot] = ue_code_time_stop[slot];
+#endif
     ///////////
     ////////////////////////////////////////////////////////////////////
 
@@ -469,7 +483,9 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
   ///////////
   ////////////////////////////////////////////////////////////////////////
-
+#ifdef TIME_ESTIMATION
+  clock_gettime(CLOCK_REALTIME, &ue_pusch_time_stop[slot]);
+#endif
 }
 
 
