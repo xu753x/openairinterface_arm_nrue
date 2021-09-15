@@ -35,6 +35,14 @@
 #include "PHY/NR_TRANSPORT/nr_ulsch.h"
 #include "PHY/NR_REFSIG/nr_refsig.h"
 
+#define TIME_ESTIMATION
+#ifdef TIME_ESTIMATION
+
+extern struct timespec nb_ulsch_convert_time_start[];
+extern struct timespec nb_ulsch_convert_time_stop[];
+
+#endif
+
 int16_t find_nr_ulsch(uint16_t rnti, PHY_VARS_gNB *gNB,find_type_t type) {
 
   uint16_t i;
@@ -201,7 +209,8 @@ void nr_ulsch_unscrambling_optim_fpga_ldpc(int16_t* llr,int8_t* llr8,
 				 uint32_t size,
 				 uint8_t q,
 				 uint32_t Nid,
-				 uint32_t n_RNTI) {
+				 uint32_t n_RNTI,
+         int slot_rx) {
   
 #if defined(__x86_64__) || defined(__i386__)
   uint32_t x1, x2, s=0;
@@ -221,6 +230,9 @@ void nr_ulsch_unscrambling_optim_fpga_ldpc(int16_t* llr,int8_t* llr8,
     s = lte_gold_generic(&x1, &x2, 0);
   }
 
+#ifdef TIME_ESTIMATION
+  clock_gettime(CLOCK_REALTIME, &nb_ulsch_convert_time_start[slot_rx]);
+#endif 
   //为FPGA加速调整格式，调整成+-32以内
   for (int i = 0; i < size; i++)
   {
@@ -231,6 +243,9 @@ void nr_ulsch_unscrambling_optim_fpga_ldpc(int16_t* llr,int8_t* llr8,
     else 
        llr8[i] = llr[i];
   }
+#ifdef TIME_ESTIMATION
+  clock_gettime(CLOCK_REALTIME, &nb_ulsch_convert_time_stop[slot_rx]);
+#endif 
   
 #else
 

@@ -111,7 +111,8 @@ void nr_ulsch_unscrambling_optim_fpga_ldpc(int16_t* llr,int8_t* llr8,
 				 uint32_t size,
 				 uint8_t q,
 				 uint32_t Nid,
-				 uint32_t n_RNTI);
+				 uint32_t n_RNTI,
+         int slot_rx);
 
 void nr_ulsch_procedures_fpga_ldpc(PHY_VARS_gNB *gNB,
                          int frame_rx,

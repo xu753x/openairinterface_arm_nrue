@@ -78,6 +78,10 @@ struct timespec nb_pusch_time_start[20];
 struct timespec nb_pusch_time_stop[20];
 struct timespec nb_ulsch_time_start[20];
 struct timespec nb_ulsch_time_stop[20];
+struct timespec nb_ulsch_code_time_start[20];
+struct timespec nb_ulsch_code_time_stop[20];
+struct timespec nb_ulsch_convert_time_start[20];
+struct timespec nb_ulsch_convert_time_stop[20];
 int log_nb_ul_cnt =0;
 
 #endif
@@ -432,6 +436,9 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
   //----------------------------------------------------------
 
   start_meas(&gNB->ulsch_decoding_stats);
+#ifdef TIME_ESTIMATION
+  clock_gettime(CLOCK_REALTIME, &nb_ulsch_code_time_start[slot_rx]);
+#endif 
   nr_ulsch_decoding(gNB,
                     ULSCH_id,
                     gNB->pusch_vars[ULSCH_id]->llr,
@@ -447,6 +454,9 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
     nr_postDecode(gNB, req);
     delNotifiedFIFO_elt(req);
   }
+#ifdef TIME_ESTIMATION
+  clock_gettime(CLOCK_REALTIME, &nb_ulsch_code_time_stop[slot_rx]);
+#endif 
   stop_meas(&gNB->ulsch_decoding_stats);
 }
 
@@ -817,7 +827,7 @@ else
 #ifdef TIME_ESTIMATION
   clock_gettime(CLOCK_REALTIME, &nb_ulsch_time_stop[slot_rx]);
 #endif
-      LOG_I(PHY, "g_fpag_ldpc is %d\n", g_fpag_ldpc);
+
           break;
         }
       }
@@ -842,15 +852,17 @@ else
 #ifdef TIME_ESTIMATION
   if ((log_nb_ul_cnt == 20) && (slot_rx == 19))
   {
-      double nb_pusch_clock_gettime_cur, nb_rx_clock_gettime_cur, nb_ulsch_clock_gettime_cur;
+      double nb_pusch_clock_gettime_cur, nb_rx_clock_gettime_cur, nb_ulsch_clock_gettime_cur, nb_pusch_code_clock_gettime_cur, nb_pusch_convert_clock_gettime_cur;
 
     for (int ii=7; ii<=slot_rx; ii++)
     {
         nb_ulsch_clock_gettime_cur = NR_TIMESPEC_TO_DOUBLE_US(nr_get_timespec_diff(&nb_ulsch_time_start[ii], &nb_ulsch_time_stop[ii])); // us
         nb_pusch_clock_gettime_cur = NR_TIMESPEC_TO_DOUBLE_US(nr_get_timespec_diff(&nb_pusch_time_start[ii], &nb_pusch_time_stop[ii])); // us
         nb_rx_clock_gettime_cur = NR_TIMESPEC_TO_DOUBLE_US(nr_get_timespec_diff(&nb_rx_time_start[ii], &nb_rx_time_stop[ii])); // us
-        
-        LOG_I(PHY, "frame %d %d, nb ulsch time %lf, pusch time %lf, rx time %lf\n", frame_rx, ii, nb_ulsch_clock_gettime_cur, nb_pusch_clock_gettime_cur, nb_rx_clock_gettime_cur);
+        nb_pusch_code_clock_gettime_cur = NR_TIMESPEC_TO_DOUBLE_US(nr_get_timespec_diff(&nb_ulsch_code_time_start[ii], &nb_ulsch_code_time_stop[ii])); // us
+        nb_pusch_convert_clock_gettime_cur = NR_TIMESPEC_TO_DOUBLE_US(nr_get_timespec_diff(&nb_ulsch_convert_time_start[ii], &nb_ulsch_convert_time_stop[ii]));
+        LOG_I(PHY, "frame %d %d, nb ulsch time %lf (code %lf, convert %lf),  pusch time %lf, rx time %lf\n", frame_rx, ii,
+         nb_ulsch_clock_gettime_cur, nb_pusch_code_clock_gettime_cur,  nb_pusch_convert_clock_gettime_cur,   nb_pusch_clock_gettime_cur, nb_rx_clock_gettime_cur);
     }
     log_nb_ul_cnt = 0;
   }
@@ -908,13 +920,17 @@ void nr_ulsch_procedures_fpga_ldpc(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx,
 			      G,
 			      0,
 			      pusch_pdu->data_scrambling_id,
-			      pusch_pdu->rnti);
+			      pusch_pdu->rnti,
+            slot_rx);
   stop_meas(&gNB->ulsch_unscrambling_stats);
   //----------------------------------------------------------
   //--------------------- ULSCH decoding ---------------------
   //----------------------------------------------------------
 
   start_meas(&gNB->ulsch_decoding_stats);
+#ifdef TIME_ESTIMATION
+  clock_gettime(CLOCK_REALTIME, &nb_ulsch_code_time_start[slot_rx]);
+#endif 
   nr_ulsch_decoding_fpga_ldpc(gNB,
                     ULSCH_id,
                     gNB->pusch_vars[ULSCH_id]->llr,
@@ -925,6 +941,8 @@ void nr_ulsch_procedures_fpga_ldpc(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx,
                     slot_rx,
                     harq_pid,
                     G);
-
+#ifdef TIME_ESTIMATION
+  clock_gettime(CLOCK_REALTIME, &nb_ulsch_code_time_stop[slot_rx]);
+#endif 
   stop_meas(&gNB->ulsch_decoding_stats);
 }
