@@ -839,11 +839,6 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
   } else {
     for (int i = 0; i < NR_NB_RA_PROC_MAX; ++i) {
       NR_RA_t *ra = &gNB_mac->common_channels[CC_idP].ra[i];
-      if (ra->state != WAIT_Msg3)
-        continue;
-
-      if( (frameP!=ra->Msg3_frame) || (slotP!=ra->Msg3_slot))
-        continue;
 
       if (ra->msg3_round >= MAX_HARQ_ROUNDS - 1) {
         LOG_W(NR_MAC, "Random Access %i failed at state %i (Reached msg3 max harq rounds)\n", i, ra->state);
@@ -851,6 +846,11 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
         nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
         return;
       }
+      if (ra->state != WAIT_Msg3)
+        continue;
+
+      if( (frameP!=ra->Msg3_frame) || (slotP!=ra->Msg3_slot))
+        continue;
 
       LOG_W(NR_MAC, "Random Access %i Msg3 CRC did not pass)\n", i);
       ra->msg3_round++;
@@ -1047,7 +1047,7 @@ void pf_ul(module_id_t module_id,
   gNB_MAC_INST *nrmac = RC.nrmac[module_id];
   NR_ServingCellConfigCommon_t *scc = nrmac->common_channels[CC_id].ServingCellConfigCommon;
   NR_UE_info_t *UE_info = &nrmac->UE_info;
-  const int min_rb = 80;
+  const int min_rb = 5;
   float coeff_ue[MAX_MOBILES_PER_GNB];
   // UEs that could be scheduled
   int ue_array[MAX_MOBILES_PER_GNB];
@@ -1064,7 +1064,7 @@ void pf_ul(module_id_t module_id,
     NR_CellGroupConfig_t *cg = UE_info->CellGroup[UE_id];
     NR_BWP_UplinkDedicated_t *ubwpd= cg ? cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP : NULL;
 
-    int rbStart = sched_ctrl->active_ubwp ? NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE) : 0;
+    int rbStart = 0;
     const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
     NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
     NR_pusch_semi_static_t *ps = &sched_ctrl->pusch_semi_static;
@@ -1155,9 +1155,9 @@ void pf_ul(module_id_t module_id,
       n_rb_sched -= sched_pusch->rbSize;
       for (int rb = 0; rb < sched_ctrl->sched_pusch.rbSize; rb++)
         rballoc_mask[rb + sched_ctrl->sched_pusch.rbStart] = 0;
-          LOG_D(NR_MAC,"##********rbSize %d, TBS %d, est buf %d, sched_ul %d, B %d\n",
+          LOG_I(NR_MAC,"##********rbSize %d, TBS %d, est buf %d, sched_ul %d, B %d\n",
           sched_pusch->rbSize, sched_pusch->tb_size, sched_ctrl->estimated_ul_buffer, sched_ctrl->sched_ul_bytes, B);
-      //continue;
+      continue;
     }
 
     /* Create UE_sched for UEs eligibale for new data transmission*/
@@ -1207,7 +1207,7 @@ void pf_ul(module_id_t module_id,
     NR_CellGroupConfig_t *cg = UE_info->CellGroup[UE_id];
     NR_BWP_UplinkDedicated_t *ubwpd= cg ? cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP:NULL;
     NR_BWP_t *genericParameters = sched_ctrl->active_ubwp ? &sched_ctrl->active_ubwp->bwp_Common->genericParameters : &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
-    int rbStart = sched_ctrl->active_ubwp ? NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE) : 0;
+    int rbStart = 0;
     const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
     NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
     NR_pusch_semi_static_t *ps = &sched_ctrl->pusch_semi_static;
@@ -1250,8 +1250,8 @@ void pf_ul(module_id_t module_id,
                   max_rbSize,
                   &TBS,
                   &rbSize);
-    sched_pusch->rbSize = rbSize;
-    sched_pusch->tb_size =TBS;// nr_compute_tbs(sched_pusch->Qm, sched_pusch->R, sched_pusch->rbSize, ps->nrOfSymbols, ps->N_PRB_DMRS * ps->num_dmrs_symb, 0, 0, 1) >> 3;;
+    sched_pusch->rbSize = 40;
+    sched_pusch->tb_size =nr_compute_tbs(sched_pusch->Qm, sched_pusch->R, sched_pusch->rbSize, ps->nrOfSymbols, ps->N_PRB_DMRS * ps->num_dmrs_symb, 0, 0, 1) >> 3;// nr_compute_tbs(sched_pusch->Qm, sched_pusch->R, sched_pusch->rbSize, ps->nrOfSymbols, ps->N_PRB_DMRS * ps->num_dmrs_symb, 0, 0, 1) >> 3;;
 
     LOG_I(NR_MAC,"slot %d.%d rbSize %d, max_rbSize %d, TBS %d, est buf %d, sched_ul %d, B %d, CCE %d, num_dmrs_symb %d, N_PRB_DMRS %d\n",
           frame,slot,rbSize,max_rbSize, sched_pusch->tb_size, sched_ctrl->estimated_ul_buffer, sched_ctrl->sched_ul_bytes, B,sched_ctrl->cce_index,ps->num_dmrs_symb,ps->N_PRB_DMRS);
@@ -1495,7 +1495,6 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
           rnti,
           sched_pusch->frame,
           sched_pusch->slot,
-          sched_ctrl->aggregation_level,
           sched_pusch->rbStart,
           sched_pusch->rbSize,
           ps->startSymbolIndex,

@@ -524,16 +524,24 @@ void nr_initiate_ra_proc(module_id_t module_idP,
 
   for (int i = 0; i < NR_NB_RA_PROC_MAX; i++) {
     NR_RA_t *ra = &cc->ra[i];
+    if (ra->msg3_round >= MAX_HARQ_ROUNDS - 1) {
+        LOG_W(NR_MAC, "Random Access %i failed at state %i (Reached msg3 max harq rounds)\n", i, ra->state);
+        nr_mac_remove_ra_rnti(module_idP, ra->rnti);
+        nr_clear_ra_proc(module_idP, CC_id, frameP, ra);
+        //return;
+      }
     pr_found = 0;
     if (ra->state == RA_IDLE) {
       for(int j = 0; j < ra->preambles.num_preambles; j++) {
         //check if the preamble received correspond to one of the listed or configured preambles
         if (preamble_index == ra->preambles.preamble_list[j]) {
+          LOG_W(NR_MAC,"preamble %d found\n",preamble_index);
           pr_found=1;
           break;
         }
       }
       if (pr_found == 0) {
+         LOG_E(NR_MAC,"preamble not found\n");
          continue;
       }
 
@@ -558,7 +566,7 @@ void nr_initiate_ra_proc(module_id_t module_idP,
 
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_INITIATE_RA_PROC, 1);
 
-      LOG_D(NR_MAC,
+      LOG_I(NR_MAC,
             "[gNB %d][RAPROC] CC_id %d Frame %d, Slot %d  Initiating RA procedure for preamble index %d\n",
             module_idP,
             CC_id,
@@ -717,11 +725,11 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
   uint8_t K2 = *pusch_TimeDomainAllocationList->list.array[ra->Msg3_tda_id]->k2;
   const int sched_frame = frame + (slot + K2 >= nr_slots_per_frame[mu]);
   const int sched_slot = (slot + K2) % nr_slots_per_frame[mu];
-
-  if (is_xlsch_in_slot(RC.nrmac[module_idP]->ulsch_slot_bitmap[sched_slot / 64], sched_slot)) {
+  if (is_xlsch_in_slot_flex(RC.nrmac[module_idP]->flexible_slots_per_frame, 1, sched_slot)) {
     // beam association for FR2
     int16_t *tdd_beam_association = nr_mac->tdd_beam_association;
     if (*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0] >= 257) {
+      assert(1==2);
       uint8_t tdd_period_slot =  scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots + scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
       if ((scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols > 0) || (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols > 0))
         tdd_period_slot++;

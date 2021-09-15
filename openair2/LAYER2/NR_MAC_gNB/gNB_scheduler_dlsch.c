@@ -462,7 +462,7 @@ void nr_store_dlsch_buffer(module_id_t module_id,
           slot,
           loop_dcch_dtch<4?"DCCH":"DTCH",
           loop_dcch_dtch,
-          sched_ctrl->rlc_status[lcid].bytes_in_buffer,
+          sched_ctrl->rlc_status[loop_dcch_dtch].bytes_in_buffer,
           sched_ctrl->ta_apply);
   }
 }
@@ -713,7 +713,7 @@ void pf_dl(module_id_t module_id,
     }
 
     // Freq-demain allocation
-    //while (rbStart < bwpSize && !rballoc_mask[rbStart]) rbStart++;
+    while (rbStart < bwpSize && !rballoc_mask[rbStart]) rbStart++;
 
     uint16_t max_rbSize = 1;
     while (rbStart + max_rbSize < bwpSize && rballoc_mask[rbStart + max_rbSize])
@@ -742,9 +742,9 @@ void pf_dl(module_id_t module_id,
                   max_rbSize,
                   &TBS,
                   &rbSize);
-    sched_pdsch->rbSize = rbSize; // Karim it was rbSize
+    sched_pdsch->rbSize = 100; // Karim it was rbSize
     sched_pdsch->rbStart = rbStart;
-    sched_pdsch->tb_size = TBS;
+    sched_pdsch->tb_size = nr_compute_tbs(sched_pdsch->Qm, sched_pdsch->R, sched_pdsch->rbSize, ps->nrOfSymbols, ps->N_PRB_DMRS * ps->N_DMRS_SLOT, 0, 0, 1) >> 3;
 
     /* transmissions: directly allocate */
     n_rb_sched -= sched_pdsch->rbSize;
@@ -1170,7 +1170,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
       /* next, get RLC data */
 
       // const int lcid = DL_SCH_LCID_DTCH;
-      const int lcid = sched_ctrl->lcid_to_schedule;
+      const int lcid = loop_dcch_dtch;
       int dlsch_total_bytes = 0;
       if (sched_ctrl->num_total_bytes > 0) {
         tbs_size_t len = 0;
