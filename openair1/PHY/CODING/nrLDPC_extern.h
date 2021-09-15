@@ -30,6 +30,7 @@ nrLDPC_dectopfunc_t top_testsuite;
 
 extern int load_nrLDPClib(void) ;
 extern int load_nrLDPClib_offload(void) ;
+extern int free_nrLDPClib_offload(void) ;
 extern int load_nrLDPClib_ref(char *libversion, nrLDPC_encoderfunc_t * nrLDPC_encoder_ptr); // for ldpctest
 /* ldpc coder/decoder functions, as loaded by load_nrLDPClib(). */
 extern nrLDPC_decoderfunc_t nrLDPC_decoder;
