@@ -137,7 +137,7 @@ int nr_derive_kngran_star(uint16_t pci, uint64_t nr_arfcn_dl,
   string[1] = (pci & 0x0000ff00) >> 8;
   string[2] = (pci & 0x000000ff);
 
-  /* L0 = length(P0) = 1 */
+  /* L0 = length(P0) = 2 */
   string[3] = 0x00;
   string[4] = 0x02;
 
@@ -146,7 +146,7 @@ int nr_derive_kngran_star(uint16_t pci, uint64_t nr_arfcn_dl,
 	string[6] = (nr_arfcn_dl & 0x0000ff00) >> 8;
 	string[7] = (nr_arfcn_dl & 0x000000ff);
   
-  /* L1 = length(P1) = 1 */
+  /* L1 = length(P1) = 3 */
 	string[8] = 0x00;
 	string[9] = 0x03;
 

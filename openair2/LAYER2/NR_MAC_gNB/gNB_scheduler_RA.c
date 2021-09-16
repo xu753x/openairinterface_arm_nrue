@@ -1237,8 +1237,10 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
                                    0,
                                    0);
         }else{
-          AssertFatal(0==1,
-                      "Not found msg3. Illegal case.\n");
+          LOG_W(NR_MAC, "No Msg4, release ra proc. %x\n", ra->rnti);
+          mac_remove_nr_ue(module_idP, ra->rnti);
+          nr_clear_ra_proc(module_idP, CC_id, frameP, ra);
+          return;
         }
     }
     // HARQ management
