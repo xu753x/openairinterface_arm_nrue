@@ -47,6 +47,7 @@
 
 /*Softmodem params*/
 #include "executables/softmodem-common.h"
+#include "../../../nfapi/oai_integration/vendor_ext.h"
 
 ////////////////////////////////////////////////////////
 /////* DLSCH MAC PDU generation (6.1.2 TS 38.321) */////
@@ -454,9 +455,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
   int rbStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
 
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
-  const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
-  const uint8_t num_dmrs_cdm_grps_no_data = sched_ctrl->active_bwp ? (f ? 1 : (ps->nrOfSymbols == 2 ? 1 : 2)) : (ps->nrOfSymbols == 2 ? 1 : 2);
-
+  const long f = sched_ctrl->active_bwp ? sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats : 0;
   int rbSize = 0;
   const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] : 1;
   if (tda == retInfo->time_domain_allocation) {
@@ -475,9 +474,8 @@ bool allocate_dl_retransmission(module_id_t module_id,
     }
     /* check whether we need to switch the TDA allocation since the last
      * (re-)transmission */
-    if (ps->time_domain_allocation != tda || ps->numDmrsCdmGrpsNoData != num_dmrs_cdm_grps_no_data)
-      nr_set_pdsch_semi_static(
-          scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, tda, num_dmrs_cdm_grps_no_data, ps);
+    if (ps->time_domain_allocation != tda)
+      nr_set_pdsch_semi_static(scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, tda, f, ps);
   } else {
     /* the retransmission will use a different time domain allocation, check
      * that we have enough resources */
@@ -486,8 +484,8 @@ bool allocate_dl_retransmission(module_id_t module_id,
     while (rbStart + rbSize < bwpSize && rballoc_mask[rbStart + rbSize])
       rbSize++;
     NR_pdsch_semi_static_t temp_ps;
-    nr_set_pdsch_semi_static(
-        scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, tda, num_dmrs_cdm_grps_no_data, &temp_ps);
+    temp_ps.nrOfLayers = 1;
+    nr_set_pdsch_semi_static(scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, tda, f, &temp_ps);
     uint32_t new_tbs;
     uint16_t new_rbSize;
     bool success = nr_find_nb_rb(retInfo->Qm,
@@ -674,6 +672,7 @@ void pf_dl(module_id_t module_id,
 
     // Freq-demain allocation
     while (rbStart < bwpSize && !rballoc_mask[rbStart]) rbStart++;
+
     uint16_t max_rbSize = 1;
     while (rbStart + max_rbSize < bwpSize && rballoc_mask[rbStart + max_rbSize])
       max_rbSize++;
@@ -682,11 +681,9 @@ void pf_dl(module_id_t module_id,
     const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] : 1;
     NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
     NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
-    const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
-    const uint8_t num_dmrs_cdm_grps_no_data = sched_ctrl->active_bwp ? (f ? 1 : (ps->nrOfSymbols == 2 ? 1 : 2)) : (ps->nrOfSymbols == 2 ? 1 : 2);
-    if (ps->time_domain_allocation != tda || ps->numDmrsCdmGrpsNoData != num_dmrs_cdm_grps_no_data)
-      nr_set_pdsch_semi_static(
-          scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, tda, num_dmrs_cdm_grps_no_data, ps);
+    const long f = sched_ctrl->active_bwp ? sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats : 0;
+    if (ps->time_domain_allocation != tda)
+      nr_set_pdsch_semi_static(scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, tda, f, ps);
     sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
     sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, ps->mcsTableIdx);
     sched_pdsch->pucch_allocation = alloc;
@@ -877,6 +874,10 @@ void nr_schedule_ue_spec(module_id_t module_id,
 
     /* look up the PDCCH PDU for this CC, BWP, and CORESET. If it does not
      * exist, create it */
+
+    // BWP
+    NR_BWP_t *genericParameters = bwp ? &bwp->bwp_Common->genericParameters : &scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
+
     const int bwpid = bwp ? bwp->bwp_Id : 0;
     const int coresetid = bwp ? sched_ctrl->coreset->controlResourceSetId : gNB_mac->sched_ctrlCommon->coreset->controlResourceSetId;
     nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu = gNB_mac->pdcch_pdu_idx[CC_id][bwpid][coresetid];
@@ -890,7 +891,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
       LOG_D(NR_MAC,"Trying to configure DL pdcch for bwp %d, cs %d\n",bwpid,coresetid);
       NR_SearchSpace_t *ss = bwp ? sched_ctrl->search_space:gNB_mac->sched_ctrlCommon->search_space;
       NR_ControlResourceSet_t *coreset = bwp? sched_ctrl->coreset:gNB_mac->sched_ctrlCommon->coreset;
-      nr_configure_pdcch(pdcch_pdu, ss, coreset, scc, bwp);
+      nr_configure_pdcch(pdcch_pdu, ss, coreset, scc, genericParameters, NULL);
       gNB_mac->pdcch_pdu_idx[CC_id][bwpid][coresetid] = pdcch_pdu;
     }
 
@@ -908,9 +909,6 @@ void nr_schedule_ue_spec(module_id_t module_id,
      * reset every slot. */
     const int pduindex = gNB_mac->pdu_index[CC_id]++;
     pdsch_pdu->pduIndex = pduindex;
-
-    // BWP
-    NR_BWP_t *genericParameters = bwp ? &bwp->bwp_Common->genericParameters : &scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
 
     pdsch_pdu->BWPSize  = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
     pdsch_pdu->BWPStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
