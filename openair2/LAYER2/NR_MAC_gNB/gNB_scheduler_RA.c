@@ -524,24 +524,24 @@ void nr_initiate_ra_proc(module_id_t module_idP,
 
   for (int i = 0; i < NR_NB_RA_PROC_MAX; i++) {
     NR_RA_t *ra = &cc->ra[i];
-    if (ra->msg3_round >= MAX_HARQ_ROUNDS - 1) {
+    /*if (ra->msg3_round >= MAX_HARQ_ROUNDS - 1) {
         LOG_W(NR_MAC, "Random Access %i failed at state %i (Reached msg3 max harq rounds)\n", i, ra->state);
         nr_mac_remove_ra_rnti(module_idP, ra->rnti);
         nr_clear_ra_proc(module_idP, CC_id, frameP, ra);
         //return;
-      }
+      }*/
     pr_found = 0;
     if (ra->state == RA_IDLE) {
       for(int j = 0; j < ra->preambles.num_preambles; j++) {
         //check if the preamble received correspond to one of the listed or configured preambles
         if (preamble_index == ra->preambles.preamble_list[j]) {
-          LOG_W(NR_MAC,"preamble %d found\n",preamble_index);
+          //LOG_W(NR_MAC,"preamble %d found\n",preamble_index);
           pr_found=1;
           break;
         }
       }
       if (pr_found == 0) {
-         LOG_E(NR_MAC,"preamble not found\n");
+         //LOG_E(NR_MAC,"preamble not found\n");
          continue;
       }
 

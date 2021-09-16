@@ -1519,7 +1519,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
   case NR_UL_DCI_FORMAT_0_1:
     switch (rnti_type) {
     case NR_RNTI_C:
-      LOG_D(NR_MAC,"Filling NR_UL_DCI_FORMAT_0_1 size %d format indicator %d\n",dci_size,dci_pdu_rel15->format_indicator);
+      LOG_I(NR_MAC,"Filling NR_UL_DCI_FORMAT_0_1 size %d format indicator %d\n",dci_size,dci_pdu_rel15->format_indicator);
       // Indicating a DL DCI format 1bit
       pos = 1;
       *dci_pdu |= ((uint64_t)dci_pdu_rel15->format_indicator & 0x1) << (dci_size - pos);
@@ -1592,6 +1592,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
       // UL-SCH indicator
       pos += 1;
       *dci_pdu |= ((uint64_t)dci_pdu_rel15->ulsch_indicator & 0x1) << (dci_size - pos);
+      LOG_I(NR_MAC,"carrier_indicator %d ul_sul_indicator %d bwp_indicator %d frequency_domain_assignment %d time_domain_assignment %d frequency_hopping_flag %d  mcs %d ndi %d rv %d harq_pid %d tpc %d srs_resource_indicator %d precoding_information %d ptrs_dmrs_association %d beta_offset_indicator %d dmrs_sequence_initialization %d\n" ,dci_pdu_rel15->carrier_indicator.val, dci_pdu_rel15->ul_sul_indicator.val,dci_pdu_rel15->bwp_indicator.val,dci_pdu_rel15->frequency_domain_assignment.val, dci_pdu_rel15->time_domain_assignment.val,dci_pdu_rel15->frequency_hopping_flag.val, dci_pdu_rel15->mcs,dci_pdu_rel15->ndi, dci_pdu_rel15->rv, dci_pdu_rel15->harq_pid, dci_pdu_rel15->tpc, dci_pdu_rel15->srs_resource_indicator.val, dci_pdu_rel15->precoding_information.val, dci_pdu_rel15->ptrs_dmrs_association.val, dci_pdu_rel15->beta_offset_indicator.val,dci_pdu_rel15->dmrs_sequence_initialization.val);
       break;
     }
     break;

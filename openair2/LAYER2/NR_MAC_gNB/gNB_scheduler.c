@@ -62,6 +62,8 @@ uint16_t nr_pdcch_order_table[6] = { 31, 31, 511, 2047, 2047, 8191 };
 
 uint8_t vnf_first_sched_entry = 1;
 
+static int last_bytes_tx[64], last_bytes_rx[64];
+
 void clear_mac_stats(gNB_MAC_INST *gNB) {
   memset((void*)gNB->UE_info.mac_stats,0,MAX_MOBILES_PER_GNB*sizeof(NR_mac_stats_t));
 }
@@ -131,10 +133,14 @@ void dump_mac_stats(gNB_MAC_INST *gNB)
     for (int lc_id = 0; lc_id < 63; lc_id++) {
       if (stats->lc_bytes_tx[lc_id] > 0) {
         stroff+=sprintf(output+stroff, "UE %d: LCID %d: %d bytes TX\n", UE_id, lc_id, stats->lc_bytes_tx[lc_id]);
+        stroff+=sprintf(output+stroff, " THROUGHPUT UE %d: LCID %d: %d Kbps TX\n", UE_id, lc_id, (stats->lc_bytes_tx[lc_id]-last_bytes_tx[lc_id])>>7);
+        last_bytes_tx[lc_id] = stats->lc_bytes_tx[lc_id];
 	LOG_D(NR_MAC, "UE %d: LCID %d: %d bytes TX\n", UE_id, lc_id, stats->lc_bytes_tx[lc_id]);
       }
       if (stats->lc_bytes_rx[lc_id] > 0) {
         stroff+=sprintf(output+stroff, "UE %d: LCID %d: %d bytes RX\n", UE_id, lc_id, stats->lc_bytes_rx[lc_id]);
+        stroff+=sprintf(output+stroff, "THROUGHPUT UE %d: LCID %d: %d Kbps RX\n", UE_id, lc_id, (stats->lc_bytes_rx[lc_id]-last_bytes_rx[lc_id])>>7);
+        last_bytes_rx[lc_id] = stats->lc_bytes_rx[lc_id];
 	LOG_D(NR_MAC, "UE %d: LCID %d: %d bytes RX\n", UE_id, lc_id, stats->lc_bytes_rx[lc_id]);
       }
     }
