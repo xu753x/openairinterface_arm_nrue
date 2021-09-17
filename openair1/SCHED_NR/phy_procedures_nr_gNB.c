@@ -70,6 +70,7 @@ struct timespec nb_pdsch_time_start[20];
 struct timespec nb_pdsch_time_stop[20];
 struct timespec nb_code_time_start[20];
 struct timespec nb_code_time_stop[20];
+double nb_tx_clock_gettime_extern[20];
 int log_nb_dl_cnt =0;
 
 struct timespec nb_rx_time_start[20];
@@ -285,11 +286,13 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
 
 #ifdef TIME_ESTIMATION
   clock_gettime(CLOCK_REALTIME, &nb_tx_time_stop[slot]);
-  if ((log_nb_dl_cnt == 20) && (slot == 17))
+  
+  nb_tx_clock_gettime_extern[slot] = NR_TIMESPEC_TO_DOUBLE_US(nr_get_timespec_diff(&nb_tx_time_start[slot], &nb_tx_time_stop[slot]));
+  if ((log_nb_dl_cnt == 1000) && (slot == 17))
   {
       double nb_pdsch_clock_gettime_cur, nb_tx_clock_gettime_cur, nb_code_clock_gettime_cur;
 
-    for (int ii=0; ii<=slot; ii++)
+    for (int ii=1; ii<=1; ii++)
     {
         nb_code_clock_gettime_cur = NR_TIMESPEC_TO_DOUBLE_US(nr_get_timespec_diff(&nb_code_time_start[ii], &nb_code_time_stop[ii])); // us
         nb_pdsch_clock_gettime_cur = NR_TIMESPEC_TO_DOUBLE_US(nr_get_timespec_diff(&nb_pdsch_time_start[ii], &nb_pdsch_time_stop[ii])); // us
@@ -850,11 +853,11 @@ else
 #endif 
 
 #ifdef TIME_ESTIMATION
-  if ((log_nb_ul_cnt == 20) && (slot_rx == 19))
+  if ((log_nb_ul_cnt == 1000) && (slot_rx == 19))
   {
       double nb_pusch_clock_gettime_cur, nb_rx_clock_gettime_cur, nb_ulsch_clock_gettime_cur, nb_pusch_code_clock_gettime_cur, nb_pusch_convert_clock_gettime_cur;
 
-    for (int ii=7; ii<=slot_rx; ii++)
+    for (int ii=8; ii<=9; ii++)
     {
         nb_ulsch_clock_gettime_cur = NR_TIMESPEC_TO_DOUBLE_US(nr_get_timespec_diff(&nb_ulsch_time_start[ii], &nb_ulsch_time_stop[ii])); // us
         nb_pusch_clock_gettime_cur = NR_TIMESPEC_TO_DOUBLE_US(nr_get_timespec_diff(&nb_pusch_time_start[ii], &nb_pusch_time_stop[ii])); // us

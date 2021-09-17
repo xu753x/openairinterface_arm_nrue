@@ -57,6 +57,8 @@
 //#define SIZE_OF_POINTER sizeof (void *)
 static int loop_dcch_dtch = DL_SCH_LCID_DTCH;
 
+extern double nb_tx_clock_gettime_extern[];
+
 void calculate_preferred_dl_tda(module_id_t module_id, const NR_BWP_Downlink_t *bwp)
 {
   gNB_MAC_INST *nrmac = RC.nrmac[module_id];
@@ -391,33 +393,65 @@ void nr_store_dlsch_buffer(module_id_t module_id,
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
     sched_ctrl->num_total_bytes = 0;
-    if ((sched_ctrl->lcid_mask&(1<<4)) > 0 && loop_dcch_dtch == DL_SCH_LCID_DCCH1)
-      loop_dcch_dtch = DL_SCH_LCID_DTCH;
-    else if ((sched_ctrl->lcid_mask&(1<<1)) > 0 && loop_dcch_dtch == DL_SCH_LCID_DTCH)
-      loop_dcch_dtch = DL_SCH_LCID_DCCH;
-    else if ((sched_ctrl->lcid_mask&(1<<2)) > 0 && loop_dcch_dtch == DL_SCH_LCID_DCCH)
-      loop_dcch_dtch = DL_SCH_LCID_DCCH1;
 
-    const int lcid = loop_dcch_dtch;
-    // const int lcid = DL_SCH_LCID_DTCH;
+
+  //first dcch, than dcch1, than dtch
+  //if one lc has data, break
+  //if no data in all 3 lc, break
+
+    // const int lcid = loop_dcch_dtch;
+    // // const int lcid = DL_SCH_LCID_DTCH;
+    loop_dcch_dtch = DL_SCH_LCID_DCCH;
     const uint16_t rnti = UE_info->rnti[UE_id];
-    sched_ctrl->rlc_status[lcid] = mac_rlc_status_ind(module_id,
+    sched_ctrl->rlc_status[loop_dcch_dtch] = mac_rlc_status_ind(module_id,
                                                       rnti,
                                                       module_id,
                                                       frame,
                                                       slot,
                                                       ENB_FLAG_YES,
                                                       MBMS_FLAG_NO,
-                                                      lcid,
+                                                      loop_dcch_dtch,
                                                       0,
                                                       0);
-    sched_ctrl->num_total_bytes += sched_ctrl->rlc_status[lcid].bytes_in_buffer;
-    
-    LOG_D(NR_MAC,
+    sched_ctrl->num_total_bytes += sched_ctrl->rlc_status[loop_dcch_dtch].bytes_in_buffer;
+
+    if ((sched_ctrl->num_total_bytes == 0) && (sched_ctrl->lcid_mask&(1<<2)))
+    {
+            loop_dcch_dtch = DL_SCH_LCID_DCCH1;
+            sched_ctrl->rlc_status[loop_dcch_dtch] = mac_rlc_status_ind(module_id,
+                                                              rnti,
+                                                              module_id,
+                                                              frame,
+                                                              slot,
+                                                              ENB_FLAG_YES,
+                                                              MBMS_FLAG_NO,
+                                                              loop_dcch_dtch,
+                                                              0,
+                                                              0);
+            sched_ctrl->num_total_bytes += sched_ctrl->rlc_status[loop_dcch_dtch].bytes_in_buffer;
+    }
+
+    if ((sched_ctrl->num_total_bytes == 0) && (sched_ctrl->lcid_mask&(1<<4)))
+    {
+            loop_dcch_dtch = DL_SCH_LCID_DTCH;
+            sched_ctrl->rlc_status[loop_dcch_dtch] = mac_rlc_status_ind(module_id,
+                                                              rnti,
+                                                              module_id,
+                                                              frame,
+                                                              slot,
+                                                              ENB_FLAG_YES,
+                                                              MBMS_FLAG_NO,
+                                                              loop_dcch_dtch,
+                                                              0,
+                                                              0);
+            sched_ctrl->num_total_bytes += sched_ctrl->rlc_status[loop_dcch_dtch].bytes_in_buffer;
+    }
+
+    LOG_I(NR_MAC,
         "%d.%d, LCID%d:->DLSCH, RLC status %d bytes. \n",
         frame,
         slot,
-        lcid,
+        loop_dcch_dtch,
         sched_ctrl->num_total_bytes);
 
     if (g_sched_dl_bytes > 0)
@@ -433,12 +467,13 @@ void nr_store_dlsch_buffer(module_id_t module_id,
           __func__,
           frame,
           slot,
-          lcid<4?"DCCH":"DTCH",
-          lcid,
-          sched_ctrl->rlc_status[lcid].bytes_in_buffer,
+          loop_dcch_dtch<4?"DCCH":"DTCH",
+          loop_dcch_dtch,
+          sched_ctrl->rlc_status[loop_dcch_dtch].bytes_in_buffer,
           sched_ctrl->ta_apply);
   }
 }
+
 
 bool allocate_dl_retransmission(module_id_t module_id,
                                 frame_t frame,
@@ -872,7 +907,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     UE_info->mac_stats[UE_id].dlsch_rounds[harq->round]++;
 
     LOG_I(NR_MAC,
-          "%4d.%2d feedback %d %d . RNTI %04x start %3d RBs %3d startSymbol %2d nb_symbol %2d MCS %2d TBS %4d HARQ PID %2d round %d NDI %d\n",
+          "%4d.%2d feedback %d %d . RNTI %04x start %3d RBs %3d startSymbol %2d nb_symbol %2d MCS %2d TBS %4d HARQ PID %2d round %d NDI %d, txtime %lf\n",
           frame,
           slot,
           harq->feedback_frame,
@@ -886,7 +921,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
           TBS,
           current_harq_pid,
           harq->round,
-          harq->ndi);
+          harq->ndi,
+          nb_tx_clock_gettime_extern[slot]);
 
     NR_BWP_Downlink_t *bwp = sched_ctrl->active_bwp;
 
