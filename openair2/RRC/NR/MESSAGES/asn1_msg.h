@@ -89,11 +89,11 @@ void do_SpCellConfig(gNB_RRC_INST *rrc,
 uint8_t do_RRCReject(uint8_t Mod_id,
                      uint8_t *const buffer);
 
-void fill_initial_SpCellConfig(rnti_t rnti,
+void fill_initial_SpCellConfig(ue_uid_t uid,
 			       NR_SpCellConfig_t *SpCellConfig,
 			       NR_ServingCellConfigCommon_t *scc);
 
-void fill_initial_cellGroupConfig(rnti_t rnti,
+void fill_initial_cellGroupConfig(ue_uid_t uid,
 				  NR_CellGroupConfig_t *cellGroupConfig,
 				  NR_ServingCellConfigCommon_t *scc);
 

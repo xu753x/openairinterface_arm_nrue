@@ -992,7 +992,7 @@ uint8_t do_RRCReject(uint8_t Mod_id,
     return((enc_rval.encoded+7)/8);
 }
 
-void fill_initial_SpCellConfig(rnti_t rnti,
+void fill_initial_SpCellConfig(ue_uid_t uid,
 			       NR_SpCellConfig_t *SpCellConfig,
 			       NR_ServingCellConfigCommon_t *scc) {
 
@@ -1024,7 +1024,7 @@ void fill_initial_SpCellConfig(rnti_t rnti,
   // one symbol (13)
   NR_PUCCH_Resource_t *pucchres0=calloc(1,sizeof(*pucchres0));
   pucchres0->pucch_ResourceId=0;
-  pucchres0->startingPRB=0;
+  pucchres0->startingPRB=uid;
   pucchres0->intraSlotFrequencyHopping=NULL;
   pucchres0->secondHopPRB=NULL;
   pucchres0->format.present= NR_PUCCH_Resource__format_PR_format0;
@@ -1051,7 +1051,7 @@ void fill_initial_SpCellConfig(rnti_t rnti,
   AssertFatal(scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity==NR_TDD_UL_DL_Pattern__dl_UL_TransmissionPeriodicity_ms5,
 	      "TDD period != 5ms : %ld\n",scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity);
   
-  schedulingRequestResourceConfig->periodicityAndOffset->choice.sl40 = 10*((rnti>>1)&3) + (rnti&2);
+  schedulingRequestResourceConfig->periodicityAndOffset->choice.sl40 = 7;
   schedulingRequestResourceConfig->resource = calloc(1,sizeof(*schedulingRequestResourceConfig->resource));
   *schedulingRequestResourceConfig->resource = 0;
   ASN_SEQUENCE_ADD(&pucch_Config->schedulingRequestResourceToAddModList->list,schedulingRequestResourceConfig);
@@ -1186,7 +1186,7 @@ void fill_mastercellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig, NR_CellGr
   ASN_SEQUENCE_ADD(&ue_context_mastercellGroup->rlc_BearerToAddModList->list, rlc_BearerConfig_drb);
 }
 
-void fill_initial_cellGroupConfig(rnti_t rnti,
+void fill_initial_cellGroupConfig(ue_uid_t uid,
 				  NR_CellGroupConfig_t *cellGroupConfig,
 				  NR_ServingCellConfigCommon_t *scc) {
 
@@ -1277,7 +1277,7 @@ void fill_initial_cellGroupConfig(rnti_t rnti,
   
   cellGroupConfig->spCellConfig                                             = calloc(1,sizeof(*cellGroupConfig->spCellConfig));
   
-  fill_initial_SpCellConfig(rnti,cellGroupConfig->spCellConfig,scc);
+  fill_initial_SpCellConfig(uid,cellGroupConfig->spCellConfig,scc);
   
   cellGroupConfig->sCellToAddModList                                        = NULL;
   cellGroupConfig->sCellToReleaseList                                       = NULL;
@@ -1355,7 +1355,7 @@ uint8_t do_RRCSetup(rrc_gNB_ue_context_t         *const ue_context_pP,
     }
     else {
       cellGroupConfig = calloc(1, sizeof(NR_CellGroupConfig_t));
-      fill_initial_cellGroupConfig(ue_context_pP->ue_context.rnti,cellGroupConfig,scc);
+      fill_initial_cellGroupConfig(ue_context_pP->local_uid,cellGroupConfig,scc);
 
       enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig,
 				       NULL,
