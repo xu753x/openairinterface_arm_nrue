@@ -319,12 +319,14 @@ int8_t nr_mac_rrc_data_ind(const module_id_t     module_idP,
     LOG_W(RRC,"[DU %d][RAPROC] Received SDU for CCCH on SRB %ld length %d for UE id %d RNTI %x \n",
           module_idP, srb_idP, sdu_lenP, UE_id, rntiP);
 
+    struct rrc_gNB_ue_context_s *ue_context_p = rrc_gNB_allocate_new_UE_context(RC.nrrrc[module_idP]);
+
     // Generate DUtoCURRCContainer
     // call do_RRCSetup like full procedure and extract masterCellGroup
     NR_CellGroupConfig_t cellGroupConfig;
     NR_ServingCellConfigCommon_t *scc=RC.nrrrc[module_idP]->carrier.servingcellconfigcommon;
     memset(&cellGroupConfig,0,sizeof(cellGroupConfig));
-    fill_initial_cellGroupConfig(UE_id,&cellGroupConfig,scc);  // TODO for now using UE_id, should be using local_uid from ue_context_p
+    fill_initial_cellGroupConfig(ue_context_p->local_uid,&cellGroupConfig,scc);
     MessageDef* tmp=itti_alloc_new_message_sized(TASK_RRC_GNB, 0, F1AP_INITIAL_UL_RRC_MESSAGE, sizeof(f1ap_initial_ul_rrc_message_t) + sdu_lenP);
     f1ap_initial_ul_rrc_message_t *msg = &F1AP_INITIAL_UL_RRC_MESSAGE(tmp);
     asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig,
@@ -345,7 +347,6 @@ int8_t nr_mac_rrc_data_ind(const module_id_t     module_idP,
     msg->rrc_container_length=sdu_lenP;
     itti_send_msg_to_task(TASK_DU_F1, 0, tmp);
     
-    struct rrc_gNB_ue_context_s *ue_context_p = rrc_gNB_allocate_new_UE_context(RC.nrrrc[module_idP]);
     ue_context_p->ue_id_rnti                    = rntiP;
     ue_context_p->ue_context.rnti               = rntiP;
     ue_context_p->ue_context.random_ue_identity = rntiP;
