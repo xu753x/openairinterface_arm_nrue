@@ -761,8 +761,8 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
       return;
     }
 
-    LOG_I(NR_MAC, "[gNB %d][RAPROC] Frame %d, Slot %d : CC_id %d Scheduling retransmission of Msg3 in (%d,%d)\n",
-          module_idP, frame, slot, CC_id, sched_frame, sched_slot);
+    LOG_I(NR_MAC, "[gNB %d][RAPROC] Frame %d, Slot %d : CC_id %d Scheduling retransmission of Msg3 in (%d,%d) DCI BWPStart %d BWPSize %d  rbStart %d\n",
+          module_idP, frame, slot, CC_id, sched_frame, sched_slot,BWPStart,BWPSize,rbStart);
 
     nfapi_nr_ul_tti_request_t *future_ul_tti_req = &RC.nrmac[module_idP]->UL_tti_req_ahead[CC_id][sched_slot];
     AssertFatal(future_ul_tti_req->SFN == sched_frame

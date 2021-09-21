@@ -273,7 +273,7 @@ int nr_process_mac_pdu(module_id_t module_idP,
                NR_BSR_SHORT *bsr_s = (NR_BSR_SHORT *) ce_ptr;
                sched_ctrl->estimated_ul_buffer = 0;
                sched_ctrl->estimated_ul_buffer = NR_SHORT_BSR_TABLE[bsr_s->Buffer_size];
-               LOG_D(NR_MAC,
+               LOG_I(NR_MAC,
                      "SHORT BSR at %4d.%2d, LCG ID %d, BS Index %d, BS value < %d, est buf %d\n",
                      frameP,
                      slot,
@@ -492,7 +492,7 @@ int nr_process_mac_pdu(module_id_t module_idP,
           /* Updated estimated buffer when receiving data */
           if (sched_ctrl->estimated_ul_buffer >= mac_sdu_len){
             sched_ctrl->estimated_ul_buffer -= mac_sdu_len;
-            LOG_I(NR_MAC,"slot %d.%d sched_ctrl->estimated_ul_buffer %d\n",frameP,slot,sched_ctrl->estimated_ul_buffer);}
+            LOG_D(NR_MAC,"slot %d.%d sched_ctrl->estimated_ul_buffer %d\n",frameP,slot,sched_ctrl->estimated_ul_buffer);}
           else
             sched_ctrl->estimated_ul_buffer = 0;
           break;
@@ -988,7 +988,7 @@ bool allocate_ul_retransmission(module_id_t module_id,
   /* Find free CCE */
   bool freeCCE = find_free_CCE(module_id, slot, UE_id);
   if (!freeCCE) {
-    LOG_D(NR_MAC, "%4d.%2d no free CCE for retransmission UL DCI UE %04x\n", frame, slot, UE_info->rnti[UE_id]);
+    LOG_E(NR_MAC, "%4d.%2d no free CCE for retransmission UL DCI UE %04x\n", frame, slot, UE_info->rnti[UE_id]);
     return false;
   }
 
@@ -1157,6 +1157,9 @@ void pf_ul(module_id_t module_id,
         rballoc_mask[rb + sched_ctrl->sched_pusch.rbStart] = 0;
           LOG_I(NR_MAC,"##********rbSize %d, TBS %d, est buf %d, sched_ul %d, B %d\n",
           sched_pusch->rbSize, sched_pusch->tb_size, sched_ctrl->estimated_ul_buffer, sched_ctrl->sched_ul_bytes, B);
+          LOG_I(NR_MAC,"slot %d.%d rbSize %d, max_rbSize %d, TBS %d, est buf %d, sched_ul %d, B %d, CCE %d, num_dmrs_symb %d, N_PRB_DMRS %d\n",
+          frame,slot,sched_pusch->rbSize,106, sched_pusch->tb_size, sched_ctrl->estimated_ul_buffer, sched_ctrl->sched_ul_bytes, B,sched_ctrl->cce_index,ps->num_dmrs_symb,ps->N_PRB_DMRS);
+
       continue;
     }
 
@@ -1193,16 +1196,16 @@ void pf_ul(module_id_t module_id,
 
     bool freeCCE = find_free_CCE(module_id, slot, UE_id);
     if (!freeCCE) {
-      LOG_D(NR_MAC, "%4d.%2d no free CCE for UL DCI UE %04x\n", frame, slot, UE_info->rnti[UE_id]);
+      LOG_E(NR_MAC, "%4d.%2d no free CCE for UL DCI UE %04x\n", frame, slot, UE_info->rnti[UE_id]);
       continue;
     }
-    else LOG_D(NR_MAC, "%4d.%2d free CCE for UL DCI UE %04x\n",frame,slot, UE_info->rnti[UE_id]);
+    else LOG_I(NR_MAC, "%4d.%2d free CCE for UL DCI UE %04x\n",frame,slot, UE_info->rnti[UE_id]);
 
     /* reduce max_num_ue once we are sure UE can be allocated, i.e., has CCE */
     max_num_ue--;
     if (max_num_ue < 0)
       return;
-
+    LOG_I(NR_MAC, "%4d.%2d free CCE for UL DCI UE %04x\n",frame,slot, UE_info->rnti[UE_id]);
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     NR_CellGroupConfig_t *cg = UE_info->CellGroup[UE_id];
     NR_BWP_UplinkDedicated_t *ubwpd= cg ? cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP:NULL;
@@ -1250,8 +1253,8 @@ void pf_ul(module_id_t module_id,
                   max_rbSize,
                   &TBS,
                   &rbSize);
-    sched_pusch->rbSize = 100;
-    sched_pusch->tb_size = nr_compute_tbs(sched_pusch->Qm, sched_pusch->R, sched_pusch->rbSize, ps->nrOfSymbols, ps->N_PRB_DMRS * ps->num_dmrs_symb, 0, 0, 1) >> 3;// nr_compute_tbs(sched_pusch->Qm, sched_pusch->R, sched_pusch->rbSize, ps->nrOfSymbols, ps->N_PRB_DMRS * ps->num_dmrs_symb, 0, 0, 1) >> 3;;
+    sched_pusch->rbSize = rbSize;
+    sched_pusch->tb_size = TBS;//nr_compute_tbs(sched_pusch->Qm, sched_pusch->R, sched_pusch->rbSize, ps->nrOfSymbols, ps->N_PRB_DMRS * ps->num_dmrs_symb, 0, 0, 1) >> 3;// nr_compute_tbs(sched_pusch->Qm, sched_pusch->R, sched_pusch->rbSize, ps->nrOfSymbols, ps->N_PRB_DMRS * ps->num_dmrs_symb, 0, 0, 1) >> 3;;
 
     LOG_I(NR_MAC,"slot %d.%d rbSize %d, max_rbSize %d, TBS %d, est buf %d, sched_ul %d, B %d, CCE %d, num_dmrs_symb %d, N_PRB_DMRS %d\n",
           frame,slot,rbSize,max_rbSize, sched_pusch->tb_size, sched_ctrl->estimated_ul_buffer, sched_ctrl->sched_ul_bytes, B,sched_ctrl->cce_index,ps->num_dmrs_symb,ps->N_PRB_DMRS);
@@ -1489,7 +1492,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     sched_ctrl->last_ul_slot = sched_pusch->slot;
 
     LOG_I(NR_MAC,
-          "ULSCH/PUSCH: %4d.%2d RNTI %04x UL sched %4d.%2d start %2d RBS %3d startSymbol %2d nb_symbol %2d dmrs_pos %x MCS %2d TBS %4d HARQ PID %2d round %d RV %d NDI %d est %6d sched %6d est BSR %6d TPC %d\n",
+          "ULSCH/PUSCH: %4d.%2d RNTI %04x UL sched %4d.%2d start %2d RBS %3d startSymbol %2d nb_symbol %2d dmrs_pos %x MCS %2d TBS %4d HARQ PID %2d round %d RV %d NDI %d est %6d sched %6d est BSR %6d TPC %d CCE %d\n",
           frame,
           slot,
           rnti,
@@ -1509,7 +1512,8 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
           sched_ctrl->estimated_ul_buffer,
           sched_ctrl->sched_ul_bytes,
           sched_ctrl->estimated_ul_buffer - sched_ctrl->sched_ul_bytes,
-          sched_ctrl->tpc0);
+          sched_ctrl->tpc0,
+          sched_ctrl->cce_index);
 
 
     /* PUSCH in a later slot, but corresponding DCI now! */

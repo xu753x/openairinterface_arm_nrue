@@ -1231,7 +1231,7 @@ void fill_initial_SpCellConfig(rnti_t rnti,
        coreset->frequencyDomainResources.buf[1] = 0xff;
   } else {
      coreset->frequencyDomainResources.buf[0] = 0xf0;
-     coreset->frequencyDomainResources.buf[1] = 0;
+     coreset->frequencyDomainResources.buf[1] = 0x00;
   }
   coreset->frequencyDomainResources.buf[2] = 0;
   coreset->frequencyDomainResources.buf[3] = 0;
