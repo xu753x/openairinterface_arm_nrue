@@ -184,7 +184,6 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
 
     /*Mapping the encoded DCI along with the DMRS */
     for(int symbol_idx = 0; symbol_idx < pdcch_pdu_rel15->DurationSymbols; symbol_idx++) {
-      int re_idx = 0;
       for (int cce_count = 0; cce_count < dci_pdu->AggregationLevel; cce_count+=pdcch_pdu_rel15->DurationSymbols) {
 
         int8_t cce_idx = reg_list_order[cce_count];
@@ -214,7 +213,7 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
                   (amp * mod_dmrs[l][(dmrs_idx << 1) + 1]) >> 15;
 
 #ifdef DEBUG_PDCCH_DMRS
-              if (dci_pdu->RNTI!=0xFFFF) LOG_I(PHY,"PDCCH DMRS %d: l %d position %d => (%d,%d)\n",dmrs_idx,l,k,((int16_t *)txdataF)[(l*frame_parms->ofdm_symbol_size + k)<<1],
+              if (dci_pdu->RNTI!=0xFFFF) LOG_D(PHY,"PDCCH DMRS %d: l %d position %d => (%d,%d)\n",dmrs_idx,l,k,((int16_t *)txdataF)[(l*frame_parms->ofdm_symbol_size + k)<<1],
                ((int16_t *)txdataF)[((l*frame_parms->ofdm_symbol_size + k)<<1)+1]);
 #endif
 
@@ -226,7 +225,7 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
               ((int16_t *) txdataF)[((l * frame_parms->ofdm_symbol_size + k) << 1) + 1] =
                   (amp * mod_dci[(dci_idx << 1) + 1]) >> 15;
 #ifdef DEBUG_DCI
-              printf("PDCCH: l %d position %d => (%d,%d)\n",l,k,((int16_t *)txdataF)[(l*frame_parms->ofdm_symbol_size + k)<<1],
+              if (dci_pdu->RNTI!=0xFFFF) LOG_D(PHY,"PDCCH: l %d position %d => (%d,%d)\n",l,k,((int16_t *)txdataF)[(l*frame_parms->ofdm_symbol_size + k)<<1],
                ((int16_t *)txdataF)[((l*frame_parms->ofdm_symbol_size + k)<<1)+1]);
 #endif
 

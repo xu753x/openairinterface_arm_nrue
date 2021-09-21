@@ -231,7 +231,7 @@ int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
   const uint16_t N_cce = N_reg / NR_NB_REG_PER_CCE;
   const uint16_t M_s_max = nr_of_candidates;
 
-  LOG_I(PHY,"allocate_NR_CCes : bwp_id %d, coreset_id %d : N_cce %d, m %d, nr_of_candidates %d, Y %d\n",
+  LOG_D(PHY,"allocate_NR_CCes : bwp_id %d, coreset_id %d : N_cce %d, m %d, nr_of_candidates %d, Y %d\n",
         (int)(bwp ? bwp->bwp_Id : 0),coreset_id,N_cce,m,nr_of_candidates, Y);
   //PDCCH candidate index m in CORESET exceeds the maximum number of PDCCH candidates
   if(m >= nr_of_candidates)
@@ -1940,6 +1940,7 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
     sched_ctrl->ta_update = 31;
     sched_ctrl->ta_apply = false;
     sched_ctrl->ul_rssi = 0;
+    sched_ctrl->maxL = 4;
     sched_ctrl->pucch_consecutive_dtx_cnt = 0;
     sched_ctrl->pusch_consecutive_dtx_cnt = 0;
     sched_ctrl->ul_failure                = 0;
@@ -2388,7 +2389,7 @@ bool find_free_CCE(module_id_t module_id,
                                            Y,
                                            m,
                                            nr_of_candidates);
-  if (UE_id >= 0) LOG_I(NR_MAC,"slot %d CCE %d calling allocate_nr_CCEs with L %d, nr_of_candidates %d, Y %x\n",slot,sched_ctrl->cce_index,sched_ctrl->aggregation_level,nr_of_candidates,Y);
+  //if (UE_id >= 0) LOG_I(NR_MAC,"slot %d CCE %d calling allocate_nr_CCEs with L %d, nr_of_candidates %d, Y %x\n",slot,sched_ctrl->cce_index,sched_ctrl->aggregation_level,nr_of_candidates,Y);
 
   if (sched_ctrl->cce_index < 0)
     return false;
