@@ -273,7 +273,7 @@ int nr_process_mac_pdu(module_id_t module_idP,
                NR_BSR_SHORT *bsr_s = (NR_BSR_SHORT *) ce_ptr;
                sched_ctrl->estimated_ul_buffer = 0;
                sched_ctrl->estimated_ul_buffer = NR_SHORT_BSR_TABLE[bsr_s->Buffer_size];
-               LOG_I(NR_MAC,
+               LOG_E(NR_MAC,
                      "SHORT BSR at %4d.%2d, LCG ID %d, BS Index %d, BS value < %d, est buf %d\n",
                      frameP,
                      slot,
@@ -311,7 +311,7 @@ int nr_process_mac_pdu(module_id_t module_idP,
                        NR_LONG_BSR_TABLE[pduP[mac_subheader_len + 1 + n]]);
                  sched_ctrl->estimated_ul_buffer +=
                        NR_LONG_BSR_TABLE[pduP[mac_subheader_len + 1 + n]];
-                 LOG_D(NR_MAC,
+                 LOG_E(NR_MAC,
                        "LONG BSR at %4d.%2d, %d/%d (n/n_Lcg), BS Index %d, BS value < %d, total %d\n",
                        frameP,
                        slot,
@@ -1253,8 +1253,8 @@ void pf_ul(module_id_t module_id,
                   max_rbSize,
                   &TBS,
                   &rbSize);
-    sched_pusch->rbSize = rbSize;
-    sched_pusch->tb_size = TBS;//nr_compute_tbs(sched_pusch->Qm, sched_pusch->R, sched_pusch->rbSize, ps->nrOfSymbols, ps->N_PRB_DMRS * ps->num_dmrs_symb, 0, 0, 1) >> 3;// nr_compute_tbs(sched_pusch->Qm, sched_pusch->R, sched_pusch->rbSize, ps->nrOfSymbols, ps->N_PRB_DMRS * ps->num_dmrs_symb, 0, 0, 1) >> 3;;
+    sched_pusch->rbSize = 50;
+    sched_pusch->tb_size = nr_compute_tbs(sched_pusch->Qm, sched_pusch->R, sched_pusch->rbSize, ps->nrOfSymbols, ps->N_PRB_DMRS * ps->num_dmrs_symb, 0, 0, 1) >> 3;// nr_compute_tbs(sched_pusch->Qm, sched_pusch->R, sched_pusch->rbSize, ps->nrOfSymbols, ps->N_PRB_DMRS * ps->num_dmrs_symb, 0, 0, 1) >> 3;;
 
     LOG_I(NR_MAC,"slot %d.%d rbSize %d, max_rbSize %d, TBS %d, est buf %d, sched_ul %d, B %d, CCE %d, num_dmrs_symb %d, N_PRB_DMRS %d\n",
           frame,slot,rbSize,max_rbSize, sched_pusch->tb_size, sched_ctrl->estimated_ul_buffer, sched_ctrl->sched_ul_bytes, B,sched_ctrl->cce_index,ps->num_dmrs_symb,ps->N_PRB_DMRS);
