@@ -56,7 +56,6 @@
 #define HALFWORD 16
 #define WORD 32
 //#define SIZE_OF_POINTER sizeof (void *)
-static int loop_dcch_dtch = DL_SCH_LCID_DTCH;
 
 void calculate_preferred_dl_tda(module_id_t module_id, const NR_BWP_Downlink_t *bwp)
 {
@@ -388,50 +387,55 @@ void nr_store_dlsch_buffer(module_id_t module_id,
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
 
   for (int UE_id = UE_info->list.head; UE_id >= 0; UE_id = UE_info->list.next[UE_id]) {
+
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-
     sched_ctrl->num_total_bytes = 0;
-    if ((sched_ctrl->lcid_mask&(1<<4)) > 0 && loop_dcch_dtch == DL_SCH_LCID_DCCH1)
-      loop_dcch_dtch = DL_SCH_LCID_DTCH;
-    else if ((sched_ctrl->lcid_mask&(1<<1)) > 0 && loop_dcch_dtch == DL_SCH_LCID_DTCH)
-      loop_dcch_dtch = DL_SCH_LCID_DCCH;
-    else if ((sched_ctrl->lcid_mask&(1<<2)) > 0 && loop_dcch_dtch == DL_SCH_LCID_DCCH)
-      loop_dcch_dtch = DL_SCH_LCID_DCCH1;
+    sched_ctrl->dl_pdus_total = 0;
 
-    const int lcid = loop_dcch_dtch;
-    // const int lcid = DL_SCH_LCID_DTCH;
-    const uint16_t rnti = UE_info->rnti[UE_id];
-    sched_ctrl->rlc_status[lcid] = mac_rlc_status_ind(module_id,
-                                                      rnti,
-                                                      module_id,
-                                                      frame,
-                                                      slot,
-                                                      ENB_FLAG_YES,
-                                                      MBMS_FLAG_NO,
-                                                      lcid,
-                                                      0,
-                                                      0);
-    sched_ctrl->num_total_bytes += sched_ctrl->rlc_status[lcid].bytes_in_buffer;
-    LOG_D(NR_MAC,
-        "%d.%d, LCID%d:->DLSCH, RLC status %d bytes. \n",
-        frame,
-        slot,
-        lcid,
-        sched_ctrl->num_total_bytes);
+    /* loop over all activated logical channels */
+    for (int i = 0; i < sched_ctrl->dl_lc_num; ++i) {
 
-    if (sched_ctrl->num_total_bytes == 0
-        && !sched_ctrl->ta_apply) /* If TA should be applied, give at least one RB */
-      return;
+      const int lcid = sched_ctrl->dl_lc_ids[i];
+      const uint16_t rnti = UE_info->rnti[UE_id];
 
-    LOG_D(NR_MAC,
-          "[%s][%d.%d], %s%d->DLSCH, RLC status %d bytes TA %d\n",
-          __func__,
+      sched_ctrl->rlc_status[lcid] = mac_rlc_status_ind(module_id,
+                                                        rnti,
+                                                        module_id,
+                                                        frame,
+                                                        slot,
+                                                        ENB_FLAG_YES,
+                                                        MBMS_FLAG_NO,
+                                                        lcid,
+                                                        0,
+                                                        0);
+
+      /* update the number of bytes in the UE_sched_ctrl. The DLSCH will use
+       * this to request the corresponding data from the RLC, and this might be
+       * limited in the preprocessor */
+      sched_ctrl->dl_pdus_total += sched_ctrl->rlc_status[lcid].pdus_in_buffer;
+      sched_ctrl->num_total_bytes += sched_ctrl->rlc_status[lcid].bytes_in_buffer;
+
+      if (sched_ctrl->num_total_bytes > 0) {
+        LOG_D(MAC, "In %s: [gNB %d][%d.%d] %s%d->DLSCH, RLC status for UE %d: %d bytes in buffer, total DL buffer size = %d bytes, %d total PDU bytes, %s TA command\n",
+          __FUNCTION__,
+          module_id,
           frame,
           slot,
-          lcid<4?"DCCH":"DTCH",
+          lcid < 4 ? "DCCH":"DTCH",
           lcid,
+          UE_id,
           sched_ctrl->rlc_status[lcid].bytes_in_buffer,
-          sched_ctrl->ta_apply);
+          sched_ctrl->num_total_bytes,
+          sched_ctrl->dl_pdus_total,
+          sched_ctrl->ta_apply ? "send":"do not send");
+      }
+
+      if (sched_ctrl->num_total_bytes == 0
+          && !sched_ctrl->ta_apply) { /* If TA should be applied, give at least one RB */
+        return;
+      }
+
+    }
   }
 }
 
@@ -689,7 +693,7 @@ void pf_dl(module_id_t module_id,
     sched_pdsch->pucch_allocation = alloc;
     uint32_t TBS = 0;
     uint16_t rbSize;
-    const int oh = 3 + 2 * (frame == (sched_ctrl->ta_frame + 10) % 1024);
+    const int oh = 3*sched_ctrl->dl_pdus_total + 2 * (frame == (sched_ctrl->ta_frame + 10) % 1024);
     nr_find_nb_rb(sched_pdsch->Qm,
                   sched_pdsch->R,
                   ps->nrOfSymbols,
@@ -1090,69 +1094,79 @@ void nr_schedule_ue_spec(module_id_t module_id,
                                           NULL); // contention res id
       buf += written;
       int size = TBS - written;
+      int dlsch_total_bytes = 0;
       DevAssert(size >= 0);
 
       /* next, get RLC data */
-
-      // const int lcid = DL_SCH_LCID_DTCH;
-      const int lcid = loop_dcch_dtch;
-      int dlsch_total_bytes = 0;
       if (sched_ctrl->num_total_bytes > 0) {
-        tbs_size_t len = 0;
-        while (size > 3) {
-          // we do not know how much data we will get from RLC, i.e., whether it
-          // will be longer than 256B or not. Therefore, reserve space for long header, then
-          // fetch data, then fill real length
-          NR_MAC_SUBHEADER_LONG *header = (NR_MAC_SUBHEADER_LONG *) buf;
-          buf += 3;
-          size -= 3;
 
-          /* limit requested number of bytes to what preprocessor specified, or
-           * such that TBS is full */
-          const rlc_buffer_occupancy_t ndata = min(sched_ctrl->rlc_status[lcid].bytes_in_buffer, size);
-          len = mac_rlc_data_req(module_id,
-                                 rnti,
-                                 module_id,
-                                 frame,
-                                 ENB_FLAG_YES,
-                                 MBMS_FLAG_NO,
-                                 lcid,
-                                 ndata,
-                                 (char *)buf,
-                                 0,
-                                 0);
+        /* loop over all activated logical channels */
+        for (int i = 0; i < sched_ctrl->dl_lc_num; ++i) {
 
-          LOG_D(NR_MAC,
-                "%4d.%2d RNTI %04x: %d bytes from %s %d (ndata %d, remaining size %d)\n",
-                frame,
-                slot,
-                rnti,
-                len,
-                lcid < 4 ? "DCCH" : "DTCH",
-                lcid,
-                ndata,
-                size);
-          if (len == 0)
-            break;
+          const int lcid = sched_ctrl->dl_lc_ids[i];
+          tbs_size_t len = 0;
+          dlsch_total_bytes = 0;
 
-          header->R = 0;
-          header->F = 1;
-          header->LCID = lcid;
-          header->L1 = (len >> 8) & 0xff;
-          header->L2 = len & 0xff;
-          size -= len;
-          buf += len;
-          dlsch_total_bytes += len;
+          while (size > 3) {
+            // we do not know how much data we will get from RLC, i.e., whether it
+            // will be longer than 256B or not. Therefore, reserve space for long header, then
+            // fetch data, then fill real length
+            NR_MAC_SUBHEADER_LONG *header = (NR_MAC_SUBHEADER_LONG *) buf;
+            buf += 3;
+            size -= 3;
+
+            /* limit requested number of bytes to what preprocessor specified, or
+             * such that TBS is full */
+            const rlc_buffer_occupancy_t ndata = min(sched_ctrl->rlc_status[lcid].bytes_in_buffer, size);
+            len = mac_rlc_data_req(module_id,
+                                   rnti,
+                                   module_id,
+                                   frame,
+                                   ENB_FLAG_YES,
+                                   MBMS_FLAG_NO,
+                                   lcid,
+                                   ndata,
+                                   (char *)buf,
+                                   0,
+                                   0);
+
+            LOG_D(NR_MAC,
+                  "%4d.%2d RNTI %04x: %d bytes from %s %d (ndata %d, remaining size %d)\n",
+                  frame,
+                  slot,
+                  rnti,
+                  len,
+                  lcid < 4 ? "DCCH" : "DTCH",
+                  lcid,
+                  ndata,
+                  size);
+            if (len == 0) {
+              break;
+            }
+
+            header->R = 0;
+            header->F = 1;
+            header->LCID = lcid;
+            header->L1 = (len >> 8) & 0xff;
+            header->L2 = len & 0xff;
+            size -= len;
+            buf += len;
+            dlsch_total_bytes += len;
+          }
+
+          if (len == 0) {
+            /* RLC did not have data anymore, mark buffer as unused */
+            buf -= 3;
+            size += 3;
+          } 
+
+          UE_info->mac_stats[UE_id].lc_bytes_tx[lcid] += dlsch_total_bytes;
+
         }
-        if (len == 0) {
-          /* RLC did not have data anymore, mark buffer as unused */
-          buf -= 3;
-          size += 3;
-        }
-      }
-      else if (get_softmodem_params()->phy_test || get_softmodem_params()->do_ra || get_softmodem_params()->sa) {
+      } else if (get_softmodem_params()->phy_test || get_softmodem_params()->do_ra || get_softmodem_params()->sa) {
         /* we will need the large header, phy-test typically allocates all
          * resources and fills to the last byte below */
+        const int lcid = DL_SCH_LCID_PADDING;
         NR_MAC_SUBHEADER_LONG *header = (NR_MAC_SUBHEADER_LONG *) buf;
         buf += 3;
         size -= 3;
@@ -1163,12 +1177,13 @@ void nr_schedule_ue_spec(module_id_t module_id,
           buf[i] = lrand48() & 0xff;
         header->R = 0;
         header->F = 1;
-        header->LCID = DL_SCH_LCID_PADDING;
+        header->LCID = lcid;
         header->L1 = (size >> 8) & 0xff;
         header->L2 = size & 0xff;
         size -= size;
         buf += size;
         dlsch_total_bytes += size;
+        UE_info->mac_stats[UE_id].lc_bytes_tx[lcid] += dlsch_total_bytes;
       }
 
       // Add padding header and zero rest out if there is space left
@@ -1187,7 +1202,6 @@ void nr_schedule_ue_spec(module_id_t module_id,
 
       UE_info->mac_stats[UE_id].dlsch_total_bytes += TBS;
       UE_info->mac_stats[UE_id].dlsch_current_bytes = TBS;
-      UE_info->mac_stats[UE_id].lc_bytes_tx[lcid] += dlsch_total_bytes;
 
       /* save retransmission information */
       harq->sched_pdsch = *sched_pdsch;
