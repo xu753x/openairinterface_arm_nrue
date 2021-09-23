@@ -125,7 +125,7 @@ int encoder_load( EncodeInHeaderStruct *pHeader, unsigned char * pSrc, unsigned 
         {
             //zLog(PHY_LOG_INFO," encoder_load:<3.5> ---[DRV_LOG]");
             // printf("fec_en_rx_release_start\n");
-            pDataHeadInfo=(EncodeOutHeaderStruct *)EnDataRx.nVirtAddr;
+            pDataHeadInfo=(EncodeInHeaderStruct *)EnDataRx.nVirtAddr;
             // memcpy(pDst, (unsigned char *)(EnDataRx.nVirtAddr), (pDataHeadInfo->pktLen));
             memcpy(pDst, (unsigned char *)(EnDataRx.nVirtAddr+32), (pDataHeadInfo->pktLen-32));
             //zLog(PHY_LOG_INFO," encoder_load:<4> ---[DRV_LOG]");
@@ -139,6 +139,7 @@ int encoder_load( EncodeInHeaderStruct *pHeader, unsigned char * pSrc, unsigned 
 int decoder_load( DecodeInHeaderStruct *pHeader, unsigned char * pSrc, unsigned char * pDst, unsigned char * pCRC )
 {
     DecodeInHeaderStruct *pDataHeadInfo;
+    DecodeOutHeaderStruct *pOutDataHeadInfo;
     int InHeaderLength = sizeof(DecodeInHeaderStruct);
     int DDRHeaderLength = ((pHeader->cbNum+7)/8)*32;
     // if(demo_count > 1)
@@ -193,10 +194,10 @@ int decoder_load( DecodeInHeaderStruct *pHeader, unsigned char * pSrc, unsigned 
         {
             zLog(PHY_LOG_INFO," decoder_load:<3.5> ---[DRV_LOG]");
             // printf("fec_de_rx_release_start\n");
-            pDataHeadInfo=(DecodeOutHeaderStruct *)DeDataRx.nVirtAddr;
+            pOutDataHeadInfo=(DecodeOutHeaderStruct *)DeDataRx.nVirtAddr;
             // memcpy(pDst, (unsigned char *)(DeDataRx.nVirtAddr), (pDataHeadInfo->tbSizeB));
-            memcpy(pDst, (unsigned char *)(DeDataRx.nVirtAddr+32), (pDataHeadInfo->tbSizeB));
-            memcpy(pCRC, (unsigned char *)( DeDataRx.nVirtAddr+32 + (pDataHeadInfo->tbSizeB+(4-pDataHeadInfo->tbSizeB%4)%4) ), (4));
+            memcpy(pDst, (unsigned char *)(DeDataRx.nVirtAddr+32), (pOutDataHeadInfo->tbSizeB));
+            memcpy(pCRC, (unsigned char *)( DeDataRx.nVirtAddr+32 + (pOutDataHeadInfo->tbSizeB+(4-pOutDataHeadInfo->tbSizeB%4)%4) ), (4));
             if(*pCRC == 1)
             {
                 zLog(PHY_LOG_INFO," decoder_load: crc correct!");
@@ -492,7 +493,7 @@ int main(int argc,char *argv[])
     mm_huge_table_init(&pFecHugepageTbl, SW_FPGA_FH_TOTAL_BUFFER_LEN);
     printf( "%s>>>---pFecHugepageTbl->nPagePhyAddr=0x%lx\n",__FUNCTION__,(uint64_t)pFecHugepageTbl->nPagePhyAddr );
     mm_segment_init(&pFecSegentInfo, pFecHugepageTbl);
-    printf("%s>>> pFecSegentInfo->pSegment=0x%lx, pFecSegentInfo->nPhysicalAddr=0x%lx\n", __FUNCTION__, pFecSegentInfo->pSegment, pFecSegentInfo->nPhysicalAddr);
+    printf("%s>>> pFecSegentInfo->pSegment=0x%p, pFecSegentInfo->nPhysicalAddr=0x%lx\n", __FUNCTION__, pFecSegentInfo->pSegment, pFecSegentInfo->nPhysicalAddr);
     mm_regist_addr_to_ring(&DescRingAddr, pFecSegentInfo);
 
     //log init
@@ -598,7 +599,7 @@ int HugePage_Init(int bbb)
     mm_huge_table_init(&pFecHugepageTbl, SW_FPGA_FH_TOTAL_BUFFER_LEN);
     printf( "%s>>>---pFecHugepageTbl->nPagePhyAddr=0x%lx\n",__FUNCTION__,(uint64_t)pFecHugepageTbl->nPagePhyAddr );
     mm_segment_init(&pFecSegentInfo, pFecHugepageTbl);
-    printf("%s>>> pFecSegentInfo->pSegment=0x%lx, pFecSegentInfo->nPhysicalAddr=0x%lx\n", __FUNCTION__, pFecSegentInfo->pSegment, pFecSegentInfo->nPhysicalAddr);
+    printf("%s>>> pFecSegentInfo->pSegment=0x%p, pFecSegentInfo->nPhysicalAddr=0x%lx\n", __FUNCTION__, pFecSegentInfo->pSegment, pFecSegentInfo->nPhysicalAddr);
     mm_regist_addr_to_ring(&DescRingAddr, pFecSegentInfo);
 
     //log init
@@ -679,7 +680,7 @@ int main234(int aaa)
     mm_huge_table_init(&pFecHugepageTbl, SW_FPGA_FH_TOTAL_BUFFER_LEN);
     printf( "%s>>>---pFecHugepageTbl->nPagePhyAddr=0x%lx\n",__FUNCTION__,(uint64_t)pFecHugepageTbl->nPagePhyAddr );
     mm_segment_init(&pFecSegentInfo, pFecHugepageTbl);
-    printf("%s>>> pFecSegentInfo->pSegment=0x%lx, pFecSegentInfo->nPhysicalAddr=0x%lx\n", __FUNCTION__, pFecSegentInfo->pSegment, pFecSegentInfo->nPhysicalAddr);
+    printf("%s>>> pFecSegentInfo->pSegment=0x%p, pFecSegentInfo->nPhysicalAddr=0x%lx\n", __FUNCTION__, pFecSegentInfo->pSegment, pFecSegentInfo->nPhysicalAddr);
     mm_regist_addr_to_ring(&DescRingAddr, pFecSegentInfo);
 
     //log init
