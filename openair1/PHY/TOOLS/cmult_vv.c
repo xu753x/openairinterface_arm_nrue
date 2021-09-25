@@ -220,6 +220,12 @@ int multadd_cpx_vector(int16_t *x1,
   // N        - the size f the vectors (this function does N cpx mpy. WARNING: N>=4;
   //
   // output_shift  - shift to be applied to generate output
+
+  //min
+  struct timespec  start_multadd_cpx_vector_ts[2], end_multadd_cpx_vector_ts[2];
+  //struct timespec  start_multadd_cpx_vector_ts, end_multadd_cpx_vector_ts;
+  clock_gettime(CLOCK_MONOTONIC, &start_multadd_cpx_vector_ts[0]);
+
   uint32_t i;                 // loop counter
   simd_q15_t *x1_128;
   simd_q15_t *x2_128;
@@ -237,6 +243,10 @@ int multadd_cpx_vector(int16_t *x1,
   x2_128 = (simd_q15_t *)&x2[0];
   y_128  = (simd_q15_t *)&y[0];
   
+  clock_gettime(CLOCK_MONOTONIC, &end_multadd_cpx_vector_ts[0]);
+
+ //printf("Data transfer : %.2f usec\n",(end_multadd_cpx_vector_ts[0].tv_nsec -start_multadd_cpx_vector_ts[0].tv_nsec)*1.0/1000);
+
   //printf("&x2[0] : %p\n",&x2[0]);
   
   // for(i=0; i<N; i++) {
@@ -248,6 +258,7 @@ int multadd_cpx_vector(int16_t *x1,
   // }
   //printf("N = %d\n",N);
 
+  clock_gettime(CLOCK_MONOTONIC, &start_multadd_cpx_vector_ts[1]);
   // we compute 4 cpx multiply for each loop
   for(i=0; i<(N>>2); i++) {
 #if defined(__x86_64__) || defined(__i386__)
@@ -278,5 +289,10 @@ int multadd_cpx_vector(int16_t *x1,
  // printf("loop counter : %d \n",i);
   _mm_empty();
   _m_empty();
+
+  clock_gettime(CLOCK_MONOTONIC, &end_multadd_cpx_vector_ts[1]);
+  //printf("Computing time : %.2f usec\n",(end_multadd_cpx_vector_ts[1].tv_nsec -start_multadd_cpx_vector_ts[1].tv_nsec)*1.0/1000);
+
   return(0);
+  
 }

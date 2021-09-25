@@ -57,6 +57,10 @@
 #include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
 #include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
 
+#include "PHY/BF/cu_function.h"
+#include "PHY/BF/bf.h"
+//#include "PHY/BF/bf_struct.h"
+
 PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
@@ -67,96 +71,15 @@ int nfapi_mode=0;
 uint16_t NB_UE_INST = 1;
 
 
-
-//min
-
-  /** \brief This function performs beamforming precoding for common
-   * data
-      @param txdataF Table of pointers for frequency-domain TX signals
-      @param txdataF_BF Table of pointers for frequency-domain TX signals
-      @param frame_parms Frame descriptor structure
-  after beamforming
-      @param beam_weights Beamforming weights applied on each
-  antenna element and each carrier
-      @param slot Slot number
-      @param symbol Symbol index on which to act
-      @param aa physical antenna index
-      @param p logical antenna index
-  */
-
-
  /*! \file openairinterface5g/openair1/SIMULATION/NR_PHY/dlsim
- * \brief merge ISIP beamforming
- * \author NCTU OpinConnect Terng-Yin Hsu,WEI-YING LIN,Min-Hsun Wu
+ * \brief merge ISIP beamforming and QR decomposer
+ * \author NCTU OpinConnect Terng-Yin Hsu, Sendren Xu, WEI-YING LIN, Min-Hsun Wu
  * \email  a22490010@gmail.com
- * \date   23-7-2021
- * \version 
+ * \date   25-9-2021
+ * \version 1.0
  * \note
  * \warning
  */
-
-
-/* int16_t *x1
- x1 = txdataF[p][symbol .....]
- printf(... , x1)*/
- 
-int counter = 0;
-struct timespec start_ts, end_ts;
-
-int nr_beam_precoding(int32_t **txdataF,
-	                    int32_t **txdataF_BF,
-                      NR_DL_FRAME_PARMS *frame_parms,
-	                    int32_t ***beam_weights,
-                      int slot,
-                      int symbol,
-                      int aa,
-                      int nb_antenna_ports)
-{
-  uint8_t p;
-  
-  //int counter = 0; 
-  // clear txdata_BF[aa][re] for each call of ue_spec_beamforming
-  // printf("frame_parms->ofdm_symbol_size = %d\n",frame_parms->ofdm_symbol_size);
-  // frame_parms->ofdm_symbol_size=4096 //RB=273
-  // frame_parms->ofdm_symbol_size=2048 //RB=106
-  // printf("txdataF_BF[%d][%d] : %04d\n",aa,symbol*frame_parms->ofdm_symbol_size,txdataF_BF[aa][symbol*frame_parms->ofdm_symbol_size]);
-  // printf("&txdataF_BF[%d][%d] : %04p\n",aa,symbol*frame_parms->ofdm_symbol_size,&txdataF_BF[aa][symbol*frame_parms->ofdm_symbol_size]);
-    
-  memset(&txdataF_BF[aa][symbol*frame_parms->ofdm_symbol_size],0,sizeof(int32_t)*(frame_parms->ofdm_symbol_size));
-  
-  // printf("txdataF_BF[%d][%d] : %04d\n",aa,symbol*frame_parms->ofdm_symbol_size,txdataF_BF[aa][symbol*frame_parms->ofdm_symbol_size]);
-  // printf("&txdataF_BF[%d][%d] : %04p\n",aa,symbol*frame_parms->ofdm_symbol_size,&txdataF_BF[aa][symbol*frame_parms->ofdm_symbol_size]);
-  
-  for (p=0; p<nb_antenna_ports; p++) {
-    if ((frame_parms->L_ssb >> p) & 0x01) {
-      
-      if(check_time){
-       clock_gettime(CLOCK_MONOTONIC, &start_ts); 
-      }
-      // printf("&txdataF[p][symbol*frame_parms->ofdm_symbol_size] :%x\n",&txdataF[p][symbol*frame_parms->ofdm_symbol_size]);
-      // printf("&txdataF_BF[aa][symbol*frame_parms->ofdm_symbol_size] : %p\n",&txdataF_BF[aa][symbol*frame_parms->ofdm_symbol_size]);
-      // printf("&beam_weights[p][aa] :%x\n",&beam_weights[p][aa]);
-      //int f = symbol*frame_parms->ofdm_symbol_size;
-
-      multadd_cpx_vector((int16_t*)&txdataF[p][symbol*frame_parms->ofdm_symbol_size],
-                          (int16_t*)&beam_weights[p][aa], 
-                          (int16_t*)&txdataF_BF[aa][symbol*frame_parms->ofdm_symbol_size], 
-                          0, 
-                          frame_parms->ofdm_symbol_size, 
-                          15
-                          );
-
-      if(check_time){
-       clock_gettime(CLOCK_MONOTONIC, &end_ts); 
-      }                    
-    }
-  }
-  counter++;
-  // printf("txdataF_BF[%d][%d] : %04d\n",aa,symbol*frame_parms->ofdm_symbol_size,txdataF_BF[aa][symbol*frame_parms->ofdm_symbol_size]);
-  // printf("&txdataF_BF[%d][%d] : %04p\n",aa,symbol*frame_parms->ofdm_symbol_size,&txdataF_BF[aa][symbol*frame_parms->ofdm_symbol_size]);
-
-  return 0;
-}
 
 
 //Dummy Functions
@@ -990,6 +913,7 @@ int main(int argc, char **argv)
   // beamforming
   //RU_t *ru;
   struct timespec start, end;
+  struct timespec start_MUSIC_DOA, end_MUSIC_DOA;
   int l,j,p,re;
   //int counter = 0;
   // RC.ru = (RU_t **)malloc(sizeof(RC.ru));
@@ -1020,7 +944,7 @@ int main(int argc, char **argv)
   //printf("frame_parms->symbols_per_tti*frame_parms->ofdm_symbol_size : %d\n",frame_parms->symbols_per_tti*frame_parms->ofdm_symbol_size);
   //frame_parms->symbols_per_tti*frame_parms->ofdm_symbol_size=0
 
-  //printf("frame_parms->samples_per_subframe_wCP : %d\n",frame_parms->samples_per_subframe_wCP);
+  printf("frame_parms->samples_per_subframe_wCP : %d\n",frame_parms->samples_per_subframe_wCP);
   //frame_parms->samples_per_subframe_wCP : 57344
 
   //printf("frame_parms->Lmax : %d\n",frame_parms->Lmax);
@@ -1088,55 +1012,6 @@ int main(int argc, char **argv)
                }   
   
 
-  //lte_init_ru.c
-  // allocate IFFT input buffers (TX)
-  // txdataF_BF = (int32_t **)malloc16(nb_tx*sizeof(int32_t*));
-  // for (i=0; i<nb_tx; i++) {
-  //   txdataF_BF[i] = (int32_t*)malloc16_clear(frame_parms->symbols_per_tti*frame_parms->ofdm_symbol_size*sizeof(int32_t) );
-  // }
-  //RC.nb_L1_inst = 1;
-  // for (int i = 0; i < 4098; i++)
-  // {
-  //   printf("&txdataF_BF[0][%d] : %p\n",i,&txdataF_BF[0][i]);
-  // }
-
-  /* number of elements of an array X is computed as sizeof(X) / sizeof(X[0]) */
-  //    AssertFatal(ru->nb_rx <= sizeof(ru->prach_rxsigF) / sizeof(ru->prach_rxsigF[0]),
-  //		"nb_antennas_rx too large");
-  
-  //printf("RC.nb_L1_inst : %d \n ", RC.nb_L1_inst);
-  //printf("frame_parms.nb_antenna_ports_eNB : %d \n",frame_parms.nb_antenna_ports_eNB);
-
-  // for ( i=0; i<RC.nb_L1_inst; i++) {
-  //   for ( p=0; p<15; p++) {      
-	//     if (p<frame_parms->nb_antenna_ports_eNB || p==5) {
-  //         beam_weights[i][p] = (int32_t **)malloc16_clear(nb_tx*sizeof(int32_t*));
-	//     for ( j=0; j<nb_tx; j++) {
-	//         beam_weights[i][p][j] = (int32_t *)malloc16_clear(frame_parms->ofdm_symbol_size*sizeof(int32_t));
-	//     // antenna ports 0-3 are mapped on antennas 0-3
-	//     // antenna port 4 is mapped on antenna 0
-	//     // antenna ports 5-14 are mapped on all antennas 
-	//     if (((p<4) && (p==j)) || ((p==4) && (j==0))) {
-	//       for ( re=0; re<frame_parms->ofdm_symbol_size; re++) 
-  //             {
-	// 	            beam_weights[i][p][j][re] = 0x00007fff; 
-
-  //               //LOG_D(PHY,"[INIT] lte_common_vars->beam_weights[%d][%d][%d][%d] = %d\n", i,p,j,re,ru->beam_weights[i][p][j][re]);
-  //             }
-	//     }
-	//     else if (p>4) {
-	//       for ( re=0; re<frame_parms->ofdm_symbol_size; re++) 
-  //             {
-	// 	            beam_weights[i][p][j][re] = 0x00007fff/nb_tx; 
-  //               //LOG_D(PHY,"[INIT] lte_common_vars->beam_weights[%d][%d][%d][%d] = %d\n", i,p,j,re,ru->beam_weights[i][p][j][re]);
-  //             }
-	//     }  
-	//     //LOG_D(PHY,"[INIT] lte_common_vars->beam_weights[%d][%d] = %p (%lu bytes)\n", i,j,ru->beam_weights[i][p][j], fp->ofdm_symbol_size*sizeof(int32_t)); 
-	//   } // for (j=0
-	// } // if (p<ru
-  //     } // for p
-  //   } //for i
-
   printf("NR_ru_param_init done\n");
 
   //printf("gNB->common_vars.txdataF = %p\n",&gNB->common_vars.txdataF);
@@ -1152,8 +1027,8 @@ int main(int argc, char **argv)
  
   printf("Initializing gNodeB for mu %d, N_RB_DL %d\n",mu,N_RB_DL);
   printf("fp->ofdm_symbol_size = %d\n",fp->ofdm_symbol_size);
-  printf("NB_ANTENNA_PORTS_GNB : %d\n",NB_ANTENNA_PORTS_GNB); 
- 
+  printf("NB_ANTENNA_PORTS_GNB : %d\n",NB_ANTENNA_PORTS_GNB);
+  printf("gNB->frame_parms.nb_antennas_tx : %d\n",gNB->frame_parms.nb_antennas_tx);
   //top
   printf("[START] beam_precoding \n");
  
@@ -1187,10 +1062,19 @@ int main(int argc, char **argv)
   //printf("counter = %d \n",counter);
   
   if(check_time){
-      printf("multadd_cpx_vector [%d] : %.2f usec\n ",counter ,(end_ts.tv_nsec - start_ts.tv_nsec) *1.0 / 1000);
-      printf("beam_precoding total : %.2f usec\n ", (end.tv_nsec - start.tv_nsec) *1.0 / 1000);
+      // printf("multadd_cpx_vector [%d] : %.2f usec\n",counter ,(end_ts.tv_nsec - start_ts.tv_nsec) *1.0 / 1000);
+      //printf("counter : %d\n",counter);
+      //printf("multadd_cpx_vector  : %.2f usec\n" ,(end_ts.tv_nsec - start_ts.tv_nsec) *1.0 / 1000);
+      //printf("symbol  : %.2f usec\n" ,(end_symbol_ts.tv_nsec - start_symbol_ts.tv_nsec) *1.0 / 1000);
+      printf("beam_precoding total : %.2f usec\n", (end.tv_nsec - start.tv_nsec) *1.0 / 1000);
       }
   
+
+  // QR decomposer  
+  printf("\n");
+  double a[]={100,200,300,400};
+  qr_test(a ,2,2);
+
 
   //min
   //kill memmory
