@@ -282,7 +282,10 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
     for (i=0;i<(A>>3);i++)
       printf("%02x.",harq_process->a[i]);
     printf("\n");
-   */ 
+   */
+
+    //for (int i=0;i<harq_process->pusch_pdu.pusch_data.tb_size;i++) harq_process->a[i]=0;
+   // harq_process->a[0]=1; 
 
     if (A > 3824) {
       // Add 24-bit crc (polynomial A) to payload

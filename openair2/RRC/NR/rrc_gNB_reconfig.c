@@ -831,7 +831,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
 
  /*------------------------------TRANSFORM PRECODING- -----------------------------------------------------------------------*/
 
- uint8_t transform_precoding = NR_PUSCH_Config__transformPrecoder_disabled;
+ uint8_t transformPrecoder = NR_PUSCH_Config__transformPrecoder_disabled;
 
  // TBD: configure this from .conf file, Dedicated params cannot yet be configured in .conf file.
  // Enable this to test transform precoding enabled from dedicated config.
@@ -843,13 +843,13 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
 
  if (pusch_Config->transformPrecoder == NULL) {
   if (servingcellconfigcommon->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder != NULL)
-    transform_precoding = NR_PUSCH_Config__transformPrecoder_enabled;
+    transformPrecoder = NR_PUSCH_Config__transformPrecoder_enabled;
  }
  else
-    transform_precoding = *pusch_Config->transformPrecoder;
+    transformPrecoder = *pusch_Config->transformPrecoder;
 
 
- if (transform_precoding == NR_PUSCH_Config__transformPrecoder_enabled ) {
+ if (transformPrecoder == NR_PUSCH_Config__transformPrecoder_enabled ) {
     /* Enable DMRS uplink config for transform precoding enabled */
     NR_DMRS_UplinkConfig->transformPrecodingEnabled = calloc(1,sizeof(*NR_DMRS_UplinkConfig->transformPrecodingEnabled));
     NR_DMRS_UplinkConfig->transformPrecodingEnabled->nPUSCH_Identity = NULL;

@@ -326,11 +326,11 @@ void nr_set_pusch_semi_static(const NR_ServingCellConfigCommon_t *scc,
 
   ps->pusch_Config = ubwp?ubwp->bwp_Dedicated->pusch_Config->choice.setup:NULL;
   if (ps->pusch_Config == NULL || !ps->pusch_Config->transformPrecoder)
-    ps->transform_precoding = !scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder;
+    ps->transformPrecoder = !scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder;
   else
-    ps->transform_precoding = *ps->pusch_Config->transformPrecoder;
+    ps->transformPrecoder = *ps->pusch_Config->transformPrecoder;
   const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
-  if (ps->transform_precoding)
+  if (ps->transformPrecoder)
     ps->mcs_table = get_pusch_mcs_table(ps->pusch_Config ? ps->pusch_Config->mcs_Table : NULL,
                                     0,
                                     ps->dci_format,
