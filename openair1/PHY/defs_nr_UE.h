@@ -639,6 +639,9 @@ typedef struct {
   uint8_t agregationLevel;
   int nb_search_space;
   fapi_nr_dl_config_dci_dl_pdu_rel15_t pdcch_config[FAPI_NR_MAX_SS_PER_CORESET];
+  // frame and slot for sib1 in initial sync
+  uint16_t sfn;
+  uint16_t slot;
   /*
 #ifdef NR_PDCCH_DEFS_NR_UE
   int nb_searchSpaces;
@@ -764,6 +767,10 @@ typedef struct {
   int UE_scan_carrier;
   /// \brief Indicator that UE should enable estimation and compensation of frequency offset
   int UE_fo_compensation;
+  /// IF frequency for RF
+  uint64_t if_freq;
+  /// UL IF frequency offset for RF
+  int if_freq_off;
   /// \brief Indicator that UE is synchronized to a gNB
   int is_synchronized;
   /// \brief Indicator that UE lost frame synchronization
