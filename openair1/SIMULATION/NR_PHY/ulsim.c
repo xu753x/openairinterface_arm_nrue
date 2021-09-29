@@ -332,7 +332,7 @@ int main(int argc, char **argv)
   /* initialize the sin-cos table */
    InitSinLUT();
 
-  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:ikl:m:n:o:p:q:r:s:u:w:y:z:F:G:H:M:N:PR:S:T:U:L:Z")) != -1) {
+  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:ikl:m:n:o:p:q:r:s:t:u:w:y:z:F:G:H:M:N:PR:S:T:U:L:Z")) != -1) {
     printf("handling optarg %c\n",c);
     switch (c) {
 
@@ -464,6 +464,10 @@ int main(int argc, char **argv)
     case 's':
       snr0 = atof(optarg);
       printf("Setting SNR0 to %f\n", snr0);
+      break;
+
+    case 't':
+      snr_step = atof(optarg);
       break;
 
     case 'u':
@@ -673,8 +677,17 @@ int main(int argc, char **argv)
   gNB->ofdm_offset_divisor = UINT_MAX;
   gNB->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
   gNB->respDecode = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
-  char tp_param[] = "n";
-  initTpool(tp_param, gNB->threadPool, false);
+
+  int numCPU = sysconf(_SC_NPROCESSORS_ONLN);
+  LOG_I(PHY,"Number of CPUs available on this machine: %d\n",numCPU);
+  char ul_pool[80];
+  sprintf(ul_pool,"-1");
+  int s_offset = 0;
+  for (int icpu=1; icpu<numCPU; icpu++) {
+    sprintf(ul_pool+2+s_offset,",-1");
+    s_offset += 3;
+  }
+  initTpool(ul_pool, gNB->threadPool, false);
   initNotifiedFIFO(gNB->respDecode);
   //gNB_config = &gNB->gNB_config;
 
@@ -1022,6 +1035,11 @@ int main(int argc, char **argv)
   memset(snrStats, 0, sizeof(double)*100);
   memset(ldpcDecStats, 0, sizeof(double)*100);
   for (SNR = snr0; SNR < snr1; SNR += snr_step) {
+
+    //  if (gNB->ldpc_offload_flag)
+    //  init_nrLDPClib_offload();
+
+
     varArray_t *table_rx=initVarArray(1000,sizeof(double));
     int error_flag = 0;
     n_false_positive = 0;
@@ -1495,20 +1513,20 @@ int main(int argc, char **argv)
     }
 
     ldpcDecStats[snrRun] = gNB->ulsch_decoding_stats.trials?inMicroS(gNB->ulsch_decoding_stats.diff/gNB->ulsch_decoding_stats.trials):0;
+    snrStats[snrRun] = SNR;
+    n_errs = n_errors[0][snrRun];
+    snrRun++;
 
     if(n_trials==1)
       break;
 
-    if ((float)n_errors[0][snrRun]/(float)n_trials <= target_error_rate) {
+    if ((float)n_errors[0][snrRun-1]/(float)n_trials <= target_error_rate) {
       printf("*************\n");
       printf("PUSCH test OK\n");
       printf("*************\n");
       break;
     }
 
-    snrStats[snrRun] = SNR;
-    snrRun++;
-    n_errs = n_errors[0][snrRun];
   } // SNR loop
   printf("\n");
 
@@ -1543,6 +1561,7 @@ int main(int argc, char **argv)
   LOG_MM("ulsimStats.m","LDPC_dec_time",ldpcDecStats,snrRun,1,7);
   free(test_input_bit);
   free(estimated_output_bit);
+
   if (gNB->ldpc_offload_flag)
     free_nrLDPClib_offload();
 

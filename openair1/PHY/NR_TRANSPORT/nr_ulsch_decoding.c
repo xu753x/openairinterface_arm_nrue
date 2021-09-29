@@ -702,7 +702,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 	}
   	else {
    	 if ( harq_process->C != harq_process->processedSegments ) {
-      		LOG_I(PHY,"uplink segment error %d/%d\n",r,harq_process->C);
+      		LOG_D(PHY,"uplink segment error %d/%d\n",r,harq_process->C);
    		LOG_D(PHY, "ULSCH %d in error\n",ULSCH_id);
       		harq_process->processedSegments=harq_process->C;
       		r=harq_process->C;
@@ -734,7 +734,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
       		LOG_D(PHY, "ULSCH %d in error\n",ULSCH_id);
 		nr_fill_indication(phy_vars_gNB,harq_process->frame, harq_process->slot, ULSCH_id, harq_pid, 1);
 	  } 
-	  //ulsch->last_iteration_cnt = no_iteration_ldpc;	
+	  ulsch->last_iteration_cnt = no_iteration_ldpc;	
 	}
     } 
   } 
