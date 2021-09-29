@@ -56,6 +56,7 @@ uint8_t SSB_Table[38]={0,2,4,6,8,10,12,14,254,254,16,18,20,22,24,26,28,30,254,25
 
 extern uint8_t nfapi_mode;
 
+short aoa = 0;
 void nr_set_ssb_first_subcarrier(nfapi_nr_config_request_scf_t *cfg, NR_DL_FRAME_PARMS *fp) {
 
   uint8_t sco = 0;
@@ -385,6 +386,7 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
   uint16_t bw_scaling = 16 * gNB->frame_parms.ofdm_symbol_size / 2048;
   timing_advance_update = sync_pos / bw_scaling;
 
+  timing_advance_update = 0;//ldx_add
   // put timing advance command in 0..63 range
   timing_advance_update += 31;
 
@@ -674,7 +676,9 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
 
           VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_RX_PUSCH,1);
 	        start_meas(&gNB->rx_pusch_stats);
-          no_sig = nr_rx_pusch(gNB, ULSCH_id, frame_rx, slot_rx, harq_pid);
+          /************************************************************************************/
+          no_sig = nr_rx_pusch(gNB, ULSCH_id, frame_rx, slot_rx, harq_pid, &aoa);
+          printf("\nCurrent aoa is %d\n",aoa);
           if (no_sig) {
             LOG_D(PHY, "PUSCH not detected in frame %d, slot %d\n", frame_rx, slot_rx);
             nr_fill_indication(gNB, frame_rx, slot_rx, ULSCH_id, harq_pid, 1);

@@ -1682,6 +1682,17 @@ void nr_fill_rar(uint8_t Mod_idP,
   int freq_hopping = (unsigned char) (rar->UL_GRANT_1 >> 2);
   // TA command
   int  ta_command = rar->TA2 + (rar->TA1 << 5);
+
+  // 存TA的值
+  FILE *ta_command_save;
+  ta_command_save = fopen("ta_command_record.txt","wt");
+  if(ta_command_save ==NULL)
+      {
+        printf("\n读取文件错误");
+      }
+  fprintf(ta_command_save,"%d ",ta_command);
+  fclose(ta_command_save);
+
   // TC-RNTI
   int t_crnti = rar->TCRNTI_2 + (rar->TCRNTI_1 << 8);
 

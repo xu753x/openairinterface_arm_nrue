@@ -140,7 +140,8 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
                 uint8_t UE_id,
                 uint32_t frame,
                 uint8_t slot,
-                unsigned char harq_pid);
+                unsigned char harq_pid,
+                short *aoaptr);
 
 /** \brief This function performs RB extraction (signal and channel estimates) (currently signal only until channel estimation and compensation are implemented)
     @param rxdataF pointer to the received frequency domain signal

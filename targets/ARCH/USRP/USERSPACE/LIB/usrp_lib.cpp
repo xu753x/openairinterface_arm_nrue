@@ -46,6 +46,7 @@
 #include <fstream>
 #include <cmath>
 #include <time.h>
+// #include <Eigen/Dense>
 #include "common/utils/LOG/log.h"
 #include "common_lib.h"
 #include "assertions.h"
@@ -71,7 +72,7 @@
  */
 int gpio789=0;
 extern int usrp_tx_thread;
-
+// short count0 = 0;
 
 typedef struct {
 
@@ -618,6 +619,7 @@ int trx_usrp_write_init(openair0_device *device){
  * \returns the number of sample read
 */
 static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp, void **buff, int nsamps, int cc) {
+  // using namespace Eigen;
   usrp_state_t *s = (usrp_state_t *)device->priv;
   int samples_received=0;
   int nsamps2;  // aligned to upper 32 or 16 byte boundary
@@ -626,7 +628,7 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
   nsamps2 = (nsamps+7)>>3;
   __m256i buff_tmp[cc<2 ? 2 : cc][nsamps2];
 #else
-  nsamps2 = (nsamps+3)>>2;
+  nsamps2 = (nsamps+3)>>2; // nsamp 23040 nsamps2 2880
   __m128i buff_tmp[cc<2 ? 2 : cc][nsamps2];
 #endif
 #elif defined(__arm__)
@@ -648,15 +650,73 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
   }
 
     samples_received=0;
+
+    // float wavelength = 2.99792458e8/s->usrp->get_rx_freq();
+    // Vector2f positions(0,0.0428);
+    // std::complex<float> cpunit(0,1);
+
+    // RowVectorXf doas(180);
+    // for (int k = 0; k<180; k++){
+    //     doas(k) = (k/90.0-1)*M_PI_2;
+    // }
+    // MatrixXcf steering_matrix = exp((2*M_PI*positions*doas.array().sin().matrix()/wavelength).array()*cpunit);
+
+    // int snapcount = 100;
+    // MatrixXcf data(cc,snapcount);
+    // MatrixXf::Index maxIndex;
+    // Vector2cf Un;
+    // std::vector<std::vector<std::complex<short>>> buffs(2, std::vector<std::complex<short>>(nsamps));
+  
     while (samples_received != nsamps) {
 
       if (cc>1) {
       // receive multiple channels (e.g. RF A and RF B)
         std::vector<void *> buff_ptrs;
+        // std::vector<std::complex<short> *> buff_ptrs2;
 
-        for (int i=0; i<cc; i++) buff_ptrs.push_back(buff_tmp[i]+samples_received);
+        for (int i=0; i<cc; i++) {
+          buff_ptrs.push_back(buff_tmp[i]+samples_received);
+          // buff_ptrs2.push_back(&buffs[i].front()+samples_received);
+        }
+        
 
+        // s->rx_stream->recv(buff_ptrs2, nsamps, s->rx_md);
         samples_received += s->rx_stream->recv(buff_ptrs, nsamps, s->rx_md);
+
+        /*****************************************************************************************/
+        // count0++;
+        // if (count0>499){
+        //   count0 = 0;
+        //   for (int i = 0; i < cc; i++) {
+        //     //  data.row(i) = Map<VectorXcf> (&buff_ptrs2[i][0],snapcount);
+        //     for (size_t j = 0;j<snapcount;j++){
+        //         data(i,j) = buff_ptrs2[i][j];
+        //     }
+        //   }
+
+        //   MatrixXcf dataT = data.adjoint();
+        //   MatrixXcf R = data*dataT/snapcount;
+        //   MatrixXcf RT = R.adjoint();
+        //   SelfAdjointEigenSolver<MatrixXcf> complexeigensolver((R+RT)*0.5);
+
+        //   if (complexeigensolver.info() != Success) abort();
+        //   VectorXcf U = complexeigensolver.eigenvectors().col(1);
+        //   Un(0) = U(1); Un(1) = -U(0);
+
+        //   ArrayXcf V = Un.adjoint()*steering_matrix;
+        //   VectorXf Vr = 1.0/real(V*conj(V));
+        //   Vr.maxCoeff(&maxIndex);
+        //   std::cout << "-----------------------------------------------------------\n" << std::endl;
+        //   std::cout << "Current Angle is:" << maxIndex-90 << "\n" << std::endl;
+        //   char filename[20];
+        //   char varname[20];
+        //   for (uint8_t i=0; i<cc; i++) {
+        //     sprintf(filename,"rxdata_%d.m", i);
+        //     sprintf(varname,"rxdata%d", i);
+        //     LOG_M(filename,varname,buff_ptrs2[i],snapcount, 1, 1);
+        //   }
+        // }
+        /******************************************************************************************/
       } else {
       // receive a single channel (e.g. from connector RF A)
 

@@ -65,6 +65,46 @@ int nr_est_timing_advance_pusch(PHY_VARS_gNB* gNB, int UE_id)
   if (max_pos > frame_parms->ofdm_symbol_size/2)
     max_pos = max_pos - frame_parms->ofdm_symbol_size;
 
+  int delta_shift=0;
+  delta_shift=max_pos - sync_pos;
+  //获取TA_command的值
+  FILE *ta_command_get;
+  int ta_command;
+  ta_command_get = fopen("ta_command_record.txt","rt");
+  if(ta_command_get ==NULL)
+      {
+        printf("\n读取文件错误");
+      }
+  fscanf(ta_command_get,"%d",&ta_command);//读取文件中的数据
+  fclose(ta_command_get);
+
+  //写入TA校准值,delta_shift校准值
+  int TA_benchmark;
+  TA_benchmark=10;
+  double delta_shift_benchmark;
+  delta_shift_benchmark=13.2988;
+  
+  //计算shift
+  double shift;
+  shift=(ta_command-TA_benchmark)*16+delta_shift-delta_shift_benchmark;
+
+  //计算距离
+  double distance_esitimation;
+  distance_esitimation=shift*299792458/61440000/2;
+  
+  //打印计算值
+  printf("\nta_command:%d,TA_benchmark:%d,delta_shift:%d,shfit:%f,distance_esitimation:%f米",ta_command,TA_benchmark,delta_shift,shift,distance_esitimation);//ldx_add
+
+  //存储shift
+  FILE *shift_save;
+  shift_save = fopen("shift_record.txt","at");
+  if(shift_save ==NULL)
+      {
+        printf("\n读取文件错误");
+      }
+  fprintf(shift_save,"%d ",shift);
+  fclose(shift_save);
+
 
   return max_pos - sync_pos;
 }

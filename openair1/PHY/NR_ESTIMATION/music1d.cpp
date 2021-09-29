@@ -8,7 +8,7 @@
 
 extern "C" {
 
-  void music1d(short **arg) {
+  short music1d(short **arg) {
     using namespace Eigen;
     short snapcount = 10;
     MatrixXcf data(2,snapcount);
@@ -28,7 +28,6 @@ extern "C" {
         data(i,j) = std::complex<float> (*(arg[i]+2*j),*(arg[i]+2*j+1));
       }
     }
-    std::cout << "data:" << data << "\n" << std::endl;
     MatrixXcf dataT = data.adjoint();
     MatrixXcf R = data*dataT/snapcount;
     MatrixXcf RT = R.adjoint();
@@ -41,8 +40,10 @@ extern "C" {
     ArrayXcf V = Un.adjoint()*steering_matrix;
     VectorXf Vr = 1.0/real(V*conj(V));
     Vr.maxCoeff(&maxIndex);
-    std::cout << "-----------------------------------------------------------\n" << std::endl;
-    std::cout << "Current Angle is:" << maxIndex-90 << "\n" << std::endl;
+    int aoa = maxIndex;
+    return aoa;
+    // std::cout << "-----------------------------------------------------------\n" << std::endl;
+    // std::cout << "(music) Current Angle is:" << aoa << "\n" << std::endl;
   }
 
 } /* extern "C" */

@@ -25,6 +25,7 @@
 #include "nr_modulation.h"
 #include "PHY/LTE_ESTIMATION/lte_estimation.h"
 #include "PHY/NR_UE_ESTIMATION/nr_estimation.h"
+// #include "music1d.h"
 #include <common/utils/LOG/log.h>
 
 //#define DEBUG_FEP
@@ -74,7 +75,7 @@ dft_size_idx_t get_dft_size_idx(uint16_t ofdm_symbol_size)
 
   return DFT_SIZE_IDXTABLESIZE;
 }
-
+// short count = 0;
 int nr_slot_fep(PHY_VARS_NR_UE *ue,
                 UE_nr_rxtx_proc_t *proc,
                 unsigned char symbol,
@@ -114,7 +115,7 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
   printf("slot_fep: slot %d, symbol %d, nb_prefix_samples %u, nb_prefix_samples0 %u, rx_offset %u\n",
          Ns, symbol, nb_prefix_samples, nb_prefix_samples0, rx_offset);
 #endif
-
+  // short *rxptr[2];
   for (unsigned char aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
     memset(&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],0,frame_parms->ofdm_symbol_size*sizeof(int32_t));
 
@@ -128,6 +129,8 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
 
       rxdata_ptr = (int16_t *)tmp_dft_in;
     }
+
+    // rxptr[aa] = (int16_t *)&common_vars->rxdata[aa][rx_offset];
 
 #if UE_TIMING_TRACE
     start_meas(&ue->rx_dft_stats);
@@ -158,6 +161,22 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
 		      frame_parms->ofdm_symbol_size,
 		      15);
   }
+  // count++;
+  // if (count>999){
+  //   count = 0;
+  //   if (frame_parms->nb_antennas_rx>1){
+  //     music1d(rxptr);
+  //     LOG_M("rxdata0.m","rxdata0",(int16_t *)common_vars->rxdata[0],1000, 1, 1);
+  //     LOG_M("rxdata1.m","rxdata1",(int16_t *)common_vars->rxdata[1],1000, 1, 1);
+  //     LOG_M("ssb0.m","ssb0",(int16_t *)&common_vars->rxdata[0][rx_offset],1000, 1, 1);
+  //     LOG_M("ssb1.m","ssb1",(int16_t *)&common_vars->rxdata[1][rx_offset],1000, 1, 1);
+  //   }
+  //   else{
+  //     LOG_M("rxdata.m","rxdata",(int16_t *)common_vars->rxdata[0],1000, 1, 1);
+  //     LOG_M("ssb.m","ssb",(int16_t *)&common_vars->rxdata[0][rx_offset],1000, 1, 1);
+  //   }
+  // }
+
 
 #ifdef DEBUG_FEP
   printf("slot_fep: done\n");

@@ -29,7 +29,7 @@
 #include "PHY/NR_REFSIG/ptrs_nr.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_UE_ESTIMATION/filt16a_32.h"
-
+#include "music1d.h"
 #include "PHY/NR_REFSIG/ul_ref_seq_nr.h"
 
 
@@ -37,14 +37,15 @@
 //#define DEBUG_PUSCH
 
 #define dBc(x,y) (dB_fixed(((int32_t)(x))*(x) + ((int32_t)(y))*(y)))
-
+short count = 0;
 int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
                                 unsigned char Ns,
                                 unsigned short p,
                                 unsigned char symbol,
                                 int ul_id,
                                 unsigned short bwp_start_subcarrier,
-                                nfapi_nr_pusch_pdu_t *pusch_pdu) {
+                                nfapi_nr_pusch_pdu_t *pusch_pdu,
+                                short *aoaptr) {
 
   int pilot[3280] __attribute__((aligned(16)));
   unsigned char aarx;
@@ -52,6 +53,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
   unsigned int pilot_cnt,re_cnt;
   int16_t ch[2],ch_r[2],ch_l[2],*pil,*rxF,*ul_ch;
   int16_t *fl,*fm,*fr,*fml,*fmr,*fmm,*fdcl,*fdcr,*fdclh,*fdcrh;
+  short *rxptr[2];
   int ch_offset,symbol_offset ;
   int32_t **ul_ch_estimates_time =  gNB->pusch_vars[ul_id]->ul_ch_estimates_time;
   __m128i *ul_ch_128;
@@ -164,13 +166,14 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
       ((int16_t*)pilot)[1 + (2 * i)]);
   }
 #endif
-
+  count++;
   for (aarx=0; aarx<gNB->frame_parms.nb_antennas_rx; aarx++) {
 
     re_offset = k;   /* Initializing the Resource element offset for each Rx antenna */
 
     pil   = (int16_t *)&pilot[0];
     rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+k+nushift)];
+    rxptr[aarx] = (int16_t *)&rxdataF[aarx][(symbol_offset+k+nushift)];
     ul_ch = (int16_t *)&ul_ch_estimates[aarx][ch_offset];
     re_offset = k;
 
@@ -577,6 +580,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 
   }
 
+  *aoaptr = music1d(rxptr);
 #ifdef DEBUG_CH
   fclose(debug_ch_est);
 #endif

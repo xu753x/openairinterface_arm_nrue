@@ -4,7 +4,7 @@
 extern "C" {
 #endif /* __cplusplus */
 
-void music1d(short **arg);
+short music1d(short **arg);
 
 #ifdef __cplusplus
 } /* extern "C" */
