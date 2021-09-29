@@ -744,6 +744,7 @@ int main(int argc, char **argv)
   PHY_vars_UE_g[0] = malloc(sizeof(PHY_VARS_NR_UE*));
   PHY_vars_UE_g[0][0] = UE;
   memcpy(&UE->frame_parms, frame_parms, sizeof(NR_DL_FRAME_PARMS));
+  UE->frame_parms.nb_antennas_rx = 0;
 
   //phy_init_nr_top(frame_parms);
   if (init_nr_ue_signal(UE, 1, 0) != 0) {
