@@ -58,18 +58,36 @@ void process_rlcBearerConfig(struct NR_CellGroupConfig__rlc_BearerToAddModList *
                              struct NR_CellGroupConfig__rlc_BearerToReleaseList *rlc_bearer2release_list,
                              NR_UE_sched_ctrl_t *sched_ctrl) {
 
-  if (rlc_bearer2add_list)
-  // keep lcids
-    for (int i=0;i<rlc_bearer2add_list->list.count;i++) {
-      sched_ctrl->lcid_mask |= (1<<rlc_bearer2add_list->list.array[i]->logicalChannelIdentity);
+  if (rlc_bearer2release_list) {
+    uint8_t updated_lcids[NR_MAX_NUM_LCID] = {0};
+    uint8_t lc = 0;
+    for (int i = 0; i < rlc_bearer2release_list->list.count; i++) {
+      for (int idx = 0; idx < sched_ctrl->dl_lc_num; idx++) {
+        if (sched_ctrl->dl_lc_ids[idx] != rlc_bearer2add_list->list.array[i]->logicalChannelIdentity) {
+          updated_lcids[lc] = sched_ctrl->dl_lc_ids[idx];
+          lc++;
+        }
+      }
+    }
+    sched_ctrl->dl_lc_num = lc;
+    memcpy(sched_ctrl->dl_lc_ids, updated_lcids, sizeof(uint8_t)*NR_MAX_NUM_LCID);
+  }
+
+  if (rlc_bearer2add_list) {
+    // keep lcids
+    for (int i = 0; i < rlc_bearer2add_list->list.count; i++) {
+      sched_ctrl->dl_lc_num++;
+      sched_ctrl->dl_lc_ids[sched_ctrl->dl_lc_num - 1] = rlc_bearer2add_list->list.array[i]->logicalChannelIdentity;
       LOG_I(NR_MAC,"Adding LCID %d (%s %d)\n",
             (int)rlc_bearer2add_list->list.array[i]->logicalChannelIdentity,
             rlc_bearer2add_list->list.array[i]->logicalChannelIdentity<4 ? "SRB" : "DRB",
             (int)rlc_bearer2add_list->list.array[i]->logicalChannelIdentity);
     }
-  if (rlc_bearer2release_list)
-    for (int i=0;i<rlc_bearer2release_list->list.count;i++)
-      sched_ctrl->lcid_mask |= (1<<*rlc_bearer2release_list->list.array[i]);
+  }
+
+  LOG_D(NR_MAC, "In %s: total num of active bearers %d) \n",
+      __FUNCTION__,
+      sched_ctrl->dl_lc_num);
 
 }
 

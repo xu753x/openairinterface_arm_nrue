@@ -563,7 +563,6 @@ typedef struct {
   /// per-LC status data
   mac_rlc_status_resp_t rlc_status[NR_MAX_NUM_LCID];
 
-  int lcid_mask;
   uint16_t ta_frame;
   int16_t ta_update;
   bool ta_apply;
