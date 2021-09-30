@@ -135,7 +135,7 @@ const initial_pucch_resource_t initial_pucch_resource[16] = {
 };
 
 
-void get_bwp_info(NR_UE_MAC_INST_t *mac,    
+void get_bwp_info(NR_UE_MAC_INST_t *mac,
                   int dl_bwp_id,
                   int ul_bwp_id,
                   NR_BWP_DownlinkDedicated_t **bwpd,
@@ -152,10 +152,10 @@ void get_bwp_info(NR_UE_MAC_INST_t *mac,
        else if (mac->scc) *bwpc = mac->scc->downlinkConfigCommon->initialDownlinkBWP;
        AssertFatal(*bwpc!=NULL,"bwpc shouldn't be null\n");
     } else {
-       if (mac->cg && 
+       if (mac->cg &&
            mac->cg->spCellConfig &&
            mac->cg->spCellConfig->spCellConfigDedicated &&
-           mac->cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP) 
+           mac->cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP)
           *bwpd = mac->cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP;
        if (mac->scc_SIB) *bwpc = &mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP;
        else if (mac->scc) *bwpc = mac->scc->downlinkConfigCommon->initialDownlinkBWP;
@@ -181,7 +181,7 @@ void get_bwp_info(NR_UE_MAC_INST_t *mac,
           *ubwpd = mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP;
        if (mac->scc_SIB) *ubwpc = &mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP;
        else if (mac->scc) *ubwpc = mac->scc->uplinkConfigCommon->initialUplinkBWP;
-       AssertFatal(*ubwpc!=NULL,"ubwpc shouldn't be null\n"); 
+       AssertFatal(*ubwpc!=NULL,"ubwpc shouldn't be null\n");
     }
 }
 
@@ -247,7 +247,7 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
                         uint16_t ssb_start_subcarrier,
                         uint16_t cell_id)
 {
-  LOG_I(MAC,"[L2][MAC] decode mib\n");
+  LOG_D(MAC,"[L2][MAC] decode mib\n");
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
   mac->physCellId = cell_id;
@@ -748,7 +748,6 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu_1_0 = &dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.dlsch_config_rel15;
 
     NR_PDSCH_Config_t *pdsch_config= (mac->DLbwp[0]) ? mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup : NULL;
-    uint16_t BWPSize = n_RB_DLBWP;
     int is_common=0;
     if(rnti == SI_RNTI) {
       NR_Type0_PDCCH_CSS_config_t type0_PDCCH_CSS_config = mac->type0_PDCCH_CSS_config;
@@ -758,7 +757,6 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
       dlsch_config_pdu_1_0->BWPStart = mac->type0_PDCCH_CSS_config.cset_start_rb;
       dlsch_config_pdu_1_0->SubcarrierSpacing = mac->mib->subCarrierSpacingCommon;
       if (pdsch_config) pdsch_config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = NULL; // For PDSCH with mapping type A, the UE shall assume dmrs-AdditionalPosition='pos2'
-      BWPSize = dlsch_config_pdu_1_0->BWPSize;
     } else {
       if (ra->RA_window_cnt >= 0 && rnti == ra->ra_rnti){
         dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_RA_DLSCH;
@@ -778,7 +776,6 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
         if (!get_softmodem_params()->sa) { // NSA mode is not using the Initial BWP
           dlsch_config_pdu_1_0->BWPStart = NRRIV2PRBOFFSET(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
           pdsch_config = mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup;
-          BWPSize = dlsch_config_pdu_1_0->BWPSize;
         }
       } else if (mac->DLbwp[0]) {
         dlsch_config_pdu_1_0->BWPSize = NRRIV2BW(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
@@ -1950,7 +1947,6 @@ uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
 
   NR_BWP_Id_t dl_bwp_id = mac->DL_BWP_Id;
   NR_BWP_Id_t ul_bwp_id = mac->UL_BWP_Id;
-  NR_PDSCH_Config_t *pdsch_Config=NULL;
   NR_BWP_DownlinkDedicated_t *bwpd=NULL;
   NR_BWP_DownlinkCommon_t *bwpc=NULL;
   NR_BWP_UplinkDedicated_t *ubwpd=NULL;
@@ -2171,8 +2167,8 @@ bool trigger_periodic_scheduling_request(NR_UE_MAC_INST_t *mac,
            mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup) {
     pucch_Config = mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup;
   }
-  if(!pucch_Config || 
-     !pucch_Config->schedulingRequestResourceToAddModList || 
+  if(!pucch_Config ||
+     !pucch_Config->schedulingRequestResourceToAddModList ||
      pucch_Config->schedulingRequestResourceToAddModList->list.count==0)
     return false; // SR not configured
 
@@ -3214,7 +3210,7 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
   frame_t frameP         = dl_info->frame;
   int slot               = dl_info->slot;
   uint8_t *pduP          = (dl_info->rx_ind->rx_indication_body + pdu_id)->pdsch_pdu.pdu;
-  int16_t pdu_len        = (int16_t)(dl_info->rx_ind->rx_indication_body + pdu_id)->pdsch_pdu.pdu_length;
+  int32_t pdu_len        = (int32_t)(dl_info->rx_ind->rx_indication_body + pdu_id)->pdsch_pdu.pdu_length;
   uint8_t gNB_index      = dl_info->gNB_index;
   uint8_t CC_id          = dl_info->cc_id;
   uint8_t done           = 0;
@@ -3372,7 +3368,7 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
         #endif
         */
 
-        LOG_D(MAC, "[%d.%d] Received TA_COMMAND %u TAGID %u CC_id %d\n", frameP, slot, ul_time_alignment->ta_command, ul_time_alignment->tag_id, CC_id);
+                LOG_I(NR_MAC, "[%d.%d] Received TA_COMMAND %u TAGID %u CC_id %d\n", frameP, slot, ul_time_alignment->ta_command, ul_time_alignment->tag_id, CC_id);
 
         break;
       case DL_SCH_LCID_CON_RES_ID:

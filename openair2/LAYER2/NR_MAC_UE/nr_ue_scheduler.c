@@ -312,7 +312,7 @@ void ul_ports_config(NR_UE_MAC_INST_t * mac, nfapi_nr_ue_pusch_pdu_t *pusch_conf
       mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig &&
       mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP)
     ubwpd = mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP;
- 
+
   NR_PUSCH_Config_t *pusch_Config = mac->ULbwp[0] ? mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup : (ubwpd?ubwpd->pusch_Config->choice.setup:NULL);
   AssertFatal(pusch_Config!=NULL,"pusch_Config shouldn't be null\n");
 
@@ -1064,6 +1064,7 @@ int nr_ue_pusch_scheduler(NR_UE_MAC_INST_t *mac,
     // Get slot offset K2 which will be used to calculate TX slot
     k2 = get_k2(mac, tda_id);
     if (k2 < 0) { // This can happen when a false DCI is received
+      LOG_W(PHY,"%d.%d. Received k2 %d, tda_id %d\n",current_frame,current_slot,k2,tda_id);
       return -1;
     }
 

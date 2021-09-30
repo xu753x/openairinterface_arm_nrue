@@ -314,7 +314,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
       for (int aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
         corr_re[aa][l]=0;
         corr_im[aa][l]=0;
-        
+
         n2=0;
         for (n=0;n<12;n++,n2+=2) {
           corr_re[aa][l]+=(xr[aa][l][n2]*idft12_re[seq_index][n]+xr[aa][l][n2+1]*idft12_im[seq_index][n])>>15;
@@ -322,12 +322,6 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
         }
       }
     }
-    if (pucch_pdu->freq_hop_flag == 0 && l==1) {// non-coherent correlation
-      temp=0;
-      for (int aa=0;aa<frame_parms->nb_antennas_rx;aa++) 
-        temp+=(int64_t)corr_re[aa][0]*corr_re[aa][0] + (int64_t)corr_im[aa][0]*corr_im[aa][0];
-    }
-
     LOG_D(PHY,"PUCCH IDFT[%d/%d] = (%d,%d)=>%f\n",mcs[i],seq_index,corr_re[0][0],corr_im[0][0],10*log10((double)corr_re[0][0]*corr_re[0][0] + (double)corr_im[0][0]*corr_im[0][0]));
     if (l>1) LOG_D(PHY,"PUCCH 2nd symbol IDFT[%d/%d] = (%d,%d)=>%f\n",mcs[i],seq_index,corr_re[0][1],corr_im[0][1],10*log10((double)corr_re[0][1]*corr_re[0][1] + (double)corr_im[0][1]*corr_im[0][1]));
     if (pucch_pdu->freq_hop_flag == 0 && l==1) {// non-coherent correlation
@@ -359,6 +353,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
     if (temp>xrtmag) {
       xrtmag_next = xrtmag;
       xrtmag=temp;
+      LOG_D(PHY,"Sequence %d xrtmag %ld xrtmag_next %ld\n", i, xrtmag, xrtmag_next);
       maxpos=i;
       uci_stats->current_pucch0_stat0 = 0;
       int64_t temp2=0,temp3=0;;
@@ -369,12 +364,14 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
       uci_stats->current_pucch0_stat0= dB_fixed64(temp2);
       if (l==2) uci_stats->current_pucch0_stat1= dB_fixed64(temp3);
     }
+    else if (temp>xrtmag_next)
+      xrtmag_next = temp;
   }
 
   av_corr/=nr_sequences/l;
 
-  int xrtmag_dBtimes10 = 10*(int)dB_fixed64(xrtmag/frame_parms->nb_antennas_rx);
-  int xrtmag_next_dBtimes10 = 10*(int)dB_fixed64(xrtmag_next/frame_parms->nb_antennas_rx);
+  int xrtmag_dBtimes10 = 10*(int)dB_fixed64(xrtmag/(12*l));
+  int xrtmag_next_dBtimes10 = 10*(int)dB_fixed64(xrtmag_next/(12*l));
 #ifdef DEBUG_NR_PUCCH_RX
   printf("PUCCH 0 : maxpos %d\n",maxpos);
 #endif
@@ -399,7 +396,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   uci_stats->pucch0_thres = gNB->pucch0_thres; /* + (10*max_n0);*/
   bool no_conf=false;
   if (nr_sequences>1) {
-    if (xrtmag_dBtimes10 < uci_stats->pucch0_thres+xrtmag_next_dBtimes10)
+    if (xrtmag_dBtimes10 < (50+xrtmag_next_dBtimes10) || SNRtimes10 < uci_stats->pucch0_thres)
       no_conf=true;
   }
   gNB->bad_pucch += no_conf;
@@ -429,8 +426,8 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
     uci_pdu->harq->harq_confidence_level = no_conf ? 1 : 0;
     uci_pdu->harq->harq_list = (nfapi_nr_harq_t*)malloc(1);
     uci_pdu->harq->harq_list[0].harq_value = index&0x01;
-    LOG_I(PHY, "[DLSCH/PDSCH/PUCCH] %d.%d HARQ value %d with confidence level (0 is good, 1 is bad) %d xrt_mag %d srt_mag_next %d n0 %d (%d,%d) pucch0_thres %d, cqi %d, SNRtimes10 %d\n",
-          frame,slot,uci_pdu->harq->harq_list[0].harq_value,uci_pdu->harq->harq_confidence_level,xrtmag_dBtimes10,xrtmag_next_dBtimes10,max_n0,uci_stats->pucch0_n00,uci_stats->pucch0_n01,uci_stats->pucch0_thres,cqi,SNRtimes10);
+    LOG_D(PHY, "[DLSCH/PDSCH/PUCCH] %d.%d HARQ value %d with confidence level (0 is good, 1 is bad) %d xrt_mag %d xrt_mag_next %d n0 %d (%d,%d) pucch0_thres %d, cqi %d, SNRtimes10 %d, energy %f, sync_pos %d\n",
+          frame,slot,uci_pdu->harq->harq_list[0].harq_value,uci_pdu->harq->harq_confidence_level,xrtmag_dBtimes10,xrtmag_next_dBtimes10,max_n0,uci_stats->pucch0_n00,uci_stats->pucch0_n01,uci_stats->pucch0_thres,cqi,SNRtimes10,10*log10((double)sigenergy),gNB->ulsch_stats[0].sync_pos);
     if (pucch_pdu->sr_flag == 1) {
       uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));
       uci_pdu->sr->sr_indication = (index>1) ? 1 : 0;
@@ -446,8 +443,8 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
     uci_pdu->harq->harq_list = (nfapi_nr_harq_t*)malloc(2);
     uci_pdu->harq->harq_list[1].harq_value = index&0x01;
     uci_pdu->harq->harq_list[0].harq_value = (index>>1)&0x01;
-    LOG_D(PHY, "[DLSCH/PDSCH/PUCCH] %d.%d HARQ values %d and %d with confidence level (0 is good, 1 is bad) %d, xrt_mag %d xrt_mag_next %d\n",
-          frame,slot,uci_pdu->harq->harq_list[1].harq_value,uci_pdu->harq->harq_list[0].harq_value,uci_pdu->harq->harq_confidence_level,xrtmag_dBtimes10,xrtmag_next_dBtimes10);
+    LOG_D(PHY, "[DLSCH/PDSCH/PUCCH] %d.%d HARQ values %d and %d with confidence level (0 is good, 1 is bad) %d, xrt_mag %d xrt_mag_next %d n0 %d (%d,%d) pucch0_thres %d, cqi %d, SNRtimes10 %d,sync_pos %d\n",
+          frame,slot,uci_pdu->harq->harq_list[1].harq_value,uci_pdu->harq->harq_list[0].harq_value,uci_pdu->harq->harq_confidence_level,xrtmag_dBtimes10,xrtmag_next_dBtimes10,max_n0,uci_stats->pucch0_n00,uci_stats->pucch0_n01,uci_stats->pucch0_thres,cqi,SNRtimes10,gNB->ulsch_stats[0].sync_pos);
     if (pucch_pdu->sr_flag == 1) {
       uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));
       uci_pdu->sr->sr_indication = (index>3) ? 1 : 0;
@@ -1123,12 +1120,12 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
   re_offset[0] = 12*(pucch_pdu->prb_start+pucch_pdu->bwp_start) + frame_parms->first_carrier_offset;
   int soffset=(slot&3)*frame_parms->symbols_per_slot*frame_parms->ofdm_symbol_size; 
 
-  if (re_offset[0]>= frame_parms->ofdm_symbol_size) 
+  if (re_offset[0]>= frame_parms->ofdm_symbol_size)
     re_offset[0]-=frame_parms->ofdm_symbol_size;
   if (pucch_pdu->freq_hop_flag == 0) re_offset[1] = re_offset[0];
   else {
     re_offset[1] = 12*(pucch_pdu->second_hop_prb+pucch_pdu->bwp_start) + frame_parms->first_carrier_offset;
-    if (re_offset[1]>= frame_parms->ofdm_symbol_size) 
+    if (re_offset[1]>= frame_parms->ofdm_symbol_size)
       re_offset[1]-=frame_parms->ofdm_symbol_size;
   }
   AssertFatal(pucch_pdu->prb_size*pucch_pdu->nr_of_symbols > 1,"number of PRB*SYMB (%d,%d)< 2",
@@ -1152,9 +1149,9 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
   __m64 dmrs_re,dmrs_im;
 
   for (int aa=0;aa<Prx;aa++){
-    for (int symb=0;symb<pucch_pdu->nr_of_symbols;symb++) { 
+    for (int symb=0;symb<pucch_pdu->nr_of_symbols;symb++) {
       tmp_rp = ((int16_t *)&rxdataF[aa][soffset + (l2+symb)*frame_parms->ofdm_symbol_size]);
-      
+
       if (re_offset[symb] + nb_re_pucch < frame_parms->ofdm_symbol_size) {
         memcpy1((void*)rp[aa][symb],(void*)&tmp_rp[re_offset[symb]*2],nb_re_pucch*sizeof(int32_t));
       }
@@ -1173,9 +1170,9 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
   int nc_group_size=1; // 2 PRB
   int ngroup = prb_size_ext/nc_group_size/2;
   int32_t corr32_re[2][ngroup][Prx2],corr32_im[2][ngroup][Prx2];
-  for (int aa=0;aa<Prx;aa++) 
-    for (int group=0;group<ngroup;group++) { 
-      corr32_re[0][group][aa]=0; corr32_im[0][group][aa]=0; 
+  for (int aa=0;aa<Prx;aa++)
+    for (int group=0;group<ngroup;group++) {
+      corr32_re[0][group][aa]=0; corr32_im[0][group][aa]=0;
       corr32_re[1][group][aa]=0; corr32_im[1][group][aa]=0;
     }
 
@@ -1191,14 +1188,14 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
     }
   }
   for (int symb=0; symb<pucch_pdu->nr_of_symbols;symb++) {
-    // 24 REs contains 48x16-bit, so 6x8x16-bit 
+    // 24 REs contains 48x16-bit, so 6x8x16-bit
     for (int prb=0;prb<pucch_pdu->prb_size;prb+=2) {
       for (int aa=0;aa<Prx;aa++) {
         r_re_ext_p=&r_re_ext[aa][symb][8*prb];
         r_im_ext_p=&r_im_ext[aa][symb][8*prb];
         rd_re_ext_p=&rd_re_ext[aa][symb][4*prb];
         rd_im_ext_p=&rd_im_ext[aa][symb][4*prb];
-        
+
         for (int idx=0; idx<8; idx++) {
           r_re_ext_p[idx<<1]=rp[aa][symb][prb*24+6*idx];
           r_im_ext_p[idx<<1]=rp[aa][symb][prb*24+1+6*idx];
@@ -1207,16 +1204,16 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
           r_re_ext_p[1+(idx<<1)]=rp[aa][symb][prb*24+4+6*idx];
           r_im_ext_p[1+(idx<<1)]=rp[aa][symb][prb*24+5+6*idx];
         }
-        
+
 #ifdef DEBUG_NR_PUCCH_RX
         for (int i=0;i<8;i++) printf("Ant %d PRB %d dmrs[%d] -> (%d,%d)\n",aa,prb+(i>>2),i,rd_re_ext_p[i],rd_im_ext_p[i]);
         for (int i=0;i<16;i++) printf("Ant %d PRB %d data[%d] -> (%d,%d)\n",aa,prb+(i>>3),i,r_re_ext_p[i],r_im_ext_p[i]);
 #endif
       } // aa
     } // prb
-    
+
     // first compute DMRS component
-    
+
     uint32_t x1, x2, s=0;
     x2 = (((1<<17)*((14*slot) + (pucch_pdu->start_symbol_index+symb) + 1)*((2*pucch_pdu->dmrs_scrambling_id) + 1)) + (2*pucch_pdu->dmrs_scrambling_id))%(1U<<31); // c_init calculation according to TS38.211 subclause
 #ifdef DEBUG_NR_PUCCH_RX
@@ -1228,7 +1225,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
       s = lte_gold_generic(&x1, &x2, reset);
       reset = 0;
     }
-    
+
     for (int group=0;group<ngroup;group++) {
       // each group has 8*nc_group_size elements, compute 1 complex correlation with DMRS per group
       // non-coherent combining across groups
@@ -1238,15 +1235,15 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
       printf("Group %d: s %x x2 %x ((%d,%d),(%d,%d),(%d,%d),(%d,%d))\n",
              group,
              ((uint16_t*)&s)[0],x2,
-             ((int16_t*)&dmrs_re)[0],((int16_t*)&dmrs_im)[0],    
-             ((int16_t*)&dmrs_re)[1],((int16_t*)&dmrs_im)[1],    
-             ((int16_t*)&dmrs_re)[2],((int16_t*)&dmrs_im)[2],    
-             ((int16_t*)&dmrs_re)[3],((int16_t*)&dmrs_im)[3]);   
+             ((int16_t*)&dmrs_re)[0],((int16_t*)&dmrs_im)[0],
+             ((int16_t*)&dmrs_re)[1],((int16_t*)&dmrs_im)[1],
+             ((int16_t*)&dmrs_re)[2],((int16_t*)&dmrs_im)[2],
+             ((int16_t*)&dmrs_re)[3],((int16_t*)&dmrs_im)[3]);
 #endif
       for (int aa=0;aa<Prx;aa++) {
         rd_re_ext_p=&rd_re_ext[aa][symb][8*group];
         rd_im_ext_p=&rd_im_ext[aa][symb][8*group];
-        
+
 #ifdef DEBUG_NR_PUCCH_RX
         printf("Group %d: rd ((%d,%d),(%d,%d),(%d,%d),(%d,%d))\n",
                group,
@@ -1255,14 +1252,14 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
                rd_re_ext_p[2],rd_im_ext_p[2],
                rd_re_ext_p[3],rd_im_ext_p[3]);
 #endif
-        corr32_re[symb][group][aa]+=(rd_re_ext_p[0]*((int16_t*)&dmrs_re)[0] + rd_im_ext_p[0]*((int16_t*)&dmrs_im)[0]); 
-        corr32_im[symb][group][aa]+=(-rd_re_ext_p[0]*((int16_t*)&dmrs_im)[0] + rd_im_ext_p[0]*((int16_t*)&dmrs_re)[0]); 
-        corr32_re[symb][group][aa]+=(rd_re_ext_p[1]*((int16_t*)&dmrs_re)[1] + rd_im_ext_p[1]*((int16_t*)&dmrs_im)[1]); 
-        corr32_im[symb][group][aa]+=(-rd_re_ext_p[1]*((int16_t*)&dmrs_im)[1] + rd_im_ext_p[1]*((int16_t*)&dmrs_re)[1]); 
-        corr32_re[symb][group][aa]+=(rd_re_ext_p[2]*((int16_t*)&dmrs_re)[2] + rd_im_ext_p[2]*((int16_t*)&dmrs_im)[2]); 
-        corr32_im[symb][group][aa]+=(-rd_re_ext_p[2]*((int16_t*)&dmrs_im)[2] + rd_im_ext_p[2]*((int16_t*)&dmrs_re)[2]); 
-        corr32_re[symb][group][aa]+=(rd_re_ext_p[3]*((int16_t*)&dmrs_re)[3] + rd_im_ext_p[3]*((int16_t*)&dmrs_im)[3]); 
-        corr32_im[symb][group][aa]+=(-rd_re_ext_p[3]*((int16_t*)&dmrs_im)[3] + rd_im_ext_p[3]*((int16_t*)&dmrs_re)[3]); 
+        corr32_re[symb][group][aa]+=(rd_re_ext_p[0]*((int16_t*)&dmrs_re)[0] + rd_im_ext_p[0]*((int16_t*)&dmrs_im)[0]);
+        corr32_im[symb][group][aa]+=(-rd_re_ext_p[0]*((int16_t*)&dmrs_im)[0] + rd_im_ext_p[0]*((int16_t*)&dmrs_re)[0]);
+        corr32_re[symb][group][aa]+=(rd_re_ext_p[1]*((int16_t*)&dmrs_re)[1] + rd_im_ext_p[1]*((int16_t*)&dmrs_im)[1]);
+        corr32_im[symb][group][aa]+=(-rd_re_ext_p[1]*((int16_t*)&dmrs_im)[1] + rd_im_ext_p[1]*((int16_t*)&dmrs_re)[1]);
+        corr32_re[symb][group][aa]+=(rd_re_ext_p[2]*((int16_t*)&dmrs_re)[2] + rd_im_ext_p[2]*((int16_t*)&dmrs_im)[2]);
+        corr32_im[symb][group][aa]+=(-rd_re_ext_p[2]*((int16_t*)&dmrs_im)[2] + rd_im_ext_p[2]*((int16_t*)&dmrs_re)[2]);
+        corr32_re[symb][group][aa]+=(rd_re_ext_p[3]*((int16_t*)&dmrs_re)[3] + rd_im_ext_p[3]*((int16_t*)&dmrs_im)[3]);
+        corr32_im[symb][group][aa]+=(-rd_re_ext_p[3]*((int16_t*)&dmrs_im)[3] + rd_im_ext_p[3]*((int16_t*)&dmrs_re)[3]);
       }
       dmrs_re = byte2m64_re[((uint8_t*)&s)[1+((group&1)<<1)]];
       dmrs_im = byte2m64_im[((uint8_t*)&s)[1+((group&1)<<1)]];
@@ -1270,9 +1267,9 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
       printf("Group %d: s %x ((%d,%d),(%d,%d),(%d,%d),(%d,%d))\n",
              group,
              ((uint16_t*)&s)[1],
-             ((int16_t*)&dmrs_re)[0],((int16_t*)&dmrs_im)[0],    
-             ((int16_t*)&dmrs_re)[1],((int16_t*)&dmrs_im)[1],    
-             ((int16_t*)&dmrs_re)[2],((int16_t*)&dmrs_im)[2],    
+             ((int16_t*)&dmrs_re)[0],((int16_t*)&dmrs_im)[0],
+             ((int16_t*)&dmrs_re)[1],((int16_t*)&dmrs_im)[1],
+             ((int16_t*)&dmrs_re)[2],((int16_t*)&dmrs_im)[2],
              ((int16_t*)&dmrs_re)[3],((int16_t*)&dmrs_im)[3]);
 #endif
       for (int aa=0;aa<Prx;aa++) {
@@ -1286,21 +1283,21 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
                rd_re_ext_p[6],rd_im_ext_p[6],
                rd_re_ext_p[7],rd_im_ext_p[7]);
 #endif
-        corr32_re[symb][group][aa]+=(rd_re_ext_p[4]*((int16_t*)&dmrs_re)[0] + rd_im_ext_p[4]*((int16_t*)&dmrs_im)[0]); 
-        corr32_im[symb][group][aa]+=(-rd_re_ext_p[4]*((int16_t*)&dmrs_im)[0] + rd_im_ext_p[4]*((int16_t*)&dmrs_re)[0]); 
-        corr32_re[symb][group][aa]+=(rd_re_ext_p[5]*((int16_t*)&dmrs_re)[1] + rd_im_ext_p[5]*((int16_t*)&dmrs_im)[1]); 
-        corr32_im[symb][group][aa]+=(-rd_re_ext_p[5]*((int16_t*)&dmrs_im)[1] + rd_im_ext_p[5]*((int16_t*)&dmrs_re)[1]); 
-        corr32_re[symb][group][aa]+=(rd_re_ext_p[6]*((int16_t*)&dmrs_re)[2] + rd_im_ext_p[6]*((int16_t*)&dmrs_im)[2]); 
-        corr32_im[symb][group][aa]+=(-rd_re_ext_p[6]*((int16_t*)&dmrs_im)[2] + rd_im_ext_p[6]*((int16_t*)&dmrs_re)[2]); 
-        corr32_re[symb][group][aa]+=(rd_re_ext_p[7]*((int16_t*)&dmrs_re)[3] + rd_im_ext_p[7]*((int16_t*)&dmrs_im)[3]); 
-        corr32_im[symb][group][aa]+=(-rd_re_ext_p[7]*((int16_t*)&dmrs_im)[3] + rd_im_ext_p[7]*((int16_t*)&dmrs_re)[3]); 
+        corr32_re[symb][group][aa]+=(rd_re_ext_p[4]*((int16_t*)&dmrs_re)[0] + rd_im_ext_p[4]*((int16_t*)&dmrs_im)[0]);
+        corr32_im[symb][group][aa]+=(-rd_re_ext_p[4]*((int16_t*)&dmrs_im)[0] + rd_im_ext_p[4]*((int16_t*)&dmrs_re)[0]);
+        corr32_re[symb][group][aa]+=(rd_re_ext_p[5]*((int16_t*)&dmrs_re)[1] + rd_im_ext_p[5]*((int16_t*)&dmrs_im)[1]);
+        corr32_im[symb][group][aa]+=(-rd_re_ext_p[5]*((int16_t*)&dmrs_im)[1] + rd_im_ext_p[5]*((int16_t*)&dmrs_re)[1]);
+        corr32_re[symb][group][aa]+=(rd_re_ext_p[6]*((int16_t*)&dmrs_re)[2] + rd_im_ext_p[6]*((int16_t*)&dmrs_im)[2]);
+        corr32_im[symb][group][aa]+=(-rd_re_ext_p[6]*((int16_t*)&dmrs_im)[2] + rd_im_ext_p[6]*((int16_t*)&dmrs_re)[2]);
+        corr32_re[symb][group][aa]+=(rd_re_ext_p[7]*((int16_t*)&dmrs_re)[3] + rd_im_ext_p[7]*((int16_t*)&dmrs_im)[3]);
+        corr32_im[symb][group][aa]+=(-rd_re_ext_p[7]*((int16_t*)&dmrs_im)[3] + rd_im_ext_p[7]*((int16_t*)&dmrs_re)[3]);
         /*	corr32_re[group][aa]>>=5;
                 corr32_im[group][aa]>>=5;*/
 #ifdef DEBUG_NR_PUCCH_RX
         printf("Group %d: corr32 (%d,%d)\n",group,corr32_re[symb][group][aa],corr32_im[symb][group][aa]);
 #endif
       } //aa    
-      
+
       if ((group&1) == 1) s = lte_gold_generic(&x1, &x2, 0);
     } // group
   } // symb
@@ -1324,7 +1321,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
       c_im2 = byte2m64_im[((uint8_t*)&s)[2]];
       c_re3 = byte2m64_re[((uint8_t*)&s)[3]];
       c_im3 = byte2m64_im[((uint8_t*)&s)[3]];
-      
+
       for (int aa=0;aa<Prx;aa++) {
 #ifdef DEBUG_NR_PUCCH_RX
         printf("prb %d: rd ((%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d))\n",
@@ -1370,27 +1367,27 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
                ((int16_t*)&c_re3)[3],((int16_t*)&c_im3)[3]
                );
 #endif
-        
+
         ((__m64*)&r_re_ext2[aa][symb][re_off])[0] = _mm_mullo_pi16(((__m64*)&r_re_ext[aa][symb][re_off])[0],c_im0);
         ((__m64*)&r_re_ext[aa][symb][re_off])[0] = _mm_mullo_pi16(((__m64*)&r_re_ext[aa][symb][re_off])[0],c_re0);
         ((__m64*)&r_im_ext2[aa][symb][re_off])[0] = _mm_mullo_pi16(((__m64*)&r_im_ext[aa][symb][re_off])[0],c_re0);
         ((__m64*)&r_im_ext[aa][symb][re_off])[0] = _mm_mullo_pi16(((__m64*)&r_im_ext[aa][symb][re_off])[0],c_im0);
-        
+
         ((__m64*)&r_re_ext2[aa][symb][re_off])[1] = _mm_mullo_pi16(((__m64*)&r_re_ext[aa][symb][re_off])[1],c_im1);
         ((__m64*)&r_re_ext[aa][symb][re_off])[1] = _mm_mullo_pi16(((__m64*)&r_re_ext[aa][symb][re_off])[1],c_re1);
         ((__m64*)&r_im_ext2[aa][symb][re_off])[1] = _mm_mullo_pi16(((__m64*)&r_im_ext[aa][symb][re_off])[1],c_re1);
         ((__m64*)&r_im_ext[aa][symb][re_off])[1] = _mm_mullo_pi16(((__m64*)&r_im_ext[aa][symb][re_off])[1],c_im1);
-        
+
         ((__m64*)&r_re_ext2[aa][symb][re_off])[2] = _mm_mullo_pi16(((__m64*)&r_re_ext[aa][symb][re_off])[2],c_im2);
         ((__m64*)&r_re_ext[aa][symb][re_off])[2] = _mm_mullo_pi16(((__m64*)&r_re_ext[aa][symb][re_off])[2],c_re2);
         ((__m64*)&r_im_ext2[aa][symb][re_off])[2] = _mm_mullo_pi16(((__m64*)&r_im_ext[aa][symb][re_off])[2],c_re2);
         ((__m64*)&r_im_ext[aa][symb][re_off])[2] = _mm_mullo_pi16(((__m64*)&r_im_ext[aa][symb][re_off])[2],c_im2);
-        
+
         ((__m64*)&r_re_ext2[aa][symb][re_off])[3] = _mm_mullo_pi16(((__m64*)&r_re_ext[aa][symb][re_off])[3],c_im3);
         ((__m64*)&r_re_ext[aa][symb][re_off])[3] = _mm_mullo_pi16(((__m64*)&r_re_ext[aa][symb][re_off])[3],c_re3);
         ((__m64*)&r_im_ext2[aa][symb][re_off])[3] = _mm_mullo_pi16(((__m64*)&r_im_ext[aa][symb][re_off])[3],c_re3);
         ((__m64*)&r_im_ext[aa][symb][re_off])[3] = _mm_mullo_pi16(((__m64*)&r_im_ext[aa][symb][re_off])[3],c_im3);
-        
+
 #ifdef DEBUG_NR_PUCCH_RX
         printf("prb %d: r ((%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d))\n",
                prb,
@@ -1475,7 +1472,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
                    ((int16_t*)&prod_im[aa])[4],((int16_t*)&prod_im[aa])[5],((int16_t*)&prod_im[aa])[6],((int16_t*)&prod_im[aa])[7],
                    ((int16_t*)&prod_im[aa])[8],((int16_t*)&prod_im[aa])[9],((int16_t*)&prod_im[aa])[10],((int16_t*)&prod_im[aa])[11],
                    ((int16_t*)&prod_im[aa])[12],((int16_t*)&prod_im[aa])[13],((int16_t*)&prod_im[aa])[14],((int16_t*)&prod_im[aa])[15]);
-            
+
 #endif
             prod_re[aa] = _mm256_hadds_epi16(prod_re[aa],prod_re[aa]);// 0+1
             prod_im[aa] = _mm256_hadds_epi16(prod_im[aa],prod_im[aa]);
@@ -1487,8 +1484,8 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
             prod_im[aa] = _mm256_hadds_epi16(prod_im[aa],prod_im[aa]);
           }
           int64_t corr_re=0,corr_im=0;
-          
-          
+
+
           for (int aa=0;aa<Prx;aa++) {
 #ifdef DEBUG_NR_PUCCH_RX
             printf("pucch2 cw %d group %d aa %d: (%d,%d)+(%d,%d) = (%d,%d)\n",cw,group,aa,
@@ -1497,7 +1494,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
               ((int16_t*)(&prod_im[aa]))[0],
               corr32_re[symb][group][aa]+((int16_t*)(&prod_re[aa]))[0],
               corr32_im[symb][group][aa]+((int16_t*)(&prod_im[aa]))[0]);
-            
+
 #endif
             LOG_D(PHY,"pucch2 cw %d group %d aa %d: (%d,%d)+(%d,%d) = (%d,%d)\n",cw,group,aa,
               corr32_re[symb][group][aa],corr32_im[symb][group][aa],
@@ -1505,14 +1502,14 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
               ((int16_t*)(&prod_im[aa]))[0],
               corr32_re[symb][group][aa]+((int16_t*)(&prod_re[aa]))[0],
               corr32_im[symb][group][aa]+((int16_t*)(&prod_im[aa]))[0]);
-            
+
             corr_re = ( corr32_re[symb][group][aa]+((int16_t*)(&prod_re[aa]))[0]);
             corr_im = ( corr32_im[symb][group][aa]+((int16_t*)(&prod_im[aa]))[0]);
-            
-            corr_tmp += corr_re*corr_re + corr_im*corr_im;	
+
+            corr_tmp += corr_re*corr_re + corr_im*corr_im;
           } // aa loop
         }// group loop
-      } // symb loop 
+      } // symb loop
       if (corr_tmp > corr) {
          corr = corr_tmp;
          cw_ML=cw;
@@ -1565,7 +1562,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
         llr_num=_mm_set1_epi16(0);llr_den=_mm_set1_epi16(0);
         for (int cw=0;cw<256;cw++) {
           corr_tmp=0;
-          for (int aa=0;aa<Prx;aa++) { 
+          for (int aa=0;aa<Prx;aa++) {
             prod_re[aa] = _mm_srai_pi16(_mm_adds_pi16(_mm_mullo_pi16(pucch2_polar_4bit[cw&15],rp_re[aa][symb][half_prb]),
                                                       _mm_mullo_pi16(pucch2_polar_4bit[cw>>4],rp_im[aa][symb][half_prb])),5);
             prod_im[aa] = _mm_srai_pi16(_mm_subs_pi16(_mm_mullo_pi16(pucch2_polar_4bit[cw&15],rp2_im[aa][symb][half_prb]),
@@ -1574,16 +1571,16 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
             prod_im[aa] = _mm_hadds_pi16(prod_im[aa],prod_im[aa]);
             prod_re[aa] = _mm_hadds_pi16(prod_re[aa],prod_re[aa]);// 0+1+2+3
             prod_im[aa] = _mm_hadds_pi16(prod_im[aa],prod_im[aa]);
-            
+
             // this is for UL CQI measurement
             if (cw==0) corr += ((int64_t)corr32_re[symb][half_prb>>2][aa]*corr32_re[symb][half_prb>>2][aa])+
                          ((int64_t)corr32_im[symb][half_prb>>2][aa]*corr32_im[symb][half_prb>>2][aa]);
-            
-            
+
+
             corr_re = ( corr32_re[symb][half_prb>>2][aa]/(2*nc_group_size*4/2)+((int16_t*)(&prod_re[aa]))[0]);
             corr_im = ( corr32_im[symb][half_prb>>2][aa]/(2*nc_group_size*4/2)+((int16_t*)(&prod_im[aa]))[0]);
             corr_tmp += corr_re*corr_re + corr_im*corr_im;
-           /* 
+           /*
               LOG_D(PHY,"pucch2 half_prb %d cw %d (%d,%d) aa %d: (%d,%d,%d,%d,%d,%d,%d,%d)x(%d,%d,%d,%d,%d,%d,%d,%d)  (%d,%d)+(%d,%d) = (%d,%d) => %d\n",
               half_prb,cw,cw&15,cw>>4,aa,
               ((int16_t*)&pucch2_polar_4bit[cw&15])[0],((int16_t*)&pucch2_polar_4bit[cw>>4])[0],
@@ -1663,7 +1660,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
 
     // estimate CQI for MAC (from antenna port 0 only)
   int SNRtimes10 = dB_fixed_times10(signal_energy_nodc(&rxdataF[0][soffset+(l2*frame_parms->ofdm_symbol_size)+re_offset[0]],
-                                                       12*pucch_pdu->prb_size)) - 
+                                                       12*pucch_pdu->prb_size)) -
                                                        (10*gNB->measurements.n0_power_tot_dB);
   int cqi,bit_left;
   if (SNRtimes10 < -640) cqi=0;

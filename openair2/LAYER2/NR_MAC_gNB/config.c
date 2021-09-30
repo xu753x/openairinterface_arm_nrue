@@ -318,7 +318,16 @@ void config_common(int Mod_idP, int ssb_SubcarrierOffset, int pdsch_AntennaPorts
     scs_scaling = scs_scaling>>2;
   uint32_t absolute_diff = (*scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB - scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA);
   uint16_t sco = absolute_diff%(12*scs_scaling);
-  AssertFatal(sco==(scs_scaling * ssb_SubcarrierOffset),"absoluteFrequencySSB has a subcarrier offset of %d while it should be %d\n",sco/scs_scaling,ssb_SubcarrierOffset);
+  // values of subcarrier offset larger than the limit only indicates CORESET for Type0-PDCCH CSS set is not present
+  uint8_t ssb_SubcarrierOffset_limit = 0;
+  if(frequency_range == FR1) {
+    ssb_SubcarrierOffset_limit = 24;
+  } else {
+    ssb_SubcarrierOffset_limit = 12;
+  }
+  if (ssb_SubcarrierOffset<ssb_SubcarrierOffset_limit)
+    AssertFatal(sco==(scs_scaling * ssb_SubcarrierOffset),"absoluteFrequencySSB has a subcarrier offset of %d while it should be %d\n",sco/scs_scaling,ssb_SubcarrierOffset);
+
   cfg->ssb_table.ssb_offset_point_a.value = absolute_diff/(12*scs_scaling) - 10; //absoluteFrequencySSB is the central frequency of SSB which is made by 20RBs in total
   cfg->ssb_table.ssb_offset_point_a.tl.tag = NFAPI_NR_CONFIG_SSB_OFFSET_POINT_A_TAG;
   cfg->num_tlv++;
@@ -534,11 +543,13 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
         const NR_BWP_Downlink_t *bwp = bwpList->list.array[i];
         calculate_preferred_dl_tda(Mod_idP, bwp);
       }
+    } else {
+      calculate_preferred_dl_tda(Mod_idP, NULL);
     }
 
     const struct NR_UplinkConfig__uplinkBWP_ToAddModList *ubwpList = servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList;
     if(ubwpList) {
-      AssertFatal(ubwpList->list.count > 0, "downlinkBWP_ToAddModList no BWPs!\n");
+      AssertFatal(ubwpList->list.count > 0, "uplinkBWP_ToAddModList no BWPs!\n");
       for (int i = 0; i < ubwpList->list.count; ++i) {
         const NR_BWP_Uplink_t *ubwp = ubwpList->list.array[i];
         calculate_preferred_ul_tda(Mod_idP, ubwp);
@@ -599,12 +610,12 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
       UE_info->CellGroup[UE_id] = CellGroup;
       LOG_I(NR_MAC,"Modified UE_id %d/%x with CellGroup\n",UE_id,rnti);
       process_CellGroup(CellGroup,&UE_info->UE_sched_ctrl[UE_id]);
-// update coreset/searchspace
+      // update coreset/searchspace
       void *bwpd = NULL;
       target_ss = NR_SearchSpace__searchSpaceType_PR_common;
-      if ((UE_info->UE_sched_ctrl->active_bwp)) {
+      if ((UE_info->UE_sched_ctrl[UE_id].active_bwp)) {
         target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
-        bwpd = (void*)UE_info->UE_sched_ctrl->active_bwp->bwp_Dedicated;
+        bwpd = (void*)UE_info->UE_sched_ctrl[UE_id].active_bwp->bwp_Dedicated;
       }
       else if (CellGroup->spCellConfig &&
                  CellGroup->spCellConfig->spCellConfigDedicated &&
@@ -612,9 +623,9 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
         target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
         bwpd = (void*)CellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP;
       }
-      UE_info->UE_sched_ctrl->search_space = get_searchspace(scc, bwpd, target_ss);
-      UE_info->UE_sched_ctrl->coreset = get_coreset(scc, bwpd, UE_info->UE_sched_ctrl->search_space, target_ss);
-      UE_info->UE_sched_ctrl->maxL = 2;
+      UE_info->UE_sched_ctrl[UE_id].search_space = get_searchspace(scc, bwpd, target_ss);
+      UE_info->UE_sched_ctrl[UE_id].coreset = get_coreset(scc, bwpd, UE_info->UE_sched_ctrl[UE_id].search_space, target_ss);
+      UE_info->UE_sched_ctrl[UE_id].maxL = 2;
     }
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_OUT);

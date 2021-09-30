@@ -261,7 +261,7 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
     }
   }
 
-  int dumpsig=0;
+  //int dumpsig=0;
   // if all segments are done 
   if (rdata->nbSegments == ulsch_harq->processedSegments) {
     if (decodeSuccess) {
@@ -273,7 +273,7 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
 
       LOG_D(PHY, "ULSCH received ok \n");
       nr_fill_indication(gNB,ulsch_harq->frame, ulsch_harq->slot, rdata->ulsch_id, rdata->harq_pid, 0,0);
-      dumpsig=1;
+      //dumpsig=1;
     } else {
       LOG_D(PHY,"[gNB %d] ULSCH: Setting NAK for SFN/SF %d/%d (pid %d, ndi %d, status %d, round %d, RV %d, TBS %d) r %d\n",
             gNB->Mod_id, ulsch_harq->frame, ulsch_harq->slot,
@@ -414,6 +414,7 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
   int sync_pos;
   NR_gNB_ULSCH_t                       *ulsch                 = gNB->ulsch[ULSCH_id][0];
   NR_UL_gNB_HARQ_t                     *harq_process          = ulsch->harq_processes[harq_pid];
+  NR_gNB_SCH_STATS_t *stats=get_ulsch_stats(gNB,ulsch);
 
   nfapi_nr_pusch_pdu_t *pusch_pdu = &harq_process->ulsch_pdu;
 
@@ -428,6 +429,8 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
     sync_pos_rounded = sync_pos + (bw_scaling / 2) - 1;
   else
     sync_pos_rounded = sync_pos - (bw_scaling / 2) - 1;
+  if (stats) stats->sync_pos = sync_pos;
+
   timing_advance_update = sync_pos_rounded / bw_scaling;
 
   // put timing advance command in 0..63 range
@@ -552,8 +555,9 @@ void fill_ul_rb_mask(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
           LOG_D(PHY,"%d.%d pucch %d : start_symbol %d, nb_symbols %d, prb_size %d\n",frame_rx,slot_rx,i,pucch_pdu->start_symbol_index,pucch_pdu->nr_of_symbols,pucch_pdu->prb_size);
           for (int symbol=pucch_pdu->start_symbol_index ; symbol<(pucch_pdu->start_symbol_index+pucch_pdu->nr_of_symbols);symbol++) {
             for (rb=0; rb<pucch_pdu->prb_size; rb++) {
-              rb2 = rb+(symbol < pucch_pdu->start_symbol_index+(pucch_pdu->nr_of_symbols>>1) ? pucch_pdu->prb_start : pucch_pdu->second_hop_prb)+pucch_pdu->bwp_start;
-              LOG_D(PHY,"%d.%d pucch %d : symbol %d, rb %d\n",frame_rx,slot_rx,i,symbol,rb2);
+              rb2 = rb + pucch_pdu->bwp_start +
+                  ((symbol < pucch_pdu->start_symbol_index+(pucch_pdu->nr_of_symbols>>1)) || (pucch_pdu->freq_hop_flag == 0) ?
+                  pucch_pdu->prb_start : pucch_pdu->second_hop_prb);
               gNB->rb_mask_ul[symbol][rb2>>5] |= (1<<(rb2&31));
             }
             if (symbol==pucch_pdu->start_symbol_index) nb_rb+=pucch_pdu->prb_size;
@@ -599,7 +603,7 @@ void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
 
   uint8_t symbol;
   unsigned char aa;
-  int offset = (slot_rx&3) * (gNB->frame_parms.symbols_per_slot * gNB->frame_parms.ofdm_symbol_size);
+
   for(symbol = 0; symbol < (gNB->frame_parms.Ncp==EXTENDED?12:14); symbol++) {
     for (aa = 0; aa < gNB->frame_parms.nb_antennas_rx; aa++) {
       nr_slot_fep_ul(&gNB->frame_parms,
@@ -800,6 +804,10 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
     }
   }
   stop_meas(&gNB->phy_proc_rx);
+  // figure out a better way to choose slot_rx, 19 is ok for a particular TDD configuration with 30kHz SCS
+  if ((frame_rx&127) == 0 && slot_rx==19) {
+    LOG_I(NR_PHY, "Number of bad PUCCH received: %lu\n", gNB->bad_pucch);
+  }
 
   if (pucch_decode_done || pusch_decode_done) {
     T(T_GNB_PHY_PUCCH_PUSCH_IQ, T_INT(frame_rx), T_INT(slot_rx), T_BUFFER(&gNB->common_vars.rxdataF[0][0], gNB->frame_parms.symbols_per_slot * gNB->frame_parms.ofdm_symbol_size * 4));

@@ -212,7 +212,7 @@ void calculate_preferred_ul_tda(module_id_t module_id, const NR_BWP_Uplink_t *ub
 //  F: length of L is 0:8 or 1:16 bits wide
 //  R: Reserved bit, set to zero.
 
-void nr_process_mac_pdu(module_id_t module_idP,
+int nr_process_mac_pdu(module_id_t module_idP,
                         int UE_id,
                         uint8_t CC_id,
                         frame_t frameP,
@@ -405,7 +405,6 @@ void nr_process_mac_pdu(module_id_t module_idP,
                              mac_sdu_len,
                              1,
                              NULL);
-
           } else {
             AssertFatal(1==0,"[UE %d] Frame/Slot %d.%d : Received LCID %d which is not configured, dropping packet\n",UE_id,frameP,slot,rx_lcid);
           }
@@ -497,7 +496,7 @@ void nr_process_mac_pdu(module_id_t module_idP,
 
         default:
           LOG_E(NR_MAC, "Received unknown MAC header (LCID = 0x%02x)\n", rx_lcid);
-          return;
+          return -1;
           break;
         }
 
@@ -522,9 +521,10 @@ void nr_process_mac_pdu(module_id_t module_idP,
           for (int i = 0; i < 20; i++) // Only printf 1st - 20nd bytes
             printf("%02x ", pduP[i]);
           printf("\n");
-          return;
+          return 0;
         }
     }
+  return 0;
 }
 
 void abort_nr_ul_harq(module_id_t mod_id, int UE_id, int8_t harq_pid)
@@ -819,11 +819,16 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
           // First byte corresponds to R/LCID MAC sub-header
           memcpy(ra->cont_res_id, &sduP[1], sizeof(uint8_t) * 6);
 
-          nr_process_mac_pdu(gnb_mod_idP, UE_id, CC_idP, frameP, slotP, sduP, sdu_lenP);
-          ra->state = Msg4;
-          ra->Msg4_frame = (frameP + 2) % 1024;
-          ra->Msg4_slot = 1;
-          LOG_I(NR_MAC, "Scheduling RA-Msg4 for TC_RNTI %04x (state %d, frame %d, slot %d)\n", ra->rnti, ra->state, ra->Msg4_frame, ra->Msg4_slot);
+          if (nr_process_mac_pdu(gnb_mod_idP, UE_id, CC_idP, frameP, slotP, sduP, sdu_lenP) == 0) {
+            ra->state = Msg4;
+            ra->Msg4_frame = (frameP + 2) % 1024;
+            ra->Msg4_slot = 1;
+            LOG_I(NR_MAC, "Scheduling RA-Msg4 for TC_RNTI %04x (state %d, frame %d, slot %d)\n", ra->rnti, ra->state, ra->Msg4_frame, ra->Msg4_slot);
+          }
+          else {
+             nr_mac_remove_ra_rnti(gnb_mod_idP, ra->rnti);
+             nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
+          }
         }
         return;
       }
@@ -836,6 +841,14 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
 
       if( (frameP!=ra->Msg3_frame) || (slotP!=ra->Msg3_slot))
         continue;
+
+      // for CFRA (NSA) do not schedule retransmission of msg3
+      if (ra->cfra) {
+        LOG_W(NR_MAC, "Random Access %i failed at state %i (NSA msg3 reception failed)\n", i, ra->state);
+        nr_mac_remove_ra_rnti(gnb_mod_idP, ra->rnti);
+        nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
+        return;
+      }
 
       if (ra->msg3_round >= MAX_HARQ_ROUNDS - 1) {
         LOG_W(NR_MAC, "Random Access %i failed at state %i (Reached msg3 max harq rounds)\n", i, ra->state);
@@ -923,7 +936,7 @@ bool allocate_ul_retransmission(module_id_t module_id,
   const uint8_t num_dmrs_cdm_grps_no_data = (sched_ctrl->active_bwp || ubwpd) ? 1 : 2;
   const int tda = sched_ctrl->active_ubwp ? RC.nrmac[module_id]->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot] : 0;
   LOG_D(NR_MAC,"retInfo->time_domain_allocation = %d, tda = %d\n", retInfo->time_domain_allocation, tda);
-  printf("num_dmrs_cdm_grps_no_data %d, tbs %d\n",num_dmrs_cdm_grps_no_data,retInfo->tb_size);
+  LOG_D(NR_MAC,"num_dmrs_cdm_grps_no_data %d, tbs %d\n",num_dmrs_cdm_grps_no_data, retInfo->tb_size);
   if (tda == retInfo->time_domain_allocation) {
     /* Check the resource is enough for retransmission */
     while (rbStart < bwpSize && !rballoc_mask[rbStart])
@@ -1213,7 +1226,7 @@ void pf_ul(module_id_t module_id,
 	    UE_id, UE_info->rnti[UE_id],rbStart,min_rb,bwpSize);
       return;
     }
-    else LOG_I(NR_MAC,"allocating UL data for UE %d/RNTI %04x (rbStsart %d, min_rb %d, bwpSize %d\n",UE_id, UE_info->rnti[UE_id],rbStart,min_rb,bwpSize);
+    else LOG_D(NR_MAC,"allocating UL data for UE %d/RNTI %04x (rbStsart %d, min_rb %d, bwpSize %d\n",UE_id, UE_info->rnti[UE_id],rbStart,min_rb,bwpSize);
 
     /* Save PUSCH field */
     /* we want to avoid a lengthy deduction of DMRS and other parameters in
@@ -1242,7 +1255,7 @@ void pf_ul(module_id_t module_id,
                   &rbSize);
     sched_pusch->rbSize = rbSize;
     sched_pusch->tb_size = TBS;
-    LOG_I(NR_MAC,"rbSize %d, TBS %d, est buf %d, sched_ul %d, B %d, CCE %d, num_dmrs_symb %d, N_PRB_DMRS %d\n",
+    LOG_D(NR_MAC,"rbSize %d, TBS %d, est buf %d, sched_ul %d, B %d, CCE %d, num_dmrs_symb %d, N_PRB_DMRS %d\n",
           rbSize, sched_pusch->tb_size, sched_ctrl->estimated_ul_buffer, sched_ctrl->sched_ul_bytes, B,sched_ctrl->cce_index,ps->num_dmrs_symb,ps->N_PRB_DMRS);
 
     /* Mark the corresponding RBs as used */
@@ -1477,7 +1490,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     sched_ctrl->last_ul_frame = sched_pusch->frame;
     sched_ctrl->last_ul_slot = sched_pusch->slot;
 
-    LOG_I(NR_MAC,
+    LOG_D(NR_MAC,
           "ULSCH/PUSCH: %4d.%2d RNTI %04x UL sched %4d.%2d DCI L %d start %2d RBS %3d startSymbol %2d nb_symbol %2d dmrs_pos %x MCS %2d TBS %4d HARQ PID %2d round %d RV %d NDI %d est %6d sched %6d est BSR %6d TPC %d\n",
           frame,
           slot,
@@ -1538,8 +1551,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     pusch_pdu->mcs_index = sched_pusch->mcs;
     pusch_pdu->mcs_table = ps->mcs_table;
     pusch_pdu->transform_precoding = ps->transform_precoding;
-    if (ps->pusch_Config &&
-	ps->pusch_Config->dataScramblingIdentityPUSCH)
+    if (ps->pusch_Config && ps->pusch_Config->dataScramblingIdentityPUSCH)
       pusch_pdu->data_scrambling_id = *ps->pusch_Config->dataScramblingIdentityPUSCH;
     else
       pusch_pdu->data_scrambling_id = *scc->physCellId;
@@ -1670,7 +1682,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     int n_ubwp=1;
     if (cg->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList)
         n_ubwp = cg->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.count;
-    
+
     config_uldci(sched_ctrl->active_ubwp,
                  ubwpd,
                  scc,

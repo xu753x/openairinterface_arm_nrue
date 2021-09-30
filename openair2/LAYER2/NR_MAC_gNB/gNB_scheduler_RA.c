@@ -691,15 +691,22 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
   NR_COMMON_channels_t *cc = &nr_mac->common_channels[CC_id];
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
 
+  NR_BWP_Uplink_t *ubwp = NULL;
+  NR_BWP_UplinkDedicated_t *ubwpd = NULL;
+  NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList = NULL;
+  NR_BWP_t *genericParameters = NULL;
+  if(ra->CellGroup) {
+    ubwp = ra->CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[ra->bwp_id-1];
+    ubwpd = ra->CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP;
+    genericParameters = &ubwp->bwp_Common->genericParameters;
+    pusch_TimeDomainAllocationList = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
+  } else {
+    genericParameters = &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
+    pusch_TimeDomainAllocationList = scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
+  }
 
-  NR_BWP_t *genericParameters = &scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
-
-  NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList= scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
-
-  int mu = scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing;
-
+  int mu = genericParameters->subcarrierSpacing;
   uint8_t K2 = *pusch_TimeDomainAllocationList->list.array[ra->Msg3_tda_id]->k2;
-
   const int sched_frame = frame + (slot + K2 >= nr_slots_per_frame[mu]);
   const int sched_slot = (slot + K2) % nr_slots_per_frame[mu];
 
@@ -766,6 +773,7 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
     // generation of DCI 0_0 to schedule msg3 retransmission
     NR_SearchSpace_t *ss = ra->ra_ss;
     NR_ControlResourceSet_t *coreset = NULL;
+    NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config = *ss->controlResourceSetId==0 ? &nr_mac->type0_PDCCH_CSS_config[ra->beam_id] : NULL;
 
     coreset = nr_mac->sched_ctrlCommon->coreset; // this is coreset 0
     AssertFatal(coreset!=NULL,"Coreset cannot be null for RA-Msg3 retransmission\n");
@@ -781,7 +789,7 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
       ul_dci_request_pdu->PDUSize = (uint8_t)(2+sizeof(nfapi_nr_dl_tti_pdcch_pdu));
       pdcch_pdu_rel15 = &ul_dci_request_pdu->pdcch_pdu.pdcch_pdu_rel15;
       ul_dci_req->numPdus += 1;
-      nr_configure_pdcch(pdcch_pdu_rel15, ss, coreset, scc, genericParameters, &nr_mac->type0_PDCCH_CSS_config[ra->beam_id]);
+      nr_configure_pdcch(pdcch_pdu_rel15, ss, coreset, scc, genericParameters, type0_PDCCH_CSS_config);
       nr_mac->pdcch_pdu_idx[CC_id][ra->bwp_id][coresetid] = pdcch_pdu_rel15;
     }
 
@@ -808,8 +816,8 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
     dci_pdu_rel15_t uldci_payload;
     memset(&uldci_payload, 0, sizeof(uldci_payload));
 
-    config_uldci(NULL,
-                 NULL,
+    config_uldci(ubwp,
+                 ubwpd,
                  scc,
                  pusch_pdu,
                  &uldci_payload,
@@ -1296,7 +1304,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     dci_payload.mcs = pdsch_pdu_rel15->mcsIndex[0];
     dci_payload.tb_scaling = tb_scaling;
 
-    LOG_I(NR_MAC,
+    LOG_D(NR_MAC,
           "[RAPROC] DCI type 1 payload: freq_alloc %d (%d,%d,%d), time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d \n",
           dci_payload.frequency_domain_assignment.val,
           pdsch_pdu_rel15->rbStart,
@@ -1918,7 +1926,7 @@ void nr_fill_rar(uint8_t Mod_idP,
   // TC-RNTI
   int t_crnti = rar->TCRNTI_2 + (rar->TCRNTI_1 << 8);
 
-  LOG_I(NR_MAC, "In %s: Transmitted RAR with t_alloc %d f_alloc %d ta_command %d mcs %d freq_hopping %d tpc_command %d csi_req %d t_crnti %x \n",
+  LOG_D(NR_MAC, "In %s: Transmitted RAR with t_alloc %d f_alloc %d ta_command %d mcs %d freq_hopping %d tpc_command %d csi_req %d t_crnti %x \n",
         __FUNCTION__,
         Msg3_t_alloc,
         Msg3_f_alloc,

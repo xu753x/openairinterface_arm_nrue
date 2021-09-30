@@ -311,7 +311,7 @@ int main(int argc, char **argv)
   uint16_t ptrsRePerSymb = 0;
 
   uint8_t transform_precoding = 1; // 0 - ENABLE, 1 - DISABLE
-  uint8_t num_dmrs_cdm_grps_no_data = 2;
+  uint8_t num_dmrs_cdm_grps_no_data = 1;
   uint8_t mcs_table = 0;
 
   UE_nr_rxtx_proc_t UE_proc;
@@ -699,7 +699,6 @@ int main(int argc, char **argv)
   gNB->prb_interpolation = prb_inter;
   frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)
 
-
   frame_parms->N_RB_DL = N_RB_DL;
   frame_parms->N_RB_UL = N_RB_UL;
   frame_parms->Ncp = extended_prefix_flag ? EXTENDED : NORMAL;
@@ -794,9 +793,6 @@ int main(int argc, char **argv)
     }
   }
   */
-  
-
-
 
   //Configure UE
   NR_UE_RRC_INST_t rrcue;
