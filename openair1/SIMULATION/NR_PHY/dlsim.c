@@ -72,11 +72,11 @@ uint16_t NB_UE_INST = 1;
 
 
  /*! \file openairinterface5g/openair1/SIMULATION/NR_PHY/dlsim
- * \brief merge ISIP beamforming and QR decomposer
+ * \brief merge ISIP beamforming and MUSIC algorithm
  * \author NCTU OpinConnect Terng-Yin Hsu, Sendren Xu, WEI-YING LIN, Min-Hsun Wu
  * \email  a22490010@gmail.com
- * \date   25-9-2021
- * \version 1.0
+ * \date   1-10-2021
+ * \version 1.1
  * \note
  * \warning
  */
@@ -1071,10 +1071,30 @@ int main(int argc, char **argv)
   
 
   // QR decomposer  
-  printf("\n");
-  double a[]={100,200,300,400};
-  qr_test(a ,2,2);
+  // printf("\n");
+  // double a[]={100,200,300,400};
+  // qr_test(a ,2,2);
 
+  
+  // MUSIC
+  printf("\n");
+  global_music_antenna=8;
+  global_music_QR_iteration=100;
+  global_music_multi_input=8;
+  global_music_SNR=10000;
+  float result[3] = {0};
+
+  // clock_gettime(CLOCK_MONOTONIC, &start_MUSIC_DOA); 
+
+  MUSIC_DOA_1D_CPU(global_music_antenna,
+                    global_music_SNR,
+                    global_music_QR_iteration,
+                    global_music_multi_input,
+                    result
+                  );
+
+  //  clock_gettime(CLOCK_MONOTONIC, &end_MUSIC_DOA); 
+  //  printf("MUSIC_DOA total : %.2f usec\n", (end_MUSIC_DOA.tv_nsec - start_MUSIC_DOA.tv_nsec) *1.0 / 1000);
 
   //min
   //kill memmory

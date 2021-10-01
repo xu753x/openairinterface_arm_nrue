@@ -1,10 +1,10 @@
 
 /*! \file openairinterface5g/openair1/PHY/BF/cu_function.h
- * \brief merge ISIP beamforming and QR decomposer
+ * \brief merge ISIP beamforming and MUSIC algorithm
  * \author NCTU OpinConnect Terng-Yin Hsu, Sendren Xu, WEI-YING LIN, Min-Hsun Wu
  * \email  a22490010@gmail.com
- * \date   25-9-2021
- * \version 1.0
+ * \date   1-10-2021
+ * \version 1.1
  * \note
  * \warning
  */
@@ -26,6 +26,7 @@ extern "C" {
     int global_RA;
 
     void qr_test(double *matA ,int rowA, int colA);
+    void MUSIC_DOA_1D_CPU(int M, int snr, int qr_iter, int multi_input, float *result);
 
 #ifdef __cplusplus  
 } // extern "C"  
