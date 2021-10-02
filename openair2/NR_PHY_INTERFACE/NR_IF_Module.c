@@ -29,6 +29,15 @@
 * \note
 * \warning
 */
+/*! \file openair2/NR_PHY_INTERFACE/NR_IF_Module.c
+ * \brief Allocate two pieces of FAPI memory
+ * \author NCTU OpinConnect Terng-Yin Hsu, Sendren Xu, WEI-YING LIN, Hong-Ming Huang
+ * \email  a22490010@gmail.com
+ * \date   2-10-2021
+ * \version 1.0
+ * \note
+ * \warning
+ */
 
 #include "openair1/SCHED_NR/fapi_nr_l1.h"
 #include "openair2/NR_PHY_INTERFACE/NR_IF_Module.h"
@@ -210,9 +219,17 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
 #ifdef DUMP_FAPI
   dump_ul(UL_info);
 #endif
+  NR_UL_IND_t *FAPI_UL_memory = (NR_UL_IND_t *) malloc(sizeof(NR_UL_IND_t));  
+  if(!FAPI_UL_memory){
+    printf("[FAPI_UL_memory] failed to allocate memory\n");
+  }
+  memcpy(FAPI_UL_memory,UL_info,sizeof(NR_UL_IND_t));
+
   module_id_t      module_id   = UL_info->module_id;
   int              CC_id       = UL_info->CC_id;
+  NR_Sched_Rsp_t *FAPI_DL_memory = (NR_Sched_Rsp_t *) malloc(sizeof(NR_Sched_Rsp_t));
   NR_Sched_Rsp_t   *sched_info = &NR_Sched_INFO[module_id][CC_id];
+  memcpy(FAPI_DL_memory,sched_info,sizeof(NR_Sched_Rsp_t));
   NR_IF_Module_t   *ifi        = nr_if_inst[module_id];
   gNB_MAC_INST     *mac        = RC.nrmac[module_id];
   LOG_D(PHY,"SFN/SF:%d%d module_id:%d CC_id:%d UL_info[rach_pdus:%d rx_ind:%d crcs:%d]\n",
@@ -257,11 +274,13 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
       sched_info->frame       = (UL_info->frame + ((UL_info->slot>(spf-1-sl_ahead)) ? 1 : 0)) % 1024;
       sched_info->slot        = (UL_info->slot+sl_ahead)%spf;
       sched_info->DL_req      = &mac->DL_req[CC_id];
+      memcpy(FAPI_DL_memory->DL_req,sched_info->DL_req,sizeof(nfapi_nr_dl_tti_request_t));
       sched_info->UL_dci_req  = &mac->UL_dci_req[CC_id];
-
+      memcpy(FAPI_DL_memory->UL_dci_req,sched_info->UL_dci_req,sizeof(nfapi_nr_ul_dci_request_t));
       sched_info->UL_tti_req  = mac->UL_tti_req[CC_id];
-
+      memcpy(FAPI_DL_memory->UL_tti_req,sched_info->UL_tti_req,sizeof(nfapi_nr_ul_tti_request_t));
       sched_info->TX_req      = &mac->TX_req[CC_id];
+      memcpy(FAPI_DL_memory->TX_req,sched_info->TX_req,sizeof(nfapi_nr_tx_data_request_t));
 #ifdef DUMP_FAPI
       dump_dl(sched_info);
 #endif
@@ -278,6 +297,8 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
 	    sched_info->frame,
 	    sched_info->slot,
 	    sched_info->DL_req->dl_tti_request_body.nPDUs);
+      free(FAPI_UL_memory);
+      free(FAPI_DL_memory);
     }
   }
 }
