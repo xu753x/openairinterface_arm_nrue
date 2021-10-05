@@ -638,7 +638,7 @@ void pf_dl(module_id_t module_id,
         continue;
 
       /* Calculate coeff */
-      sched_pdsch->mcs = 9;
+      sched_pdsch->mcs = 16;
       ps->nrOfLayers = 1;
       uint32_t tbs = pf_tbs[ps->mcsTableIdx][sched_pdsch->mcs];
       coeff_ue[UE_id] = (float) tbs / thr_ue[UE_id];
@@ -742,9 +742,9 @@ void pf_dl(module_id_t module_id,
                   max_rbSize,
                   &TBS,
                   &rbSize);
-    sched_pdsch->rbSize = 100; // Karim it was rbSize
+    sched_pdsch->rbSize = rbSize; // Karim it was rbSize
     sched_pdsch->rbStart = rbStart;
-    sched_pdsch->tb_size = nr_compute_tbs(sched_pdsch->Qm, sched_pdsch->R, sched_pdsch->rbSize, ps->nrOfSymbols, ps->N_PRB_DMRS * ps->N_DMRS_SLOT, 0, 0, 1) >> 3;
+    sched_pdsch->tb_size = TBS; //nr_compute_tbs(sched_pdsch->Qm, sched_pdsch->R, sched_pdsch->rbSize, ps->nrOfSymbols, ps->N_PRB_DMRS * ps->N_DMRS_SLOT, 0, 0, 1) >> 3;
 
     /* transmissions: directly allocate */
     n_rb_sched -= sched_pdsch->rbSize;

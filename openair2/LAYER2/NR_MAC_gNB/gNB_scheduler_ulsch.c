@@ -1137,7 +1137,7 @@ void pf_ul(module_id_t module_id,
           || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data)
         nr_set_pusch_semi_static(scc, sched_ctrl->active_ubwp, ubwpd, dci_format, tda, num_dmrs_cdm_grps_no_data, ps);
       NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
-      sched_pusch->mcs = 9;
+      sched_pusch->mcs = 16;
       update_ul_ue_R_Qm(sched_pusch, ps);
       sched_pusch->rbStart = rbStart;
       sched_pusch->rbSize = min_rb;
@@ -1167,7 +1167,7 @@ void pf_ul(module_id_t module_id,
     add_tail_nr_list(&UE_sched, UE_id);
 
     /* Calculate coefficient*/
-    sched_pusch->mcs = 9;
+    sched_pusch->mcs = 16;
     const uint32_t tbs = ul_pf_tbs[ps->mcs_table][sched_pusch->mcs];
     coeff_ue[UE_id] = (float) tbs / ul_thr_ue[UE_id];
     LOG_D(NR_MAC,"b %d, ul_thr_ue[%d] %f, tbs %d, coeff_ue[%d] %f\n",
@@ -1253,12 +1253,10 @@ void pf_ul(module_id_t module_id,
                   max_rbSize,
                   &TBS,
                   &rbSize);
-    sched_pusch->rbSize = 50;
-    sched_pusch->tb_size = nr_compute_tbs(sched_pusch->Qm, sched_pusch->R, sched_pusch->rbSize, ps->nrOfSymbols, ps->N_PRB_DMRS * ps->num_dmrs_symb, 0, 0, 1) >> 3;// nr_compute_tbs(sched_pusch->Qm, sched_pusch->R, sched_pusch->rbSize, ps->nrOfSymbols, ps->N_PRB_DMRS * ps->num_dmrs_symb, 0, 0, 1) >> 3;;
-
-    LOG_I(NR_MAC,"slot %d.%d rbSize %d, max_rbSize %d, TBS %d, est buf %d, sched_ul %d, B %d, CCE %d, num_dmrs_symb %d, N_PRB_DMRS %d\n",
-          frame,slot,rbSize,max_rbSize, sched_pusch->tb_size, sched_ctrl->estimated_ul_buffer, sched_ctrl->sched_ul_bytes, B,sched_ctrl->cce_index,ps->num_dmrs_symb,ps->N_PRB_DMRS);
-
+    sched_pusch->rbSize = rbSize;
+    sched_pusch->tb_size = TBS; // nr_compute_tbs(sched_pusch->Qm, sched_pusch->R, sched_pusch->rbSize, ps->nrOfSymbols, ps->N_PRB_DMRS * ps->num_dmrs_symb, 0, 0, 1) >> 3;;
+    LOG_D(NR_MAC,"rbSize %d, TBS %d, est buf %d, sched_ul %d, B %d, CCE %d, num_dmrs_symb %d, N_PRB_DMRS %d\n",
+          rbSize, sched_pusch->tb_size, sched_ctrl->estimated_ul_buffer, sched_ctrl->sched_ul_bytes, B,sched_ctrl->cce_index,ps->num_dmrs_symb,ps->N_PRB_DMRS);
 
     /* Mark the corresponding RBs as used */
     n_rb_sched -= sched_pusch->rbSize;
