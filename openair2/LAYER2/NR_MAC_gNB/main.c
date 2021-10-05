@@ -46,7 +46,7 @@ extern RAN_CONTEXT_t RC;
 
 
 #define MACSTATSSTRLEN 16384
-
+int last_bytes_rx[64],last_bytes_tx[64];
 void nrmac_stats_thread(void *arg) {
 
   gNB_MAC_INST *gNB = (gNB_MAC_INST *)arg;
