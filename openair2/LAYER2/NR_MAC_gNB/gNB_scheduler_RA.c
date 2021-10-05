@@ -877,7 +877,7 @@ void nr_get_Msg3alloc(module_id_t module_id,
 
     // msg3 is schedulend in mixed slot in the following TDD period
 
-    uint16_t msg3_nb_rb = 8 + sizeof(NR_MAC_SUBHEADER_SHORT) + sizeof(NR_MAC_SUBHEADER_SHORT); // sdu has 6 or 8 bytes
+    uint16_t msg3_nb_rb = 8; //+ sizeof(NR_MAC_SUBHEADER_SHORT) + sizeof(NR_MAC_SUBHEADER_SHORT); // sdu has 6 or 8 bytes
 
     int mu = ubwp ?
       ubwp->bwp_Common->genericParameters.subcarrierSpacing :
@@ -900,7 +900,6 @@ void nr_get_Msg3alloc(module_id_t module_id,
       if (NrOfSymbols == RC.nrmac[module_id]->flexible_symbols[1]) {
         k2 = *pusch_TimeDomainAllocationList->list.array[i]->k2;
         temp_slot = current_slot + k2 + DELTA[mu]; // msg3 slot according to 8.3 in 38.213
-        printf("ra->Msg3_slot %d temp_slot %d current_slot %d, k2 %d\n",ra->Msg3_slot,temp_slot,current_slot,k2);
         ra->Msg3_slot = temp_slot%nr_slots_per_frame[mu];
         if (is_xlsch_in_slot_flex(RC.nrmac[module_id]->flexible_slots_per_frame, 1, ra->Msg3_slot)) {
           ra->Msg3_tda_id = i;

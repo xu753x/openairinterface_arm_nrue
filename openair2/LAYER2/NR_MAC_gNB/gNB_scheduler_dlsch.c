@@ -638,7 +638,7 @@ void pf_dl(module_id_t module_id,
         continue;
 
       /* Calculate coeff */
-      sched_pdsch->mcs = 16;
+      sched_pdsch->mcs = 9;
       ps->nrOfLayers = 1;
       uint32_t tbs = pf_tbs[ps->mcsTableIdx][sched_pdsch->mcs];
       coeff_ue[UE_id] = (float) tbs / thr_ue[UE_id];
