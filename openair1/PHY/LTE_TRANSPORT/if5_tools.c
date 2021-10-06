@@ -1274,7 +1274,7 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int tti, uint16_t pa
         ru->ifdevice.trx_read_func(&ru->ifdevice,
 				   &timestamp[packet_id],
 				   (void**)txp,
-				   spp_eth,
+				   spp_eth,0,
 				   fp->nb_antennas_tx);
         clock_gettime( CLOCK_MONOTONIC, &end_decomp);
         LOG_D(HW,"[SF %d] IF_Read_Time: %"PRId64"\n",subframe,clock_difftime_ns(start_decomp, end_decomp));

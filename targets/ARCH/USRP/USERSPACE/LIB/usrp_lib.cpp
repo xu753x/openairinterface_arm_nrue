@@ -619,16 +619,18 @@ int trx_usrp_write_init(openair0_device *device){
  * \param antenna_id Index of antenna for which to receive samples
  * \returns the number of sample read
 */
-static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp, void **buff, int nsamps, int cc) {
+static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp, void **buff, int nsamps, int dcoff,int cc) {
   usrp_state_t *s = (usrp_state_t *)device->priv;
   int samples_received=0;
-  int nsamps2;  // aligned to upper 32 or 16 byte boundary
+  int nsamps2,dcoff2;  // aligned to upper 32 or 16 byte boundary
 #if defined(__x86_64) || defined(__i386__)
 #ifdef __AVX2__
   nsamps2 = (nsamps+7)>>3;
+  dcoff2 = (dcoff+7)>>3;
   __m256i buff_tmp[cc<2 ? 2 : cc][nsamps2];
 #else
   nsamps2 = (nsamps+3)>>2;
+  dcoff2 = (dcoff+3)>>2;
   __m128i buff_tmp[cc<2 ? 2 : cc][nsamps2];
 #endif
 #elif defined(__arm__)
@@ -682,7 +684,7 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
       __m256i mean=_mm256_setzero_si256();
       int16_t mean16[2];
 
-      for (int j=0; j<nsamps2<<1; j++) {
+      for (int j=dcoff2; j<nsamps2<<1; j++) {
         mean=_mm256_add_epi32(mean,_mm256_cvtepi16_epi32(((__m128i*)buff_tmp[i])[j]));        
       }
       mean16[0] =(int16_t)((_mm256_extract_epi32(mean,0) + _mm256_extract_epi32(mean,2) + _mm256_extract_epi32(mean,4) + _mm256_extract_epi32(mean,6))/nsamps);
@@ -704,7 +706,7 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
            ((__m256i *)buff[i])[j] = _mm256_srai_epi16(_mm256_subs_epi16(buff_tmp[i][j],mean),rxshift);
       } else {
         __m128i mean128 = _mm_set1_epi32(*(uint32_t*)mean16);
-        for (int j=0; j<(nsamps2<<1); j++) 
+        for (int j=dcoff2; j<(nsamps2<<1); j++) 
           ((__m128i *)buff[i])[j]  = _mm_srai_epi16(_mm_subs_epi16(((__m128i *)buff_tmp[i])[j],mean128),rxshift);
       }
 #else    

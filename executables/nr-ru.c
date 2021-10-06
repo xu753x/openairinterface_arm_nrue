@@ -607,6 +607,8 @@ void *emulatedRF_thread(void *param) {
 void rx_rf(RU_t *ru,int *frame,int *slot) {
   RU_proc_t *proc = &ru->proc;
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
+  nfapi_nr_config_request_scf_t *cfg = &ru->config;
+  int slot_type         = nr_slot_select(cfg,*frame,*slot%fp->slots_per_frame);
   void *rxp[ru->nb_rx];
   unsigned int rxs;
   int i;
@@ -615,6 +617,26 @@ void rx_rf(RU_t *ru,int *frame,int *slot) {
   openair0_timestamp ts,old_ts;
   AssertFatal(*slot<fp->slots_per_frame && *slot>=0, "slot %d is illegal (%d)\n",*slot,fp->slots_per_frame);
 
+  int txsymb;
+  int rxoff = 0;
+
+  if (cfg->cell_config.frame_duplex_type.value == TDD) {
+    if(slot_type == NR_MIXED_SLOT) {
+      txsymb = 0;
+
+      for(int symbol_count = 0; symbol_count<NR_NUMBER_OF_SYMBOLS_PER_SLOT; symbol_count++) {
+        if (cfg->tdd_table.max_tdd_periodicity_list[*slot].max_num_of_symbol_per_slot_list[symbol_count].slot_config.value == 0)
+          txsymb++;
+      }
+
+      AssertFatal(txsymb>0,"illegal txsymb %d\n",txsymb);
+
+      if(*slot%(fp->slots_per_subframe/2))
+        rxoff = txsymb * (fp->ofdm_symbol_size + fp->nb_prefix_samples);
+      else
+        rxoff = (fp->ofdm_symbol_size + fp->nb_prefix_samples0) + (txsymb - 1) * (fp->ofdm_symbol_size + fp->nb_prefix_samples);
+    }
+  }
   start_meas(&ru->rx_fhaul);
   for (i=0; i<ru->nb_rx; i++)
     rxp[i] = (void *)&ru->common.rxdata[i][fp->get_samples_slot_timestamp(*slot,fp,0)];
@@ -633,6 +655,7 @@ void rx_rf(RU_t *ru,int *frame,int *slot) {
                                      &ts,
                                      rxp,
                                      samples_per_slot,
+                                     rxoff,
                                      ru->nb_rx);
   }
 

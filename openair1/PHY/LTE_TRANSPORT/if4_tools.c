@@ -307,7 +307,7 @@ void recv_IF4p5(RU_t *ru,
   while (ru->ifdevice.trx_read_func(&ru->ifdevice,
                                     (int64_t *) packet_type,
                                     &rx_buffer,
-                                    db_fulllength,
+                                    db_fulllength,0,
                                     0) < 0) {
     perror("ETHERNET read");
     read_cnt++;
