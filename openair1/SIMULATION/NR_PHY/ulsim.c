@@ -302,7 +302,7 @@ int main(int argc, char **argv)
   /* L_PTRS = ptrs_arg[0], K_PTRS = ptrs_arg[1] */
   int ptrs_arg[2] = {-1,-1};// Invalid values
   /* DMRS TYPE = dmrs_arg[0], Add Pos = dmrs_arg[1] */
-  int dmrs_arg[2] = {-1,-1};// Invalid values
+  int dmrs_arg[3] = {-1,-1,-1};// Invalid values
   uint16_t ptrsSymPos = 0;
   uint16_t ptrsSymbPerSlot = 0;
   uint16_t ptrsRePerSymb = 0;
@@ -329,7 +329,7 @@ int main(int argc, char **argv)
   /* initialize the sin-cos table */
    InitSinLUT();
 
-  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:ikl:m:n:p:r:s:u:w:y:z:F:G:H:M:N:PR:S:T:U:L:Z")) != -1) {
+  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:ikl:m:n:p:r:s:u:w:y:z:B:F:G:H:M:N:PR:S:T:U:L:Z")) != -1) {
     printf("handling optarg %c\n",c);
     switch (c) {
 
@@ -501,6 +501,10 @@ int main(int argc, char **argv)
       }
       
       break;
+
+    case 'B':
+      mcs_table = atoi(optarg);
+      break;
       
     case 'F':
       input_fd = fopen(optarg, "r");
@@ -597,6 +601,7 @@ int main(int argc, char **argv)
       printf("-y Number of TX antennas used in eNB\n");
       printf("-z Number of RX antennas used in UE\n");
       printf("-A Interpolation_filname Run with Abstraction to generate Scatter plot using interpolation polynomial in file\n");
+      printf("-B MCS table\n");
       //printf("-C Generate Calibration information for Abstraction (effective SNR adjustment to remove Pe bias w.r.t. AWGN)\n");
       printf("-F Input filename (.txt format) for RX conformance testing\n");
       printf("-G Offset of samples to read from file (0 default)\n");
@@ -856,6 +861,7 @@ int main(int argc, char **argv)
     {
       add_pos = dmrs_arg[1];
     }
+    num_dmrs_cdm_grps_no_data = dmrs_arg[2];
   }
   printf("NOTE: DMRS config is modified with Mapping Type %d , Additional Position %d \n", mapping_type, add_pos );
 
@@ -1424,7 +1430,12 @@ int main(int argc, char **argv)
 	   roundStats[snrRun],effRate[snrRun],effTP[snrRun],TBS);
 
     FILE *fd=fopen("nr_ulsim.log","w");
+    if (fd == NULL) {
+      printf("Problem with filename %s\n", "nr_ulsim.log");
+      exit(-1);
+    }
     dump_pusch_stats(fd,gNB);
+    fclose(fd);
 
     printf("*****************************************\n");
     printf("\n");
@@ -1458,7 +1469,6 @@ int main(int argc, char **argv)
       printf("*************\n");
       printf("PUSCH test OK\n");
       printf("*************\n");
-      break;
     }
 
     snrStats[snrRun] = SNR;
