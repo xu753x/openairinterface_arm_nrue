@@ -29,6 +29,7 @@
     {"D" ,                    CONFIG_HLP_DLBM_PHYTEST,0,                u64ptr:&dlsch_slot_bitmap,          defintval:0,                   TYPE_UINT64, 0},        \
     {"U" ,                    CONFIG_HLP_ULBM_PHYTEST,0,                u64ptr:&ulsch_slot_bitmap,          defintval:0,                   TYPE_UINT64, 0},        \
     {"usrp-tx-thread-config", CONFIG_HLP_USRP_THREAD, 0,                iptr:&usrp_tx_thread,               defstrval:0,                   TYPE_INT,    0},        \
+    {"ldpc-offload-enable",   CONFIG_HLP_LDPC_OFFLOAD, 0,               iptr:&ldpc_offload_flag,          defstrval:0,                   TYPE_INT,    0},        \
     {"s" ,                    CONFIG_HLP_SNR,         0,                dblptr:&snr_dB,                     defdblval:25,                  TYPE_DOUBLE, 0},        \
   }
 
@@ -41,6 +42,7 @@ extern uint32_t target_dl_bw;
 extern uint32_t target_ul_bw;
 extern uint64_t dlsch_slot_bitmap;
 extern uint64_t ulsch_slot_bitmap;
+extern uint32_t ldpc_offload_flag;
 
 // In nr-gnb.c
 extern void init_gNB(int single_thread_flag,int wait_for_sync);
