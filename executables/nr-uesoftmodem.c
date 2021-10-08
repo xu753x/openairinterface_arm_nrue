@@ -449,7 +449,7 @@ int main( int argc, char **argv ) {
 
   init_NR_UE(1,rrc_config_path);
   if(IS_SOFTMODEM_NOS1 || get_softmodem_params()->sa)
-	  init_pdcp();
+    init_pdcp();
 
   NB_UE_INST=1;
   NB_INST=1;
