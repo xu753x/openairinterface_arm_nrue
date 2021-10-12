@@ -1109,6 +1109,35 @@ void fill_initial_SpCellConfig(rnti_t rnti,
   *pusch_Config->maxRank= 1;
   pusch_Config->rbg_Size=NULL;
   pusch_Config->uci_OnPUSCH=NULL;
+  if (1){
+  pusch_Config->uci_OnPUSCH=calloc(1,sizeof(*pusch_Config->uci_OnPUSCH));
+  pusch_Config->uci_OnPUSCH->present = NR_SetupRelease_UCI_OnPUSCH_PR_setup;
+  pusch_Config->uci_OnPUSCH->choice.setup = calloc(1,sizeof(*pusch_Config->uci_OnPUSCH->choice.setup));
+  pusch_Config->uci_OnPUSCH->choice.setup->betaOffsets = calloc(1,sizeof(*pusch_Config->uci_OnPUSCH->choice.setup->betaOffsets));
+  pusch_Config->uci_OnPUSCH->choice.setup->betaOffsets->present = NR_UCI_OnPUSCH__betaOffsets_PR_semiStatic;
+  pusch_Config->uci_OnPUSCH->choice.setup->betaOffsets->choice.semiStatic = calloc(1,sizeof(*pusch_Config->uci_OnPUSCH->choice.setup->betaOffsets->choice.semiStatic));
+  pusch_Config->uci_OnPUSCH->choice.setup->betaOffsets->choice.semiStatic->betaOffsetACK_Index1 = calloc(1,sizeof(*pusch_Config->uci_OnPUSCH->choice.setup->betaOffsets->choice.semiStatic->betaOffsetACK_Index1));
+  *pusch_Config->uci_OnPUSCH->choice.setup->betaOffsets->choice.semiStatic->betaOffsetACK_Index1 =9;
+  pusch_Config->uci_OnPUSCH->choice.setup->betaOffsets->choice.semiStatic->betaOffsetACK_Index2 = calloc(1,sizeof(*pusch_Config->uci_OnPUSCH->choice.setup->betaOffsets->choice.semiStatic->betaOffsetACK_Index2));
+  *pusch_Config->uci_OnPUSCH->choice.setup->betaOffsets->choice.semiStatic->betaOffsetACK_Index2 =9;
+  pusch_Config->uci_OnPUSCH->choice.setup->betaOffsets->choice.semiStatic->betaOffsetACK_Index3 = calloc(1,sizeof(*pusch_Config->uci_OnPUSCH->choice.setup->betaOffsets->choice.semiStatic->betaOffsetACK_Index3));
+  *pusch_Config->uci_OnPUSCH->choice.setup->betaOffsets->choice.semiStatic->betaOffsetACK_Index3 =9;
+
+  pusch_Config->uci_OnPUSCH->choice.setup->betaOffsets->choice.semiStatic->betaOffsetCSI_Part1_Index1 = calloc(1,sizeof(*pusch_Config->uci_OnPUSCH->choice.setup->betaOffsets->choice.semiStatic->betaOffsetCSI_Part1_Index1));
+  *pusch_Config->uci_OnPUSCH->choice.setup->betaOffsets->choice.semiStatic->betaOffsetCSI_Part1_Index1 =6;
+    pusch_Config->uci_OnPUSCH->choice.setup->betaOffsets->choice.semiStatic->betaOffsetCSI_Part1_Index2 = calloc(1,sizeof(*pusch_Config->uci_OnPUSCH->choice.setup->betaOffsets->choice.semiStatic->betaOffsetCSI_Part1_Index2));
+
+  *pusch_Config->uci_OnPUSCH->choice.setup->betaOffsets->choice.semiStatic->betaOffsetCSI_Part1_Index2 =6;
+    pusch_Config->uci_OnPUSCH->choice.setup->betaOffsets->choice.semiStatic->betaOffsetCSI_Part2_Index1 = calloc(1,sizeof(*pusch_Config->uci_OnPUSCH->choice.setup->betaOffsets->choice.semiStatic->betaOffsetCSI_Part2_Index1));
+
+  *pusch_Config->uci_OnPUSCH->choice.setup->betaOffsets->choice.semiStatic->betaOffsetCSI_Part2_Index1 =6;
+    pusch_Config->uci_OnPUSCH->choice.setup->betaOffsets->choice.semiStatic->betaOffsetCSI_Part2_Index2 = calloc(1,sizeof(*pusch_Config->uci_OnPUSCH->choice.setup->betaOffsets->choice.semiStatic->betaOffsetCSI_Part2_Index2));
+
+  *pusch_Config->uci_OnPUSCH->choice.setup->betaOffsets->choice.semiStatic->betaOffsetCSI_Part2_Index2 =6;
+  pusch_Config->uci_OnPUSCH->choice.setup->scaling = NR_UCI_OnPUSCH__scaling_f1;
+  LOG_E(NR_RRC,"pusch_Config uci_OnPUSCH Done\n");
+  
+  }
   pusch_Config->tp_pi2BPSK=NULL;
 
   initialUplinkBWP->srs_Config = calloc(1,sizeof(*initialUplinkBWP->srs_Config));
