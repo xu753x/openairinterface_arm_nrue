@@ -285,7 +285,6 @@ int main(int argc, char **argv)
   int32_t txlev=0;
   int start_rb = 0;
   int UE_id =0; // [hna] only works for UE_id = 0 because NUMBER_OF_NR_UE_MAX is set to 1 (phy_init_nr_gNB causes segmentation fault)
-  float target_error_rate = 0.01;
   int print_perf = 0;
   cpuf = get_cpu_freq_GHz();
   int msg3_flag = 0;
@@ -293,7 +292,7 @@ int main(int argc, char **argv)
   float roundStats[100];
   double effRate[100]; 
   double effTP[100]; 
-  //float eff_tp_check = 0.7;
+  float eff_tp_check = 100;
   uint8_t snrRun;
   int prb_inter = 0;
 
@@ -464,11 +463,11 @@ int main(int argc, char **argv)
       start_rb = atoi(optarg);
       break;
 
-/*
+
     case 't':
-      eff_tp_check = (float)atoi(optarg)/100;
+      eff_tp_check = (float)atoi(optarg);
       break;
-*/
+
       /*
 	case 'r':
 	ricean_factor = pow(10,-.1*atof(optarg));
@@ -1472,10 +1471,11 @@ int main(int argc, char **argv)
     if(n_trials==1)
       break;
 
-    if ((float)n_errors[0][snrRun]/(float)n_trials <= target_error_rate) {
+    if ((float)effTP[snrRun] >= eff_tp_check) {
       printf("*************\n");
       printf("PUSCH test OK\n");
       printf("*************\n");
+      break;
     }
 
     snrStats[snrRun] = SNR;
