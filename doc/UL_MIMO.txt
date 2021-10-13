@@ -1,0 +1,19 @@
+# how to build phy sim
+cd cmake_targets/
+sudo ./build_oai --phy_simulators -c
+
+cd phy_simulators/build/
+# ULSCH sim  
+# bit level validation                   
+# PUSCH encoding and decoding for 4 layers   2 CMD without data
+sudo ./nr_ulschsim -R 106 -m9 -s13 -n100 -y4 -z4 -W4
+
+# UL sim
+# Uplink chain validation  
+# PUSCH on UE side and gNB side,whole chain for PUSCH
+# No channel model on data domain signal
+# No cross-path connection
+# PMI = 0  is only unitary prcoding matrix
+sudo ./nr_ulsim -n100 -m9 -r106 -s13 -W4 -y4 -z4   
+
+

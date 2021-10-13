@@ -1,0 +1,23 @@
+new config file:
+   gnb.sa.band78.fr1.106PRB.usrpb210.4layer
+
+   put it in folder: ..\targets\PROJECTS\GENERIC-NR-5GC\CONF
+  
+test with rfsim:
+  compile:
+      sudo ./build_oai -g --gNB --nrUE -w SIMU
+      
+  run: 
+     folder: cmake_targets/ran_build/build
+     
+     4x4 RANK 4
+         gNB: 
+             sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.fr1.106PRB.usrpb210.4layer.conf --rfsim --phy-test --l 2  --L 4
+         UE: 
+             sudo ./nr-uesoftmodem  --rfsim --phy-test --ue-nb-ant-rx 4 --ue-nb-ant-tx 4
+     
+     4x4 RANK 2
+         gNB: 
+             sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.fr1.106PRB.usrpb210.4layer.conf --rfsim --phy-test --l 2  --L 2
+         UE: 
+             sudo ./nr-uesoftmodem  --rfsim --phy-test --ue-nb-ant-rx 4 --ue-nb-ant-tx 4
