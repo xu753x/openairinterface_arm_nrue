@@ -681,7 +681,8 @@ int nr_rrc_mac_config_req_ue(
     //    NR_MAC_CellGroupConfig_t        *mac_cell_group_configP,
     //    NR_PhysicalCellGroupConfig_t    *phy_cell_group_configP,
     NR_CellGroupConfig_t            *cell_group_config,
-    NR_CellGroupConfig_t            *scell_group_config){
+    NR_CellGroupConfig_t            *scell_group_config)
+{
 
     NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
     RA_config_t *ra = &mac->ra;

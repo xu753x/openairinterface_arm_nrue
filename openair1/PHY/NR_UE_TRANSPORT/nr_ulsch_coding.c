@@ -257,6 +257,15 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
   Ilbrm = 0;
   Tbslbrm = 950984; //max tbs
   Coderate = 0.0;
+  
+  #if 0
+  harq_process->a[0] = 0x31;
+  for (int i = 1; i < harq_process->pusch_pdu.pusch_data.tb_size; i++) 
+  {
+    harq_process->a[i] = (i&0xff);
+  }
+  #endif
+  
   trace_NRpdu(DIRECTION_UPLINK, harq_process->a, harq_process->pusch_pdu.pusch_data.tb_size, 0, WS_C_RNTI, 0, 0, 0,0, 0);
 ///////////
 /////////////////////////////////////////////////////////////////////////////////////////  
@@ -282,7 +291,10 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
     for (i=0;i<(A>>3);i++)
       printf("%02x.",harq_process->a[i]);
     printf("\n");
-   */ 
+   */
+
+    //for (int i=0;i<harq_process->pusch_pdu.pusch_data.tb_size;i++) harq_process->a[i]=0;
+   // harq_process->a[0]=1; 
 
     if (A > 3824) {
       // Add 24-bit crc (polynomial A) to payload

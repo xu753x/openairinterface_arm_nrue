@@ -319,7 +319,7 @@ typedef struct NR_pusch_semi_static_t {
   int nrOfSymbols;
 
   NR_PUSCH_Config_t *pusch_Config;
-  uint8_t transform_precoding;
+  uint8_t transformPrecoder;
   uint8_t mcs_table;
 
   long mapping_type;
@@ -342,6 +342,7 @@ typedef struct NR_sched_pusch {
   uint8_t mcs;
 
   /// TBS-related info
+  uint8_t nrOfLayers;
   uint16_t R;
   uint8_t Qm;
   uint32_t tb_size;

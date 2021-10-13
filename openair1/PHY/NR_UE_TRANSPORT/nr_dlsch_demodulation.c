@@ -2262,7 +2262,8 @@ void nr_dlsch_detection_mrc(int **rxdataF_comp,
         dl_ch_mag128_1r     = (__m128i *)&dl_ch_magr[(aatx*n_rx)+aarx][symbol*nb_rb*12];
 
         // MRC on each re of rb, both on MF output and magnitude (for 16QAM/64QAM/256 llr computation)
-        for (i=0; i<nb_rb_0*3; i++) {
+        for (i=0; i<nb_rb_0*3; i++) 
+        {
           rxdataF_comp128_0[i] = _mm_adds_epi16(rxdataF_comp128_0[i],rxdataF_comp128_1[i]);
           dl_ch_mag128_0[i]    = _mm_adds_epi16(dl_ch_mag128_0[i],dl_ch_mag128_1[i]);
           dl_ch_mag128_0b[i]   = _mm_adds_epi16(dl_ch_mag128_0b[i],dl_ch_mag128_1b[i]);

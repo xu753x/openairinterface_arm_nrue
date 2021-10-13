@@ -3078,8 +3078,8 @@ uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
         break;
       }
     break;
-       }
-    
+  }
+
     return 0;
 }
 

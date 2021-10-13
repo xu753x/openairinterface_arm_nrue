@@ -472,10 +472,13 @@ int main( int argc, char **argv ) {
     memset(UE[CC_id],0,sizeof(PHY_VARS_NR_UE));
 
     set_options(CC_id, UE[CC_id]);
+    NR_DL_FRAME_PARMS *fp = &UE[CC_id]->frame_parms;
+    NR_UE_MAC_INST_t *mac = get_mac_inst(0);  
 
-    NR_UE_MAC_INST_t *mac = get_mac_inst(0);
+    mac->phy_config.config_req.carrier_config.num_tx_ant = fp->nb_antennas_tx;
+
     if(mac->if_module != NULL && mac->if_module->phy_config_request != NULL)
-      mac->if_module->phy_config_request(&mac->phy_config);
+      mac->if_module->phy_config_request(&mac->phy_config);    
 
     fapi_nr_config_request_t *nrUE_config = &UE[CC_id]->nrUE_config;
     if (get_softmodem_params()->sa) { // set frame config to initial values from command line and assume that the SSB is centered on the grid

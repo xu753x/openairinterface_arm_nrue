@@ -940,7 +940,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     pdsch_pdu->dlDmrsScramblingId = *scc->physCellId;
     pdsch_pdu->SCID = 0;
     pdsch_pdu->numDmrsCdmGrpsNoData = ps->numDmrsCdmGrpsNoData;
-    pdsch_pdu->dmrsPorts = 1;
+    pdsch_pdu->dmrsPorts = (1<<nrOfLayers)-1;
 
     // Pdsch Allocation in frequency domain
     pdsch_pdu->resourceAlloc = 1;
@@ -1022,17 +1022,22 @@ void nr_schedule_ue_spec(module_id_t module_id,
     dci_payload.tpc = sched_ctrl->tpc1; // TPC for PUCCH: table 7.2.1-1 in 38.213
     dci_payload.pucch_resource_indicator = pucch->resource_indicator;
     dci_payload.pdsch_to_harq_feedback_timing_indicator.val = pucch->timing_indicator; // PDSCH to HARQ TI
-    dci_payload.antenna_ports.val = 0;  // nb of cdm groups w/o data 1 and dmrs port 0
+    dci_payload.antenna_ports.val = 0; // nb of cdm groups w/o data 1 and dmrs port 0
+    if (nrOfLayers==2)
+    {
+      dci_payload.antenna_ports.val = 2;  // nb of cdm groups w/o data 1 and dmrs port 0&1
+    }
     dci_payload.dmrs_sequence_initialization.val = pdsch_pdu->SCID;
     LOG_D(NR_MAC,
           "%4d.%2d DCI type 1 payload: freq_alloc %d (%d,%d,%d), "
-          "time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d ndi %d rv %d tpc %d\n",
+          "nrOfLayers %d, time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d ndi %d rv %d tpc %d\n",
           frame,
           slot,
           dci_payload.frequency_domain_assignment.val,
           pdsch_pdu->rbStart,
           pdsch_pdu->rbSize,
           pdsch_pdu->BWPSize,
+          pdsch_pdu->nrOfLayers,
           dci_payload.time_domain_assignment.val,
           dci_payload.vrb_to_prb_mapping.val,
           dci_payload.mcs,

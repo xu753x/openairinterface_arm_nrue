@@ -125,7 +125,7 @@ void fill_channel_desc(channel_desc_t *chan_desc,
     chan_desc->ch[i] = (struct complex *) malloc(channel_length * sizeof(struct complex));
 
   for (i = 0; i<nb_tx*nb_rx; i++)
-    chan_desc->chF[i] = (struct complex *) malloc(1200 * sizeof(struct complex)); // allocate for up to 100 RBs, 12 samples per RB
+    chan_desc->chF[i] = (struct complex *) malloc(12 * 273 * sizeof(struct complex)); // allocate for up to 273 RBs, 12 samples per RB
 
   LOG_D(OCM,"[CHANNEL] Filling a (nb_taps %d)\n",nb_taps);
 

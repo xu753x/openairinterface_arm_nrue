@@ -2575,8 +2575,8 @@ uint16_t nr_dci_size(const NR_BWP_UplinkCommon_t *initialUplinkBWP,
                      const NR_CellGroupConfig_t *cg,
                      dci_pdu_rel15_t *dci_pdu,
                      nr_dci_format_t format,
-		     nr_rnti_type_t rnti_type,
-		     uint16_t N_RB,
+                     nr_rnti_type_t rnti_type,
+                     uint16_t N_RB,
                      int bwp_id) {
 
   uint16_t size = 0;
@@ -2710,21 +2710,29 @@ uint16_t nr_dci_size(const NR_BWP_UplinkCommon_t *initialUplinkBWP,
       }
       // Precoding info and number of layers
       long transformPrecoder = get_transformPrecoding(initialUplinkBWP, pusch_Config, ubwp, (uint8_t*)&format, rnti_type, 0);
-
-      if (pusch_Config->txConfig != NULL){
-        if (*pusch_Config->txConfig == NR_PUSCH_Config__txConfig_codebook){
-          if (pusch_antenna_ports > 1) {
-            if (pusch_antenna_ports == 4) {
+      
+      pusch_antenna_ports = *pusch_Config->maxRank;
+      
+      if (pusch_Config->txConfig != NULL)
+      {
+        if (*pusch_Config->txConfig == NR_PUSCH_Config__txConfig_codebook)
+        {
+          if (pusch_antenna_ports > 1) 
+          {
+            if (pusch_antenna_ports == 4) 
+            {
               if ((transformPrecoder == NR_PUSCH_Config__transformPrecoder_disabled) && (*pusch_Config->maxRank>1))
                 dci_pdu->precoding_information.nbits = 6-(*pusch_Config->codebookSubset);
-              else {
+              else 
+              {
                 if(*pusch_Config->codebookSubset == NR_PUSCH_Config__codebookSubset_nonCoherent)
                   dci_pdu->precoding_information.nbits = 2;
                 else
                   dci_pdu->precoding_information.nbits = 5-(*pusch_Config->codebookSubset);
               }
             }
-            else {
+            else 
+            {
               AssertFatal(pusch_antenna_ports==2,"Not valid number of antenna ports");
               if ((transformPrecoder == NR_PUSCH_Config__transformPrecoder_disabled) && (*pusch_Config->maxRank==2))
                 dci_pdu->precoding_information.nbits = 4-(*pusch_Config->codebookSubset);
