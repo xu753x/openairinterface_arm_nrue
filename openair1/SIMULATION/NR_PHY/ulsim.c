@@ -286,7 +286,6 @@ int main(int argc, char **argv)
   int32_t txlev=0;
   int start_rb = 0;
   int UE_id =0; // [hna] only works for UE_id = 0 because NUMBER_OF_NR_UE_MAX is set to 1 (phy_init_nr_gNB causes segmentation fault)
-  float target_error_rate = 0.01;
   int print_perf = 0;
   cpuf = get_cpu_freq_GHz();
   int msg3_flag = 0;
@@ -294,7 +293,7 @@ int main(int argc, char **argv)
   float roundStats[100];
   double effRate[100]; 
   double effTP[100]; 
-  //float eff_tp_check = 0.7;
+  float eff_tp_check = 100;
   uint8_t snrRun;
   int prb_inter = 0;
   int ldpc_offload_flag = 0;
@@ -305,7 +304,7 @@ int main(int argc, char **argv)
   /* L_PTRS = ptrs_arg[0], K_PTRS = ptrs_arg[1] */
   int ptrs_arg[2] = {-1,-1};// Invalid values
   /* DMRS TYPE = dmrs_arg[0], Add Pos = dmrs_arg[1] */
-  int dmrs_arg[2] = {-1,-1};// Invalid values
+  int dmrs_arg[3] = {-1,-1,-1};// Invalid values
   uint16_t ptrsSymPos = 0;
   uint16_t ptrsSymbPerSlot = 0;
   uint16_t ptrsRePerSymb = 0;
@@ -322,6 +321,7 @@ int main(int argc, char **argv)
   int ibwps=24;
   int ibwp_rboffset=41;
   int params_from_file = 0;
+  int max_ldpc_iterations = 5;
   if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == 0 ) {
     exit_fun("[NR_ULSIM] Error, configuration module init failed\n");
   }
@@ -332,7 +332,8 @@ int main(int argc, char **argv)
   /* initialize the sin-cos table */
    InitSinLUT();
 
-  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:ikl:m:n:o:p:q:r:s:t:u:w:y:z:F:G:H:M:N:PR:S:T:U:L:Z")) != -1) {
+  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:ikl:m:n:p:r:s:t:u:w:y:z:B:F:G:H:I:M:N:PR:S:T:U:L:Z")) != -1) {
+
     printf("handling optarg %c\n",c);
     switch (c) {
 
@@ -478,11 +479,11 @@ int main(int argc, char **argv)
       start_rb = atoi(optarg);
       break;
 
-/*
+
     case 't':
-      eff_tp_check = (float)atoi(optarg)/100;
+      eff_tp_check = (float)atoi(optarg);
       break;
-*/
+
       /*
 	case 'r':
 	ricean_factor = pow(10,-.1*atof(optarg));
@@ -516,6 +517,10 @@ int main(int argc, char **argv)
       }
       
       break;
+
+    case 'B':
+      mcs_table = atoi(optarg);
+      break;
       
     case 'F':
       input_fd = fopen(optarg, "r");
@@ -533,6 +538,10 @@ int main(int argc, char **argv)
 
     case 'H':
       slot = atoi(optarg);
+      break;
+
+    case 'I':
+      max_ldpc_iterations = atoi(optarg);
       break;
 
     case 'M':
@@ -613,9 +622,11 @@ int main(int argc, char **argv)
       printf("-y Number of TX antennas used in eNB\n");
       printf("-z Number of RX antennas used in UE\n");
       printf("-A Interpolation_filname Run with Abstraction to generate Scatter plot using interpolation polynomial in file\n");
+      printf("-B MCS table\n");
       //printf("-C Generate Calibration information for Abstraction (effective SNR adjustment to remove Pe bias w.r.t. AWGN)\n");
       printf("-F Input filename (.txt format) for RX conformance testing\n");
       printf("-G Offset of samples to read from file (0 default)\n");
+      printf("-I Maximum LDPC decoder iterations\n");
       printf("-M Multiple SSB positions in burst\n");
       printf("-N Nid_cell\n");
       printf("-O oversampling factor (1,2,4,8,16)\n");
@@ -697,6 +708,7 @@ int main(int argc, char **argv)
   gNB->UL_INFO.rx_ind.number_of_pdus = 0;
   gNB->UL_INFO.crc_ind.number_crcs = 0;
   gNB->prb_interpolation = prb_inter;
+  gNB->max_ldpc_iterations = max_ldpc_iterations;
   frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)
 
   frame_parms->N_RB_DL = N_RB_DL;
@@ -881,6 +893,7 @@ int main(int argc, char **argv)
     {
       add_pos = dmrs_arg[1];
     }
+    num_dmrs_cdm_grps_no_data = dmrs_arg[2];
   }
   printf("NOTE: DMRS config is modified with Mapping Type %d , Additional Position %d \n", mapping_type, add_pos );
 
@@ -1411,13 +1424,9 @@ int main(int argc, char **argv)
     /*if (n_trials == 1) {
       for (int r=0;r<ulsch_ue[0]->harq_processes[harq_pid]->C;r++) 
 	for (int i=0;i<ulsch_ue[0]->harq_processes[harq_pid]->K>>3;i++) {
-<<<<<<< HEAD
-	  if ((ulsch_ue[0]->harq_processes[harq_pid]->c[r][i]^ulsch_gNB->harq_processes[harq_pid]->c[r][i]) != 0) 
-	    printf("r %d: in[%d] %x, out[%d] %x (%x)\n",r,
-=======
+
 	  //if ((ulsch_ue[0]->harq_processes[harq_pid]->c[r][i]^ulsch_gNB->harq_processes[harq_pid]->c[r][i]) != 0)
 	    /*printf("r %d: in[%d] %x, out[%d] %x (%x)\n",r,
->>>>>>> origin/ulsim-perf-testing
 	    i,ulsch_ue[0]->harq_processes[harq_pid]->c[r][i],
 	    i,ulsch_gNB->harq_processes[harq_pid]->c[r][i],
 	    ulsch_ue[0]->harq_processes[harq_pid]->c[r][i]^ulsch_gNB->harq_processes[harq_pid]->c[r][i]);
@@ -1461,7 +1470,12 @@ int main(int argc, char **argv)
 	   roundStats[snrRun],effRate[snrRun],effTP[snrRun],TBS);
 
     FILE *fd=fopen("nr_ulsim.log","w");
+    if (fd == NULL) {
+      printf("Problem with filename %s\n", "nr_ulsim.log");
+      exit(-1);
+    }
     dump_pusch_stats(fd,gNB);
+    fclose(fd);
 
     printf("*****************************************\n");
     printf("\n");
@@ -1496,7 +1510,8 @@ int main(int argc, char **argv)
     if(n_trials==1)
       break;
 
-    if ((float)n_errors[0][snrRun-1]/(float)n_trials <= target_error_rate) {
+    //if ((float)n_errors[0][snrRun-1]/(float)n_trials <= target_error_rate) {
+    if ((float)effTP[snrRun] >= eff_tp_check) {
       printf("*************\n");
       printf("PUSCH test OK\n");
       printf("*************\n");
