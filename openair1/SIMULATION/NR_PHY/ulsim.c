@@ -332,7 +332,7 @@ int main(int argc, char **argv)
   /* initialize the sin-cos table */
    InitSinLUT();
 
-  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:ikl:m:n:p:r:s:t:u:v:w:y:z:B:F:G:H:I:M:N:PR:S:T:U:L:Z")) != -1) {
+  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:ikl:m:n:o:p:q:r:s:t:u:v:w:y:z:B:F:G:H:I:M:N:PR:S:T:U:L:Z")) != -1) {
 
     printf("handling optarg %c\n",c);
     switch (c) {
@@ -1425,8 +1425,8 @@ int main(int argc, char **argv)
       for (int r=0;r<ulsch_ue[0]->harq_processes[harq_pid]->C;r++) 
 	for (int i=0;i<ulsch_ue[0]->harq_processes[harq_pid]->K>>3;i++) {
 
-	  //if ((ulsch_ue[0]->harq_processes[harq_pid]->c[r][i]^ulsch_gNB->harq_processes[harq_pid]->c[r][i]) != 0)
-	    /*printf("r %d: in[%d] %x, out[%d] %x (%x)\n",r,
+	  if ((ulsch_ue[0]->harq_processes[harq_pid]->c[r][i]^ulsch_gNB->harq_processes[harq_pid]->c[r][i]) != 0)
+	    printf("r %d: in[%d] %x, out[%d] %x (%x)\n",r,
 	    i,ulsch_ue[0]->harq_processes[harq_pid]->c[r][i],
 	    i,ulsch_gNB->harq_processes[harq_pid]->c[r][i],
 	    ulsch_ue[0]->harq_processes[harq_pid]->c[r][i]^ulsch_gNB->harq_processes[harq_pid]->c[r][i]);
@@ -1439,6 +1439,7 @@ int main(int argc, char **argv)
     } 
     roundStats[snrRun] += ((float)round);
     if (!crc_status) effRate[snrRun] += ((double)TBS)/(double)round;
+
     } // trial loop
     
     roundStats[snrRun]/=((float)n_trials);
@@ -1457,6 +1458,7 @@ int main(int argc, char **argv)
     berStats[2][snrRun] = (double)errors_scrambling[2][snrRun]/available_bits/round_trials[2][snrRun];
     berStats[3][snrRun] = (double)errors_scrambling[3][snrRun]/available_bits/round_trials[3][snrRun];
     effTP[snrRun] = effRate[snrRun]/(double)TBS*(double)100;
+
     printf("SNR %f: Channel BLER (%e,%e,%e,%e), Channel BER (%e,%e,%e,%e) Avg round %.2f, Eff Rate %.4f bits/slot, Eff Throughput %.2f, TBS %u bits/slot\n", 
 	   SNR,
      blerStats[0][snrRun],
@@ -1502,21 +1504,20 @@ int main(int argc, char **argv)
       printf("\n");
     }
 
-    ldpcDecStats[snrRun] = gNB->ulsch_decoding_stats.trials?inMicroS(gNB->ulsch_decoding_stats.diff/gNB->ulsch_decoding_stats.trials):0;
-    snrStats[snrRun] = SNR;
-    n_errs = n_errors[0][snrRun];
-    snrRun++;
-
     if(n_trials==1)
       break;
 
-    //if ((float)n_errors[0][snrRun-1]/(float)n_trials <= target_error_rate) {
     if ((float)effTP[snrRun] >= eff_tp_check) {
       printf("*************\n");
       printf("PUSCH test OK\n");
       printf("*************\n");
       break;
     }
+
+    ldpcDecStats[snrRun] = gNB->ulsch_decoding_stats.trials?inMicroS(gNB->ulsch_decoding_stats.diff/gNB->ulsch_decoding_stats.trials):0;
+    snrStats[snrRun] = SNR;
+    n_errs = n_errors[0][snrRun];
+    snrRun++;
 
   } // SNR loop
   printf("\n");
