@@ -416,7 +416,6 @@ static int trx_usrp_write(openair0_device *device,
     s->tx_md.start_of_burst = (s->tx_count==0) ? true : first_packet_state;
     s->tx_md.end_of_burst   = last_packet_state;
     s->tx_md.time_spec      = uhd::time_spec_t::from_ticks(timestamp, s->sample_rate);
-
     s->tx_count++;
 
 VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_BEAM_SWITCHING_GPIO,1);
@@ -676,25 +675,26 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
 
     // bring RX data into 12 LSBs for softmodem RX
     for (int i=0; i<cc; i++) {
-      for (int j=0; j<nsamps2; j++) {
+
 #if defined(__x86_64__) || defined(__i386__)
 #ifdef __AVX2__
-        // FK: in some cases the buffer might not be 32 byte aligned, so we cannot use avx2
 
-        if ((((uintptr_t) buff[i])&0x1F)==0) {
-          ((__m256i *)buff[i])[j] = _mm256_srai_epi16(buff_tmp[i][j],rxshift);
-        } else {
-          ((__m128i *)buff[i])[2*j] = _mm_srai_epi16(((__m128i *)buff_tmp[i])[2*j],rxshift);
-          ((__m128i *)buff[i])[2*j+1] = _mm_srai_epi16(((__m128i *)buff_tmp[i])[2*j+1],rxshift);
-        }
-
-#else
+      if ((((uintptr_t) buff[i])&0x1F)==0) {
+        for (int j=0; j<nsamps2; j++) 
+           ((__m256i *)buff[i])[j] = _mm256_srai_epi16(buff_tmp[i][j],rxshift);
+      } else {
+        for (int j=0; j<(nsamps2<<1); j++) 
+          ((__m128i *)buff[i])[j]  = _mm_srai_epi16(((__m128i *)buff_tmp[i])[j],rxshift);
+      }
+#else    
+      for (int j=0; j<nsamps2; j++) 
         ((__m128i *)buff[i])[j] = _mm_srai_epi16(buff_tmp[i][j],rxshift);
 #endif
 #elif defined(__arm__)
+      for (int j=0; j<nsamps2; j++) 
         ((int16x8_t *)buff[i])[j] = vshrq_n_s16(buff_tmp[i][j],rxshift);
 #endif
-      }
+      
     }
 
     if (samples_received < nsamps) {
@@ -1025,7 +1025,6 @@ extern "C" {
       // USRP recommended: https://files.ettus.com/manual/page_usrp_x3x0_config.html
       if ( 0 != system("sysctl -w net.core.rmem_max=33554432 net.core.wmem_max=33554432") )
         LOG_W(HW,"Can't set kernel parameters for X3xx\n");
-
     }
 
     s->usrp = uhd::usrp::multi_usrp::make(args);
@@ -1098,7 +1097,7 @@ extern "C" {
   if (device->type==USRP_X300_DEV) {
     openair0_cfg[0].rx_gain_calib_table = calib_table_x310;
     std::cerr << "-- Using calibration table: calib_table_x310" << std::endl;
-    s->usrp->set_rx_dc_offset(true);
+ //   s->usrp->set_rx_dc_offset(true);
   }
 
   if (device->type==USRP_N300_DEV) {

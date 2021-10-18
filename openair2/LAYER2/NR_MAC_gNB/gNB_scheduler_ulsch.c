@@ -840,6 +840,14 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
     for (int i = 0; i < NR_NB_RA_PROC_MAX; ++i) {
       NR_RA_t *ra = &gNB_mac->common_channels[CC_idP].ra[i];
 
+      // for CFRA (NSA) do not schedule retransmission of msg3
+      if (ra->cfra) {
+        LOG_W(NR_MAC, "Random Access %i failed at state %i (NSA msg3 reception failed)\n", i, ra->state);
+        nr_mac_remove_ra_rnti(gnb_mod_idP, ra->rnti);
+        nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
+        return;
+      }
+
       if (ra->msg3_round >= MAX_HARQ_ROUNDS - 1) {
         LOG_W(NR_MAC, "Random Access %i failed at state %i (Reached msg3 max harq rounds)\n", i, ra->state);
         nr_mac_remove_ra_rnti(gnb_mod_idP, ra->rnti);
@@ -1329,6 +1337,7 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
 
   int st = 0, e = 0, len = 0;
   for (int i = 0; i < bwpSize; i++) {
+    if (RC.nrmac[module_id]->ulprbbl[i] == 1) vrb_map_UL[i]=1;
     while ((vrb_map_UL[i] & symb) != 0 && i < bwpSize)
       i++;
     st = i;

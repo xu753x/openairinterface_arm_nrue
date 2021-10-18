@@ -251,6 +251,8 @@ typedef struct {
   uint32_t slot;
   /// Index of current HARQ round for this DLSCH
   uint8_t round;
+  uint8_t ndi;
+  bool new_rx;
   /// Last TPC command
   uint8_t TPC;
   /// MIMO mode for this DLSCH
@@ -855,6 +857,8 @@ typedef struct PHY_VARS_gNB_s {
   int pusch_thres;
   int prach_thres;
   uint64_t bad_pucch;
+  int num_ulprbbl;
+  int ulprbbl[275];
   /*
   time_stats_t phy_proc;
   */
