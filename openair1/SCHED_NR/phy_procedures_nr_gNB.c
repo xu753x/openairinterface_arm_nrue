@@ -65,7 +65,7 @@ void nr_set_ssb_first_subcarrier(nfapi_nr_config_request_scf_t *cfg, NR_DL_FRAME
 
   fp->ssb_start_subcarrier = (12 * cfg->ssb_table.ssb_offset_point_a.value + sco);
   LOG_D(PHY, "SSB first subcarrier %d (%d,%d)\n", fp->ssb_start_subcarrier,cfg->ssb_table.ssb_offset_point_a.value,sco);
-}   
+}
 
 void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame,int slot,nfapi_nr_dl_tti_ssb_pdu ssb_pdu) {
 
@@ -250,7 +250,7 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
   }
 
   //int dumpsig=0;
-  // if all segments are done 
+  // if all segments are done
   if (rdata->nbSegments == ulsch_harq->processedSegments) {
     if (decodeSuccess) {
       LOG_D(PHY,"[gNB %d] ULSCH: Setting ACK for SFN/SF %d.%d (pid %d, ndi %d, status %d, round %d, TBS %d, Max interation (all seg) %d)\n",
@@ -263,16 +263,16 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
       nr_fill_indication(gNB,ulsch_harq->frame, ulsch_harq->slot, rdata->ulsch_id, rdata->harq_pid, 0,0);
       //dumpsig=1;
     } else {
-
-      // ulsch_harq->round++;
-      LOG_I(PHY,"[gNB %d] ULSCH: Setting NAK for SFN/SF %d/%d (pid %d, status %d, round %d, prb_start %d, prb_size %d, TBS %d) r %d\n",
+      LOG_I(PHY,"[gNB %d] ULSCH: Setting NAK for SFN/SF %d/%d (pid %d, ndi %d, status %d, round %d, RV %d, prb_start %d, prb_size %d, TBS %d) r %d\n",
             gNB->Mod_id, ulsch_harq->frame, ulsch_harq->slot,
-            rdata->harq_pid,ulsch_harq->status, 
-	    ulsch_harq->round,
-	    ulsch_harq->ulsch_pdu.rb_start,
-	    ulsch_harq->ulsch_pdu.rb_size,
-	    ulsch_harq->TBS,
-	    r);
+            rdata->harq_pid, pusch_pdu->pusch_data.new_data_indicator, ulsch_harq->status,
+	          ulsch_harq->round,
+            ulsch_harq->ulsch_pdu.pusch_data.rv_index,
+	          ulsch_harq->ulsch_pdu.rb_start,
+	          ulsch_harq->ulsch_pdu.rb_size,
+	          ulsch_harq->TBS,
+	          r);
+      ulsch_harq->round++;
 
       if (ulsch_harq->round >= ulsch->Mlimit) {
         ulsch_harq->status = SCH_IDLE;
@@ -285,7 +285,7 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
       LOG_D(PHY, "ULSCH %d in error\n",rdata->ulsch_id);
       nr_fill_indication(gNB,ulsch_harq->frame, ulsch_harq->slot, rdata->ulsch_id, rdata->harq_pid, 1,0);
     }
-/*    
+/*
     if (ulsch_harq->ulsch_pdu.mcs_index == 9 && dumpsig==1) {
 #ifdef __AVX2__
       int off = ((ulsch_harq->ulsch_pdu.rb_size&1) == 1)? 4:0;
@@ -488,8 +488,8 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
       }
       exit(-1);
 
-    } 
- 
+    }
+
   // crc indication
   uint16_t num_crc = gNB->UL_INFO.crc_ind.number_crcs;
   gNB->UL_INFO.crc_ind.crc_list = &gNB->crc_pdu_list[0];
@@ -534,36 +534,37 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
 // Function to fill UL RB mask to be used for N0 measurements
 void fill_ul_rb_mask(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
 
-  int rb2, rb, nb_rb;
-  int prbpos;
-  for (int symbol=0;symbol<14;symbol++) {
-    if (gNB->gNB_config.tdd_table.max_tdd_periodicity_list[slot_rx].max_num_of_symbol_per_slot_list[symbol].slot_config.value==1){
-      nb_rb = 0;
-      for (int m=0;m<9;m++) {
-	 gNB->rb_mask_ul[m] = 0;
-	 for (int i=0;i<32;i++) {
-          prbpos = (m*32)+i;
-          if (prbpos>gNB->frame_parms.N_RB_UL) break;
-          gNB->rb_mask_ul[m] |= (gNB->ulprbbl[prbpos]>0 ? 1 : 0)<<i;
-         }
-      }
-      gNB->ulmask_symb = -1;
+  int rb = 0;
+  int rb2 = 0;
+  int prbpos = 0;
 
-      for (int i=0;i<NUMBER_OF_NR_PUCCH_MAX;i++){
-        NR_gNB_PUCCH_t *pucch = gNB->pucch[i];
-        if (pucch) {
-          if ((pucch->active == 1) &&
-	            (pucch->frame == frame_rx) &&
-	            (pucch->slot == slot_rx) ) {
-            gNB->ulmask_symb = symbol;
-            nfapi_nr_pucch_pdu_t  *pucch_pdu = &pucch->pucch_pdu;
-            if ((symbol>=pucch_pdu->start_symbol_index) &&
-                (symbol<(pucch_pdu->start_symbol_index + pucch_pdu->nr_of_symbols))){
-              for (rb=0; rb<pucch_pdu->prb_size; rb++) {
-                rb2 = rb+pucch_pdu->prb_start+pucch_pdu->bwp_start;
-                gNB->rb_mask_ul[rb2>>5] |= (1<<(rb2&31));
-              }
-              nb_rb+=pucch_pdu->prb_size;
+  for (int symbol=0;symbol<14;symbol++) {
+    for (int m=0;m<9;m++) {
+      gNB->rb_mask_ul[symbol][m] = 0;
+      for (int i=0;i<32;i++) {
+        prbpos = (m*32)+i;
+        if (prbpos>gNB->frame_parms.N_RB_UL) break;
+        gNB->rb_mask_ul[symbol][m] |= (gNB->ulprbbl[prbpos]>0 ? 1 : 0)<<i;
+      }
+    }
+  }
+
+  for (int i=0;i<NUMBER_OF_NR_PUCCH_MAX;i++){
+    NR_gNB_PUCCH_t *pucch = gNB->pucch[i];
+    if (pucch) {
+      if ((pucch->active == 1) &&
+          (pucch->frame == frame_rx) &&
+          (pucch->slot == slot_rx) ) {
+        nfapi_nr_pucch_pdu_t  *pucch_pdu = &pucch->pucch_pdu;
+        LOG_D(PHY,"%d.%d pucch %d : start_symbol %d, nb_symbols %d, prb_size %d\n",frame_rx,slot_rx,i,pucch_pdu->start_symbol_index,pucch_pdu->nr_of_symbols,pucch_pdu->prb_size);
+        for (int symbol=pucch_pdu->start_symbol_index ; symbol<(pucch_pdu->start_symbol_index+pucch_pdu->nr_of_symbols);symbol++) {
+          if(gNB->frame_parms.frame_type == FDD ||
+              (gNB->frame_parms.frame_type == TDD && gNB->gNB_config.tdd_table.max_tdd_periodicity_list[slot_rx].max_num_of_symbol_per_slot_list[symbol].slot_config.value==1)) {
+            for (rb=0; rb<pucch_pdu->prb_size; rb++) {
+              rb2 = rb + pucch_pdu->bwp_start +
+                    ((symbol < pucch_pdu->start_symbol_index+(pucch_pdu->nr_of_symbols>>1)) || (pucch_pdu->freq_hop_flag == 0) ?
+                     pucch_pdu->prb_start : pucch_pdu->second_hop_prb);
+              gNB->rb_mask_ul[symbol][rb2>>5] |= (1<<(rb2&31));
 
             }
           }
@@ -684,7 +685,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
           LOG_D(PHY,"frame %d, slot %d: PUCCH signal energy %d\n",frame_rx,slot_rx,power_rxF);
 
           nr_decode_pucch0(gNB,
-	                   frame_rx,
+                           frame_rx,
                            slot_rx,
                            uci_pdu_format0,
                            pucch_pdu);

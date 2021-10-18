@@ -403,9 +403,10 @@ class OaiCiTest():
 					#execute additional commands from yaml file after UE attach
 					SSH = sshconnection.SSHConnection()
 					SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
-					for startcommand in Module_UE.StartCommands:
-						cmd = 'echo ' + Module_UE.HostPassword + ' | ' + startcommand 
-					SSH.command(cmd,'\$',5)	
+					if hasattr(Module_UE,'StartCommands'):
+						for startcommand in Module_UE.StartCommands:
+							cmd = 'echo ' + Module_UE.HostPassword + ' | ' + startcommand 
+							SSH.command(cmd,'\$',5)	
 					SSH.close()
 					#check that the MTU is as expected / requested
 					Module_UE.CheckModuleMTU()
@@ -2265,7 +2266,7 @@ class OaiCiTest():
 				SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
 				cmd = 'rm ' + server_filename
 				SSH.command(cmd,'\$',5)
-				cmd = 'echo $USER; nohup iperf -s -B ' + UE_IPAddress + ' -u  2>&1 > ' + server_filename
+				cmd = 'echo $USER; nohup iperf -s -B ' + UE_IPAddress + ' -u &  2>&1 > ' + server_filename
 				SSH.command(cmd,'\$',5)
 				SSH.close()
 				#client side EPC
@@ -2340,7 +2341,7 @@ class OaiCiTest():
 				SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
 				cmd = 'rm iperf_server_' +  self.testCase_id + '_' + self.ue_id + '.log'
 				SSH.command(cmd,'\$',5)
-				cmd = 'echo $USER; nohup /opt/iperf-2.0.10/iperf -s -B ' + UE_IPAddress + ' -u  2>&1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log' 
+				cmd = 'echo $USER; nohup /opt/iperf-2.0.10/iperf -s -B ' + UE_IPAddress + ' -u &  2>&1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log' 
 				SSH.command(cmd,'\$',5)
 				SSH.close()
 				#client side EPC
@@ -2363,7 +2364,7 @@ class OaiCiTest():
 				SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
 				cmd = 'rm iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
 				SSH.command(cmd,'\$',5)
-				cmd = 'echo $USER; nohup iperf -s -u 2>&1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
+				cmd = 'echo $USER; nohup iperf -s -u &  2>&1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
 				SSH.command(cmd,'\$',5)
 				SSH.close()
 

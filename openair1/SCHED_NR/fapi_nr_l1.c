@@ -157,8 +157,8 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   uint8_t number_ul_tti_pdu         = (UL_tti_req==NULL) ? 0 : UL_tti_req->n_pdus;
   uint8_t number_tx_data_pdu        = (TX_req == NULL) ? 0 : TX_req->Number_of_PDUs;
 
-  if (NFAPI_MODE == NFAPI_MONOLITHIC) {
-    if (DL_req != NULL && TX_req!=NULL)
+  if (NFAPI_MODE == NFAPI_MONOLITHIC){
+    if (DL_req != NULL && TX_req!=NULL && (number_dl_pdu > 0 || number_ul_dci_pdu > 0 || number_ul_tti_pdu > 0))
       LOG_D(PHY,"NFAPI: Sched_INFO:SFN/SLOT:%04d/%d DL_req:SFN/SLO:%04d/%d:dl_pdu:%d tx_req:SFN/SLOT:%04d/%d:pdus:%d;ul_dci %d ul_tti %d\n",
       frame,slot,
       DL_req->SFN,DL_req->Slot,number_dl_pdu,
@@ -184,7 +184,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
         case NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE:
           AssertFatal(pdcch_received == 0, "pdcch_received is not 0, we can only handle one PDCCH PDU per slot\n");
           msgTx->pdcch_pdu = dl_tti_pdu->pdcch_pdu;
-   
+
           pdcch_received = 1;
           break;
 
@@ -211,7 +211,6 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
       msgTx->ul_pdcch_pdu = UL_dci_req->ul_dci_pdu_list[number_ul_dci_pdu-1]; // copy the last pdu
 
     pushNotifiedFIFO(gNB->resp_L1_tx,res);
-
 
     for (int i=0;i<number_ul_dci_pdu;i++) {
       handle_nfapi_nr_ul_dci_pdu(gNB, frame, slot, &UL_dci_req->ul_dci_pdu_list[i]);
