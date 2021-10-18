@@ -141,7 +141,7 @@ void calculate_preferred_dl_tda(module_id_t module_id, const NR_BWP_Downlink_t *
 
     LOG_D(MAC, "slot %d preferred_dl_tda %d\n", i, nrmac->preferred_dl_tda[bwp_id][i]);
   }
-  assert(1==2);
+  //assert(1==2);
 }
 
 // Compute and write all MAC CEs and subheaders, and return number of written
