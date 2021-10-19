@@ -1,10 +1,10 @@
  
 /*! \file openairinterface5g/openair1/PHY/BF/cu_function.cpp
- * \brief merge ISIP beamforming and MUSIC algorithm
+ * \brief merge ISIP beamforming and MVDR algorithm
  * \author NCTU OpinConnect Terng-Yin Hsu, Sendren Xu, WEI-YING LIN, Min-Hsun Wu
  * \email  a22490010@gmail.com
- * \date   1-10-2021
- * \version 1.1
+ * \date   19-10-2021
+ * \version 1.2
  * \note
  * \warning
  */
@@ -386,8 +386,8 @@ void eigen(std::complex<double> *A, std::complex<double> *Ve, std::complex<doubl
 }
 
 
-// compute the MUSIC DOA in one dimension on CPU
-void MUSIC_DOA_1D_CPU(int M, int snr, int qr_iter, int multi_input, float *result) {
+// compute the MVDR DOA in one dimension on CPU
+void MVDR_DOA_1D_CPU(int M, int snr, int qr_iter, int multi_input, float *result) {
     #ifdef PRINT_RESULT
     printf("--Parameter--\n");
     printf("Antenna count:\t\t%d\n", M);
@@ -406,7 +406,7 @@ void MUSIC_DOA_1D_CPU(int M, int snr, int qr_iter, int multi_input, float *resul
     std::complex<double> kc(2.0 * PI / lemda);
     const int nd = 500;
     // angle setting
-    const int len_t_theta = 3;
+    const int len_t_theta = 1;
     std::complex<double> *t_theta = (std::complex<double>*)malloc(len_t_theta * sizeof(std::complex<double>));
     t_theta[0].real(3);
     t_theta[1].real(12);
@@ -446,7 +446,7 @@ void MUSIC_DOA_1D_CPU(int M, int snr, int qr_iter, int multi_input, float *resul
     // add noise to the signal
     awgn(sig_co, x_r, snr, M, nd);
 
-// music algorithm
+// mvdr algorithm
     // R_xx matrix (M, M)
     std::complex<double> *R_xx = (std::complex<double>*)malloc(M * M * sizeof(std::complex<double>));
     // matlab code:  (R_xx = 1 / M * x_r * x_r')
@@ -458,25 +458,23 @@ void MUSIC_DOA_1D_CPU(int M, int snr, int qr_iter, int multi_input, float *resul
     // timestamp start
     timeStart = clock();
     eigen(R_xx, Ve, De, M, M, qr_iter);
-	//printf("Ve \n");
-	//print_complex_matrix(Ve,M,M);
-	//printf("De \n");
-	//print_complex_matrix(De,M,M);
-	//return;
-    // get vet_noise (M, M - len_t_theta): part of Ve (eigenvector)
-    std::complex<double> *vet_noise = (std::complex<double>*)malloc(M * (M - len_t_theta) * sizeof(std::complex<double>));
-    for(int i = 0; i < M; ++i) {
-        for(int j = len_t_theta; j < M; ++j) {
-            vet_noise[i * (M - len_t_theta) + j - len_t_theta] = Ve[i * M + j];
-        }
-    }
-    // Pn matrix (M, M)
-    std::complex<double> *Pn = (std::complex<double>*)calloc(M * M, sizeof(std::complex<double>));
-    compute_Pn(Pn, vet_noise, M, len_t_theta);
-    // timestamp end
+	std::complex<double> *R_xx_inv_1 = (std::complex<double>*)malloc(M * M * sizeof(std::complex<double>));
+	std::complex<double> *Pn = (std::complex<double>*)calloc(M * M, sizeof(std::complex<double>));
+	for(int i = 0; i < M * M; i += (M + 1)) {
+		if(abs(De[i])<0.00000000001) {
+			De[i].real(1000000);
+			De[i].imag(0);
+		}
+		else De[i]= std::complex <double> (1)/De[i];
+	}
+	
+	complex_matrix_multiplication(Ve, De, R_xx_inv_1, M, M, M);
+	complex_matrix_conjugate_transpose(Ve, M, M);
+	complex_matrix_multiplication(R_xx_inv_1, Ve, Pn, M, M, M);
+
     timeEnd = clock();
     #ifdef PRINT_RESULT
-    std::cout << std::setprecision(6) << "MUSIC (cpu):\t\t" << (timeEnd - timeStart) / CLOCKS_PER_SEC * 1000 << " ms" << std::endl;
+    std::cout << std::setprecision(6) << "MVDR (cpu):\t\t" << (timeEnd - timeStart) / CLOCKS_PER_SEC * 1000 << " ms" << std::endl;
     #endif
     result[2] += (timeEnd - timeStart) / CLOCKS_PER_SEC * 1000;
 
@@ -489,26 +487,26 @@ void MUSIC_DOA_1D_CPU(int M, int snr, int qr_iter, int multi_input, float *resul
         dth[i] = -10 + 0.1 * i;
         dr[i] = dth[i] * PI / 180;
     }
-    // compute S_MUSIC_dB
+    // compute S_MVDR_dB
     std::complex<double> *a_vector = (std::complex<double>*)malloc(M * sizeof(std::complex<double>));
-    std::complex<double> *S_MUSIC = (std::complex<double>*)malloc(len_dth * sizeof(std::complex<double>));
-    double *S_MUSIC_dB = (double*)malloc(len_dth * sizeof(double));
+    std::complex<double> *S_MVDR = (std::complex<double>*)malloc(len_dth * sizeof(std::complex<double>));
+    double *S_MVDR_dB = (double*)malloc(len_dth * sizeof(double));
     // timestamp start
     timeStart = clock();
-    for(int i = 0; i < len_dth; ++i) { // can be paralleled to compute S_MUSIC_dB
+    for(int i = 0; i < len_dth; ++i) { // can be paralleled to compute S_MVDR_dB
         for(int j = 0; j < M; ++j) {
             a_vector[j] = exp(1i * kc * (std::complex<double>)j * d * sin(dr[i]));
         }
-        S_MUSIC[i] = compute_S_MUSIC(a_vector, Pn, M);
-        // compute S_MUSIC_dB
-        S_MUSIC_dB[i] = 20 * log10(abs(S_MUSIC[i]));
+        S_MVDR[i] = compute_S_MUSIC(a_vector, Pn, M);
+        // compute S_MVDR_dB
+        S_MVDR_dB[i] = 20 * log10(abs(S_MVDR[i]));
     }
     // find Max and position
-    double max_temp = S_MUSIC_dB[0];
+    double max_temp = S_MVDR_dB[0];
     int position = 0;
     for(int i = 0; i < len_dth; ++i) {
-        if(S_MUSIC_dB[i] > max_temp) {
-            max_temp = S_MUSIC_dB[i];
+        if(S_MVDR_dB[i] > max_temp) {
+            max_temp = S_MVDR_dB[i];
             position = i;
         }
     }
@@ -516,25 +514,21 @@ void MUSIC_DOA_1D_CPU(int M, int snr, int qr_iter, int multi_input, float *resul
     timeEnd = clock();
     #ifdef PRINT_RESULT
     std::cout << std::setprecision(6) << "Array pattern (cpu):\t" << (timeEnd - timeStart) / CLOCKS_PER_SEC * 1000 << " ms" << std::endl;
-    // print the result 
     printf("\n--Result--\n");
     std::cout << "Theta estimation:\t" << dth[position] << std::endl;
+    std::cout << std::endl << "-----------------------------------------" << std::endl << std::endl;
     #endif
-    float error[3];
-    float errorFinal = 0;
-    for(int i = 0; i < 3; ++i) {
-        error[i] = abs(dth[position] - t_theta[i].real());
-        if(i == 0) errorFinal = error[i];
-        else if(error[i] < errorFinal) errorFinal = error[i];
-    }
-    if(errorFinal > result[0]) result[0] = errorFinal;
-    else if (errorFinal == 0) result[1]++;
+    float error;
+    error = abs(dth[position] - t_theta[0].real());
+
+    if(error > result[0]) result[0] = error;
+    if (error != 0) result[1] += pow(error, 2);
 
 // plot the result
     #ifdef PLOT_RESULT
-    std::vector<double> S_MUSIC_dB_vec(S_MUSIC_dB, S_MUSIC_dB + len_dth);
+    std::vector<double> S_MVDR_dB_vec(S_MVDR_dB, S_MVDR_dB + len_dth);
     std::vector<double> dth_vec(dth, dth + len_dth);
-    plt::plot(dth_vec, S_MUSIC_dB_vec, "blue");
+    plt::plot(dth_vec, S_MVDR_dB_vec, "blue");
     plt::title("MUSIC DOA Estimation");
     plt::xlabel("Theta (degree)");
     plt::ylabel("Power Spectrum (dB)");
@@ -552,13 +546,13 @@ void MUSIC_DOA_1D_CPU(int M, int snr, int qr_iter, int multi_input, float *resul
     free(R_xx);
     free(Ve);
     free(De);
-    free(vet_noise);
+    // free(vet_noise);
     free(Pn);
     free(dth);
     free(dr);
     free(a_vector);
-    free(S_MUSIC);
-    free(S_MUSIC_dB);
+    free(S_MVDR);
+    free(S_MVDR_dB);
 }
 
 
@@ -588,6 +582,7 @@ void qr_test(double *matA ,int rowA, int colA) {
 
 }
 
+// test
 // int main(void){
 //     // double a[]={100,200,300,400};
 //     // qr_test(a ,2,2);

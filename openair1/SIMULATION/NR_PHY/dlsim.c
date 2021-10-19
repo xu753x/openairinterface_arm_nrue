@@ -72,11 +72,11 @@ uint16_t NB_UE_INST = 1;
 
 
  /*! \file openairinterface5g/openair1/SIMULATION/NR_PHY/dlsim
- * \brief merge ISIP beamforming and MUSIC algorithm
+ * \brief merge ISIP beamforming and MVDR algorithm
  * \author NCTU OpinConnect Terng-Yin Hsu, Sendren Xu, WEI-YING LIN, Min-Hsun Wu
  * \email  a22490010@gmail.com
- * \date   1-10-2021
- * \version 1.1
+ * \date   19-10-2021
+ * \version 1.2
  * \note
  * \warning
  */
@@ -1076,25 +1076,23 @@ int main(int argc, char **argv)
   // qr_test(a ,2,2);
 
   
-  // MUSIC
+  //MVDR
   printf("\n");
-  global_music_antenna=8;
-  global_music_QR_iteration=100;
-  global_music_multi_input=8;
-  global_music_SNR=10000;
+  global_antenna = 64;
+  global_QR_iteration = 5;
+  global_multi_input = 8;
+  global_SNR = 100;
   float result[3] = {0};
 
-  // clock_gettime(CLOCK_MONOTONIC, &start_MUSIC_DOA); 
 
-  MUSIC_DOA_1D_CPU(global_music_antenna,
-                    global_music_SNR,
-                    global_music_QR_iteration,
-                    global_music_multi_input,
-                    result
-                  );
+  MVDR_DOA_1D_CPU(global_antenna,
+                  global_SNR,
+                  global_QR_iteration,
+                  global_multi_input,
+                  result
+                   );
+  
 
-  //  clock_gettime(CLOCK_MONOTONIC, &end_MUSIC_DOA); 
-  //  printf("MUSIC_DOA total : %.2f usec\n", (end_MUSIC_DOA.tv_nsec - start_MUSIC_DOA.tv_nsec) *1.0 / 1000);
 
   //min
   //kill memmory
