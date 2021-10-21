@@ -60,6 +60,7 @@ void nr_fill_nfapi_pucch(module_id_t mod_id,
   memset(pucch_pdu, 0, sizeof(nfapi_nr_pucch_pdu_t));
   future_ul_tti_req->n_pdus += 1;
 
+  if(pucch->dai_c+pucch->csi_bits>0)
   LOG_I(NR_MAC,
         "%s %4d.%2d Scheduling pucch reception in %4d.%2d: bits SR %d, DAI %d, CSI %d on res %d\n",
         pucch->dai_c>0 ? "pucch_acknak" : "",
