@@ -219,7 +219,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
           nr_fill_ulsch(gNB,UL_tti_req->SFN, UL_tti_req->Slot, &UL_tti_req->pdus_list[i].pusch_pdu);
           break;
         case NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE:
-          LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_UL_TTI_PUCCH_PDU_TYPE for %d.%d\n", frame, slot, UL_tti_req->SFN, UL_tti_req->Slot);
+          LOG_I(PHY,"frame %d, slot %d, Got NFAPI_NR_UL_TTI_PUCCH_PDU_TYPE for %d.%d\n", frame, slot, UL_tti_req->SFN, UL_tti_req->Slot);
           nr_fill_pucch(gNB,UL_tti_req->SFN, UL_tti_req->Slot, &UL_tti_req->pdus_list[i].pucch_pdu);
           break;
         case NFAPI_NR_UL_CONFIG_PRACH_PDU_TYPE:
