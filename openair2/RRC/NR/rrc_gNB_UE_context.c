@@ -135,11 +135,11 @@ rrc_gNB_allocate_new_UE_context(
 
   for(int i = 0; i < NB_RB_MAX; i++) {
     new_p->ue_context.e_rab[i].xid = -1;
-    new_p->ue_context.pdusession[i].xid = -1;
+    new_p->ue_context.pduSession[i].xid = -1;
     new_p->ue_context.modify_e_rab[i].xid = -1;
   }
 
-  LOG_I(NR_RRC,"Returning new UE context at %p\n",new_p);
+  LOG_D(NR_RRC,"Returning new UE context at %p\n",new_p);
   return(new_p);
 }
 

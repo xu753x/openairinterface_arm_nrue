@@ -182,7 +182,7 @@ void DL_channel(RU_t *ru,PHY_VARS_UE *UE,uint subframe,int awgn_flag,double SNR,
 
     if (UE->perfect_ce==1) {
       // fill in perfect channel estimates
-      freq_channel(eNB2UE[round],UE->frame_parms.N_RB_DL,12*UE->frame_parms.N_RB_DL + 1);
+      freq_channel(eNB2UE[round],UE->frame_parms.N_RB_DL,12*UE->frame_parms.N_RB_DL + 1, 15);
       /*
       LOG_M("channel.m","ch",eNB2UE[round]->ch[0],eNB2UE[round]->channel_length,1,8);
       LOG_M("channelF.m","chF",eNB2UE[round]->chF[0],12*UE->frame_parms.N_RB_DL + 1,1,8);
@@ -193,52 +193,52 @@ void DL_channel(RU_t *ru,PHY_VARS_UE *UE,uint subframe,int awgn_flag,double SNR,
   if(abstx) {
     if (trials==0 && round==0) {
       // calculate freq domain representation to compute SINR
-      freq_channel(eNB2UE[0], ru->frame_parms->N_RB_DL,2*ru->frame_parms->N_RB_DL + 1);
+      freq_channel(eNB2UE[0], ru->frame_parms->N_RB_DL,2*ru->frame_parms->N_RB_DL + 1, 15);
       // snr=pow(10.0,.1*SNR);
       fprintf(csv_fd,"%f,",SNR);
 
       for (u=0; u<2*ru->frame_parms->N_RB_DL; u++) {
         for (aarx=0; aarx<eNB2UE[0]->nb_rx; aarx++) {
           for (aatx=0; aatx<eNB2UE[0]->nb_tx; aatx++) {
-            channelx = eNB2UE[0]->chF[aarx+(aatx*eNB2UE[0]->nb_rx)][u].x;
-            channely = eNB2UE[0]->chF[aarx+(aatx*eNB2UE[0]->nb_rx)][u].y;
+            channelx = eNB2UE[0]->chF[aarx+(aatx*eNB2UE[0]->nb_rx)][u].r;
+            channely = eNB2UE[0]->chF[aarx+(aatx*eNB2UE[0]->nb_rx)][u].i;
             fprintf(csv_fd,"%e+i*(%e),",channelx,channely);
           }
         }
       }
 
       if(num_rounds>1) {
-        freq_channel(eNB2UE[1], ru->frame_parms->N_RB_DL,2*ru->frame_parms->N_RB_DL + 1);
+        freq_channel(eNB2UE[1], ru->frame_parms->N_RB_DL,2*ru->frame_parms->N_RB_DL + 1, 15);
 
         for (u=0; u<2*ru->frame_parms->N_RB_DL; u++) {
           for (aarx=0; aarx<eNB2UE[1]->nb_rx; aarx++) {
             for (aatx=0; aatx<eNB2UE[1]->nb_tx; aatx++) {
-              channelx = eNB2UE[1]->chF[aarx+(aatx*eNB2UE[1]->nb_rx)][u].x;
-              channely = eNB2UE[1]->chF[aarx+(aatx*eNB2UE[1]->nb_rx)][u].y;
+              channelx = eNB2UE[1]->chF[aarx+(aatx*eNB2UE[1]->nb_rx)][u].r;
+              channely = eNB2UE[1]->chF[aarx+(aatx*eNB2UE[1]->nb_rx)][u].i;
               fprintf(csv_fd,"%e+i*(%e),",channelx,channely);
             }
           }
         }
 
-        freq_channel(eNB2UE[2], ru->frame_parms->N_RB_DL,2*ru->frame_parms->N_RB_DL + 1);
+        freq_channel(eNB2UE[2], ru->frame_parms->N_RB_DL,2*ru->frame_parms->N_RB_DL + 1, 15);
 
         for (u=0; u<2*ru->frame_parms->N_RB_DL; u++) {
           for (aarx=0; aarx<eNB2UE[2]->nb_rx; aarx++) {
             for (aatx=0; aatx<eNB2UE[2]->nb_tx; aatx++) {
-              channelx = eNB2UE[2]->chF[aarx+(aatx*eNB2UE[2]->nb_rx)][u].x;
-              channely = eNB2UE[2]->chF[aarx+(aatx*eNB2UE[2]->nb_rx)][u].y;
+              channelx = eNB2UE[2]->chF[aarx+(aatx*eNB2UE[2]->nb_rx)][u].r;
+              channely = eNB2UE[2]->chF[aarx+(aatx*eNB2UE[2]->nb_rx)][u].i;
               fprintf(csv_fd,"%e+i*(%e),",channelx,channely);
             }
           }
         }
 
-        freq_channel(eNB2UE[3], ru->frame_parms->N_RB_DL,2*ru->frame_parms->N_RB_DL + 1);
+        freq_channel(eNB2UE[3], ru->frame_parms->N_RB_DL,2*ru->frame_parms->N_RB_DL + 1, 15);
 
         for (u=0; u<2*ru->frame_parms->N_RB_DL; u++) {
           for (aarx=0; aarx<eNB2UE[3]->nb_rx; aarx++) {
             for (aatx=0; aatx<eNB2UE[3]->nb_tx; aatx++) {
-              channelx = eNB2UE[3]->chF[aarx+(aatx*eNB2UE[3]->nb_rx)][u].x;
-              channely = eNB2UE[3]->chF[aarx+(aatx*eNB2UE[3]->nb_rx)][u].y;
+              channelx = eNB2UE[3]->chF[aarx+(aatx*eNB2UE[3]->nb_rx)][u].r;
+              channely = eNB2UE[3]->chF[aarx+(aatx*eNB2UE[3]->nb_rx)][u].i;
               fprintf(csv_fd,"%e+i*(%e),",channelx,channely);
             }
           }

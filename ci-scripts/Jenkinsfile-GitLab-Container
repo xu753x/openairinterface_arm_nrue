@@ -198,6 +198,41 @@ pipeline {
             }
           }
         }
+        stage ("RF Simulators") {
+          when { expression {doMandatoryTests} }
+          steps {
+            script {
+              triggerSlaveJob ('RAN-RF-Sim-Test', 'Test-RF-Sim-Container')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('RAN-RF-Sim-Test')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
+      }
+    }
+    stage ("Images Push to Registries") {
+      when { expression {"PUSH".equals(env.gitlabActionType)} }
+      steps {
+        script {
+          triggerSlaveJob ('RAN-DockerHub-Push', 'Push-to-Docker-Hub')
+        }
+        post {
+          failure {
+            script {
+              currentBuild.result = 'FAILURE'
+            }
+          }
+        }
       }
     }
   }

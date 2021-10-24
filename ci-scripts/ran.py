@@ -39,7 +39,6 @@ import time
 from multiprocessing import Process, Lock, SimpleQueue
 import yaml
 
-
 #-----------------------------------------------------------
 # OAI Testing modules
 #-----------------------------------------------------------
@@ -93,6 +92,9 @@ class RANManagement():
 		self.epcPcapFile = ''
 		self.runtime_stats= ''
 		self.datalog_rt_stats={}
+		self.eNB_Trace = '' #if 'yes', Tshark will be launched at initialization
+		self.eNB_Stats = '' #if 'yes', Statistics Monitor will be launched at initialization		
+		self.USRPIPAddress = ''
 
 
 
@@ -339,11 +341,44 @@ class RANManagement():
 
 		self.testCase_id = HTML.testCase_id
 		mySSH = SSH.SSHConnection()
+		cwd = os.getcwd()
+		mySSH.copyout(lIpAddr,lUserName,lPassWord, cwd + "/active_net_interfaces.awk", "/tmp")
 		
+		#reboot USRP if requested in xml
+		if self.USRPIPAddress!='':
+			logging.debug('USRP '+ self.USRPIPAddress +'reboot request')
+			mySSH.open(lIpAddr, lUserName, lPassWord)
+			cmd2usrp='ssh root@'+self.USRPIPAddress+' reboot'
+			mySSH.command2(cmd2usrp,1)
+			mySSH.close()
+			logging.debug('Waiting for USRP to be ready')
+			time.sleep(120)
+
+
 		if (self.pStatus < 0):
 			HTML.CreateHtmlTestRow(self.air_interface[self.eNB_instance] + ' ' + self.Initialize_eNB_args, 'KO', self.pStatus)
 			HTML.CreateHtmlTabFooter(False)
 			sys.exit(1)
+
+		#Get pcap on enb and/or gnb if enabled in the xml 
+		if self.eNB_Trace=='yes':
+			if ((self.air_interface[self.eNB_instance] == 'lte-softmodem') or (self.air_interface[self.eNB_instance] == 'ocp-enb')):
+				pcapfile_prefix="enb_"
+			else:
+				pcapfile_prefix="gnb_"
+			mySSH.open(lIpAddr, lUserName, lPassWord)
+			mySSH.command('ip addr show | awk -f /tmp/active_net_interfaces.awk | egrep -v "lo|tun"', '\$', 5)
+			result = re.search('interfaceToUse=(?P<eth_interface>[a-zA-Z0-9\-\_]+)done', mySSH.getBefore())
+			if result is not None:
+				eth_interface = result.group('eth_interface')
+				logging.debug('\u001B[1m Launching tshark on interface ' + eth_interface + '\u001B[0m')
+				pcapfile = pcapfile_prefix + self.testCase_id + '_log.pcap'
+				mySSH.command('echo ' + lPassWord + ' | sudo -S rm -f /tmp/' + pcapfile , '\$', 5)
+				mySSH.command('echo $USER; nohup sudo -E tshark  -i ' + eth_interface + ' -w /tmp/' + pcapfile + ' 2>&1 &','\$', 5)
+			mySSH.close()
+			
+
+
 		# If tracer options is on, running tshark on EPC side and capture traffic b/ EPC and eNB
 		result = re.search('T_stdout', str(self.Initialize_eNB_args))
 		if (result is not None):
@@ -428,10 +463,36 @@ class RANManagement():
 			mySSH.command('if [ -e rbconfig.raw ]; then echo ' + lPassWord + ' | sudo -S rm rbconfig.raw; fi', '\$', 5)
 			mySSH.command('if [ -e reconfig.raw ]; then echo ' + lPassWord + ' | sudo -S rm reconfig.raw; fi', '\$', 5)
 		# NOTE: WE SHALL do a check if the executable is present (in case build went wrong)
-		mySSH.command('echo "ulimit -c unlimited && ./ran_build/build/' + self.air_interface[self.eNB_instance] + ' -O ' + lSourcePath + '/' + ci_full_config_file + extra_options + '" > ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
+
+		#hack UHD_RFNOC_DIR variable for gNB / N310 on RHEL8 server:
+		#if the USRP address is in the xml then we are using an eth USRP (N3xx)
+		if (self.air_interface[self.eNB_instance] == 'lte-softmodem') or (self.air_interface[self.eNB_instance] == 'ocp-enb'):
+			gNB = False
+		else:
+			gNB = True
+		if ((self.USRPIPAddress!='') and (gNB==True)):
+			mySSH.command('echo ' + lPassWord + ' | echo "ulimit -c unlimited && sudo UHD_RFNOC_DIR=/usr/local/share/uhd/rfnoc ./ran_build/build/' + self.air_interface[self.eNB_instance] + ' -O ' + lSourcePath + '/' + ci_full_config_file + extra_options + '" > ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
+		#otherwise the regular command is ok
+		else:
+			mySSH.command('echo "ulimit -c unlimited && ./ran_build/build/' + self.air_interface[self.eNB_instance] + ' -O ' + lSourcePath + '/' + ci_full_config_file + extra_options + '" > ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
+
 		mySSH.command('chmod 775 ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
 		mySSH.command('echo ' + lPassWord + ' | sudo -S rm -Rf enb_' + self.testCase_id + '.log', '\$', 5)
 		mySSH.command('echo $USER; nohup sudo -E ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh > ' + lSourcePath + '/cmake_targets/enb_' + self.testCase_id + '.log 2>&1 &', lUserName, 10)
+
+
+		#stats monitoring during runtime
+		time.sleep(20)
+		monitor_file='../ci-scripts/stats_monitor.py'
+		conf_file='../ci-scripts/stats_monitor_conf.yaml'
+		if self.eNB_Stats=='yes':
+			if (self.air_interface[self.eNB_instance] == 'lte-softmodem') or (self.air_interface[self.eNB_instance] == 'ocp-enb'):
+				mySSH.command('echo $USER; nohup python3 ' + monitor_file + ' ' + conf_file + ' enb 2>&1 > enb_stats_monitor_execution.log &', '\$', 5)
+			else:
+				mySSH.command('echo $USER; nohup python3 ' + monitor_file + ' ' + conf_file + ' gnb 2>&1 > gnb_stats_monitor_execution.log &', '\$', 5)
+
+
+
 		self.eNBLogFiles[int(self.eNB_instance)] = 'enb_' + self.testCase_id + '.log'
 		if extra_options != '':
 			self.eNBOptions[int(self.eNB_instance)] = extra_options
@@ -506,6 +567,8 @@ class RANManagement():
 			self.eNBstatuses[int(self.eNB_instance)] = int(self.eNB_serverId[self.eNB_instance])
 
 		mySSH.close()
+
+
 		HTML.CreateHtmlTestRow(self.air_interface[self.eNB_instance] + ' -O ' + config_file + extra_options, 'OK', CONST.ALL_PROCESSES_OK)
 		logging.debug('\u001B[1m Initialize eNB/gNB/ocp-eNB Completed\u001B[0m')
 
@@ -579,6 +642,10 @@ class RANManagement():
 				mySSH.command('echo ' + lPassWord + ' | sudo -S killall --signal SIGKILL -r .*-softmodem ocp-enb || true', '\$', 5)
 				time.sleep(5)
 		mySSH.command('rm -f my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
+		#stopping tshark (valid if eNB and enabled in xml, will not harm otherwise)
+		logging.debug('\u001B[1m Stopping tshark \u001B[0m')
+		mySSH.command('echo ' + lPassWord + ' | sudo -S killall --signal SIGKILL tshark', '\$', 5)
+		time.sleep(1)
 		mySSH.close()
 		# If tracer options is on, stopping tshark on EPC side
 		result = re.search('T_stdout', str(self.Initialize_eNB_args))
@@ -597,6 +664,7 @@ class RANManagement():
 			mySSH.close()
 			logging.debug('\u001B[1m Replaying RAW record file\u001B[0m')
 			mySSH.open(lIpAddr, lUserName, lPassWord)
+			mySSH.command('killall --signal SIGKILL record', '\$', 5)
 			mySSH.command('cd ' + lSourcePath + '/common/utils/T/tracer/', '\$', 5)
 			enbLogFile = self.eNBLogFiles[int(self.eNB_instance)]
 			raw_record_file = enbLogFile.replace('.log', '_record.raw')
@@ -619,6 +687,11 @@ class RANManagement():
 				fileToAnalyze = self.eNBLogFiles[int(self.eNB_instance)]
 				self.eNBLogFiles[int(self.eNB_instance)] = ''
 			if analyzeFile:
+				#*stats.log files + pickle + png
+				mySSH.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/*stats.log', '.')
+				mySSH.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/*.pickle', '.')
+				mySSH.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/*.png', '.')
+				#
 				copyin_res = mySSH.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/' + fileToAnalyze, '.')
 				if (copyin_res == -1):
 					logging.debug('\u001B[1;37;41m Could not copy ' + nodeB_prefix + 'NB logfile to analyze it! \u001B[0m')
@@ -627,12 +700,20 @@ class RANManagement():
 					self.eNBmbmsEnables[int(self.eNB_instance)] = False
 					return
 				if self.eNB_serverId[self.eNB_instance] != '0':
+					#*stats.log files + pickle + png
+
+					#debug / tentative
+					mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './nrL1_stats.log', self.eNBSourceCodePath + '/cmake_targets/')
+					mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './nrMAC_stats.log', self.eNBSourceCodePath + '/cmake_targets/')
+					mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './gnb_stats_monitor.pickle', self.eNBSourceCodePath + '/cmake_targets/')
+					mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './gnb_stats_monitor.png', self.eNBSourceCodePath + '/cmake_targets/')
+					#
 					mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './' + fileToAnalyze, self.eNBSourceCodePath + '/cmake_targets/')
 				logging.debug('\u001B[1m Analyzing ' + nodeB_prefix + 'NB logfile \u001B[0m ' + fileToAnalyze)
 				logStatus = self.AnalyzeLogFile_eNB(fileToAnalyze, HTML)
 				if (logStatus < 0):
 					HTML.CreateHtmlTestRow('N/A', 'KO', logStatus)
-					self.preamtureExit = True
+					self.prematureExit = True
 					self.eNBmbmsEnables[int(self.eNB_instance)] = False
 					return
 				else:
@@ -650,9 +731,11 @@ class RANManagement():
 		mySSH.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
 		mySSH.command('cd ' + self.eNBSourceCodePath, '\$', 5)
 		mySSH.command('cd cmake_targets', '\$', 5)
+		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S mv /tmp/enb_*.pcap .','\$',20)
+		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S mv /tmp/gnb_*.pcap .','\$',20)
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S rm -f enb.log.zip', '\$', 5)
-		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S zip enb.log.zip enb*.log core* enb_*record.raw enb_*.pcap enb_*txt physim_*.log', '\$', 60)
-		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S rm enb*.log core* enb_*record.raw enb_*.pcap enb_*txt', '\$', 5)
+		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S zip enb.log.zip enb*.log core* enb_*record.raw enb_*.pcap gnb_*.pcap enb_*txt physim_*.log *stats.log *monitor.pickle *monitor.png', '\$', 60)
+		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S rm enb*.log core* enb_*record.raw enb_*.pcap gnb_*.pcap enb_*txt physim_*.log *stats.log *.pickle *.png', '\$', 5)
 		mySSH.close()
 
 	def AnalyzeLogFile_eNB(self, eNBlogFile, HTML):
@@ -707,6 +790,8 @@ class RANManagement():
 		real_time_stats = {}
 		#count "problem receiving samples" msg
 		pb_receiving_samples_cnt = 0
+		#count "removing UE" msg
+		removing_ue = 0
 		#NSA specific log markers
 		nsa_markers ={'SgNBReleaseRequestAcknowledge': [],'FAILURE': [], 'scgFailureInformationNR-r15': [], 'SgNBReleaseRequest': []}
 	
@@ -896,13 +981,18 @@ class RANManagement():
 				if result is not None:
 					#remove 1- all useless char before relevant info  2- trailing char
 					line=line.replace('[0m','')
-					tmp=re.match(rf'^.*?(\b{k}\b.*)',line.rstrip()) #from python 3.6 we can use literal string interpolation for the variable k, using rf' in the regex 
-					real_time_stats[k]=tmp.group(1)
+					tmp=re.match(rf'^.*?(\b{k}\b.*)',line.rstrip()) #from python 3.6 we can use literal string interpolation for the variable k, using rf' in the regex
+					if tmp!=None: #with ULULULUULULULLLL at the head of the line, we skip it
+						real_time_stats[k]=tmp.group(1)
 
 			#count "problem receiving samples" msg
 			result = re.search('\[PHY\]\s+problem receiving samples', str(line))
 			if result is not None:
 				pb_receiving_samples_cnt += 1
+			#count "Removing UE" msg
+			result = re.search('\[MAC\]\s+Removing UE', str(line))
+			if result is not None:
+				removing_ue += 1
 
 			#nsa markers logging
 			for k in nsa_markers:
@@ -985,13 +1075,18 @@ class RANManagement():
 				for k in datalog_rt_stats['Data']:
 					if float(datalog_rt_stats['Data'][k][2])> datalog_rt_stats['Threshold'][k]: #condition for fail : avg/ref is greater than the fixed threshold
 						#setting prematureExit is ok although not the best option
-						self.prematureExit=True
+						self.prematureExit=False #temp for debug : do not stop the test if RT stats are excedeed
 			else:
 				statMsg = 'No real time stats found in the log file\n'
 				logging.debug('No real time stats found in the log file')
 				htmleNBFailureMsg += statMsg
 
 		else:
+			#Removing UE log
+			statMsg = '[MAC] Removing UE msg count =  '+str(removing_ue)
+			htmlMsg = statMsg+'\n'
+			logging.debug(statMsg)
+			htmleNBFailureMsg += htmlMsg
 			#nsa markers
 			statMsg = 'logfile line count = ' + str(line_cnt)			
 			htmlMsg = statMsg+'\n'

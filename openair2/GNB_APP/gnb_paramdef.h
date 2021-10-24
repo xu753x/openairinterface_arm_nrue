@@ -116,8 +116,12 @@ typedef enum {
 #define GNB_CONFIG_STRING_SSBSUBCARRIEROFFSET           "ssb_SubcarrierOffset"
 #define GNB_CONFIG_STRING_PDSCHANTENNAPORTS             "pdsch_AntennaPorts"
 #define GNB_CONFIG_STRING_PUSCHANTENNAPORTS             "pusch_AntennaPorts"
-#define GNB_CONFIG_STRING_PUSCHTARGETPOWX10             "pusch_TargetSNRx10"
-#define GNB_CONFIG_STRING_PUCCHTARGETPOWX10             "pucch_TargetSNRx10"
+#define GNB_CONFIG_STRING_SIB1TDA                       "sib1_tda"
+#define GNB_CONFIG_STRING_DOCSIRS                       "do_CSIRS"
+#define GNB_CONFIG_STRING_NRCELLID                      "nr_cellid"
+#define GNB_CONFIG_STRING_MINRXTXTIMEPDSCH              "min_rxtxtime_pdsch"
+#define GNB_CONFIG_STRING_ULPRBBLACKLIST                "ul_prbblacklist"
+
 
 /*-----------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            cell configuration parameters                                                                */
@@ -141,9 +145,12 @@ typedef enum {
 {GNB_CONFIG_STRING_SSBSUBCARRIEROFFSET,          NULL,   0,            iptr:NULL,   defintval:31,                TYPE_INT,       0},  \
 {GNB_CONFIG_STRING_PDSCHANTENNAPORTS,            NULL,   0,            iptr:NULL,   defintval:1,                 TYPE_INT,       0},  \
 {GNB_CONFIG_STRING_PUSCHANTENNAPORTS,            NULL,   0,            iptr:NULL,   defintval:1,                 TYPE_INT,       0},  \
-{GNB_CONFIG_STRING_PUSCHTARGETPOWX10,            NULL,   0,            iptr:NULL,   defintval:200,               TYPE_INT,       0},  \
-{GNB_CONFIG_STRING_PUCCHTARGETPOWX10,            NULL,   0,            iptr:NULL,   defintval:200,               TYPE_INT,       0},  \
-}															     	
+{GNB_CONFIG_STRING_SIB1TDA,                      NULL,   0,            iptr:NULL,   defintval:0,                 TYPE_INT,       0},  \
+{GNB_CONFIG_STRING_DOCSIRS,                      NULL,   0,            iptr:NULL,   defintval:0,                 TYPE_INT,       0},  \
+{GNB_CONFIG_STRING_NRCELLID,                     NULL,   0,            u64ptr:NULL, defint64val:1,               TYPE_UINT64,    0},  \
+{GNB_CONFIG_STRING_MINRXTXTIMEPDSCH,             NULL,   0,            iptr:NULL,   defintval:2,                 TYPE_INT,       0},  \
+{GNB_CONFIG_STRING_ULPRBBLACKLIST,               NULL,   0,            strptr:NULL, defstrval:"",                 TYPE_STRING,   0}   \
+}
 
 #define GNB_GNB_ID_IDX                  0
 #define GNB_CELL_TYPE_IDX               1
@@ -162,8 +169,11 @@ typedef enum {
 #define GNB_SSB_SUBCARRIEROFFSET_IDX    14
 #define GNB_PDSCH_ANTENNAPORTS_IDX      15
 #define GNB_PUSCH_ANTENNAPORTS_IDX      16
-#define GNB_PUSCH_TARGETPOW_X10_IDX     17
-#define GNB_PUCCH_TARGETPOW_X10_IDX     18
+#define GNB_SIB1_TDA_IDX                17
+#define GNB_DO_CSIRS_IDX                18
+#define GNB_NRCELLID_IDX                19
+#define GNB_MINRXTXTIMEPDSCH_IDX        20
+#define GNB_ULPRBBLACKLIST_IDX          21
 
 #define TRACKING_AREA_CODE_OKRANGE {0x0001,0xFFFD}
 #define GNBPARAMS_CHECK {                                         \
@@ -460,10 +470,12 @@ typedef enum {
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /* security configuration                                                                                                                                                           */
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-#define CONFIG_STRING_SECURITY      "security"
+#define CONFIG_STRING_SECURITY             "security"
 
-#define SECURITY_CONFIG_CIPHERING   "ciphering_algorithms"
-#define SECURITY_CONFIG_INTEGRITY   "integrity_algorithms"
+#define SECURITY_CONFIG_CIPHERING          "ciphering_algorithms"
+#define SECURITY_CONFIG_INTEGRITY          "integrity_algorithms"
+#define SECURITY_CONFIG_DO_DRB_CIPHERING   "drb_ciphering"
+#define SECURITY_CONFIG_DO_DRB_INTEGRITY   "drb_integrity"
 
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*   security configuration                                                                                                                                                         */
@@ -472,10 +484,15 @@ typedef enum {
 #define SECURITY_GLOBALPARAMS_DESC { \
     {SECURITY_CONFIG_CIPHERING,            "preferred ciphering algorithms\n",            0,                strlistptr:NULL,      defstrlistval:NULL,       TYPE_STRINGLIST,  0}, \
     {SECURITY_CONFIG_INTEGRITY,            "preferred integrity algorithms\n",            0,                strlistptr:NULL,      defstrlistval:NULL,       TYPE_STRINGLIST,  0}, \
+    {SECURITY_CONFIG_DO_DRB_CIPHERING,     "use ciphering for DRBs",                      0,                strptr:NULL,          defstrval:"yes",          TYPE_STRING,      0}, \
+    {SECURITY_CONFIG_DO_DRB_INTEGRITY,     "use integrity for DRBs",                      0,                strptr:NULL,          defstrval:"no",           TYPE_STRING,      0}, \
 }
 
-#define SECURITY_CONFIG_CIPHERING_IDX   0
-#define SECURITY_CONFIG_INTEGRITY_IDX   1
+#define SECURITY_CONFIG_CIPHERING_IDX          0
+#define SECURITY_CONFIG_INTEGRITY_IDX          1
+#define SECURITY_CONFIG_DO_DRB_CIPHERING_IDX   2
+#define SECURITY_CONFIG_DO_DRB_INTEGRITY_IDX   3
+
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 
 #endif

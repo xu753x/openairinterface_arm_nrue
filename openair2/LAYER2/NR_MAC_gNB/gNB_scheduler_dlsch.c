@@ -47,6 +47,7 @@
 
 /*Softmodem params*/
 #include "executables/softmodem-common.h"
+#include "../../../nfapi/oai_integration/vendor_ext.h"
 
 ////////////////////////////////////////////////////////
 /////* DLSCH MAC PDU generation (6.1.2 TS 38.321) */////
@@ -59,7 +60,7 @@
 void calculate_preferred_dl_tda(module_id_t module_id, const NR_BWP_Downlink_t *bwp)
 {
   gNB_MAC_INST *nrmac = RC.nrmac[module_id];
-  const int bwp_id = bwp->bwp_Id;
+  const int bwp_id = bwp ? bwp->bwp_Id : 0;
   if (nrmac->preferred_dl_tda[bwp_id])
     return;
 
@@ -69,15 +70,22 @@ void calculate_preferred_dl_tda(module_id_t module_id, const NR_BWP_Downlink_t *
       scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
   const int symb_dlMixed = tdd ? (1 << tdd->nrofDownlinkSymbols) - 1 : 0;
 
-  const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
-  const NR_SearchSpace_t *search_space = get_searchspace(bwp, target_ss);
-  const NR_ControlResourceSet_t *coreset = get_coreset(bwp, search_space, 1 /* dedicated */);
+  int target_ss;
+  if (bwp) {
+    target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
+  }
+  else {
+    target_ss = NR_SearchSpace__searchSpaceType_PR_common;
+  }
+  NR_SearchSpace_t *search_space = get_searchspace(scc, bwp ? bwp->bwp_Dedicated : NULL, target_ss);
+  NR_ControlResourceSet_t *coreset = get_coreset(module_id, scc, bwp ? bwp->bwp_Dedicated : NULL, search_space, target_ss);
   // get coreset symbol "map"
   const uint16_t symb_coreset = (1 << coreset->duration) - 1;
 
   /* check that TDA index 0 fits into DL and does not overlap CORESET */
-  const struct NR_PDSCH_TimeDomainResourceAllocationList *tdaList =
-      bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
+  const struct NR_PDSCH_TimeDomainResourceAllocationList *tdaList = bwp ?
+      bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList :
+      scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
   AssertFatal(tdaList->list.count >= 1, "need to have at least one TDA for DL slots\n");
   const NR_PDSCH_TimeDomainResourceAllocation_t *tdaP_DL = tdaList->list.array[0];
   AssertFatal(!tdaP_DL->k0 || *tdaP_DL->k0 == 0,
@@ -128,7 +136,7 @@ void calculate_preferred_dl_tda(module_id_t module_id, const NR_BWP_Downlink_t *
       nrmac->preferred_dl_tda[bwp_id][i] = 0;
     else if (tdd && nr_mix_slots && i % nr_slots_period == tdd->nrofDownlinkSlots)
       nrmac->preferred_dl_tda[bwp_id][i] = tdaMi;
-    LOG_I(MAC, "slot %d preferred_dl_tda %d\n", i, nrmac->preferred_dl_tda[bwp_id][i]);
+    LOG_D(MAC, "slot %d preferred_dl_tda %d\n", i, nrmac->preferred_dl_tda[bwp_id][i]);
   }
 }
 
@@ -176,7 +184,7 @@ int nr_write_ce_dlsch_pdu(module_id_t module_idP,
       ((NR_MAC_CE_TA *) ce_ptr)->TAGID = tag_id;
     }
 
-    LOG_D(MAC, "NR MAC CE timing advance command = %d (%d) TAG ID = %d\n", timing_advance_cmd, ((NR_MAC_CE_TA *) ce_ptr)->TA_COMMAND, tag_id);
+    LOG_D(NR_MAC, "NR MAC CE timing advance command = %d (%d) TAG ID = %d\n", timing_advance_cmd, ((NR_MAC_CE_TA *) ce_ptr)->TA_COMMAND, tag_id);
     mac_ce_size = sizeof(NR_MAC_CE_TA);
     // Copying  bytes for MAC CEs to the mac pdu pointer
     memcpy((void *) mac_pdu_ptr, (void *) ce_ptr, mac_ce_size);
@@ -195,7 +203,7 @@ int nr_write_ce_dlsch_pdu(module_id_t module_idP,
     // contention resolution identity MAC ce has a fixed 48 bit size
     // this contains the UL CCCH SDU. If UL CCCH SDU is longer than 48 bits,
     // it contains the first 48 bits of the UL CCCH SDU
-    LOG_T(MAC, "[gNB ][RAPROC] Generate contention resolution msg: %x.%x.%x.%x.%x.%x\n",
+    LOG_T(NR_MAC, "[gNB ][RAPROC] Generate contention resolution msg: %x.%x.%x.%x.%x.%x\n",
           ue_cont_res_id[0], ue_cont_res_id[1], ue_cont_res_id[2],
           ue_cont_res_id[3], ue_cont_res_id[4], ue_cont_res_id[5]);
     // Copying bytes (6 octects) to CEs pointer
@@ -220,7 +228,7 @@ int nr_write_ce_dlsch_pdu(module_id_t module_idP,
     nr_UESpec_TCI_StateInd_PDCCH.ServingCellId = (ue_sched_ctl->UE_mac_ce_ctrl.pdcch_state_ind.servingCellId) & 0x1F; //extracting LSB 5 Bits
     nr_UESpec_TCI_StateInd_PDCCH.TciStateId = (ue_sched_ctl->UE_mac_ce_ctrl.pdcch_state_ind.tciStateId) & 0x7F; //extracting LSB 7 bits
     nr_UESpec_TCI_StateInd_PDCCH.CoresetId2 = (ue_sched_ctl->UE_mac_ce_ctrl.pdcch_state_ind.coresetId) & 0x1; //extracting LSB 1 bit
-    LOG_D(MAC, "NR MAC CE TCI state indication for UE Specific PDCCH = %d \n", nr_UESpec_TCI_StateInd_PDCCH.TciStateId);
+    LOG_D(NR_MAC, "NR MAC CE TCI state indication for UE Specific PDCCH = %d \n", nr_UESpec_TCI_StateInd_PDCCH.TciStateId);
     mac_ce_size = sizeof(NR_TCI_PDCCH);
     // Copying  bytes for MAC CEs to the mac pdu pointer
     memcpy((void *) mac_pdu_ptr, (void *)&nr_UESpec_TCI_StateInd_PDCCH, mac_ce_size);
@@ -331,7 +339,7 @@ int nr_write_ce_dlsch_pdu(module_id_t module_idP,
     ((NR_MAC_CE_SP_ZP_CSI_RS_RES_SET *) mac_pdu_ptr)->BWPID = ue_sched_ctl->UE_mac_ce_ctrl.sp_zp_csi_rs.bwpid & 0x3; //2 bits
     ((NR_MAC_CE_SP_ZP_CSI_RS_RES_SET *) mac_pdu_ptr)->CSIRS_RSC_ID = ue_sched_ctl->UE_mac_ce_ctrl.sp_zp_csi_rs.rsc_id & 0xF; //4 bits
     ((NR_MAC_CE_SP_ZP_CSI_RS_RES_SET *) mac_pdu_ptr)->R = 0;
-    LOG_D(MAC, "NR MAC CE of ZP CSIRS Serv cell ID = %d BWPID= %d Rsc set ID = %d\n", ue_sched_ctl->UE_mac_ce_ctrl.sp_zp_csi_rs.serv_cell_id, ue_sched_ctl->UE_mac_ce_ctrl.sp_zp_csi_rs.bwpid,
+    LOG_D(NR_MAC, "NR MAC CE of ZP CSIRS Serv cell ID = %d BWPID= %d Rsc set ID = %d\n", ue_sched_ctl->UE_mac_ce_ctrl.sp_zp_csi_rs.serv_cell_id, ue_sched_ctl->UE_mac_ce_ctrl.sp_zp_csi_rs.bwpid,
           ue_sched_ctl->UE_mac_ce_ctrl.sp_zp_csi_rs.rsc_id);
     mac_ce_size = sizeof(NR_MAC_CE_SP_ZP_CSI_RS_RES_SET);
     mac_pdu_ptr += (unsigned char) mac_ce_size;
@@ -388,24 +396,68 @@ void nr_store_dlsch_buffer(module_id_t module_id,
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
     sched_ctrl->num_total_bytes = 0;
-    const int lcid = DL_SCH_LCID_DTCH;
+
+    int lcid; 
     const uint16_t rnti = UE_info->rnti[UE_id];
-    sched_ctrl->rlc_status[lcid] = mac_rlc_status_ind(module_id,
-                                                      rnti,
-                                                      module_id,
-                                                      frame,
-                                                      slot,
-                                                      ENB_FLAG_YES,
-                                                      MBMS_FLAG_NO,
-                                                      lcid,
-                                                      0,
-                                                      0);
+    LOG_D(NR_MAC,"UE %d/%x : lcid_mask %x\n",UE_id,rnti,sched_ctrl->lcid_mask);
+    if ((sched_ctrl->lcid_mask&(1<<2)) > 0)
+      sched_ctrl->rlc_status[DL_SCH_LCID_DCCH1] = mac_rlc_status_ind(module_id,
+                                                        rnti,
+                                                        module_id,
+                                                          frame,
+                                                        slot,
+                                                        ENB_FLAG_YES,
+                                                        MBMS_FLAG_NO,
+                                                        DL_SCH_LCID_DCCH1,
+                                                        0,
+                                                        0);
+    if ((sched_ctrl->lcid_mask&(1<<1)) > 0)
+       sched_ctrl->rlc_status[DL_SCH_LCID_DCCH] = mac_rlc_status_ind(module_id,
+                                                        rnti,
+                                                        module_id,
+                                                        frame,
+                                                        slot,
+                                                        ENB_FLAG_YES,
+                                                        MBMS_FLAG_NO,
+                                                        DL_SCH_LCID_DCCH,
+                                                        0,
+                                                        0);
+    if ((sched_ctrl->lcid_mask&(1<<4)) > 0)  
+       sched_ctrl->rlc_status[DL_SCH_LCID_DTCH] = mac_rlc_status_ind(module_id,
+                                                                    rnti,
+                                                                    module_id,
+                                                                    frame,
+                                                                    slot,
+                                                                    ENB_FLAG_YES,
+                                                                    MBMS_FLAG_NO,
+                                                                    DL_SCH_LCID_DTCH,
+                                                                    0,
+                                                                    0);
+
+     if(sched_ctrl->rlc_status[DL_SCH_LCID_DCCH].bytes_in_buffer > 0){
+       lcid = DL_SCH_LCID_DCCH;       
+     } 
+     else if (sched_ctrl->rlc_status[DL_SCH_LCID_DCCH1].bytes_in_buffer > 0)
+     {
+       lcid = DL_SCH_LCID_DCCH1;       
+     }else{
+       lcid = DL_SCH_LCID_DTCH;       
+     }
+                                                      
     sched_ctrl->num_total_bytes += sched_ctrl->rlc_status[lcid].bytes_in_buffer;
-    LOG_D(MAC,
-          "[%s][%d.%d], DTCH%d->DLSCH, RLC status %d bytes TA %d\n",
+    //later multiplex here. Just select DCCH/SRB before DTCH/DRB
+    sched_ctrl->lcid_to_schedule = lcid;
+
+    if (sched_ctrl->num_total_bytes == 0
+        && !sched_ctrl->ta_apply) /* If TA should be applied, give at least one RB */
+      return;
+
+    LOG_D(NR_MAC,
+          "[%s][%d.%d], %s%d->DLSCH, RLC status %d bytes TA %d\n",
           __func__,
           frame,
           slot,
+          lcid<4?"DCCH":"DTCH",
           lcid,
           sched_ctrl->rlc_status[lcid].bytes_in_buffer,
           sched_ctrl->ta_apply);
@@ -418,18 +470,28 @@ bool allocate_dl_retransmission(module_id_t module_id,
                                 uint8_t *rballoc_mask,
                                 int *n_rb_sched,
                                 int UE_id,
-                                int current_harq_pid)
-{
+                                int current_harq_pid) {
+
   const NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels->ServingCellConfigCommon;
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
   NR_sched_pdsch_t *retInfo = &sched_ctrl->harq_processes[current_harq_pid].sched_pdsch;
-  const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-  int rbStart = NRRIV2PRBOFFSET(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-  const uint8_t num_dmrs_cdm_grps_no_data = 1;
+  NR_CellGroupConfig_t *cg = UE_info->CellGroup[UE_id];
+  NR_BWP_DownlinkDedicated_t *bwpd= cg ? cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP:NULL;
 
+
+  NR_BWP_t *genericParameters = sched_ctrl->active_bwp ?
+                                &sched_ctrl->active_bwp->bwp_Common->genericParameters :
+                                &RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
+
+  const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+  int rbStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+
+  NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
+  const long f = (sched_ctrl->active_bwp ||bwpd) ? sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats : 0;
   int rbSize = 0;
-  const int tda = RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot];
+  const int tda = RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Id : 0][slot];
+  AssertFatal(tda>=0,"Unable to find PDSCH time domain allocation in list\n");
   if (tda == retInfo->time_domain_allocation) {
     /* Check that there are enough resources for retransmission */
     while (rbSize < retInfo->rbSize) {
@@ -438,7 +500,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
       while (rbStart < bwpSize && !rballoc_mask[rbStart])
         rbStart++;
       if (rbStart >= bwpSize) {
-        LOG_D(MAC, "cannot allocate retransmission for UE %d/RNTI %04x: no resources\n", UE_id, UE_info->rnti[UE_id]);
+        LOG_D(NR_MAC, "cannot allocate retransmission for UE %d/RNTI %04x: no resources\n", UE_id, UE_info->rnti[UE_id]);
         return false;
       }
       while (rbStart + rbSize < bwpSize && rballoc_mask[rbStart + rbSize] && rbSize < retInfo->rbSize)
@@ -446,10 +508,8 @@ bool allocate_dl_retransmission(module_id_t module_id,
     }
     /* check whether we need to switch the TDA allocation since the last
      * (re-)transmission */
-    NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
-    if (ps->time_domain_allocation != tda || ps->numDmrsCdmGrpsNoData != num_dmrs_cdm_grps_no_data)
-      nr_set_pdsch_semi_static(
-          scc, UE_info->secondaryCellGroup[UE_id], sched_ctrl->active_bwp, tda, num_dmrs_cdm_grps_no_data, ps);
+    if (ps->time_domain_allocation != tda)
+      nr_set_pdsch_semi_static(scc, cg, sched_ctrl->active_bwp, bwpd, tda, f, ps);
   } else {
     /* the retransmission will use a different time domain allocation, check
      * that we have enough resources */
@@ -458,8 +518,8 @@ bool allocate_dl_retransmission(module_id_t module_id,
     while (rbStart + rbSize < bwpSize && rballoc_mask[rbStart + rbSize])
       rbSize++;
     NR_pdsch_semi_static_t temp_ps;
-    nr_set_pdsch_semi_static(
-        scc, UE_info->secondaryCellGroup[UE_id], sched_ctrl->active_bwp, tda, num_dmrs_cdm_grps_no_data, &temp_ps);
+    temp_ps.nrOfLayers = 1;
+    nr_set_pdsch_semi_static(scc, cg, sched_ctrl->active_bwp, bwpd, tda, f, &temp_ps);
     uint32_t new_tbs;
     uint16_t new_rbSize;
     bool success = nr_find_nb_rb(retInfo->Qm,
@@ -492,7 +552,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
 
   /* Find PUCCH occasion: if it fails, undo CCE allocation (undoing PUCCH
    * allocation after CCE alloc fail would be more complex) */
-  const int alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot);
+  const int alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot, -1, 0);
   if (alloc<0) {
     LOG_D(MAC,
           "%s(): could not find PUCCH for UE %d/%04x@%d.%d\n",
@@ -503,7 +563,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
           slot);
     int cid = sched_ctrl->coreset->controlResourceSetId;
     UE_info->num_pdcch_cand[UE_id][cid]--;
-    int *cce_list = RC.nrmac[module_id]->cce_list[sched_ctrl->active_bwp->bwp_Id][cid];
+    int *cce_list = RC.nrmac[module_id]->cce_list[sched_ctrl->active_bwp?sched_ctrl->active_bwp->bwp_Id:0][cid];
     for (int i = 0; i < sched_ctrl->aggregation_level; i++)
       cce_list[sched_ctrl->cce_index + i] = 0;
     return false;
@@ -523,7 +583,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
 }
 
 float thr_ue[MAX_MOBILES_PER_GNB];
-uint32_t pf_tbs[3][28]; // pre-computed, approximate TBS values for PF coefficient
+uint32_t pf_tbs[3][29]; // pre-computed, approximate TBS values for PF coefficient
 
 void pf_dl(module_id_t module_id,
            frame_t frame,
@@ -532,8 +592,10 @@ void pf_dl(module_id_t module_id,
            int max_num_ue,
            int n_rb_sched,
            uint8_t *rballoc_mask) {
-  const NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels->ServingCellConfigCommon;
-  NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
+
+  gNB_MAC_INST *mac = RC.nrmac[module_id];
+  NR_UE_info_t *UE_info = &mac->UE_info;
+  NR_ServingCellConfigCommon_t *scc=mac->common_channels[0].ServingCellConfigCommon;
   float coeff_ue[MAX_MOBILES_PER_GNB];
   // UEs that could be scheduled
   int ue_array[MAX_MOBILES_PER_GNB];
@@ -541,7 +603,9 @@ void pf_dl(module_id_t module_id,
 
   /* Loop UE_info->list to check retransmission */
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
+    if (UE_info->Msg4_ACKed[UE_id] != true) continue;
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+    if (sched_ctrl->ul_failure==1 && get_softmodem_params()->phy_test==0) continue;
     NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
     NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
     /* get the PID of a HARQ process awaiting retrnasmission, or -1 otherwise */
@@ -558,7 +622,7 @@ void pf_dl(module_id_t module_id,
       bool r = allocate_dl_retransmission(
           module_id, frame, slot, rballoc_mask, &n_rb_sched, UE_id, sched_pdsch->dl_harq_pid);
       if (!r) {
-        LOG_D(MAC, "%4d.%2d retransmission can NOT be allocated\n", frame, slot);
+        LOG_D(NR_MAC, "%4d.%2d retransmission can NOT be allocated\n", frame, slot);
         continue;
       }
       /* reduce max_num_ue once we are sure UE can be allocated, i.e., has CCE */
@@ -571,9 +635,10 @@ void pf_dl(module_id_t module_id,
 
       /* Calculate coeff */
       sched_pdsch->mcs = 9;
+      ps->nrOfLayers = 1;
       uint32_t tbs = pf_tbs[ps->mcsTableIdx][sched_pdsch->mcs];
       coeff_ue[UE_id] = (float) tbs / thr_ue[UE_id];
-      LOG_D(MAC,"b %d, thr_ue[%d] %f, tbs %d, coeff_ue[%d] %f\n",
+      LOG_D(NR_MAC,"b %d, thr_ue[%d] %f, tbs %d, coeff_ue[%d] %f\n",
             b, UE_id, thr_ue[UE_id], tbs, UE_id, coeff_ue[UE_id]);
       /* Create UE_sched list for UEs eligible for new transmission*/
       add_tail_nr_list(&UE_sched, UE_id);
@@ -599,16 +664,23 @@ void pf_dl(module_id_t module_id,
     p = &UE_sched.next[*max];
     *max = UE_sched.next[*max];
     *p = -1;
+    NR_CellGroupConfig_t *cg = UE_info->CellGroup[UE_id];
+    NR_BWP_DownlinkDedicated_t *bwpd= cg ? cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP:NULL;
 
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+    int bwp_Id = sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Id : 0;
     const uint16_t rnti = UE_info->rnti[UE_id];
-    const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-    int rbStart = NRRIV2PRBOFFSET(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+    NR_BWP_t *genericParameters = sched_ctrl->active_bwp ?
+      &sched_ctrl->active_bwp->bwp_Common->genericParameters:
+      &scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
+
+    const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
+    int rbStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
 
     /* Find a free CCE */
     bool freeCCE = find_free_CCE(module_id, slot, UE_id);
     if (!freeCCE) {
-      LOG_D(MAC, "%4d.%2d could not find CCE for DL DCI UE %d/RNTI %04x\n", frame, slot, UE_id, rnti);
+      LOG_D(NR_MAC, "%4d.%2d could not find CCE for DL DCI UE %d/RNTI %04x\n", frame, slot, UE_id, rnti);
       continue;
     }
     /* reduce max_num_ue once we are sure UE can be allocated, i.e., has CCE */
@@ -617,9 +689,9 @@ void pf_dl(module_id_t module_id,
 
     /* Find PUCCH occasion: if it fails, undo CCE allocation (undoing PUCCH
     * allocation after CCE alloc fail would be more complex) */
-    const int alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot);
+    const int alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot, -1,0);
     if (alloc<0) {
-      LOG_D(MAC,
+      LOG_D(NR_MAC,
             "%s(): could not find PUCCH for UE %d/%04x@%d.%d\n",
             __func__,
             UE_id,
@@ -628,7 +700,7 @@ void pf_dl(module_id_t module_id,
             slot);
       int cid = sched_ctrl->coreset->controlResourceSetId;
       UE_info->num_pdcch_cand[UE_id][cid]--;
-      int *cce_list = RC.nrmac[module_id]->cce_list[sched_ctrl->active_bwp->bwp_Id][cid];
+      int *cce_list = mac->cce_list[bwp_Id][cid];
       for (int i = 0; i < sched_ctrl->aggregation_level; i++)
         cce_list[sched_ctrl->cce_index + i] = 0;
       return;
@@ -636,25 +708,26 @@ void pf_dl(module_id_t module_id,
 
     // Freq-demain allocation
     while (rbStart < bwpSize && !rballoc_mask[rbStart]) rbStart++;
+
     uint16_t max_rbSize = 1;
     while (rbStart + max_rbSize < bwpSize && rballoc_mask[rbStart + max_rbSize])
       max_rbSize++;
 
     /* MCS has been set above */
-    const uint8_t num_dmrs_cdm_grps_no_data = 1;
-    const int tda = RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot];
+
+    const int tda = RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Id : 0][slot];
+    AssertFatal(tda>=0,"Unable to find PDSCH time domain allocation in list\n");
     NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
     NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
-    if (ps->time_domain_allocation != tda || ps->numDmrsCdmGrpsNoData != num_dmrs_cdm_grps_no_data)
-      nr_set_pdsch_semi_static(
-          scc, UE_info->secondaryCellGroup[UE_id], sched_ctrl->active_bwp, tda, num_dmrs_cdm_grps_no_data, ps);
+    const long f = (sched_ctrl->active_bwp || bwpd) ? sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats : 0;
+    if (ps->time_domain_allocation != tda)
+      nr_set_pdsch_semi_static(scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, bwpd, tda, f, ps);
     sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
     sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, ps->mcsTableIdx);
     sched_pdsch->pucch_allocation = alloc;
     uint32_t TBS = 0;
     uint16_t rbSize;
-    const int oh = 2 + (sched_ctrl->num_total_bytes >= 256)
-                 + 2 * (frame == (sched_ctrl->ta_frame + 10) % 1024);
+    const int oh = 3 + 2 * (frame == (sched_ctrl->ta_frame + 10) % 1024);
     nr_find_nb_rb(sched_pdsch->Qm,
                   sched_pdsch->R,
                   ps->nrOfSymbols,
@@ -677,22 +750,20 @@ void pf_dl(module_id_t module_id,
 void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t slot)
 {
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
-
   if (UE_info->num_UEs == 0)
     return;
 
+  NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon;
   const int CC_id = 0;
-
 
   /* Get bwpSize from the first UE */
   int UE_id = UE_info->list.head;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
-  const int tda = RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot];
-  if (tda < 0)
-    return;
-
-  const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_bwp ?
+				    sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth:
+				    scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth,
+				    MAX_BWP_SIZE);
 
   uint16_t *vrb_map = RC.nrmac[module_id]->common_channels[CC_id].vrb_map;
   uint8_t rballoc_mask[bwpSize];
@@ -764,8 +835,11 @@ void nr_schedule_ue_spec(module_id_t module_id,
   NR_list_t *UE_list = &UE_info->list;
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+    if (sched_ctrl->ul_failure==1 && get_softmodem_params()->phy_test==0) continue;
     NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
     UE_info->mac_stats[UE_id].dlsch_current_bytes = 0;
+    NR_CellGroupConfig_t *cg = UE_info->CellGroup[UE_id];
+    NR_BWP_DownlinkDedicated_t *bwpd= cg ? cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP:NULL;
 
     /* update TA and set ta_apply every 10 frames.
      * Possible improvement: take the periodicity from input file.
@@ -773,7 +847,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
      * If we add the CE, ta_apply will be reset */
     if (frame == (sched_ctrl->ta_frame + 10) % 1024){
       sched_ctrl->ta_apply = true; /* the timer is reset once TA CE is scheduled */
-      LOG_D(MAC, "[UE %d][%d.%d] UL timing alignment procedures: setting flag for Timing Advance command\n", UE_id, frame, slot);
+      LOG_D(NR_MAC, "[UE %d][%d.%d] UL timing alignment procedures: setting flag for Timing Advance command\n", UE_id, frame, slot);
     }
 
     if (sched_pdsch->rbSize <= 0)
@@ -781,16 +855,16 @@ void nr_schedule_ue_spec(module_id_t module_id,
 
     const rnti_t rnti = UE_info->rnti[UE_id];
 
-    /* POST processing */
-    const int nrOfLayers = 1;
-    const uint16_t R = sched_pdsch->R;
-    const uint8_t Qm = sched_pdsch->Qm;
-    const uint32_t TBS = sched_pdsch->tb_size;
-
     /* pre-computed PDSCH values that only change if time domain
      * allocation/DMRS parameters change. Updated in the preprocessor through
      * nr_set_pdsch_semi_static() */
     NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
+
+    /* POST processing */
+    const uint8_t nrOfLayers = ps->nrOfLayers;
+    const uint16_t R = sched_pdsch->R;
+    const uint8_t Qm = sched_pdsch->Qm;
+    const uint32_t TBS = sched_pdsch->tb_size;
 
     int8_t current_harq_pid = sched_pdsch->dl_harq_pid;
     if (current_harq_pid < 0) {
@@ -819,31 +893,39 @@ void nr_schedule_ue_spec(module_id_t module_id,
     harq->is_waiting = true;
     UE_info->mac_stats[UE_id].dlsch_rounds[harq->round]++;
 
-    LOG_D(MAC,
-          "%4d.%2d RNTI %04x start %3d RBs %3d startSymbol %2d nb_symbol %2d MCS %2d TBS %4d HARQ PID %2d round %d NDI %d\n",
+    LOG_D(NR_MAC,
+          "%4d.%2d [DLSCH/PDSCH/PUCCH] UE %d RNTI %04x DCI L %d start %3d RBs %3d startSymbol %2d nb_symbol %2d dmrspos %x MCS %2d TBS %4d HARQ PID %2d round %d RV %d NDI %d dl_data_to_ULACK %d (%d.%d) TPC %d\n",
           frame,
           slot,
+          UE_id,
           rnti,
+          sched_ctrl->aggregation_level,
           sched_pdsch->rbStart,
           sched_pdsch->rbSize,
           ps->startSymbolIndex,
           ps->nrOfSymbols,
+          ps->dl_dmrs_symb_pos,
           sched_pdsch->mcs,
           TBS,
           current_harq_pid,
           harq->round,
-          harq->ndi);
+          nr_rv_round_map[harq->round],
+          harq->ndi,
+          pucch->timing_indicator,
+          pucch->frame,
+          pucch->ul_slot,
+          sched_ctrl->tpc1);
 
     NR_BWP_Downlink_t *bwp = sched_ctrl->active_bwp;
-    AssertFatal(bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList,
-                "searchSpacesToAddModList is null\n");
-    AssertFatal(bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.count > 0,
-                "searchSPacesToAddModList is empty\n");
 
     /* look up the PDCCH PDU for this CC, BWP, and CORESET. If it does not
      * exist, create it */
-    const int bwpid = sched_ctrl->active_bwp->bwp_Id;
-    const int coresetid = sched_ctrl->coreset->controlResourceSetId;
+
+    // BWP
+    NR_BWP_t *genericParameters = bwp ? &bwp->bwp_Common->genericParameters : &scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
+
+    const int bwpid = bwp ? bwp->bwp_Id : 0;
+    const int coresetid = (bwp||bwpd) ? sched_ctrl->coreset->controlResourceSetId : gNB_mac->sched_ctrlCommon->coreset->controlResourceSetId;
     nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu = gNB_mac->pdcch_pdu_idx[CC_id][bwpid][coresetid];
     if (!pdcch_pdu) {
       nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdcch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
@@ -852,7 +934,10 @@ void nr_schedule_ue_spec(module_id_t module_id,
       dl_tti_pdcch_pdu->PDUSize = (uint8_t)(2+sizeof(nfapi_nr_dl_tti_pdcch_pdu));
       dl_req->nPDUs += 1;
       pdcch_pdu = &dl_tti_pdcch_pdu->pdcch_pdu.pdcch_pdu_rel15;
-      nr_configure_pdcch(pdcch_pdu, sched_ctrl->search_space, sched_ctrl->coreset, scc, bwp);
+      LOG_D(NR_MAC,"Trying to configure DL pdcch for UE %d, bwp %d, cs %d\n",UE_id,bwpid,coresetid);
+      NR_SearchSpace_t *ss = (bwp||bwpd) ? sched_ctrl->search_space:gNB_mac->sched_ctrlCommon->search_space;
+      NR_ControlResourceSet_t *coreset = (bwp||bwpd)? sched_ctrl->coreset:gNB_mac->sched_ctrlCommon->coreset;
+      nr_configure_pdcch(pdcch_pdu, ss, coreset, scc, genericParameters, NULL);
       gNB_mac->pdcch_pdu_idx[CC_id][bwpid][coresetid] = pdcch_pdu;
     }
 
@@ -871,14 +956,11 @@ void nr_schedule_ue_spec(module_id_t module_id,
     const int pduindex = gNB_mac->pdu_index[CC_id]++;
     pdsch_pdu->pduIndex = pduindex;
 
-    // BWP
-    pdsch_pdu->BWPSize  = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-    pdsch_pdu->BWPStart = NRRIV2PRBOFFSET(bwp->bwp_Common->genericParameters.locationAndBandwidth,MAX_BWP_SIZE);
-    pdsch_pdu->SubcarrierSpacing = bwp->bwp_Common->genericParameters.subcarrierSpacing;
-    if (bwp->bwp_Common->genericParameters.cyclicPrefix)
-      pdsch_pdu->CyclicPrefix = *bwp->bwp_Common->genericParameters.cyclicPrefix;
-    else
-      pdsch_pdu->CyclicPrefix = 0;
+    pdsch_pdu->BWPSize  = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+    pdsch_pdu->BWPStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
+    pdsch_pdu->SubcarrierSpacing = genericParameters->subcarrierSpacing;
+
+    pdsch_pdu->CyclicPrefix = genericParameters->cyclicPrefix ? *genericParameters->cyclicPrefix : 0;
 
     // Codeword information
     pdsch_pdu->NrOfCodewords = 1;
@@ -886,6 +968,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     pdsch_pdu->qamModOrder[0] = Qm;
     pdsch_pdu->mcsIndex[0] = sched_pdsch->mcs;
     pdsch_pdu->mcsTable[0] = ps->mcsTableIdx;
+    AssertFatal(harq!=NULL,"harq is null\n");
     AssertFatal(harq->round<4,"%d",harq->round);
     pdsch_pdu->rvIndex[0] = nr_rv_round_map[harq->round];
     pdsch_pdu->TBSize[0] = TBS;
@@ -901,7 +984,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     pdsch_pdu->dlDmrsScramblingId = *scc->physCellId;
     pdsch_pdu->SCID = 0;
     pdsch_pdu->numDmrsCdmGrpsNoData = ps->numDmrsCdmGrpsNoData;
-    pdsch_pdu->dmrsPorts = 1;
+    pdsch_pdu->dmrsPorts = (1<<nrOfLayers)-1;  // FIXME with a better implementation
 
     // Pdsch Allocation in frequency domain
     pdsch_pdu->resourceAlloc = 1;
@@ -913,9 +996,16 @@ void nr_schedule_ue_spec(module_id_t module_id,
     pdsch_pdu->StartSymbolIndex = ps->startSymbolIndex;
     pdsch_pdu->NrOfSymbols = ps->nrOfSymbols;
 
+    NR_PDSCH_Config_t *pdsch_Config=NULL;
+    if (bwp &&
+        bwp->bwp_Dedicated &&
+        bwp->bwp_Dedicated->pdsch_Config &&
+        bwp->bwp_Dedicated->pdsch_Config->choice.setup)
+      pdsch_Config =  bwp->bwp_Dedicated->pdsch_Config->choice.setup;
+
     /* Check and validate PTRS values */
     struct NR_SetupRelease_PTRS_DownlinkConfig *phaseTrackingRS =
-        bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS;
+      pdsch_Config ? pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS : NULL;
     if (phaseTrackingRS) {
       bool valid_ptrs_setup = set_dl_ptrs_values(phaseTrackingRS->choice.setup,
                                                  pdsch_pdu->rbSize,
@@ -935,7 +1025,9 @@ void nr_schedule_ue_spec(module_id_t module_id,
     nfapi_nr_dl_dci_pdu_t *dci_pdu = &pdcch_pdu->dci_pdu[pdcch_pdu->numDlDci];
     pdcch_pdu->numDlDci++;
     dci_pdu->RNTI = rnti;
-    if (sched_ctrl->coreset->pdcch_DMRS_ScramblingID &&
+    if (sched_ctrl->coreset &&
+        sched_ctrl->search_space &&
+        sched_ctrl->coreset->pdcch_DMRS_ScramblingID &&
         sched_ctrl->search_space->searchSpaceType->present == NR_SearchSpace__searchSpaceType_PR_ue_Specific) {
       dci_pdu->ScramblingId = *sched_ctrl->coreset->pdcch_DMRS_ScramblingID;
       dci_pdu->ScramblingRNTI = rnti;
@@ -952,19 +1044,19 @@ void nr_schedule_ue_spec(module_id_t module_id,
     dci_pdu_rel15_t dci_payload;
     memset(&dci_payload, 0, sizeof(dci_pdu_rel15_t));
     // bwp indicator
-    const int n_dl_bwp = UE_info->secondaryCellGroup[UE_id]->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count;
-      AssertFatal(n_dl_bwp == 1,
-          "downlinkBWP_ToAddModList has %d BWP!\n",
-          n_dl_bwp);
+    const int n_dl_bwp = bwp ? UE_info->CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count : 0;
+    AssertFatal(n_dl_bwp <= 1, "downlinkBWP_ToAddModList has %d BWP!\n", n_dl_bwp);
+
     // as per table 7.3.1.1.2-1 in 38.212
-    dci_payload.bwp_indicator.val = n_dl_bwp < 4 ? bwp->bwp_Id : bwp->bwp_Id - 1;
-    AssertFatal(bwp->bwp_Dedicated->pdsch_Config->choice.setup->resourceAllocation == NR_PDSCH_Config__resourceAllocation_resourceAllocationType1,
-                "Only frequency resource allocation type 1 is currently supported\n");
+    dci_payload.bwp_indicator.val = bwp ? (n_dl_bwp < 4 ? bwp->bwp_Id : bwp->bwp_Id - 1) : 0;
+    if (bwp) AssertFatal(bwp->bwp_Dedicated->pdsch_Config->choice.setup->resourceAllocation == NR_PDSCH_Config__resourceAllocation_resourceAllocationType1,
+			 "Only frequency resource allocation type 1 is currently supported\n");
     dci_payload.frequency_domain_assignment.val =
         PRBalloc_to_locationandbandwidth0(
             pdsch_pdu->rbSize,
             pdsch_pdu->rbStart,
             pdsch_pdu->BWPSize);
+    dci_payload.format_indicator = 1;
     dci_payload.time_domain_assignment.val = ps->time_domain_allocation;
     dci_payload.mcs = sched_pdsch->mcs;
     dci_payload.rv = pdsch_pdu->rvIndex[0];
@@ -974,11 +1066,11 @@ void nr_schedule_ue_spec(module_id_t module_id,
     dci_payload.tpc = sched_ctrl->tpc1; // TPC for PUCCH: table 7.2.1-1 in 38.213
     dci_payload.pucch_resource_indicator = pucch->resource_indicator;
     dci_payload.pdsch_to_harq_feedback_timing_indicator.val = pucch->timing_indicator; // PDSCH to HARQ TI
-    dci_payload.antenna_ports.val = 0;  // nb of cdm groups w/o data 1 and dmrs port 0
+    dci_payload.antenna_ports.val = ps->dmrs_ports_id;
     dci_payload.dmrs_sequence_initialization.val = pdsch_pdu->SCID;
-    LOG_D(MAC,
+    LOG_D(NR_MAC,
           "%4d.%2d DCI type 1 payload: freq_alloc %d (%d,%d,%d), "
-          "time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d ndi %d rv %d\n",
+          "time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d ndi %d rv %d tpc %d ti %d\n",
           frame,
           slot,
           dci_payload.frequency_domain_assignment.val,
@@ -990,22 +1082,30 @@ void nr_schedule_ue_spec(module_id_t module_id,
           dci_payload.mcs,
           dci_payload.tb_scaling,
           dci_payload.ndi,
-          dci_payload.rv);
+          dci_payload.rv,
+          dci_payload.tpc,
+          pucch->timing_indicator);
 
     const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
-    const int dci_format = f ? NR_DL_DCI_FORMAT_1_1 : NR_DL_DCI_FORMAT_1_0;
+    int dci_format;
+    if (sched_ctrl->search_space) {
+       dci_format = f ? NR_DL_DCI_FORMAT_1_1 : NR_DL_DCI_FORMAT_1_0;
+    }
+    else {
+       dci_format = NR_DL_DCI_FORMAT_1_0;
+    }
     const int rnti_type = NR_RNTI_C;
 
     fill_dci_pdu_rel15(scc,
-                       UE_info->secondaryCellGroup[UE_id],
+                       UE_info->CellGroup[UE_id],
                        dci_pdu,
                        &dci_payload,
                        dci_format,
                        rnti_type,
                        pdsch_pdu->BWPSize,
-                       bwp->bwp_Id);
+                       bwp? bwp->bwp_Id : 0);
 
-    LOG_D(MAC,
+    LOG_D(NR_MAC,
           "coreset params: FreqDomainResource %llx, start_symbol %d  n_symb %d\n",
           (unsigned long long)pdcch_pdu->FreqDomainResource,
           pdcch_pdu->StartSymbolIndex,
@@ -1015,7 +1115,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
       /* we do not have to do anything, since we do not require to get data
        * from RLC or encode MAC CEs. The TX_req structure is filled below 
        * or copy data to FAPI structures */
-      LOG_D(MAC,
+      LOG_D(NR_MAC,
             "%d.%2d DL retransmission UE %d/RNTI %04x HARQ PID %d round %d NDI %d\n",
             frame,
             slot,
@@ -1024,13 +1124,14 @@ void nr_schedule_ue_spec(module_id_t module_id,
             current_harq_pid,
             harq->round,
             harq->ndi);
+
       AssertFatal(harq->sched_pdsch.tb_size == TBS,
                   "UE %d mismatch between scheduled TBS and buffered TB for HARQ PID %d\n",
                   UE_id,
                   current_harq_pid);
     } else { /* initial transmission */
 
-      LOG_D(MAC, "[%s] Initial HARQ transmission in %d.%d\n", __FUNCTION__, frame, slot);
+      LOG_D(NR_MAC, "[%s] Initial HARQ transmission in %d.%d\n", __FUNCTION__, frame, slot);
 
       uint8_t *buf = (uint8_t *) harq->tb;
 
@@ -1046,7 +1147,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
 
       /* next, get RLC data */
 
-      const int lcid = DL_SCH_LCID_DTCH;
+      // const int lcid = DL_SCH_LCID_DTCH;
+      const int lcid = sched_ctrl->lcid_to_schedule;
       int dlsch_total_bytes = 0;
       if (sched_ctrl->num_total_bytes > 0) {
         tbs_size_t len = 0;
@@ -1073,12 +1175,13 @@ void nr_schedule_ue_spec(module_id_t module_id,
                                  0,
                                  0);
 
-          LOG_D(MAC,
-                "%4d.%2d RNTI %04x: %d bytes from DTCH %d (ndata %d, remaining size %d)\n",
+          LOG_D(NR_MAC,
+                "%4d.%2d RNTI %04x: %d bytes from %s %d (ndata %d, remaining size %d)\n",
                 frame,
                 slot,
                 rnti,
                 len,
+                lcid < 4 ? "DCCH" : "DTCH",
                 lcid,
                 ndata,
                 size);
@@ -1107,7 +1210,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
         buf += 3;
         size -= 3;
         DevAssert(size > 0);
-        LOG_D(MAC, "Configuring DL_TX in %d.%d: TBS %d with %d B of random data\n", frame, slot, TBS, size);
+        LOG_D(NR_MAC, "Configuring DL_TX in %d.%d: TBS %d with %d B of random data\n", frame, slot, TBS, size);
         // fill dlsch_buffer with random data
         for (int i = 0; i < size; i++)
           buf[i] = lrand48() & 0xff;
@@ -1149,7 +1252,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
       if (sched_ctrl->ta_apply) {
         sched_ctrl->ta_apply = false;
         sched_ctrl->ta_frame = frame;
-        LOG_D(MAC,
+        LOG_D(NR_MAC,
               "%d.%2d UE %d TA scheduled, resetting TA frame\n",
               frame,
               slot,
@@ -1172,6 +1275,6 @@ void nr_schedule_ue_spec(module_id_t module_id,
     gNB_mac->TX_req[CC_id].Slot = slot;
 
     /* mark UE as scheduled */
-    memset(sched_pdsch, 0, sizeof(*sched_pdsch));
+    sched_pdsch->rbSize = 0;
   }
 }

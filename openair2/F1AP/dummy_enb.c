@@ -19,14 +19,16 @@
  *      contact@openairinterface.org
  */
 
-/***************************************************************************
-                          print.h  -  description
-                             -------------------
-  AUTHOR  : Lionel GAUTHIER
-  COMPANY : EURECOM
-  EMAIL   : Lionel.Gauthier@eurecom.fr
- ***************************************************************************/
-#ifndef __PRINT_H__
-#    define __PRINT_H__
-#    define msg printf
-#endif
+#include "COMMON/platform_types.h"
+#include "common/ran_context.h"
+#include "common/utils/LOG/log.h"
+#include "NR_BCCH-BCH-Message.h"
+#include "NR_ServingCellConfigCommon.h"
+#include "NR_MIB.h"
+
+void apply_macrlc_config(gNB_RRC_INST *rrc,
+                         rrc_gNB_ue_context_t         *const ue_context_pP,
+                         const protocol_ctxt_t        *const ctxt_pP ) {
+abort();
+}
+
