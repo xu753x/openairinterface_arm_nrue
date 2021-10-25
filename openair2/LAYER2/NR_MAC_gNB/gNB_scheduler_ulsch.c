@@ -1052,7 +1052,7 @@ void pf_ul(module_id_t module_id,
   gNB_MAC_INST *nrmac = RC.nrmac[module_id];
   NR_ServingCellConfigCommon_t *scc = nrmac->common_channels[CC_id].ServingCellConfigCommon;
   NR_UE_info_t *UE_info = &nrmac->UE_info;
-  const int min_rb = 12;
+  const int min_rb = 50;
   float coeff_ue[MAX_MOBILES_PER_GNB];
   // UEs that could be scheduled
   int ue_array[MAX_MOBILES_PER_GNB];
@@ -1141,7 +1141,7 @@ void pf_ul(module_id_t module_id,
           || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data)
         nr_set_pusch_semi_static(scc, sched_ctrl->active_ubwp, ubwpd, dci_format, tda, num_dmrs_cdm_grps_no_data, ps);
       NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
-      sched_pusch->mcs = 9;
+      sched_pusch->mcs = 12; 
       update_ul_ue_R_Qm(sched_pusch, ps);
       sched_pusch->rbStart = rbStart;
       sched_pusch->rbSize = min_rb;
@@ -1167,7 +1167,7 @@ void pf_ul(module_id_t module_id,
     add_tail_nr_list(&UE_sched, UE_id);
 
     /* Calculate coefficient*/
-    sched_pusch->mcs = 9;
+    sched_pusch->mcs = 12;
     const uint32_t tbs = ul_pf_tbs[ps->mcs_table][sched_pusch->mcs];
     coeff_ue[UE_id] = (float) tbs / ul_thr_ue[UE_id];
     LOG_D(NR_MAC,"b %d, ul_thr_ue[%d] %f, tbs %d, coeff_ue[%d] %f\n",
