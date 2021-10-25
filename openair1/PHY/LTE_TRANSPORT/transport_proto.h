@@ -496,7 +496,7 @@ void fill_mdci_and_dlsch(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,mDCI_ALLOC_t *dc
 void fill_dci0(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_proc_t *proc,DCI_ALLOC_t *dci_alloc,
                nfapi_hi_dci0_dci_pdu *pdu);
 
-void fill_ulsch(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_ulsch_pdu *ulsch_pdu,int frame,int subframe);
+void fill_ulsch(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_ulsch_pdu *ulsch_pdu,int frame,int subframe,uint8_t use_srs);
 
 void fill_mpdcch_dci0 (PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc, mDCI_ALLOC_t *dci_alloc, nfapi_hi_dci0_mpdcch_dci_pdu *pdu);
 

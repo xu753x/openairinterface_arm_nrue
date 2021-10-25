@@ -279,7 +279,7 @@ void phy_config_request(PHY_Config_t *phy_config) {
   fp->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift = dmrs1_tab[cfg->uplink_reference_signal_config.cyclic_shift_1_for_drms.value];
   LOG_I (PHY, "pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift = %d\n", fp->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift);
   init_ul_hopping (fp);
-  fp->soundingrs_ul_config_common.enabled_flag = 0;     // 1; Don't know how to turn this off in NFAPI
+  fp->soundingrs_ul_config_common.enabled_flag = 1;     // 1; Don't know how to turn this off in NFAPI
   fp->soundingrs_ul_config_common.srs_BandwidthConfig = cfg->srs_config.bandwidth_configuration.value;
   fp->soundingrs_ul_config_common.srs_SubframeConfig = cfg->srs_config.srs_subframe_configuration.value;
   fp->soundingrs_ul_config_common.ackNackSRS_SimultaneousTransmission = cfg->srs_config.srs_acknack_srs_simultaneous_transmission.value;

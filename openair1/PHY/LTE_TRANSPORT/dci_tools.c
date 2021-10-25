@@ -1994,7 +1994,7 @@ int get_narrowband_index(int N_RB_UL,int rb) {
   }
 }
 
-void fill_ulsch(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_ulsch_pdu *ulsch_pdu,int frame,int subframe) {
+void fill_ulsch(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_ulsch_pdu *ulsch_pdu,int frame,int subframe, uint8_t use_srs) {
   uint8_t harq_pid;
   //uint8_t UE_id;
   boolean_t new_ulsch = (find_ulsch(ulsch_pdu->ulsch_pdu_rel8.rnti,eNB,SEARCH_EXIST)==-1) ? TRUE : FALSE;
@@ -2002,7 +2002,7 @@ void fill_ulsch(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_ulsch_pdu *ulsch_pdu
   //        "No existing/free UE ULSCH for rnti %x\n",ulsch_pdu->ulsch_pdu_rel8.rnti);
   LTE_eNB_ULSCH_t *ulsch=eNB->ulsch[UE_id];
   LTE_DL_FRAME_PARMS *frame_parms = &eNB->frame_parms;
-  int use_srs = 0;
+  //int use_srs = 0;
   harq_pid = ulsch_pdu->ulsch_pdu_rel8.harq_process_number;
   ulsch->harq_mask |= 1 << harq_pid;
   LOG_D(PHY,"Filling ULSCH : ue_type %d, harq_pid %d\n",ulsch->ue_type,harq_pid);

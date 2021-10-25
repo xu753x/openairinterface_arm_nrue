@@ -119,6 +119,7 @@ add_msg3(module_id_t module_idP, int CC_id, RA_t *ra, frame_t frameP,
            module_idP, frameP, subframeP, CC_id, ra->rach_resource_type - 1, ra->Msg3_frame, ra->Msg3_subframe);
     LOG_D (MAC, "Frame %d, Subframe %d Adding Msg3 UL Config Request for (%d,%d) : (%d,%d)\n",
            frameP, subframeP, ra->Msg3_frame, ra->Msg3_subframe, ra->msg3_nb_rb, ra->msg3_round);
+    //ul_req_body->srs_present = 1;
     ul_config_pdu = &ul_req_body->ul_config_pdu_list[ul_req_body->number_of_pdus];
     memset ((void *) ul_config_pdu, 0, sizeof (nfapi_ul_config_request_pdu_t));
     ul_config_pdu->pdu_type = NFAPI_UL_CONFIG_ULSCH_PDU_TYPE;
@@ -153,6 +154,7 @@ add_msg3(module_id_t module_idP, int CC_id, RA_t *ra, frame_t frameP,
     ul_req_body->number_of_pdus++;
   }                             //  if (ra->rach_resource_type>0) {
   else {
+	 // ul_req_body->srs_present = 1;
     LOG_D(MAC,
           "[eNB %d][RAPROC] Frame %d, Subframe %d : CC_id %d RA is active, Msg3 in (%d,%d)\n",
           module_idP, frameP, subframeP, CC_id, ra->Msg3_frame,

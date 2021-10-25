@@ -734,8 +734,10 @@ void srs_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
     // Do SRS processing
     // check if there is SRS and we have to use shortened format
     // TODO: check for exceptions in transmission of SRS together with ACK/NACK
-    for (i = 0; i < NUMBER_OF_SRS_MAX; i++) {
-      if (eNB->soundingrs_ul_config_dedicated[i].active == 1) {
+    for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
+      if (eNB->soundingrs_ul_config_dedicated[i].active == 1 &&
+    		  eNB->soundingrs_ul_config_dedicated[i].frame == frame &&
+			  eNB->soundingrs_ul_config_dedicated[i].subframe == subframe) {
         if (lte_srs_channel_estimation (fp, &eNB->common_vars, &eNB->srs_vars[i], &eNB->soundingrs_ul_config_dedicated[i], subframe, 0 /*eNB_id */ )) {
           LOG_E (PHY, "problem processing SRS\n");
         }

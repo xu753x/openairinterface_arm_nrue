@@ -664,7 +664,7 @@ void handle_srs_pdu(PHY_VARS_eNB *eNB,nfapi_ul_config_request_pdu_t *ul_config_p
 
   if (NFAPI_MODE==NFAPI_MODE_VNF) return;
 
-  for (i=0; i<NUMBER_OF_SRS_MAX; i++) {
+  for (i=0; i<NUMBER_OF_UE_MAX; i++) {
     if (eNB->soundingrs_ul_config_dedicated[i].active==1) continue;
 
     eNB->soundingrs_ul_config_dedicated[i].active               = 1;
@@ -701,24 +701,24 @@ void handle_nfapi_ul_pdu(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,
     LOG_D(PHY,"Applying UL config for UE %d, rnti %x for frame %d, subframe %d, modulation %d, rvidx %d, first_rb %d, nb_rb %d\n", UE_id,rel8->rnti,frame,subframe,rel8->modulation_type,
           rel8->redundancy_version,
           rel8->resource_block_start,rel8->number_of_resource_blocks);
-    fill_ulsch(eNB,UE_id,&ul_config_pdu->ulsch_pdu,frame,subframe);
+    fill_ulsch(eNB,UE_id,&ul_config_pdu->ulsch_pdu,frame,subframe,srs_present);
   } else if (ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_ULSCH_HARQ_PDU_TYPE) {
     AssertFatal((UE_id = find_ulsch(ul_config_pdu->ulsch_harq_pdu.ulsch_pdu.ulsch_pdu_rel8.rnti,eNB,SEARCH_EXIST_OR_FREE))>=0,
                 "No available UE ULSCH for rnti %x\n",ul_config_pdu->ulsch_harq_pdu.ulsch_pdu.ulsch_pdu_rel8.rnti);
-    fill_ulsch(eNB,UE_id,&ul_config_pdu->ulsch_harq_pdu.ulsch_pdu,frame,subframe);
+    fill_ulsch(eNB,UE_id,&ul_config_pdu->ulsch_harq_pdu.ulsch_pdu,frame,subframe,srs_present);
     handle_ulsch_harq_pdu(eNB, UE_id, ul_config_pdu,
                           &ul_config_pdu->ulsch_harq_pdu.harq_information, frame, subframe);
   } else if (ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_ULSCH_CQI_RI_PDU_TYPE) {
     AssertFatal((UE_id = find_ulsch(ul_config_pdu->ulsch_cqi_ri_pdu.ulsch_pdu.ulsch_pdu_rel8.rnti,
                                     eNB,SEARCH_EXIST_OR_FREE))>=0,
                 "No available UE ULSCH for rnti %x\n",ul_config_pdu->ulsch_cqi_ri_pdu.ulsch_pdu.ulsch_pdu_rel8.rnti);
-    fill_ulsch(eNB,UE_id,&ul_config_pdu->ulsch_cqi_ri_pdu.ulsch_pdu,frame,subframe);
+    fill_ulsch(eNB,UE_id,&ul_config_pdu->ulsch_cqi_ri_pdu.ulsch_pdu,frame,subframe,srs_present);
     handle_ulsch_cqi_ri_pdu(eNB,UE_id,ul_config_pdu,frame,subframe);
   } else if (ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_ULSCH_CQI_HARQ_RI_PDU_TYPE) {
     AssertFatal((UE_id = find_ulsch(ul_config_pdu->ulsch_cqi_harq_ri_pdu.ulsch_pdu.ulsch_pdu_rel8.rnti,
                                     eNB,SEARCH_EXIST_OR_FREE))>=0,
                 "No available UE ULSCH for rnti %x\n",ul_config_pdu->ulsch_cqi_harq_ri_pdu.ulsch_pdu.ulsch_pdu_rel8.rnti);
-    fill_ulsch(eNB,UE_id,&ul_config_pdu->ulsch_cqi_harq_ri_pdu.ulsch_pdu,frame,subframe);
+    fill_ulsch(eNB,UE_id,&ul_config_pdu->ulsch_cqi_harq_ri_pdu.ulsch_pdu,frame,subframe,srs_present);
     handle_ulsch_cqi_harq_ri_pdu(eNB,UE_id,ul_config_pdu,frame,subframe);
     handle_ulsch_harq_pdu(eNB, UE_id, ul_config_pdu,
                           &ul_config_pdu->ulsch_cqi_harq_ri_pdu.harq_information, frame, subframe);
@@ -1034,7 +1034,8 @@ void schedule_response(Sched_Rsp_t *Sched_INFO, void *arg) {
                   ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_ULSCH_CQI_HARQ_RI_PDU_TYPE ||
                   ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_UCI_HARQ_PDU_TYPE ||
                   ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_UCI_SR_PDU_TYPE ||
-                  ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_UCI_SR_HARQ_PDU_TYPE
+                  ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_UCI_SR_HARQ_PDU_TYPE ||
+				  ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_SRS_PDU_TYPE
                   ,
                   "Optional UL_PDU type %d not supported\n",ul_config_pdu->pdu_type);
       handle_nfapi_ul_pdu(eNB,proc,ul_config_pdu,UL_req->sfn_sf>>4,UL_req->sfn_sf&0xf,UL_req->ul_config_request_body.srs_present);

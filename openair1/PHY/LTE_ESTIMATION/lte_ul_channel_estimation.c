@@ -752,7 +752,7 @@ int32_t lte_srs_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
 #endif
     //LOG_M("eNB_rxF.m","rxF",&common_vars->rxdataF[0][aa][2*frame_parms->ofdm_symbol_size*symbol],2*(frame_parms->ofdm_symbol_size),2,1);
     //LOG_M("eNB_srs.m","srs_eNB",common_vars->srs,(frame_parms->ofdm_symbol_size),1,1);
-    mult_cpx_conj_vector((int16_t *) &common_vars->rxdataF[aa][2*frame_parms->ofdm_symbol_size*symbol],
+    mult_cpx_conj_vector((int16_t *) &common_vars->rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
                          (int16_t *) srs_vars->srs,
                          (int16_t *) srs_vars->srs_ch_estimates[aa],
                          frame_parms->ofdm_symbol_size,
