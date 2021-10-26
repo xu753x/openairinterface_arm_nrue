@@ -61,6 +61,9 @@
 #include "map.h"
 int vrb_map_new[3][20][106];
 int count;
+int rbstart_new;
+int rbrbstart_new_count;
+slicing slices[3];
 
 uint16_t nr_pdcch_order_table[6] = { 31, 31, 511, 2047, 2047, 8191 };
 
@@ -409,10 +412,50 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
 
   if ((slot == 0) && (frame & 127) == 0) dump_mac_stats(RC.nrmac[module_idP]);
+  // rbstart_new = 15;
+  // rbrbstart_new_count = rbrbstart_new_count + 1;
+  // int mass = 60000;
+  // rbstart_new = rbstart_new + rbrbstart_new_count/mass;
+  // rbstart_new  = 10; 
+  if(slot == 0)
+  {
+    FILE * fp;
+    if((fp = fopen("text_1.txt","a+"))==NULL){
+        printf("cant open the file");
+        // exit(0);
+      }
+      
+    for(int j=0;j<20;j++){
+      for(int k=0;k<106;k++){
+        if(vrb_map_new[count][j][k]!=0){
+          fprintf(fp,"%d ",count);
+          fprintf(fp,"%d ",j);
+          fprintf(fp,"%d ",k);
+    fprintf(fp,"%d ",vrb_map_new[count][j][k]);
+      fprintf(fp,"\t");
+        }
+      }
+    }
+    fprintf(fp,"\n");
+    fprintf(fp,"\n");
+    fclose(fp);
 
-  count=count+1;
-  if(count==3)
-     count=0;
+    count=count+1;
+    if(count==3)
+      count=0;
+    memset(vrb_map_new[count],0,20*106);
+
+    for(int j=0;j<3;j++)
+    {
+      for(int k=slices[j].rbstartlocation;k<slices[j].rboverlocation;k++)
+      {
+        for(int i=0;i<20;i++)
+        {
+          vrb_map_new[count][i][k] = 21 + j;
+        }
+      }
+    }
+  }
   
   // This schedules MIB     1
   schedule_nr_mib(module_idP, frame, slot);
@@ -456,6 +499,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   nr_schedule_ulsch(module_idP, frame, slot);
 
   // This schedules the DCI for Downlink and PDSCH
+  if((slot!=7) && (slot!=17))
   nr_schedule_ue_spec(module_idP, frame, slot);
 
   nr_schedule_pucch(module_idP, frame, slot);

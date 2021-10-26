@@ -19,6 +19,13 @@
 
 #include <string.h>
 
+//#include "openair2/LAYER2/NR_MAC_gNB/map.h"
+char arr[100];
+int refresh[3*24 + 2];
+int infor_length;
+slicing slices[3];
+
+
 /* one of these created for each message */
 
 struct msg {
@@ -54,7 +61,6 @@ static void
 __minimal_destroy_message(void *_msg)
 {
 	struct msg *msg = _msg;
-
 	free(msg->payload);
 	msg->payload = NULL;
 	msg->len = 0;
@@ -65,6 +71,7 @@ static int notifying = 0;
 struct lws *wsi_client;
 
 
+#define RB_SIZE_deal    22
 #define RB_SIZE 		106
 #define MS_IN_FRAME 	10
 #define SLOT_IN_MS 		2
@@ -84,13 +91,13 @@ int update_client(int len, const char* payload)
 		return 0;
 
     notifying = 1;
-	lwsl_user("update_client  size %d. %p.\n",len,payload);
+//	lwsl_user("update_client  size %d. %p.\n",len,payload);
 
 	memcpy(sendArr + LWS_PRE, payload, len);
 	/* notice we allowed for LWS_PRE in the payload already */
 	int m = lws_write(wsi_client, sendArr + LWS_PRE, len, LWS_WRITE_TEXT);
 	if (m < len) {
-		lwsl_err("ERROR %d writing to ws\n", m);
+		lwsl_err("ERROR only %d writing to ws, but all is %d.\n", m,len);
 	}
 	notifying = 0;
     return (m-len);
@@ -127,6 +134,85 @@ callback_minimal(struct lws *wsi, enum lws_callback_reasons reason,
 		pss->last = vhd->current;
 		wsi_client = wsi;
 		first_conn = 1;
+
+		int slices_on_num = 0;
+        for(int i=0;i<3;i++){
+			if(slices[i].slice_online)
+			{
+                slices_on_num = slices_on_num + 1;
+			}
+		}
+		printf("slices_on_num= %02x \n",slices_on_num);        
+		refresh[0] = 1;
+		refresh[1] = slices_on_num*24;
+		printf("refresh[ttt*24 + 19]= %02x \n",refresh[0]);
+		printf("refresh[ttt*24 + 20]= %02x \n",refresh[1]);
+		int ttt=0;
+		for(int i = 0;i<3;i++){
+			if(slices[i].slice_online){
+				refresh[ttt*24 + 2] = slices[i].slice_id;
+				int k = slices[i].slice_id - 1;
+				printf("k= %02x \n",k);
+				for(int j = 0;j<16;j++){
+					refresh[ttt*24 + j + 3] = slices[k].slice_name[j];
+					printf("refresh[ttt*24 + j + 3]= %02x \n",slices[k].slice_name[j]);
+				}
+				refresh[ttt*24 + 19] = slices[k].rbstartlocation;
+				refresh[ttt*24 + 20] = slices[k].rboverlocation;
+				refresh[ttt*24 + 21] = slices[k].ueid[0];
+				refresh[ttt*24 + 22] = slices[k].ueid[1];
+				refresh[ttt*24 + 23] = slices[k].ueid[2];
+				refresh[ttt*24 + 24] = slices[k].ueid[3];
+				refresh[ttt*24 + 25] = slices[k].ueid[4];
+				printf("refresh[ttt*24 + 19]= %02x \n",refresh[ttt*24 + 19]);
+				printf("refresh[ttt*24 + 20]= %02x \n",refresh[ttt*24 + 20]);
+				printf("refresh[ttt*24 + 21]= %02x \n",refresh[ttt*24 + 21]);
+				printf("refresh[ttt*24 + 22]= %02x \n",refresh[ttt*24 + 22]);
+				printf("refresh[ttt*24 + 23]= %02x \n",refresh[ttt*24 + 23]);
+				printf("refresh[ttt*24 + 24]= %02x \n",refresh[ttt*24 + 24]);
+				printf("refresh[ttt*24 + 25]= %02x \n",refresh[ttt*24 + 25]);
+				ttt=ttt+1;
+			}
+		}
+        update_client(slices_on_num*24 + 2,refresh);
+
+		// int slices_on_num = 0;
+        // for(int i=0;i<3;i++){
+		// 	if(slices[i].slice_online)
+		// 	{
+        //         slices_on_num = slices_on_num + 1;
+		// 	}
+		// }
+		// printf("slices_on_num= %02x \n",slices_on_num);        
+		// refresh[0] = 1;
+		// refresh[1] = slices_on_num*8;
+		// printf("refresh[ttt*24 + 19]= %02x \n",refresh[0]);
+		// printf("refresh[ttt*24 + 20]= %02x \n",refresh[1]);
+		// int ttt=0;
+		// for(int i = 0;i<3;i++){
+		// 	if(slices[i].slice_online){
+		// 		refresh[ttt*8 + 2] = slices[i].slice_id;
+		// 		int k = slices[i].slice_id - 1;
+		// 		printf("k= %02x \n",k);
+		// 		refresh[ttt*8 + 3] = slices[k].rbstartlocation;
+		// 		refresh[ttt*8 + 4] = slices[k].rboverlocation;
+		// 		refresh[ttt*8 + 5] = slices[k].ueid[0];
+		// 		refresh[ttt*8 + 6] = slices[k].ueid[1];
+		// 		refresh[ttt*8 + 7] = slices[k].ueid[2];
+		// 		refresh[ttt*8 + 8] = slices[k].ueid[3];
+		// 		refresh[ttt*8 + 9] = slices[k].ueid[4];
+		// 		printf("refresh[ttt*24 + 19]= %02x \n",refresh[ttt*8 + 3]);
+		// 		printf("refresh[ttt*24 + 20]= %02x \n",refresh[ttt*8 + 4]);
+		// 		printf("refresh[ttt*24 + 21]= %02x \n",refresh[ttt*8 + 5]);
+		// 		printf("refresh[ttt*24 + 22]= %02x \n",refresh[ttt*8 + 6]);
+		// 		printf("refresh[ttt*24 + 23]= %02x \n",refresh[ttt*8 + 7]);
+		// 		printf("refresh[ttt*24 + 24]= %02x \n",refresh[ttt*8 + 8]);
+		// 		printf("refresh[ttt*24 + 25]= %02x \n",refresh[ttt*8 + 9]);
+		// 		ttt=ttt+1;
+		// 	}
+		// }
+        // update_client(slices_on_num*8 + 2,refresh);
+
 		break;
 
 	case LWS_CALLBACK_CLOSED:
@@ -138,7 +224,10 @@ callback_minimal(struct lws *wsi, enum lws_callback_reasons reason,
 		break;
 
 	case LWS_CALLBACK_SERVER_WRITEABLE:
-		lwsl_user("LWS_CALLBACK_SERVER_WRITEABLE len %d %p \n",vhd->amsg.len,vhd->amsg.payload);
+		if (0 != vhd->amsg.len)
+		{
+			lwsl_user("LWS_CALLBACK_SERVER_WRITEABLE len %d %p \n",vhd->amsg.len,vhd->amsg.payload);
+		}
 		if (!vhd->amsg.payload)
 		{
 			if (1 == first_conn)
@@ -165,21 +254,90 @@ callback_minimal(struct lws *wsi, enum lws_callback_reasons reason,
 
 	case LWS_CALLBACK_RECEIVE:
 		lwsl_user("LWS_CALLBACK_RECEIVE len %d \n",vhd->amsg.len);
-		if (vhd->amsg.payload)
-			__minimal_destroy_message(&vhd->amsg);
+		memcpy(arr,in,2);
+		printf("arr[]= %02x \n",arr[0]);
+		
+		switch (arr[0])
+		{
+		case 0:
 
-		vhd->amsg.len = len;
-		/* notice we over-allocate by LWS_PRE */
-		vhd->amsg.payload = malloc(LWS_PRE + len);
-		if (!vhd->amsg.payload) {
-			lwsl_user("OOM: dropping\n");
+			break;
+		case 1:
+		    infor_length = arr[1];
+            memcpy(arr,in,infor_length+2);
+			// printf("arr[]= %02x \n",arr[0]);
+			// printf("arr[]= %02x \n",arr[1]);
+			// printf("arr[]= %02x \n",arr[2]);
+			// printf("arr[]= %02x \n",arr[3]);
+			// printf("arr[]= %02x \n",arr[4]);
+			// printf("arr[]= %02x \n",arr[21]);
+			// printf("arr[]= %02x \n",arr[22]);
+			// printf("arr[]= %02x \n",arr[23]);
+			// printf("arr[]= %02x \n",arr[24]);
+			// printf("arr[]= %02x \n",arr[25]);
+			// infor_length = infor_length/24;
+			// for(int i = 0;i<infor_length;i++){
+			// 	int id = arr[i*24 + 2] - 1;
+			// 	for(int j = 0;j<16;j++){
+			// 		slices[id].slice_name[j] = arr[i*24 + j + 3];
+			// 	}
+			// 	slices[id].rbstartlocation = arr[i*24 + 19];
+			// 	slices[id].rboverlocation = arr[i*24 + 20];
+			// 	slices[id].ueid[0] = arr[i*24 + 21];
+			// 	slices[id].ueid[1] = arr[i*24 + 22];
+			// 	slices[id].ueid[2] = arr[i*24 + 23];
+			// 	slices[id].ueid[3] = arr[i*24 + 24];
+			// 	slices[id].ueid[4] = arr[i*24 + 25];
+			// }
+			infor_length = infor_length/8;
+			for(int i = 0;i<infor_length;i++){
+				int id = arr[i*8 + 2] - 1;
+				slices[id].rbstartlocation = arr[i*8 + 3];
+				slices[id].rboverlocation = arr[i*8 + 4];
+				slices[id].ueid[0] = arr[i*8 + 5];
+				slices[id].ueid[1] = arr[i*8 + 6];
+				slices[id].ueid[2] = arr[i*8 + 7];
+				slices[id].ueid[3] = arr[i*8 + 8];
+				slices[id].ueid[4] = arr[i*8 + 9];
+			}
+			printf("arr[]= %02x \n",arr[0]);
+			printf("arr[]= %02x \n",arr[1]);
+			printf("arr[]= %02x \n",arr[2]);
+			printf("arr[]= %02x \n",arr[3]);
+			printf("arr[]= %02x \n",arr[4]);
+			printf("arr[]= %02x \n",arr[5]);
+			printf("arr[]= %02x \n",arr[6]);
+			printf("arr[]= %02x \n",arr[7]);
+			printf("arr[]= %02x \n",arr[8]);
+			printf("arr[]= %02x \n",arr[9]);
+			break;
+
+		default:
 			break;
 		}
+		// for(int i = 0;i<3;i++){
+		// 	printf("slices.uenum = %02x \n",slices[i].uenum);
+		// 	printf("slices.ueid[0] = %02x \n",slices[i].ueid[0]);
+		// 	printf("slices.ueid[1] = %02x \n",slices[i].ueid[1]);
+		// 	printf("slices.ueid[2] = %02x \n",slices[i].ueid[2]);
+		// 	printf("slices.rbstartlocation = %02x \n",slices[i].rbstartlocation);
+		// 	printf("slices.rboverlocation = %02x \n",slices[i].rboverlocation);
+		// }
+		// if (vhd->amsg.payload)
+		// 	__minimal_destroy_message(&vhd->amsg);
 
-		memcpy((char *)vhd->amsg.payload + LWS_PRE, in, len);
-		vhd->current++;
+		// vhd->amsg.len = len;
+		// /* notice we over-allocate by LWS_PRE */
+		// vhd->amsg.payload = malloc(LWS_PRE + len);
+		// if (!vhd->amsg.payload) {
+		// 	lwsl_user("OOM: dropping\n");
+		// 	break;
+		// }
 
-		update_client(vhd->amsg.len,in);
+		// memcpy((char *)vhd->amsg.payload + LWS_PRE, in, len);
+		// vhd->current++;
+
+		//update_client(vhd->amsg.len,in);
 		// /*
 		//  * let everybody know we want to write something on them
 		//  * as soon as they are ready
@@ -188,6 +346,12 @@ callback_minimal(struct lws *wsi, enum lws_callback_reasons reason,
 		// 		      ppss, vhd->pss_list) {
 		// 	lws_callback_on_writable((*ppss)->wsi);
 		// } lws_end_foreach_llp(ppss, pss_list);
+
+
+		// memcpy((char *)&tmp_infor, in , 10);
+        //         //rbstart_new = arr[0];
+        //         rbstart_new = tmp_infor.slic_start;
+		// printf("rbstart_new %d  \n",rbstart_new);
 		break;
 
 	default:

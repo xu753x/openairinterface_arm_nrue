@@ -48,6 +48,11 @@
 /*Softmodem params*/
 #include "executables/softmodem-common.h"
 
+#include "map.h"
+int rbstart_new;
+int vrb_map_new[3][20][106];
+int count;
+
 ////////////////////////////////////////////////////////
 /////* DLSCH MAC PDU generation (6.1.2 TS 38.321) */////
 ////////////////////////////////////////////////////////
@@ -411,6 +416,8 @@ void nr_store_dlsch_buffer(module_id_t module_id,
                                                       0,
                                                       0);
     sched_ctrl->num_total_bytes += sched_ctrl->rlc_status[lcid].bytes_in_buffer;
+
+    sched_ctrl->num_total_bytes =  100;
     LOG_D(NR_MAC,
         "%d.%d, LCID%d:->DLSCH, RLC status %d bytes. \n",
         frame,
@@ -452,7 +459,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
 
   const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
   int rbStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
-
+  rbStart = rbStart+rbstart_new;
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
   const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
   const uint8_t num_dmrs_cdm_grps_no_data = sched_ctrl->active_bwp ? (f ? 1 : (ps->nrOfSymbols == 2 ? 1 : 2)) : (ps->nrOfSymbols == 2 ? 1 : 2);
@@ -547,6 +554,31 @@ bool allocate_dl_retransmission(module_id_t module_id,
   *n_rb_sched -= sched_ctrl->sched_pdsch.rbSize;
   for (int rb = 0; rb < sched_ctrl->sched_pdsch.rbSize; rb++)
     rballoc_mask[rb + sched_ctrl->sched_pdsch.rbStart] = 0;
+  for (int i = 0; i<sched_ctrl->sched_pdsch.rbSize; i++){
+        if (rballoc_mask[i+ sched_ctrl->sched_pdsch.rbStart] == 0){
+        vrb_map_new[count][slot][i+  sched_ctrl->sched_pdsch.rbStart+27] = 25;
+        }
+      }
+  // FILE * fp;
+  // fp = fopen("text_1.txt","a+");
+  // fprintf(fp,"%d ",sched_ctrl->sched_pdsch.rbSize);
+  // fputs("$$$$$$$$$$$$$$", fp);
+  // fprintf(fp,"\n");
+  // fprintf(fp,"%d ",UE_id);
+  // fprintf(fp,"\n");
+  // for(int j=0;j<sched_ctrl->sched_pdsch.rbSize;j++){
+  //   if(rballoc_mask[j+ sched_ctrl->sched_pdsch.rbStart]==0){
+  //     fprintf(fp,"%d ",j+ sched_ctrl->sched_pdsch.rbStart);
+  //     fprintf(fp,"%d ",0);
+  //   }
+  //   if(rballoc_mask[j+ sched_ctrl->sched_pdsch.rbStart]!=0){
+  //     fprintf(fp,"%d ",j+ sched_ctrl->sched_pdsch.rbStart);
+  //     fprintf(fp,"%d ",1);
+  //   }
+  // }
+  // fprintf(fp,"\n");
+  // fprintf(fp,"\n");
+  // fclose(fp);  
   return true;
 }
 
@@ -642,7 +674,7 @@ void pf_dl(module_id_t module_id,
 
     const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
     int rbStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
-
+    rbStart = rbStart+rbstart_new;
     /* Find a free CCE */
     bool freeCCE = find_free_CCE(module_id, slot, UE_id);
     if (!freeCCE) {
@@ -709,6 +741,31 @@ void pf_dl(module_id_t module_id,
     n_rb_sched -= sched_pdsch->rbSize;
     for (int rb = 0; rb < sched_pdsch->rbSize; rb++)
       rballoc_mask[rb + sched_pdsch->rbStart] = 0;
+    for (int i = 0; i<sched_pdsch->rbSize; i++){
+        if (rballoc_mask[i+ sched_pdsch->rbStart] == 0){
+        vrb_map_new[count][slot][i+sched_pdsch->rbStart+27] = 25;
+        }
+      }
+    // FILE * fp;
+    // fp = fopen("text_1.txt","a+");
+    // fprintf(fp,"%d ",sched_ctrl->sched_pdsch.rbSize);
+    // fputs("$$$$$$", fp);
+    // fprintf(fp,"\n");
+    // fprintf(fp,"%d ",UE_id);
+    // fprintf(fp,"\n");
+    // for(int j=0;j<sched_ctrl->sched_pdsch.rbSize;j++){
+    //   if(rballoc_mask[j+ sched_ctrl->sched_pdsch.rbStart]==0){
+    //     fprintf(fp,"%d ",j+ sched_ctrl->sched_pdsch.rbStart);
+    //     fprintf(fp,"%d ",0);
+    //   }
+    //   if(rballoc_mask[j+ sched_ctrl->sched_pdsch.rbStart]!=0){
+    //     fprintf(fp,"%d ",j+ sched_ctrl->sched_pdsch.rbStart);
+    //     fprintf(fp,"%d ",1);
+    //   }
+    // }
+    // fprintf(fp,"\n");
+    // fprintf(fp,"\n");
+    // fclose(fp);  
   }
 }
 
@@ -741,6 +798,31 @@ void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
     rballoc_mask[i] = !vrb_map[i];
     n_rb_sched += rballoc_mask[i];
   }
+  // for (int i = 0; i<48; i++){
+  //     if (rballoc_mask[i] == 0){
+  //     vrb_map_new[count][slot][i+27] = 11;
+  //     }
+  //   }
+  // FILE * fp;
+  // fp = fopen("text_1.txt","a+");
+  // fprintf(fp,"%d ",bwpSize);
+  // fputs("!!!!!!!!!!!!!", fp);
+  // fprintf(fp,"\n");
+  // fprintf(fp,"%d ",UE_id);
+  // fprintf(fp,"\n");
+  // for(int j=0;j<bwpSize;j++){
+  //   if(rballoc_mask[j]==0){
+  //     fprintf(fp,"%d ",j);
+  //     fprintf(fp,"%d ",0);
+  //   }
+  //   if(rballoc_mask[j]!=0){
+  //     fprintf(fp,"%d ",j);
+  //     fprintf(fp,"%d ",1);
+  //   }
+  // }
+  // fprintf(fp,"\n");
+  // fprintf(fp,"\n");
+  // fclose(fp);  
 
   /* Retrieve amount of data to send for this UE */
   nr_store_dlsch_buffer(module_id, frame, slot);

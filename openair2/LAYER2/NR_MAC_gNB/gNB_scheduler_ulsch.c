@@ -34,6 +34,10 @@
 #include "common/utils/nr/nr_common.h"
 #include <openair2/UTIL/OPT/opt.h>
 
+#include "map.h"
+int rbstart_new;
+int vrb_map_new[3][20][106];
+int count;
 
 //38.321 Table 6.1.3.1-1
 const uint32_t NR_SHORT_BSR_TABLE[32] = {
@@ -857,6 +861,7 @@ bool allocate_ul_retransmission(module_id_t module_id,
 
   NR_BWP_t *genericParameters = sched_ctrl->active_ubwp ? &sched_ctrl->active_ubwp->bwp_Common->genericParameters : &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
   int rbStart = sched_ctrl->active_ubwp ? NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE) : 0;
+  rbStart = rbStart+rbstart_new;
   const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
 
   const uint8_t num_dmrs_cdm_grps_no_data = sched_ctrl->active_bwp ? 1 : 2;
@@ -948,6 +953,32 @@ bool allocate_ul_retransmission(module_id_t module_id,
   n_rb_sched -= sched_pusch->rbSize;
   for (int rb = 0; rb < sched_ctrl->sched_pusch.rbSize; rb++)
     rballoc_mask[rb + sched_ctrl->sched_pusch.rbStart] = 0;
+  for (int i = 0; i<sched_ctrl->sched_pusch.rbSize; i++){
+        if (rballoc_mask[i+ sched_ctrl->sched_pusch.rbStart] == 0){
+        vrb_map_new[count][slot][i+sched_ctrl->sched_pusch.rbStart+27] = 26;
+        }
+      }
+  // FILE * fp;
+  // fp = fopen("text_1.txt","a+");
+  // fprintf(fp,"%d ",sched_ctrl->sched_pusch.rbSize);
+  // fputs("******************", fp);
+  // fprintf(fp,"\n");
+  // fprintf(fp,"\n");
+  // fprintf(fp,"%d ",UE_id);
+  // fprintf(fp,"\n");
+  // for(int j=0;j<sched_ctrl->sched_pusch.rbSize;j++){
+  //   if(rballoc_mask[j+ sched_ctrl->sched_pusch.rbStart]==0){
+  //     fprintf(fp,"%d ",j+ sched_ctrl->sched_pusch.rbStart);
+  //     fprintf(fp,"%d ",0);
+  //   }
+  //   if(rballoc_mask[j+ sched_ctrl->sched_pusch.rbStart]!=0){
+  //     fprintf(fp,"%d ",j+ sched_ctrl->sched_pusch.rbStart);
+  //     fprintf(fp,"%d ",1);
+  //   }
+  // }
+  // fprintf(fp,"\n");
+  // fprintf(fp,"\n");
+  // fclose(fp);
   return true;
 }
 
@@ -991,6 +1022,7 @@ void pf_ul(module_id_t module_id,
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     NR_BWP_t *genericParameters = sched_ctrl->active_ubwp ? &sched_ctrl->active_ubwp->bwp_Common->genericParameters : &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
     int rbStart = sched_ctrl->active_ubwp ? NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE) : 0;
+    rbStart = rbStart+rbstart_new;
     const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
     NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
     NR_pusch_semi_static_t *ps = &sched_ctrl->pusch_semi_static;
@@ -1077,7 +1109,32 @@ void pf_ul(module_id_t module_id,
       n_rb_sched -= sched_pusch->rbSize;
       for (int rb = 0; rb < sched_ctrl->sched_pusch.rbSize; rb++)
         rballoc_mask[rb + sched_ctrl->sched_pusch.rbStart] = 0;
-
+      for (int i = 0; i<sched_ctrl->sched_pusch.rbSize; i++){
+        if (rballoc_mask[i+ sched_ctrl->sched_pusch.rbStart] == 0){
+        vrb_map_new[count][slot][i+ sched_ctrl->sched_pusch.rbStart+27] = 24;
+        }
+      }
+        
+      // FILE * fp;
+      // fp = fopen("text_1.txt","a+");
+      // fprintf(fp,"%d ",sched_ctrl->sched_pusch.rbSize);
+      // fputs("#################", fp);
+      // fprintf(fp,"\n");
+      // fprintf(fp,"%d ",UE_id);
+      // fprintf(fp,"\n");
+      // for(int j=0;j<sched_ctrl->sched_pusch.rbSize;j++){
+      //   if(rballoc_mask[j+ sched_ctrl->sched_pusch.rbStart]==0){
+      //     fprintf(fp,"%d ",j+ sched_ctrl->sched_pusch.rbStart);
+      //     fprintf(fp,"%d ",0);
+      //   }
+      //   if(rballoc_mask[j+ sched_ctrl->sched_pusch.rbStart]!=0){
+      //     fprintf(fp,"%d ",j+ sched_ctrl->sched_pusch.rbStart);
+      //     fprintf(fp,"%d ",1);
+      //   }
+      // }
+      // fprintf(fp,"\n");
+      // fprintf(fp,"\n");
+      // fclose(fp);
       continue;
     }
 
@@ -1126,6 +1183,7 @@ void pf_ul(module_id_t module_id,
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     NR_BWP_t *genericParameters = sched_ctrl->active_ubwp ? &sched_ctrl->active_ubwp->bwp_Common->genericParameters : &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
     int rbStart = sched_ctrl->active_ubwp ? NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE) : 0;
+    rbStart = rbStart+rbstart_new;
     const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
     NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
     NR_pusch_semi_static_t *ps = &sched_ctrl->pusch_semi_static;
@@ -1177,6 +1235,31 @@ void pf_ul(module_id_t module_id,
     n_rb_sched -= sched_pusch->rbSize;
     for (int rb = 0; rb < sched_ctrl->sched_pusch.rbSize; rb++)
       rballoc_mask[rb + sched_ctrl->sched_pusch.rbStart] = 0;
+    for (int i = 0; i<sched_ctrl->sched_pusch.rbSize; i++){
+        if (rballoc_mask[i+ sched_ctrl->sched_pusch.rbStart] == 0){
+        vrb_map_new[count][slot][i+ sched_ctrl->sched_pusch.rbStart+27] = 24;
+        }
+      }
+    // FILE * fp;
+    // fp = fopen("text_1.txt","a+");
+    // fprintf(fp,"%d ",sched_ctrl->sched_pusch.rbSize);
+    // fputs("########", fp);
+    // fprintf(fp,"\n");
+    // fprintf(fp,"%d ",UE_id);
+    // fprintf(fp,"\n");
+    // for(int j=0;j<sched_ctrl->sched_pusch.rbSize;j++){
+    //   if(rballoc_mask[j+ sched_ctrl->sched_pusch.rbStart]==0){
+    //     fprintf(fp,"%d ",j+ sched_ctrl->sched_pusch.rbStart);
+    //     fprintf(fp,"%d ",0);
+    //   }
+    //   if(rballoc_mask[j+ sched_ctrl->sched_pusch.rbStart]!=0){
+    //     fprintf(fp,"%d ",j+ sched_ctrl->sched_pusch.rbStart);
+    //     fprintf(fp,"%d ",1);
+    //   }
+    // }
+    // fprintf(fp,"\n");
+    // fprintf(fp,"\n");
+    // fclose(fp);
   }
 }
 
@@ -1262,7 +1345,29 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   /* Calculate mask: if any RB in vrb_map_UL is blocked (1), the current RB will be 0 */
   for (int i = 0; i < bwpSize; i++)
     rballoc_mask[i] = i >= st && i <= e;
-
+  // for (int i = 0; i<48; i++){
+  //     if (rballoc_mask[i] == 0){
+  //       vrb_map_new[count][slot][i+27] = 10;
+  //       }
+  //     }
+  // FILE * fp;
+  // fp = fopen("text_1.txt","a+");
+  // fprintf(fp,"%d ",bwpSize);
+  // fputs("*********", fp);
+  // fprintf(fp,"\n");
+  // for(int j=0;j<bwpSize;j++){
+  //   if(rballoc_mask[j]==0){
+  //     fprintf(fp,"%d ",j);
+  //     fprintf(fp,"%d ",0);
+  //   }
+  //   if(rballoc_mask[j]!=0){
+  //     fprintf(fp,"%d ",j);
+  //     fprintf(fp,"%d ",1);
+  //   }
+  // }
+  // fprintf(fp,"\n");
+  // fprintf(fp,"\n");
+  // fclose(fp);
   /* proportional fair scheduling algorithm */
   pf_ul(module_id,
         frame,

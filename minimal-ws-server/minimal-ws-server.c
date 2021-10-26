@@ -23,13 +23,21 @@
 #define HTTP_BUF 1024
 volatile int  g_force_exit  = 0;
 
-#define LWS_PLUGIN_STATIC
-#include "protocol_lws_minimal.c"
 #ifdef WS_SERVER_ON
 #include "openair2/LAYER2/NR_MAC_gNB/map.h"
+#else
+#include "../openair2/LAYER2/NR_MAC_gNB/map.h"
 #endif
+
+#define LWS_PLUGIN_STATIC
+#include "protocol_lws_minimal.c"
+
 int vrb_map_new[3][20][106];
 int count;
+
+int ue_speed_up[3];
+int ue_speed_down[3];
+int ue_state[3];
 static struct lws_protocols protocols[] = {
 	{ "http", lws_callback_http_dummy, 0, 0, 0, NULL, 0},
 	LWS_PLUGIN_PROTOCOL_MINIMAL,
@@ -75,26 +83,60 @@ void sig_alarm_handler(int sig_num)
     {
         int remaing = alarm(1);
 
-		for(int i=2;i<nf_status_arr_len;i++)
+		for(int i=3;i<nf_status_arr_len;i++)
 			nf_status_arr[i] = rand()%10;
+#if 1
 		int index=0;
 		index=count-1;
 		if(index==-1)
 		  index=2;
 		int j=0;
 		int k=0;
-		for(int i=2;i<nf_status_arr_len;i++)
+		int tmp_data = 0;
+		for(int i=3;i<nf_status_arr_len;i++)
 		{
-		   nf_status_arr[i]=vrb_map_new[index][j][k];
+		   tmp_data = 0;
+		   if(k==21)
+		   {
+			   tmp_data = vrb_map_new[index][j][105];
+		   }
+		   else
+		   {
+			   for(int tmp=0;tmp<5;tmp++)
+			   {
+				  if(tmp_data<vrb_map_new[index][j][k*5+tmp])
+				  {
+					tmp_data = vrb_map_new[index][j][k*5+tmp];
+			      }
+			   }
+		   }
+		   nf_status_arr[i]=tmp_data;
 		   k=k+1;
-           if(k==106)
+           if(k==22)
 		    {
 			   k=0;
 			   j=j+1;
 			}
 			
 		}
-        update_client(nf_status_arr_len,nf_status_arr);
+		//memcpy(&nf_status_arr[2],&vrb_map_new[index],nf_status_arr_len);
+		//memset(&vrb_map_new[index],0,nf_status_arr_len);
+#endif 		
+       update_client(nf_status_arr_len,nf_status_arr);
+       
+	//    int speed[8];
+	//    speed[0] = 3;
+    //    speed[1] = 6;
+	//    for(int i = 1;i<4;i++){
+	//       speed[i*2] = ue_speed_up[i-1];
+	// 	  speed[i*2+1] = ue_speed_down[i-1];
+	//    }
+    //    update_client(8,speed);
+
+	//    int ue_online[8];
+	//    ue_online[0] = 4;
+	//    ue_online[1] = 6;
+	//    update_client(8,ue_online);
     }
 }
 
@@ -113,6 +155,43 @@ int ws_server(int argc, const char **argv)
 int main(int argc, const char **argv)
 #endif
 {
+	slices[0].ueid[0] = -1;
+	slices[0].ueid[1] = -1;
+	slices[0].ueid[2] = -1;
+	slices[0].ueid[3] = -1;
+	slices[0].ueid[4] = -1;
+	slices[0].rbstartlocation = 25;
+	slices[0].rboverlocation = 44;
+    slices[0].slice_id = 1;
+	for(int i = 0;i<16;i++){
+       slices[0].slice_name[i] = i;
+	}
+
+	slices[1].ueid[0] = -1;
+	slices[1].ueid[1] = -1;
+	slices[1].ueid[2] = -1;
+	slices[1].ueid[3] = -1;
+	slices[1].ueid[4] = -1;
+	slices[1].rbstartlocation = 45;
+	slices[1].rboverlocation = 64;
+    slices[1].slice_id = 2;
+ 	for(int i = 0;i<16;i++){
+       slices[1].slice_name[i] = i;
+	}
+
+	slices[2].ueid[0] = -1;
+	slices[2].ueid[1] = -1;
+	slices[2].ueid[2] = -1;
+	slices[2].ueid[3] = -1;
+	slices[2].ueid[4] = -1;
+	slices[2].rbstartlocation = 65;
+	slices[2].rboverlocation = 84;
+    slices[2].slice_id = 3;
+	for(int i = 0;i<16;i++){
+       slices[2].slice_name[i] = i;
+	}
+    slices[2].slice_online = 1;
+
 	struct lws_context_creation_info info;
 	struct lws_context *context;
 	const char *p;
@@ -128,9 +207,10 @@ int main(int argc, const char **argv)
 	signal(SIGALRM, sig_alarm_handler);
     alarm(1);
 
-	nf_status_arr_len= RB_SIZE*SLOT_IN_FRAME+2;
-	nf_status_arr[0] = RB_SIZE; //rb size
-	nf_status_arr[1] = SLOT_IN_FRAME; //time 
+	nf_status_arr_len= RB_SIZE_deal*SLOT_IN_FRAME+3;
+	nf_status_arr[0] = 2;
+	nf_status_arr[1] = RB_SIZE_deal; //rb size
+	nf_status_arr[2] = SLOT_IN_FRAME; //time 
 
 	if ((p = lws_cmdline_option(argc, argv, "-d")))
 		logs = atoi(p);
