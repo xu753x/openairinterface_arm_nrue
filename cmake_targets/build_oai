@@ -440,7 +440,8 @@ function main() {
 	MAKE_CMD=ninja
 	shift;;
     --sanitize-address | -fsanitize=address)
-        SANITIZE_ADDRESS=True
+        SANITIZE_ADDRESS="True"
+        echo_info "Will use ASAN"
         shift;;
       --ittiSIM)
             ittiSIM=1

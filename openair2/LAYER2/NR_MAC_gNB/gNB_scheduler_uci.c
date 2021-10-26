@@ -964,7 +964,7 @@ void tci_handling(module_id_t Mod_idP, int UE_id, frame_t frame, slot_t slot) {
   stats->cumul_rsrp += strongest_ssb_rsrp;
   stats->num_rsrp_meas++;
   ssb_rsrp[idx * nb_of_csi_ssb_report] = strongest_ssb_rsrp;
-  LOG_D(MAC,"ssb_rsrp = %d\n",strongest_ssb_rsrp);
+  LOG_D(NR_MAC,"ssb_rsrp = %d\n",strongest_ssb_rsrp);
 
   //if current ssb rsrp is greater than better rsrp
   if(ssb_rsrp[idx * nb_of_csi_ssb_report] > better_rsrp_reported) {
@@ -1148,7 +1148,7 @@ void evaluate_rsrp_report(NR_UE_info_t *UE_info,
         *(csi_report->CSI_Index_list[cri_ssbri_bitlen>0?((curr_payload)&~(~1<<(cri_ssbri_bitlen-1))):cri_ssbri_bitlen]);
 
     *cumul_bits += cri_ssbri_bitlen;
-    LOG_D(MAC,"SSB_index = %d\n",sched_ctrl->CSI_report.ssb_cri_report.CRI_SSBRI [csi_ssb_idx]);
+    LOG_D(NR_MAC,"SSB_index = %d\n",sched_ctrl->CSI_report.ssb_cri_report.CRI_SSBRI [csi_ssb_idx]);
   }
 
   curr_payload = pickandreverse_bits(payload, 7, *cumul_bits);
@@ -1161,7 +1161,7 @@ void evaluate_rsrp_report(NR_UE_info_t *UE_info,
     *cumul_bits += 4;
   }
   csi_report->nb_of_csi_ssb_report++;
-  LOG_D(MAC,"rsrp_id = %d rsrp = %d\n",
+  LOG_I(NR_MAC,"rsrp_id = %d rsrp = %d\n",
         sched_ctrl->CSI_report.ssb_cri_report.RSRP,
         get_measured_rsrp(sched_ctrl->CSI_report.ssb_cri_report.RSRP));
 }
@@ -1188,7 +1188,7 @@ int evaluate_ri_report(uint8_t *payload,
      if ((ri_restriction>>i)&0x01) {
        if(count == ri_index) {
          sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.ri = i;
-         LOG_D(MAC,"CSI Reported Rank %d\n", i+1);
+         LOG_I(NR_MAC,"CSI Reported Rank %d\n", i+1);
          return i;
        }
        count++;
@@ -1218,11 +1218,11 @@ void evaluate_cqi_report(uint8_t *payload,
   else
     AssertFatal(1==0,"CQI Table not present in RRC configuration\n");
   sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.wb_cqi_1tb = temp_cqi;
-  LOG_D(MAC,"Wide-band CQI for the first TB %d\n", temp_cqi);
+  LOG_I(NR_MAC,"Wide-band CQI for the first TB %d\n", temp_cqi);
   if (cqi_bitlen > 4) {
     temp_cqi = pickandreverse_bits(payload, 4, cumul_bits);
     sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.wb_cqi_2tb = temp_cqi;
-    LOG_D(MAC,"Wide-band CQI for the second TB %d\n", temp_cqi);
+    LOG_D(NR_MAC,"Wide-band CQI for the second TB %d\n", temp_cqi);
   }
   sched_ctrl->set_mcs = TRUE;
 }
@@ -1243,7 +1243,7 @@ uint8_t evaluate_pmi_report(uint8_t *payload,
 
   sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.pmi_x1 = temp_pmi&((1<<x1_bitlen)-1);
   sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.pmi_x2 = (temp_pmi>>x1_bitlen)&((1<<x2_bitlen)-1);
-  LOG_D(MAC,"PMI Report: X1 %d X2 %d\n",
+  LOG_I(NR_MAC,"PMI Report: X1 %d X2 %d\n",
         sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.pmi_x1,
         sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.pmi_x2);
 
@@ -1262,7 +1262,7 @@ int evaluate_li_report(uint8_t *payload,
 
   if (li_bitlen>0) {
     int temp_li = pickandreverse_bits(payload, li_bitlen, cumul_bits);
-    LOG_D(MAC,"LI %d\n",temp_li);
+    LOG_D(NR_MAC,"LI %d\n",temp_li);
     sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.li = temp_li;
   }
   return li_bitlen;
@@ -1319,15 +1319,18 @@ void extract_pucch_csi_report(NR_CSI_MeasConfig_t *csi_MeasConfig,
     // verify if report with current id has been scheduled for this frame and slot
     if ((n_slots_frame*frame + slot - offset)%period == 0) {
       reportQuantity_type = csi_report->reportQuantity_type;
-      LOG_D(MAC,"SFN/SF:%d/%d reportQuantity type = %d\n",frame,slot,reportQuantity_type);
+
       switch(reportQuantity_type){
         case NR_CSI_ReportConfig__reportQuantity_PR_cri_RSRP:
+          LOG_I(NR_MAC,"SFN/SF:%d/%d reportQuantity type cri_RSRP\n",frame,slot);
           evaluate_rsrp_report(UE_info,sched_ctrl,UE_id,csi_report_id,payload,&cumul_bits,reportQuantity_type);
           break;
         case NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP:
+          LOG_I(NR_MAC,"SFN/SF:%d/%d reportQuantity type ssb_Index_RSRP\n",frame,slot);
           evaluate_rsrp_report(UE_info,sched_ctrl,UE_id,csi_report_id,payload,&cumul_bits,reportQuantity_type);
           break;
         case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_CQI:
+          LOG_I(NR_MAC,"SFN/SF:%d/%d reportQuantity type cri_RI_CQI\n",frame,slot);
           cri_bitlen = csi_report->csi_meas_bitlen.cri_bitlen;
           if(cri_bitlen)
             evaluate_cri_report(payload,cri_bitlen,cumul_bits,sched_ctrl);
@@ -1341,6 +1344,7 @@ void extract_pucch_csi_report(NR_CSI_MeasConfig_t *csi_MeasConfig,
           evaluate_cqi_report(payload,csi_report,cumul_bits,r_index,sched_ctrl,csirep->cqi_Table);
           break;
         case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_PMI_CQI:
+          LOG_I(NR_MAC,"SFN/SF:%d/%d reportQuantity type CRI_RI_PMI_CQI\n",frame,slot);
           cri_bitlen = csi_report->csi_meas_bitlen.cri_bitlen;
           if(cri_bitlen)
             evaluate_cri_report(payload,cri_bitlen,cumul_bits,sched_ctrl);
@@ -1356,6 +1360,7 @@ void extract_pucch_csi_report(NR_CSI_MeasConfig_t *csi_MeasConfig,
           evaluate_cqi_report(payload,csi_report,cumul_bits,r_index,sched_ctrl,csirep->cqi_Table);
           break;
         case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_LI_PMI_CQI:
+          LOG_I(NR_MAC,"SFN/SF:%d/%d reportQuantity type CRI_RI_LI_PMI_CQI\n",frame,slot);
           cri_bitlen = csi_report->csi_meas_bitlen.cri_bitlen;
           if(cri_bitlen)
             evaluate_cri_report(payload,cri_bitlen,cumul_bits,sched_ctrl);
@@ -1459,9 +1464,9 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
     LOG_D(NR_MAC, "SR UE %04x ul_cqi %d\n", uci_01->rnti, uci_01->ul_cqi);
   }
 
-  // tpc (power control) only if we received AckNack or positive SR. For a
-  // negative SR, the UE won't have sent anything, and the SNR is not valid
-  if (((uci_01->pduBitmap >> 1) & 0x1) || sched_ctrl->SR) {
+  // tpc (power control) only if we received AckNack not SR. 
+  // 
+  if (((uci_01->pduBitmap >> 1) & 0x1) ) {
     if ((uci_01->harq) && (uci_01->harq->harq_confidence_level==0)) sched_ctrl->tpc1 = nr_get_tpc(RC.nrmac[mod_id]->pucch_target_snrx10, uci_01->ul_cqi, 30);
     else                                        sched_ctrl->tpc1 = 3;
     sched_ctrl->pucch_snrx10 = uci_01->ul_cqi * 5 - 640;
@@ -1553,7 +1558,7 @@ int nr_acknack_scheduling(int mod_id,
    * * each UE has dedicated PUCCH Format 0 resources, and we use index 0! */
   NR_UE_sched_ctrl_t *sched_ctrl = &RC.nrmac[mod_id]->UE_info.UE_sched_ctrl[UE_id];
   NR_sched_pucch_t *pucch = &sched_ctrl->sched_pucch[0];
-  LOG_D(NR_MAC,"pucch_acknak %d.%d Trying to allocate pucch, current DAI %d\n",frame,slot,pucch->dai_c);
+  LOG_I(NR_MAC,"pucch_acknak %d.%d Trying to allocate pucch, current DAI %d\n",frame,slot,pucch->dai_c);
   pucch->r_pucch=r_pucch;
   AssertFatal(pucch->csi_bits == 0,
               "%s(): csi_bits %d in sched_pucch[0]\n",
@@ -1565,7 +1570,7 @@ int nr_acknack_scheduling(int mod_id,
      * the same slot again */
     const int f = pucch->frame;
     const int s = pucch->ul_slot;
-    LOG_D(NR_MAC,"pucch_acknak : %d.%d DAI = 2 pucch currently in %d.%d, advancing by 1 slot\n",frame,slot,f,s);
+    LOG_I(NR_MAC,"pucch_acknak : %d.%d DAI = 2 pucch currently in %d.%d, advancing by 1 slot\n",frame,slot,f,s);
     nr_fill_nfapi_pucch(mod_id, frame, slot, pucch, UE_id);
     memset(pucch, 0, sizeof(*pucch));
     pucch->frame = s == n_slots_frame - 1 ? (f + 1) % 1024 : f;
@@ -1592,7 +1597,7 @@ int nr_acknack_scheduling(int mod_id,
     }
   }
 
-  LOG_D(NR_MAC,"pucch_acknak 1. DL %d.%d, UL_ACK %d.%d, DAI_C %d\n",frame,slot,pucch->frame,pucch->ul_slot,pucch->dai_c);
+  LOG_I(NR_MAC,"pucch_acknak 1. DL %d.%d, UL_ACK %d.%d, DAI_C %d\n",frame,slot,pucch->frame,pucch->ul_slot,pucch->dai_c);
 
   // this is hardcoded for now as ue specific only if we are not on the initialBWP (to be fixed to allow ue_Specific also on initialBWP
   NR_CellGroupConfig_t *cg = RC.nrmac[mod_id]->UE_info.CellGroup[UE_id];
@@ -1614,7 +1619,7 @@ int nr_acknack_scheduling(int mod_id,
   get_pdsch_to_harq_feedback(mod_id, UE_id, bwp_Id, ss_type, &max_fb_time, pdsch_to_harq_feedback);
   int max_absslot = frame*n_slots_frame + slot + max_fb_time;
 
-  LOG_D(NR_MAC,"pucch_acknak 1b. DL %d.%d, UL_ACK %d.%d, DAI_C %d\n",frame,slot,pucch->frame,pucch->ul_slot,pucch->dai_c);
+  LOG_I(NR_MAC,"pucch_acknak 1b. DL %d.%d, UL_ACK %d.%d, DAI_C %d\n",frame,slot,pucch->frame,pucch->ul_slot,pucch->dai_c);
   /* there is a HARQ. Check whether we can use it for this ACKNACK */
   if (pucch->dai_c > 0) {
     /* this UE already has a PUCCH occasion */
@@ -1630,7 +1635,7 @@ int nr_acknack_scheduling(int mod_id,
       const int f = pucch->frame;
       const int s = pucch->ul_slot;
       const int n_slots_frame = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
-      LOG_D(NR_MAC,"pucch_acknak : %d.%d DAI > 0, cannot reach timing for pucch in %d.%d, advancing slot by 1 and trying again\n",frame,slot,f,s);
+      LOG_I(NR_MAC,"pucch_acknak : %d.%d DAI > 0, cannot reach timing for pucch in %d.%d, advancing slot by 1 and trying again\n",frame,slot,f,s);
       nr_fill_nfapi_pucch(mod_id, frame, slot, pucch, UE_id);
       memset(pucch, 0, sizeof(*pucch));
       pucch->frame = s == n_slots_frame - 1 ? (f + 1) % 1024 : f;
@@ -1644,11 +1649,11 @@ int nr_acknack_scheduling(int mod_id,
     pucch->timing_indicator = i;
     pucch->dai_c++;
     // retain old resource indicator, and we are good
-    LOG_D(NR_MAC,"pucch_acknak : %d.%d. DAI > 0, pucch allocated for %d.%d (index %d)\n",frame,slot,pucch->frame,pucch->ul_slot,pucch->timing_indicator);
+    LOG_I(NR_MAC,"pucch_acknak : %d.%d. DAI > 0, pucch allocated for %d.%d (index %d)\n",frame,slot,pucch->frame,pucch->ul_slot,pucch->timing_indicator);
     return 0;
   }
 
-  LOG_D(NR_MAC,"pucch_acknak : %d.%d DAI = 0, looking for new pucch occasion\n",frame,slot);
+  LOG_I(NR_MAC,"pucch_acknak : %d.%d DAI = 0, looking for new pucch occasion\n",frame,slot);
   /* we need to find a new PUCCH occasion */
 
   /*Inizialization of timing information*/
@@ -1666,7 +1671,7 @@ int nr_acknack_scheduling(int mod_id,
   while ((pucch->frame*n_slots_frame + pucch->ul_slot) <= max_absslot) {
     int i = 0;
     while (i < 8) {
-      LOG_D(NR_MAC,"pdsch_to_harq_feedback[%d] = %d (pucch->ul_slot %d - slot %d)\n",
+      LOG_I(NR_MAC,"pdsch_to_harq_feedback[%d] = %d (pucch->ul_slot %d - slot %d)\n",
             i,pdsch_to_harq_feedback[i],pucch->ul_slot,slot);
       if (pdsch_to_harq_feedback[i] == pucch->ul_slot - slot) {
         ind_found = i;
@@ -1725,13 +1730,15 @@ int nr_acknack_scheduling(int mod_id,
     else {
       csi_pucch->timing_indicator = ind_found;
       csi_pucch->dai_c++;
+      // clear the "old" pucch because we might have changed the frame/ul_slot entries
+      memset(pucch,0,sizeof(*pucch));
       return 1;
     }
   }
 
   pucch->timing_indicator = ind_found; // index in the list of timing indicators
 
-  LOG_D(NR_MAC,"pucch_acknak 2. DAI 0 DL %d.%d, UL_ACK %d.%d (index %d)\n",frame,slot,pucch->frame,pucch->ul_slot,pucch->timing_indicator);
+  LOG_I(NR_MAC,"pucch_acknak 2. DAI 0 DL %d.%d, UL_ACK %d.%d (index %d)\n",frame,slot,pucch->frame,pucch->ul_slot,pucch->timing_indicator);
 
   pucch->dai_c++;
   pucch->resource_indicator = 0; // each UE has dedicated PUCCH resources
@@ -1805,7 +1812,7 @@ void nr_sr_reporting(int Mod_idP, frame_t SFN, sub_frame_t slot)
       LOG_D(NR_MAC,"SR_resource_id %d: SR_period %d, SR_offset %d\n",SR_resource_id,SR_period,SR_offset);
       if ((sfn_sf - SR_offset) % SR_period != 0)
         continue;
-      LOG_D(NR_MAC, "%4d.%2d Scheduling Request identified\n", SFN, slot);
+      LOG_I(NR_MAC, "%4d.%2d Scheduling Request identified\n", SFN, slot);
       NR_PUCCH_ResourceId_t *PucchResourceId = SchedulingRequestResourceConfig->resource;
 
       int found = -1;
@@ -1837,7 +1844,7 @@ void nr_sr_reporting(int Mod_idP, frame_t SFN, sub_frame_t slot)
             && pdu->initial_cyclic_shift == pucch_res->format.choice.format0->initialCyclicShift
             && pdu->nr_of_symbols == pucch_res->format.choice.format0->nrofSymbols
             && pdu->start_symbol_index == pucch_res->format.choice.format0->startingSymbolIndex) {
-          LOG_D(NR_MAC,"%4d.%2d adding SR_flag 1 to PUCCH nFAPI SR for RNTI %04x\n", SFN, slot, pdu->rnti);
+          LOG_I(NR_MAC,"%4d.%2d adding SR_flag 1 to PUCCH nFAPI SR for RNTI %04x\n", SFN, slot, pdu->rnti);
           pdu->sr_flag = 1;
           nfapi_allocated = true;
           break;
@@ -1850,12 +1857,14 @@ void nr_sr_reporting(int Mod_idP, frame_t SFN, sub_frame_t slot)
       /* we did not find it: check if current PUCCH is for the current slot, in
        * which case we add the SR to it; otherwise, allocate SR separately */
       NR_sched_pucch_t *curr_pucch = &sched_ctrl->sched_pucch[0];
+      LOG_I(NR_MAC,"%d.%d No PUCCH resource found for SR, current pucch in %d.%d\n",SFN,slot,curr_pucch->frame,curr_pucch->ul_slot);
       if (curr_pucch->frame == SFN && curr_pucch->ul_slot == slot) {
         if (curr_pucch->resource_indicator != found) {
           LOG_W(NR_MAC, "%4d.%2d expected PUCCH in this slot to have resource indicator of SR (%d), skipping SR\n", SFN, slot, found);
           continue;
         }
         curr_pucch->sr_flag = true;
+        LOG_I(NR_MAC,"Added SR flag to current pucch\n");
       } else {
         NR_sched_pucch_t sched_sr;
         memset(&sched_sr, 0, sizeof(sched_sr));
@@ -1863,6 +1872,7 @@ void nr_sr_reporting(int Mod_idP, frame_t SFN, sub_frame_t slot)
         sched_sr.ul_slot = slot;
         sched_sr.resource_indicator = found;
         sched_sr.sr_flag = true;
+        LOG_I(NR_MAC,"Filling standlone pucch for SR\n");
         nr_fill_nfapi_pucch(Mod_idP, SFN, slot, &sched_sr, UE_id);
       }
     }

@@ -267,8 +267,7 @@ void nr_dlsim_preprocessor(module_id_t module_id,
 
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
 
-  ps->nrOfLayers = g_nrOfLayers;
-
+  ps->nrOfLayers = 0; //g_nrOfLayers;
   int dci_format = sched_ctrl->search_space && sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats ?
       NR_DL_DCI_FORMAT_1_1 : NR_DL_DCI_FORMAT_1_0;
 
@@ -825,6 +824,14 @@ int main(int argc, char **argv)
   else if (mu == 1 && N_RB_DL == 106) { 
     fs = 61.44e6;
     bw = 40e6;
+  }
+  else if (mu == 1 && N_RB_DL == 133) { 
+    fs = 61.44e6;
+    bw = 50e6;
+  }
+  else if (mu == 1 && N_RB_DL == 162) { 
+    fs = 61.44e6;
+    bw = 60e6;
   }
   else if (mu == 3 && N_RB_DL == 66) {
     fs = 122.88e6;

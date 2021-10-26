@@ -777,7 +777,8 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
     re_offset = k;
     rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+re_offset+nushift)];
     dl_ch = (int16_t *)&dl_ch_estimates[p*ue->frame_parms.nb_antennas_rx+aarx][ch_offset];
-
+    LOG_I(PHY,"p %d, ue->frame_parms.nb_antennas_rx %d, aarx %d,ch_offset %d => dl_ch %p\n",
+          p,ue->frame_parms.nb_antennas_rx,aarx,ch_offset, dl_ch);
     memset(dl_ch,0,4*(ue->frame_parms.ofdm_symbol_size));
 #ifdef DEBUG_PDSCH
     printf("ch est pilot addr %p RB_DL %d\n",&pilot[0], ue->frame_parms.N_RB_DL);

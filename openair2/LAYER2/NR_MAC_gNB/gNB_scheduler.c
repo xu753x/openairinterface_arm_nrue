@@ -354,6 +354,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
      LOG_I(NR_MAC,"Frame.Slot %d.%d\n%s\n",frame,slot,stats_output);
   }
 
+  LOG_I(NR_MAC,"Frame.Slot %d.%d Scheduling SI\n",frame,slot);
   // This schedules MIB
   schedule_nr_mib(module_idP, frame, slot);
 
@@ -362,6 +363,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     schedule_nr_sib1(module_idP, frame, slot);
 
 
+  LOG_I(NR_MAC,"Frame.Slot %d.%d Scheduling PRACH/SR/CSI-RS/CSI-Report/RA/\n",frame,slot);
   // This schedule PRACH if we are not in phy_test mode
   if (get_softmodem_params()->phy_test == 0) {
     /* we need to make sure that resources for PRACH are free. To avoid that
@@ -392,12 +394,15 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     nr_schedule_RA(module_idP, frame, slot);
   }
 
+  LOG_I(NR_MAC,"Frame.Slot %d.%d Scheduling ULSCH\n",frame,slot);
   // This schedules the DCI for Uplink and subsequently PUSCH
   nr_schedule_ulsch(module_idP, frame, slot);
 
+  LOG_I(NR_MAC,"Frame.Slot %d.%d Scheduling DLSCH\n",frame,slot);
   // This schedules the DCI for Downlink and PDSCH
   nr_schedule_ue_spec(module_idP, frame, slot);
 
+  LOG_I(NR_MAC,"Frame.Slot %d.%d Scheduling PUCCH\n",frame,slot);
   nr_schedule_pucch(module_idP, frame, slot);
 
   stop_meas(&RC.nrmac[module_idP]->eNB_scheduler);

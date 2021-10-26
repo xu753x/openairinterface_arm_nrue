@@ -137,6 +137,8 @@ uint8_t nr_generate_pdsch(processingData_L1tx_t *msgTx,
   for (int dlsch_id=0; dlsch_id<msgTx->num_pdsch_slot; dlsch_id++) {
     dlsch = msgTx->dlsch[dlsch_id][0];
 
+    unsigned long long time_in = rdtsc_oai();
+
     NR_DL_gNB_HARQ_t *harq = &dlsch->harq_process;
     nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &harq->pdsch_pdu.pdsch_pdu_rel15;
     uint32_t scrambled_output[NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH>>5];
@@ -178,6 +180,8 @@ uint8_t nr_generate_pdsch(processingData_L1tx_t *msgTx,
       n_ptrs = (rel15->rbSize + rel15->PTRSFreqDensity - 1)/rel15->PTRSFreqDensity;
     }
     int16_t mod_ptrs[n_ptrs<<1] __attribute__ ((aligned(16)));
+    unsigned long long time_init = rdtsc_oai();
+    unsigned long long diff_init = rdtsc_oai() - time_in;
 
     /// CRC, coding, interleaving and rate matching
     AssertFatal(harq->pdu!=NULL,"harq->pdu is null\n");
@@ -204,6 +208,8 @@ uint8_t nr_generate_pdsch(processingData_L1tx_t *msgTx,
     printf("\n");
 #endif
     
+    unsigned long long time_encoding = rdtsc_oai();
+    unsigned long long diff_encoding = rdtsc_oai() - time_init;
     
     
     /// scrambling
@@ -228,6 +234,8 @@ uint8_t nr_generate_pdsch(processingData_L1tx_t *msgTx,
     }
 #endif
     
+    unsigned long long time_scrambling = rdtsc_oai();
+    unsigned long long diff_scrambling = rdtsc_oai() - time_encoding;
     /// Modulation
     start_meas(dlsch_modulation_stats);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PDSCH_MODULATION, 1);
@@ -247,7 +255,9 @@ uint8_t nr_generate_pdsch(processingData_L1tx_t *msgTx,
       printf("\n");
     }
 #endif
-    
+   
+    unsigned long long time_modulation = rdtsc_oai();
+    unsigned long long diff_modulation = rdtsc_oai() - time_scrambling;
     
     /// Layer mapping
     nr_layer_mapping(mod_symbs,
@@ -266,6 +276,8 @@ uint8_t nr_generate_pdsch(processingData_L1tx_t *msgTx,
       }
 #endif
 
+    unsigned long long time_layermap = rdtsc_oai();
+    unsigned long long diff_layermap = rdtsc_oai() - time_modulation;
     /// Resource mapping
     
     // Non interleaved VRB to PRB mapping
@@ -523,6 +535,9 @@ uint8_t nr_generate_pdsch(processingData_L1tx_t *msgTx,
     else {
       LOG_D(PHY,"beam index for PDSCH allocation already taken\n");
     }
+    unsigned long long diff_resourcemap = rdtsc_oai() - time_layermap;
+    LOG_I(PHY,"times: init %f us, encoding %f us, scrambling %f us, modulation %f us, layermap %f us, resourcemap %f us\n",
+          (double)diff_init/3.1e3,(double)diff_encoding/3.1e3,(double)diff_scrambling/3.1e3,(double)diff_modulation/3.1e3,(double)diff_layermap/3.1e3,(double)diff_resourcemap/3.1e3);
   }// dlsch loop
 
   

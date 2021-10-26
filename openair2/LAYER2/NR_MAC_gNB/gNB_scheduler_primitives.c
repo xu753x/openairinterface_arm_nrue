@@ -456,7 +456,7 @@ void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
     ps->nrOfLayers = 1;
   }
   else {
-    LOG_D(NR_MAC,"checking layers\n");
+    LOG_D(NR_MAC,"checking layers, ps->nrOfLayers %d, layers %d\n",ps->nrOfLayers,layers);
     if (ps->nrOfLayers != layers) {
       reset_dmrs = true;
       ps->nrOfLayers = layers;

@@ -184,7 +184,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
         case NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE:
           AssertFatal(pdcch_received == 0, "pdcch_received is not 0, we can only handle one PDCCH PDU per slot\n");
           msgTx->pdcch_pdu = dl_tti_pdu->pdcch_pdu;
-   
+
           pdcch_received = 1;
           break;
 
