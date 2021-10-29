@@ -44,7 +44,7 @@
 #include "ldpc_generate_coefficient.c"
 
 
-int nrLDPC_encod(unsigned char **test_input,unsigned char **channel_input,int Zc,int Kb,short block_length, short BG, encoder_implemparams_t *impp)
+int nrLDPC_encod(unsigned char **input,unsigned char **output,int Zc,int Kb,short block_length, short BG, encoder_implemparams_t *impp)
 {
   //set_log(PHY, 4);
   
@@ -97,7 +97,7 @@ int nrLDPC_encod(unsigned char **test_input,unsigned char **channel_input,int Zc
 
 #ifdef DEBUG_LDPC
   LOG_D(PHY,"ldpc_encoder_optim_8seg: BG %d, Zc %d, Kb %d, block_length %d, segments %d\n",BG,Zc,Kb,block_length,impp->n_segments);
-  LOG_D(PHY,"ldpc_encoder_optim_8seg: PDU (seg 0) %x %x %x %x\n",test_input[0][0],test_input[0][1],test_input[0][2],test_input[0][3]);
+  LOG_D(PHY,"ldpc_encoder_optim_8seg: PDU (seg 0) %x %x %x %x\n",input[0][0],input[0][1],input[0][2],input[0][3]);
 #endif
 
   AssertFatal(Zc>0,"no valid Zc found for block length %d\n",block_length);
@@ -123,7 +123,7 @@ int nrLDPC_encod(unsigned char **test_input,unsigned char **channel_input,int Zc
 	//for (j=0; j<n_segments; j++) {
     for (j=macro_segment; j < macro_segment_end; j++) {
 
-      temp = (test_input[j][i/8]&(1<<(i&7)))>>(i&7);
+      temp = (input[j][i/8]&(1<<(i&7)))>>(i&7);
       //printf("c(%d,%d)=%d\n",j,i,temp);
       c[i] |= (temp << (j-macro_segment));
     }
@@ -131,10 +131,10 @@ int nrLDPC_encod(unsigned char **test_input,unsigned char **channel_input,int Zc
 #else
 #ifdef __AVX2__
   for (int i=0; i<block_length>>5; i++) {
-    c256 = _mm256_and_si256(_mm256_cmpeq_epi8(_mm256_andnot_si256(_mm256_shuffle_epi8(_mm256_set1_epi32(((uint32_t*)test_input[macro_segment])[i]), shufmask),andmask),zero256),masks[0]);
+    c256 = _mm256_and_si256(_mm256_cmpeq_epi8(_mm256_andnot_si256(_mm256_shuffle_epi8(_mm256_set1_epi32(((uint32_t*)input[macro_segment])[i]), shufmask),andmask),zero256),masks[0]);
     //for (j=1; j<n_segments; j++) {
     for (int j=macro_segment+1; j < macro_segment_end; j++) {    
-      c256 = _mm256_or_si256(_mm256_and_si256(_mm256_cmpeq_epi8(_mm256_andnot_si256(_mm256_shuffle_epi8(_mm256_set1_epi32(((uint32_t*)test_input[j])[i]), shufmask),andmask),zero256),masks[j-macro_segment]),c256);
+      c256 = _mm256_or_si256(_mm256_and_si256(_mm256_cmpeq_epi8(_mm256_andnot_si256(_mm256_shuffle_epi8(_mm256_set1_epi32(((uint32_t*)input[j])[i]), shufmask),andmask),zero256),masks[j-macro_segment]),c256);
     }
     ((__m256i *)cc)[i] = c256;
   }
@@ -143,7 +143,7 @@ int nrLDPC_encod(unsigned char **test_input,unsigned char **channel_input,int Zc
     //for (j=0; j<n_segments; j++) {
 	  for (int j=macro_segment; j < macro_segment_end; j++) {
 
-	    temp = (test_input[j][i/8]&(128>>(i&7)))>>(7-(i&7));
+	    temp = (input[j][i/8]&(128>>(i&7)))>>(7-(i&7));
       //printf("c(%d,%d)=%d\n",j,i,temp);
       cc[i] |= (temp << (j-macro_segment));
     }
@@ -173,8 +173,8 @@ int nrLDPC_encod(unsigned char **test_input,unsigned char **channel_input,int Zc
   if(impp->toutput != NULL) start_meas(impp->toutput);
   // information part and puncture columns
   /*
-  memcpy(&channel_input[0], &c[2*Zc], (block_length-2*Zc)*sizeof(unsigned char));
-  memcpy(&channel_input[block_length-2*Zc], &d[0], ((nrows-no_punctured_columns) * Zc-removed_bit)*sizeof(unsigned char));
+  memcpy(&output[0], &c[2*Zc], (block_length-2*Zc)*sizeof(unsigned char));
+  memcpy(&output[block_length-2*Zc], &d[0], ((nrows-no_punctured_columns) * Zc-removed_bit)*sizeof(unsigned char));
   */
 #ifdef __AVX2__
   if ((((2*Zc)&31) == 0) && (((block_length-(2*Zc))&31) == 0)) {
@@ -187,15 +187,15 @@ int nrLDPC_encod(unsigned char **test_input,unsigned char **channel_input,int Zc
     //  if (((block_length-(2*Zc))&31)>0) l1++;
 
     for (int i=0;i<l1;i++)
-      //for (j=0;j<n_segments;j++) ((__m256i *)channel_input[j])[i] = _mm256_and_si256(_mm256_srai_epi16(c256p[i],j),masks[0]);
-    	for (int j=macro_segment; j < macro_segment_end; j++) ((__m256i *)channel_input[j])[i] = _mm256_and_si256(_mm256_srai_epi16(c256p[i],j-macro_segment),masks[0]);
+      //for (j=0;j<n_segments;j++) ((__m256i *)output[j])[i] = _mm256_and_si256(_mm256_srai_epi16(c256p[i],j),masks[0]);
+    	for (int j=macro_segment; j < macro_segment_end; j++) ((__m256i *)output[j])[i] = _mm256_and_si256(_mm256_srai_epi16(c256p[i],j-macro_segment),masks[0]);
 
 
     //  if ((((nrows-no_punctured_columns) * Zc-removed_bit)&31)>0) l2++;
 
     for (int i1=0, i=l1;i1<l2;i1++,i++)
-      //for (j=0;j<n_segments;j++) ((__m256i *)channel_input[j])[i] = _mm256_and_si256(_mm256_srai_epi16(d256p[i1],j),masks[0]);
-    	for (int j=macro_segment; j < macro_segment_end; j++)  ((__m256i *)channel_input[j])[i] = _mm256_and_si256(_mm256_srai_epi16(d256p[i1],j-macro_segment),masks[0]);
+      //for (j=0;j<n_segments;j++) ((__m256i *)output[j])[i] = _mm256_and_si256(_mm256_srai_epi16(d256p[i1],j),masks[0]);
+    	for (int j=macro_segment; j < macro_segment_end; j++)  ((__m256i *)output[j])[i] = _mm256_and_si256(_mm256_srai_epi16(d256p[i1],j-macro_segment),masks[0]);
   }
   else {
 #ifdef DEBUG_LDPC
@@ -205,11 +205,11 @@ int nrLDPC_encod(unsigned char **test_input,unsigned char **channel_input,int Zc
     for (int i=0;i<(block_length-2*Zc);i++)
       //for (j=0; j<n_segments; j++)
       for (int j=macro_segment; j < macro_segment_end; j++)
-	channel_input[j][i] = (cc[2*Zc+i]>>(j-macro_segment))&1;
+	output[j][i] = (cc[2*Zc+i]>>(j-macro_segment))&1;
     for (int i=0;i<((nrows-no_punctured_columns) * Zc-removed_bit);i++)
       //for (j=0; j<n_segments; j++)
     	  for (int j=macro_segment; j < macro_segment_end; j++)
-	channel_input[j][block_length-2*Zc+i] = (dd[i]>>(j-macro_segment))&1;
+	output[j][block_length-2*Zc+i] = (dd[i]>>(j-macro_segment))&1;
     }
 
 #else
