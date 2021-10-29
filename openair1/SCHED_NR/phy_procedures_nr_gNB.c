@@ -51,12 +51,14 @@
 #include "intertask_interface.h"
 
 //#define DEBUG_RXDATA
-
-uint8_t SSB_Table[38]={0,2,4,6,8,10,12,14,254,254,16,18,20,22,24,26,28,30,254,254,32,34,36,38,40,42,44,46,254,254,48,50,52,54,56,58,60,62};
-
+#define INTERVAL 20
+uint8_t SSB_Table[38] = {0, 2, 4, 6, 8, 10, 12, 14, 254, 254, 16, 18, 20, 22, 24, 26, 28, 30, 254, 254, 32, 34, 36, 38, 40, 42, 44, 46, 254, 254, 48, 50, 52, 54, 56, 58, 60, 62};
+int aoa = 0, lccount = 0;
+float dist = 0, aoa_sum = 0, dist_sum = 0;
+int aoas[INTERVAL];
+float dists[INTERVAL];
 extern uint8_t nfapi_mode;
 
-short aoa = 0;
 void nr_set_ssb_first_subcarrier(nfapi_nr_config_request_scf_t *cfg, NR_DL_FRAME_PARMS *fp) {
 
   uint8_t sco = 0;
@@ -271,7 +273,7 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
       ulsch->harq_mask &= ~(1 << rdata->harq_pid);
 
       LOG_D(PHY, "ULSCH received ok \n");
-      nr_fill_indication(gNB,ulsch_harq->frame, ulsch_harq->slot, rdata->ulsch_id, rdata->harq_pid, 0);
+      nr_fill_indication(gNB,ulsch_harq->frame, ulsch_harq->slot, rdata->ulsch_id, rdata->harq_pid, 0,&dist);
     } else {
       LOG_D(PHY,"[gNB %d] ULSCH: Setting NAK for SFN/SF %d/%d (pid %d, status %d, round %d, TBS %d) r %d\n",
             gNB->Mod_id, ulsch_harq->frame, ulsch_harq->slot,
@@ -285,7 +287,7 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
       ulsch_harq->handled  = 1;
 
       LOG_D(PHY, "ULSCH %d in error\n",rdata->ulsch_id);
-      nr_fill_indication(gNB,ulsch_harq->frame, ulsch_harq->slot, rdata->ulsch_id, rdata->harq_pid, 1);
+      nr_fill_indication(gNB,ulsch_harq->frame, ulsch_harq->slot, rdata->ulsch_id, rdata->harq_pid, 1,&dist);
     }
     ulsch->last_iteration_cnt = rdata->decodeIterations;
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_gNB_ULSCH_DECODING,0);
@@ -367,8 +369,8 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
   stop_meas(&gNB->ulsch_decoding_stats);
 }
 
-
-  void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id, uint8_t harq_pid, uint8_t crc_flag) {
+void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id, uint8_t harq_pid, uint8_t crc_flag, float *distptr)
+{
 
   pthread_mutex_lock(&gNB->UL_INFO_mutex);
 
@@ -380,13 +382,13 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
   nfapi_nr_pusch_pdu_t *pusch_pdu = &harq_process->ulsch_pdu;
 
   //  pdu->data                              = gNB->ulsch[ULSCH_id+1][0]->harq_processes[harq_pid]->b;
-  sync_pos                               = nr_est_timing_advance_pusch(gNB, ULSCH_id); // estimate timing advance for MAC
+  sync_pos                               = nr_est_timing_advance_pusch(gNB, ULSCH_id,distptr); // estimate timing advance for MAC
 
   // scale the 16 factor in N_TA calculation in 38.213 section 4.2 according to the used FFT size
   uint16_t bw_scaling = 16 * gNB->frame_parms.ofdm_symbol_size / 2048;
   timing_advance_update = sync_pos / bw_scaling;
 
-  timing_advance_update = 0;//ldx_add
+  timing_advance_update = 0; //ldx_add
   // put timing advance command in 0..63 range
   timing_advance_update += 31;
 
@@ -676,12 +678,10 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
 
           VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_RX_PUSCH,1);
 	        start_meas(&gNB->rx_pusch_stats);
-          /************************************************************************************/
           no_sig = nr_rx_pusch(gNB, ULSCH_id, frame_rx, slot_rx, harq_pid, &aoa);
-          printf("\nCurrent aoa is %d\n",aoa);
           if (no_sig) {
             LOG_D(PHY, "PUSCH not detected in frame %d, slot %d\n", frame_rx, slot_rx);
-            nr_fill_indication(gNB, frame_rx, slot_rx, ULSCH_id, harq_pid, 1);
+            nr_fill_indication(gNB, frame_rx, slot_rx, ULSCH_id, harq_pid, 1, &dist);
             return 1;
           }
           gNB->pusch_vars[ULSCH_id]->ulsch_power_tot=0;
@@ -700,12 +700,53 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
                    dB_fixed_x10(gNB->pusch_vars[ULSCH_id]->ulsch_power_tot),
                    dB_fixed_x10(gNB->pusch_vars[ULSCH_id]->ulsch_noise_power_tot),gNB->pusch_thres);
              gNB->pusch_vars[ULSCH_id]->ulsch_power_tot = gNB->pusch_vars[ULSCH_id]->ulsch_noise_power_tot;
-             nr_fill_indication(gNB,frame_rx, slot_rx, ULSCH_id, harq_pid, 1);
+             nr_fill_indication(gNB,frame_rx, slot_rx, ULSCH_id, harq_pid, 1, &dist);
              gNB->pusch_vars[ULSCH_id]->DTX=1;
              if (stats) stats->DTX++;
              return 1;
           } else gNB->pusch_vars[ULSCH_id]->DTX=0;
+          /****************************AOA statistics************************************/
+          if (lccount < INTERVAL)
+          {
+            aoas[lccount] = aoa;
+            dists[lccount] = dist;
+            lccount++;
+          }
+          else
+          {
+            for (int i = 0; i < INTERVAL; i++)
+            {
+              aoa_sum += aoas[i];
+              dist_sum += dists[i];
+            }
+            float distance;
+            distance=(1-0.22705)*dist_sum/INTERVAL+0.235872;
+            printf("\n*****The positioning results is");
+            printf("\n*****current angle is %.2fdegrees", aoa_sum/INTERVAL);
+            printf("\n*****current distance is %.2fmeters\n", distance);
+            // FILE *distance_save;
+            // distance_save = fopen("distance_record.txt", "at");
+            // if (distance_save == NULL)
+            // {
+            //   printf("\n读取文件错误");
+            // }
+            // fprintf(distance_save, "%lf ", distance);
+            // fclose(distance_save);
 
+            // FILE *distance_save;
+            // distance_save = fopen("distance_record.txt", "at");
+            // if (distance_save == NULL)
+            // {
+            //   printf("\n读取文件错误");
+            // }
+            // fprintf(distance_save, "%lf ",aoa);
+            // fclose(distance_save);
+
+            lccount = 0;
+            aoa_sum = 0;
+            dist_sum = 0;
+          }
+          /*******************************************************************************/
           stop_meas(&gNB->rx_pusch_stats);
           VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_RX_PUSCH,0);
           //LOG_M("rxdataF_comp.m","rxF_comp",gNB->pusch_vars[0]->rxdataF_comp[0],6900,1,1);

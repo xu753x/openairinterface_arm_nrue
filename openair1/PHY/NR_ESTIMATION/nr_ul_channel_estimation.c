@@ -37,7 +37,7 @@
 //#define DEBUG_PUSCH
 
 #define dBc(x,y) (dB_fixed(((int32_t)(x))*(x) + ((int32_t)(y))*(y)))
-short count = 0;
+
 int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
                                 unsigned char Ns,
                                 unsigned short p,
@@ -45,7 +45,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
                                 int ul_id,
                                 unsigned short bwp_start_subcarrier,
                                 nfapi_nr_pusch_pdu_t *pusch_pdu,
-                                short *aoaptr) {
+                                int *aoaptr) {
 
   int pilot[3280] __attribute__((aligned(16)));
   unsigned char aarx;
@@ -166,7 +166,8 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
       ((int16_t*)pilot)[1 + (2 * i)]);
   }
 #endif
-  count++;
+  // char filename[20];//LOG_M
+  // char varname[10];
   for (aarx=0; aarx<gNB->frame_parms.nb_antennas_rx; aarx++) {
 
     re_offset = k;   /* Initializing the Resource element offset for each Rx antenna */
@@ -174,6 +175,9 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
     pil   = (int16_t *)&pilot[0];
     rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+k+nushift)];
     rxptr[aarx] = (int16_t *)&rxdataF[aarx][(symbol_offset+k+nushift)];
+    // sprintf(filename,"rxdataF%d.m", aarx);//LOG_M
+    // sprintf(varname,"rxdataF%d", aarx);//LOG_M
+    // LOG_M(filename,varname, rxF,100,1,1);
     ul_ch = (int16_t *)&ul_ch_estimates[aarx][ch_offset];
     re_offset = k;
 
@@ -580,7 +584,21 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 
   }
 
-  *aoaptr = music1d(rxptr);
+  // char filename[20];//LOG_M
+  // char varname[10];
+  // for (int aa=0;aa<gNB->frame_parms.nb_antennas_rx;aa++) {
+  //   sprintf(filename,"rxdataF%d.m", aa);//LOG_M
+  //   sprintf(varname,"rxdataF%d", aa);//LOG_M
+  //   LOG_M(filename,varname, rxptr[aa],100,1,1);
+  // }
+  music1d(rxptr, aoaptr);
+
+  // FILE *aoa_get;
+  // int aoa;
+  // aoa_get = fopen("aoa.txt","rt");
+  // fscanf(aoa_get,"%d",&aoa);//读取文件中的数据
+  // fclose(aoa_get);
+  // printf("Current aoa is %d",aoa);
 #ifdef DEBUG_CH
   fclose(debug_ch_est);
 #endif

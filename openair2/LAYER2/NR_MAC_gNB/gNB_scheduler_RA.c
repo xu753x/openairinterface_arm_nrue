@@ -1683,7 +1683,7 @@ void nr_fill_rar(uint8_t Mod_idP,
   // TA command
   int  ta_command = rar->TA2 + (rar->TA1 << 5);
 
-  // 存TA的值
+  //  存TA的值
   FILE *ta_command_save;
   ta_command_save = fopen("ta_command_record.txt","wt");
   if(ta_command_save ==NULL)

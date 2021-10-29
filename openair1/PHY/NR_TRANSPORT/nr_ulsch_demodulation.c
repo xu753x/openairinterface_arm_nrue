@@ -1161,7 +1161,7 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
                 uint32_t frame,
                 uint8_t slot,
                 unsigned char harq_pid,
-                short *aoaptr)
+                int *aoaptr)
 {
 
   uint8_t aarx, aatx;

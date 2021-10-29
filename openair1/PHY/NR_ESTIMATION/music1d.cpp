@@ -8,13 +8,13 @@
 
 extern "C" {
 
-  short music1d(short **arg) {
+  void music1d(short **arg, int *aoaptr) {
     using namespace Eigen;
-    short snapcount = 10;
+    short snapcount = 50;
     MatrixXcf data(2,snapcount);
     float wavelength = 2.99792458e8/3.6192e9;
     RowVectorXf doas(180);
-    MatrixXf::Index maxIndex;
+    MatrixXf::Index minIndex;
     Vector2cf Un;
 
     for (short k = 0; k<180; k++){
@@ -30,20 +30,27 @@ extern "C" {
     }
     MatrixXcf dataT = data.adjoint();
     MatrixXcf R = data*dataT/snapcount;
-    MatrixXcf RT = R.adjoint();
-    SelfAdjointEigenSolver<MatrixXcf> complexeigensolver((R+RT)*0.5);
+    // MatrixXcf RT = R.adjoint();
+    // SelfAdjointEigenSolver<MatrixXcf> complexeigensolver((R+RT)*0.5);
+    SelfAdjointEigenSolver<MatrixXcf> complexeigensolver(R);
 
     if (complexeigensolver.info() != Success) abort();
     VectorXcf U = complexeigensolver.eigenvectors().col(1);
     Un(0) = U(1); Un(1) = -U(0);
 
     ArrayXcf V = Un.adjoint()*steering_matrix;
-    VectorXf Vr = 1.0/real(V*conj(V));
-    Vr.maxCoeff(&maxIndex);
-    int aoa = maxIndex;
-    return aoa;
+    // VectorXf Vr = 1.0/real(V*conj(V));
+    VectorXf Vr = real(V*conj(V));
+    Vr.minCoeff(&minIndex);
+    int aoa; 
+    aoa = minIndex;
+    *aoaptr = aoa-90;
+    // FILE *aoa_save;
+    // aoa_save = fopen("aoa.txt","wt");
+    // fprintf(aoa_save,"%d ", minIndex-90);
+    // fclose(aoa_save);
     // std::cout << "-----------------------------------------------------------\n" << std::endl;
-    // std::cout << "(music) Current Angle is:" << aoa << "\n" << std::endl;
+    // std::cout << "(music) Current Angle is:" << minIndex << "\n" << std::endl;
   }
 
 } /* extern "C" */
