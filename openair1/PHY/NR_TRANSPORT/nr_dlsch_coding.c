@@ -60,46 +60,37 @@ void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr, uint16_t N_RB) {
       a_segments = a_segments*N_RB;
       a_segments = a_segments/273 +1;
     }
-
+    
 #ifdef DEBUG_DLSCH_FREE
     LOG_D(PHY,"Freeing dlsch %p\n",dlsch);
 #endif
     NR_DL_gNB_HARQ_t *harq = &dlsch->harq_process;
-
+    
     if (harq->b) {
       free16(harq->b, a_segments * 1056);
       harq->b = NULL;
 #ifdef DEBUG_DLSCH_FREE
       LOG_D(PHY, "Freeing harq->b (%p)\n", harq->b);
 #endif
-
-      if (harq->e) {
-        free16(harq->e, 14 * N_RB * 12 * 8);
-        harq->e = NULL;
+    }
+    
 #ifdef DEBUG_DLSCH_FREE
-        printf("Freeing dlsch process %d e (%p)\n", i, harq->e);
+    LOG_D(PHY, "Freeing dlsch process %d c (%p)\n", i, harq->c);
 #endif
-      }
-
+    
+    for (r = 0; r < a_segments; r++) {
 #ifdef DEBUG_DLSCH_FREE
-      LOG_D(PHY, "Freeing dlsch process %d c (%p)\n", i, harq->c);
+      LOG_D(PHY, "Freeing dlsch process %d c[%d] (%p)\n", i, r, harq->c[r]);
 #endif
-
-      for (r = 0; r < a_segments; r++) {
-#ifdef DEBUG_DLSCH_FREE
-        LOG_D(PHY, "Freeing dlsch process %d c[%d] (%p)\n", i, r, harq->c[r]);
-#endif
-
-        if (harq->c[r]) {
-          free16(harq->c[r], 1056);
-          harq->c[r] = NULL;
-        }
+      
+      if (harq->c[r]) {
+	free16(harq->c[r], 1056);
+	harq->c[r] = NULL;
       }
     }
+    free16(dlsch, sizeof(NR_gNB_DLSCH_t));
+    *dlschptr = NULL;
   }
-
-  free16(dlsch, sizeof(NR_gNB_DLSCH_t));
-  *dlschptr = NULL;
 }
 
 NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
@@ -175,9 +166,6 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
     bzero(harq->c[r], 8448);
   }
 
-  harq->e = malloc16(N_RB * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * NR_MAX_NB_LAYERS);
-  AssertFatal(harq->e, "cannot allocate harq->e\n");
-  bzero(harq->e, N_RB * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * NR_MAX_NB_LAYERS);
   return(dlsch);
 }
 
@@ -215,11 +203,14 @@ void ldpc8blocks( void *p) {
   // nrLDPC_encoder output is in "d"
   // let's make this interface happy!
   uint8_t tmp[8][68 * 384]__attribute__((aligned(32)));
-  for (int rr=impp->macro_num*8, i=0; rr < impp->n_segments && rr < impp->macro_num+8; rr++,i++ )
+  for (int rr=impp->macro_num*8, i=0; rr < impp->n_segments && rr < (impp->macro_num+1)*8; rr++,i++ )
     impp->d[rr]=tmp[i];
   nrLDPC_encoder(harq->c,impp->d,*impp->Zc, impp->Kb,Kr,impp->BG,impp);
+  // Compute where to place in output buffer that is concatenation of all segments
   uint32_t r_offset=0;
-  for (int rr=impp->macro_num*8; rr < impp->n_segments && rr < impp->macro_num+8; rr++ ) {
+  for (int i=0; i < impp->macro_num*8; i++ )
+     r_offset+=nr_get_E(G, impp->n_segments, mod_order, rel15->nrOfLayers, i);
+  for (int rr=impp->macro_num*8; rr < impp->n_segments && rr < (impp->macro_num+1)*8; rr++ ) {
     if (impp->F>0) {
       // writing into positions d[r][k-2Zc] as in clause 5.3.2 step 2) in 38.212
       memset(&impp->d[rr][Kr-impp->F-2*(*impp->Zc)], impp->F, NR_NULL);
@@ -246,12 +237,15 @@ void ldpc8blocks( void *p) {
 
     uint32_t Tbslbrm = nr_compute_tbslbrm(rel15->mcsTable[0],nb_rb,Nl);
     uint8_t Ilbrm = 1;
+
+    uint8_t e[E];
+    bzero (e, E);
     nr_rate_matching_ldpc(Ilbrm,
                           Tbslbrm,
                           impp->BG,
                           *impp->Zc,
                           impp->d[rr],
-                          harq->e+r_offset,
+                          e,
                           impp->n_segments,
                           impp->F,
                           Kr-impp->F-2*(*impp->Zc),
@@ -265,15 +259,15 @@ void ldpc8blocks( void *p) {
 #endif
     nr_interleaving_ldpc(E,
                          mod_order,
-                         harq->e+r_offset,
-                         impp->f+r_offset);
+                         e,
+                         impp->output+r_offset);
 #ifdef DEBUG_DLSCH_CODING
 
     for (int i =0; i<16; i++)
-      printf("output interleaving f[%d]= %d r_offset %u\n", i,impp->f[i+r_offset], r_offset);
+      printf("output interleaving f[%d]= %d r_offset %u\n", i,impp->output[i+r_offset], r_offset);
 
     if (r==impp->n_segments-1)
-      write_output("enc_output.m","enc",impp->f,G,1,4);
+      write_output("enc_output.m","enc",impp->output,G,1,4);
 
 #endif
     r_offset += E;
@@ -291,7 +285,7 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
                       time_stats_t *dlsch_rate_matching_stats,time_stats_t *dlsch_interleaving_stats,
                       time_stats_t *dlsch_segmentation_stats) {
   encoder_implemparams_t impp;
-  impp.f=output;
+  impp.output=output;
   unsigned int crc=1;
   NR_DL_gNB_HARQ_t *harq = &dlsch->harq_process;
   nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &harq->pdsch_pdu.pdsch_pdu_rel15;
@@ -397,12 +391,23 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
   impp.tparity = tparity;
   impp.toutput = toutput;
   impp.harq=harq;
-
+  notifiedFIFO_t nf;
+  initNotifiedFIFO(&nf);
+  int nbJobs=0;
   for(int j=0; j<(impp.n_segments/8+1); j++) {
-    impp.macro_num=j;
-    ldpc8blocks(&impp);
+    notifiedFIFO_elt_t *req=newNotifiedFIFO_elt(sizeof(impp), j, &nf, ldpc8blocks);
+    encoder_implemparams_t* perJobImpp=(encoder_implemparams_t*)NotifiedFifoData(req);
+    *perJobImpp=impp;
+    perJobImpp->macro_num=j;
+    pushTpool(gNB->threadPool,req);
+    nbJobs++;
   }
-
+  printf("workers: %d\n",nbJobs);
+  while(nbJobs) {
+    notifiedFIFO_elt_t *req=pullTpool(&nf, gNB->threadPool);
+    delNotifiedFIFO_elt(req);
+    nbJobs--;
+  }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ENCODING, VCD_FUNCTION_OUT);
   return 0;
 }

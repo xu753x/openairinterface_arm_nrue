@@ -51,12 +51,11 @@ typedef struct {
   /// Encoder BG
   uint8_t BG;
   /// Interleaver outputs
-  unsigned char *f;
+  unsigned char *output;
   /// Number of bits in "small" code segments
   uint32_t K;
   /// Number of "Filler" bits
   uint32_t F;
-
   /// LDPC-code outputs
   uint8_t *d[MAX_NUM_NR_DLSCH_SEGMENTS];
 }encoder_implemparams_t;

@@ -189,7 +189,8 @@ uint8_t nr_generate_pdsch(processingData_L1tx_t *msgTx,
     bzero(output,rel15->rbSize * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * NR_MAX_NB_LAYERS);
     start_meas(dlsch_encoding_stats);
     nr_dlsch_encoding(gNB,
-		      harq->pdu, frame, slot, dlsch, frame_parms, output, tinput,tprep,tparity,toutput,
+		      harq->pdu, frame, slot, dlsch, frame_parms, output,
+		      tinput,tprep,tparity,toutput,
 		      dlsch_rate_matching_stats,
 		      dlsch_interleaving_stats,
 		      dlsch_segmentation_stats);

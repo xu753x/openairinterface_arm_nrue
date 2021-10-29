@@ -96,8 +96,6 @@ typedef struct {
   uint32_t subframe;
   /// MIMO mode for this DLSCH
   MIMO_mode_t mimo_mode;
-  /// Concatenated sequences
-  uint8_t *e;
   /// LDPC lifting size
   uint32_t Z;
 } NR_DL_gNB_HARQ_t;
