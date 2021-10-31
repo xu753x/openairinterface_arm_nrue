@@ -14,6 +14,15 @@
  * limitations under the License.
  */
 
+/*! \file /openairinterface5g/nfapi/open-nFAPI/nfapi/public_inc/nfapi_interface.h
+ * \brief Create FAPI(P5/P7) message header 
+ * \author NCTU OpinConnect Terng-Yin Hsu, Sendren Xu, WEI-YING LIN, Hong-Ming Huang
+ * \email  a22490010@gmail.com
+ * \date   31-10-2021
+ * \version 2.0
+ * \note
+ * \warning
+ */
 
 #ifndef _NFAPI_INTERFACE_H_
 #define _NFAPI_INTERFACE_H_
@@ -104,6 +113,28 @@ typedef struct {
 	uint32_t checksum;
 	uint32_t transmit_timestamp;
 } nfapi_p7_message_header_t;
+
+// NR FAPI P5 and P7 message header
+typedef struct {
+    uint16_t segment_length;
+    uint16_t m_segment_sequence;
+    uint32_t transmit_timestamp;
+    uint8_t* termination_type;
+    uint8_t* phy_id;
+    uint16_t* message_id;
+    uint32_t* message_lenght;
+}nfapi_nr_p5_message_header_t;
+
+ typedef struct{
+    uint16_t sequence_number;
+    uint32_t total_sdu_length;
+    uint32_t byte_offset;
+    uint32_t transmit_timestamp;
+    uint8_t* termination_type;
+    uint8_t* phy_id;
+    uint16_t* message_id;
+    uint32_t* message_lenght;
+ }nfapi_nr_p7_message_header_t;
 
 #define NFAPI_PHY_ID_NA 0
 
