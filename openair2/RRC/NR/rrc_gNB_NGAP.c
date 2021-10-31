@@ -60,9 +60,10 @@
 #include "NGAP_Cause.h"
 #include "NGAP_CauseRadioNetwork.h"
 #include "f1ap_messages_types.h"
+#include <openair3/NAS/COMMON/NR_NAS_defs.h>
 
 extern RAN_CONTEXT_t RC;
-
+extern mui_t rrc_gNB_mui;
 /* Value to indicate an invalid UE initial id */
 static const uint16_t UE_INITIAL_ID_INVALID = 0;
 
@@ -1531,3 +1532,56 @@ void nr_rrc_rx_tx(void) {
 
 }
 
+void extract_imsi_nr(uint8_t *pdu_buf, uint32_t pdu_len, rrc_gNB_ue_context_t *ue_context_pP) {
+  /* Process NAS message locally to get the IMSI */
+  LOG_I(NR_RRC, "extract_imsi_nr size %d. ", pdu_len);
+
+}
+
+void rrc_gNB_send_identity_req(  const protocol_ctxt_t     *const ctxt_pP,
+  rrc_gNB_ue_context_t *ue_context_pP) {
+
+  char *resp;
+  uint8_t *buffer;
+  nr_user_nas_t UErrc= {0};
+  NRUEcontext_t UEnas= {0};
+  int size=identityRequest((void **)&resp, &UEnas);
+  log_dump(NAS, resp, size, LOG_DUMP_CHAR,"   identity Request:\n" );
+  int length = do_NR_DLInformationTransfer (
+          ctxt_pP->instance,
+          &buffer,
+          rrc_gNB_get_next_transaction_identifier (ctxt_pP->instance),
+          size,
+          resp);
+  LOG_DUMPMSG(NR_RRC, DEBUG_RRC, buffer, length, "[MSG] RRC DL Information Transfer\n");
+
+  nr_rrc_data_req (
+      ctxt_pP,
+      ue_context_pP->ue_context.Srb2.Active == 1 ? ue_context_pP->ue_context.Srb2.Srb_info.Srb_id : ue_context_pP->ue_context.Srb1.Srb_info.Srb_id,
+      rrc_gNB_mui++,
+      SDU_CONFIRM_NO,
+      length,
+      buffer,
+      PDCP_TRANSMISSION_MODE_CONTROL);
+}
+
+void rrc_gNB_process_identity_req(
+  const protocol_ctxt_t    *const ctxt_pP,
+  rrc_gNB_ue_context_t     *const ue_context_pP,
+  NR_UL_DCCH_Message_t     *const ul_dcch_msg) {
+
+    uint32_t pdu_length;
+    uint8_t *pdu_buffer;
+    MessageDef *msg_p;
+    NR_ULInformationTransfer_t *ulInformationTransfer = ul_dcch_msg->message.choice.c1->choice.ulInformationTransfer;
+    nr_user_nas_t UErrc= {0};
+
+    if (ulInformationTransfer->criticalExtensions.present == NR_ULInformationTransfer__criticalExtensions_PR_ulInformationTransfer) {
+        pdu_length = ulInformationTransfer->criticalExtensions.choice.ulInformationTransfer->dedicatedNAS_Message->size;
+        pdu_buffer = ulInformationTransfer->criticalExtensions.choice.ulInformationTransfer->dedicatedNAS_Message->buf;
+
+        UEprocessNAS(pdu_buffer,&UErrc);
+    }
+
+
+}

@@ -716,6 +716,8 @@ rrc_gNB_process_RRCSetupComplete(
   ue_context_pP->ue_context.Srb1.Srb_info.Srb_id = 1;
   ue_context_pP->ue_context.StatusRrc = NR_RRC_CONNECTED;
 
+  rrc_gNB_send_identity_req(ctxt_pP,ue_context_pP);
+
   if (AMF_MODE_ENABLED) {
     rrc_gNB_send_NGAP_NAS_FIRST_REQ(ctxt_pP, ue_context_pP, rrcSetupComplete);
   } else {
@@ -2504,6 +2506,10 @@ rrc_gNB_decode_dcch(
               ue_context_p->ue_context.rnti,
               sdu_sizeP);
 
+            rrc_gNB_process_identity_req(ctxt_pP,
+                                        ue_context_p,
+                                         ul_dcch_msg);
+
             if (AMF_MODE_ENABLED == 1) {
                 rrc_gNB_send_NGAP_UPLINK_NAS(ctxt_pP,
                                           ue_context_p,
@@ -3675,3 +3681,4 @@ void nr_rrc_trigger(protocol_ctxt_t *ctxt, int CC_id, int frame, int subframe)
   RRC_SUBFRAME_PROCESS(message_p).CC_id = CC_id;
   itti_send_msg_to_task(TASK_RRC_GNB, ctxt->module_id, message_p);
 }
+

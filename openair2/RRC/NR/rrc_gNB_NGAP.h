@@ -167,4 +167,21 @@ nr_rrc_pdcp_config_security(
     const uint8_t          send_security_mode_command
 );
 
+void 
+extract_imsi_nr(
+  uint8_t *pdu_buf, 
+  uint32_t   pdu_len, 
+  rrc_gNB_ue_context_t *ue_context_pP);
+
+void 
+rrc_gNB_send_identity_req(
+  const protocol_ctxt_t     *const ctxt_pP,
+  rrc_gNB_ue_context_t *ue_context_pP);
+
+void 
+rrc_gNB_process_identity_req(
+  const protocol_ctxt_t    *const ctxt_pP,
+  rrc_gNB_ue_context_t     *const ue_context_pP,
+  NR_UL_DCCH_Message_t     *const ul_dcch_msg);
+
 #endif
