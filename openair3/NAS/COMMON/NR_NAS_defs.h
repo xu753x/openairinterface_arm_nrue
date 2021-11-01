@@ -282,6 +282,14 @@ typedef struct {
 typedef struct {
   Extendedprotocoldiscriminator_t epd:8;
   Security_header_t sh:8;
+  uint8_t mac[4];
+  uint8_t seq_num;
+  uint8_t new_msg;
+} SGSSecurityHeader_t;
+
+typedef struct {
+  Extendedprotocoldiscriminator_t epd:8;
+  Security_header_t sh:8;
   SGSmobilitymanagementmessages_t mt:8;
   identitytype_t it:8;
 } Identityrequest_t;

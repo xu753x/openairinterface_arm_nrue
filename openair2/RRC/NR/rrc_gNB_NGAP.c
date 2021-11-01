@@ -1541,9 +1541,8 @@ void extract_imsi_nr(uint8_t *pdu_buf, uint32_t pdu_len, rrc_gNB_ue_context_t *u
 void rrc_gNB_send_identity_req(  const protocol_ctxt_t     *const ctxt_pP,
   rrc_gNB_ue_context_t *ue_context_pP) {
 
-  char *resp;
+  uint8_t *resp;
   uint8_t *buffer;
-  nr_user_nas_t UErrc= {0};
   NRUEcontext_t UEnas= {0};
   int size=identityRequest((void **)&resp, &UEnas);
   log_dump(NAS, resp, size, LOG_DUMP_CHAR,"   identity Request:\n" );
@@ -1554,6 +1553,7 @@ void rrc_gNB_send_identity_req(  const protocol_ctxt_t     *const ctxt_pP,
           size,
           resp);
   LOG_DUMPMSG(NR_RRC, DEBUG_RRC, buffer, length, "[MSG] RRC DL Information Transfer\n");
+  log_dump(NR_RRC, buffer, length, LOG_DUMP_CHAR,"[MSG] RRC DL Information Transfer\n");
 
   nr_rrc_data_req (
       ctxt_pP,
@@ -1565,6 +1565,32 @@ void rrc_gNB_send_identity_req(  const protocol_ctxt_t     *const ctxt_pP,
       PDCP_TRANSMISSION_MODE_CONTROL);
 }
 
+typedef struct {
+  uint8_t  spare; //don't know for what
+  uint8_t  length;
+  uint8_t  spare1:1;
+  uint8_t  supiformat:3;
+  uint8_t  spare2:1;
+  uint8_t  typeofidentity:3;
+  uint8_t  mccdigit1:4;
+  uint8_t  mccdigit2:4;
+  uint8_t  mccdigit3:4;
+  uint8_t  mncdigit3:4;
+  uint8_t  mncdigit1:4;
+  uint8_t  mncdigit2:4;
+  uint8_t  routingindicatordigit1:4;
+  uint8_t  routingindicatordigit2:4;
+  uint8_t  routingindicatordigit3:4;
+  uint8_t  routingindicatordigit4:4;
+  uint8_t  protectionschemeId:4;
+  uint8_t  spare3:1;
+  uint8_t  spare4:1;
+  uint8_t  spare5:1;
+  uint8_t  spare6:1;
+  uint8_t  homenetworkpki;
+  char schemeoutput[32];
+} nr_imsi_type_t;
+
 void rrc_gNB_process_identity_req(
   const protocol_ctxt_t    *const ctxt_pP,
   rrc_gNB_ue_context_t     *const ue_context_pP,
@@ -1572,16 +1598,39 @@ void rrc_gNB_process_identity_req(
 
     uint32_t pdu_length;
     uint8_t *pdu_buffer;
-    MessageDef *msg_p;
     NR_ULInformationTransfer_t *ulInformationTransfer = ul_dcch_msg->message.choice.c1->choice.ulInformationTransfer;
-    nr_user_nas_t UErrc= {0};
 
     if (ulInformationTransfer->criticalExtensions.present == NR_ULInformationTransfer__criticalExtensions_PR_ulInformationTransfer) {
         pdu_length = ulInformationTransfer->criticalExtensions.choice.ulInformationTransfer->dedicatedNAS_Message->size;
         pdu_buffer = ulInformationTransfer->criticalExtensions.choice.ulInformationTransfer->dedicatedNAS_Message->buf;
+        
+        log_dump(NR_RRC, pdu_buffer, pdu_length, LOG_DUMP_CHAR,"[MSG] RRC UL Information Transfer\n");
+        int imsi_offset = 3;      //offset for nas header
+        if (pdu_buffer[1] != 0)   //offset for sercurity header
+          imsi_offset = imsi_offset + 7;
+        nr_imsi_type_t *imsi = (nr_imsi_type_t*) (pdu_buffer+imsi_offset);
 
-        UEprocessNAS(pdu_buffer,&UErrc);
+        ue_context_pP->imsi_digi[0] = imsi->mccdigit1;
+        ue_context_pP->imsi_digi[1] = imsi->mccdigit2;
+        ue_context_pP->imsi_digi[2] = imsi->mccdigit3;
+        ue_context_pP->imsi_digi[3] = imsi->mncdigit1;
+        ue_context_pP->imsi_digi[4] = imsi->mncdigit2;
+        for(int i=0;i<5;i++)
+        {
+          ue_context_pP->imsi_digi[5+2*i] = (imsi->schemeoutput[i] & 0x0F);
+          ue_context_pP->imsi_digi[5+2*i+1] = ((imsi->schemeoutput[i]>>4) & 0x0F);
+        }
+
+        for(int i=0;i<15;i++)
+        {
+          ue_context_pP->imsi_char[i] = ue_context_pP->imsi_digi[i]+'0';
+        }        
+
+        printf("IMSI is: ");
+        for(int i=0;i<15;i++)
+        {
+          printf("%c",ue_context_pP->imsi_char[i]);
+        }   
+        printf("\n");
     }
-
-
 }

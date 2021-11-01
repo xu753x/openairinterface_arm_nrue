@@ -413,7 +413,8 @@ typedef struct rrc_gNB_ue_context_s {
 
   // another key for protocol layers but should not be used as a key for RB tree
   ue_uid_t       local_uid;
-
+  uint8_t        imsi_digi[15];
+  char           imsi_char[15];
   /* UE id for initial connection to S1AP */
   struct gNB_RRC_UE_s   ue_context;
 } rrc_gNB_ue_context_t;

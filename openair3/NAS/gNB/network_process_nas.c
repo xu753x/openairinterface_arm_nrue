@@ -87,8 +87,15 @@ void SGSsecurityModeComplete(void *msg, NRUEcontext_t *UE) {
 void SGSregistrationComplete(void *msg, NRUEcontext_t *UE) {
 }
 
-void processNAS(void *msg, NRUEcontext_t *UE) {
-  SGScommonHeader_t *header=(SGScommonHeader_t *) msg;
+void ProcessNAS(void *msg_in, NRUEcontext_t *UE) {
+  SGScommonHeader_t *header=(SGScommonHeader_t *) msg_in;
+  uint8_t *msg = msg_in;
+
+  if (header->sh == Integrityprotected)
+  {
+      msg = &(((SGSSecurityHeader_t *) msg_in)->new_msg);
+      header = (SGScommonHeader_t *) msg;
+  }
 
   if ( header->sh > 4 )
     SGSabortUE(msg, UE);
