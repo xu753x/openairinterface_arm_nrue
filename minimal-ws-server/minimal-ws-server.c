@@ -35,9 +35,8 @@ volatile int  g_force_exit  = 0;
 int vrb_map_new[3][20][106];
 int count;
 
-int ue_speed_up[3];
-int ue_speed_down[3];
-int ue_state[3];
+uint8_t ue_speed[25];
+
 static struct lws_protocols protocols[] = {
 	{ "http", lws_callback_http_dummy, 0, 0, 0, NULL, 0},
 	LWS_PLUGIN_PROTOCOL_MINIMAL,
@@ -82,7 +81,7 @@ void sig_alarm_handler(int sig_num)
     if(sig_num = SIGALRM)
     {
         int remaing = alarm(1);
-
+        
 		for(int i=3;i<nf_status_arr_len;i++)
 			nf_status_arr[i] = rand()%10;
 #if 1
@@ -99,6 +98,7 @@ void sig_alarm_handler(int sig_num)
 		   if(k==21)
 		   {
 			   tmp_data = vrb_map_new[index][j][105];
+			//    printf("tmp_data= %02x error =  %02x\n",tmp_data,1);
 		   }
 		   else
 		   {
@@ -106,10 +106,34 @@ void sig_alarm_handler(int sig_num)
 			   {
 				  if(tmp_data<vrb_map_new[index][j][k*5+tmp])
 				  {
-					tmp_data = vrb_map_new[index][j][k*5+tmp];
+					tmp_data = vrb_map_new[index][j][k*5+tmp];				
 			      }
 			   }
 		   }
+		//    if(tmp_data == 21)
+		//    {
+		// 	   if(slices[0].slice_online == 0)
+		// 	   {
+		// 		   printf("error1 \n");
+		// 		   tmp_data = 0;
+		// 	   }
+		//    }
+		//    if(tmp_data == 22)
+		//    {
+		// 	   if(slices[1].slice_online == 0)
+		// 	   {
+		// 		   printf("error2 \n");
+		// 		   tmp_data = 0;
+		// 	   }
+		//    }
+		//    if(tmp_data == 23)
+		//    {
+		//        if(slices[2].slice_online == 0)
+		// 	   {
+		// 		   printf("error3 \n");
+		// 		   tmp_data = 0;
+		// 	   }
+		//    }
 		   nf_status_arr[i]=tmp_data;
 		   k=k+1;
            if(k==22)
@@ -124,6 +148,9 @@ void sig_alarm_handler(int sig_num)
 #endif 		
        update_client(nf_status_arr_len,nf_status_arr);
        
+
+	   
+	   update_client(25,ue_speed);
 	//    int speed[8];
 	//    speed[0] = 3;
     //    speed[1] = 6;
@@ -155,42 +182,50 @@ int ws_server(int argc, const char **argv)
 int main(int argc, const char **argv)
 #endif
 {
-	slices[0].ueid[0] = -1;
-	slices[0].ueid[1] = -1;
-	slices[0].ueid[2] = -1;
-	slices[0].ueid[3] = -1;
-	slices[0].ueid[4] = -1;
-	slices[0].rbstartlocation = 25;
-	slices[0].rboverlocation = 44;
+	namelen = 4*6;
+    one_slice_len = namelen + 8;
+	slices[0].ueid[0] = 127;
+	slices[0].ueid[1] = 127;
+	slices[0].ueid[2] = 127;
+	slices[0].ueid[3] = 127;
+	slices[0].ueid[4] = 127;
+	slices[0].rbstartlocation = 0;
+	slices[0].rboverlocation = 0;
     slices[0].slice_id = 1;
-	for(int i = 0;i<16;i++){
+	for(int i = 0;i<namelen;i++){
        slices[0].slice_name[i] = i;
 	}
 
-	slices[1].ueid[0] = -1;
-	slices[1].ueid[1] = -1;
-	slices[1].ueid[2] = -1;
-	slices[1].ueid[3] = -1;
-	slices[1].ueid[4] = -1;
-	slices[1].rbstartlocation = 45;
-	slices[1].rboverlocation = 64;
+	slices[1].ueid[0] = 127;
+	slices[1].ueid[1] = 127;
+	slices[1].ueid[2] = 127;
+	slices[1].ueid[3] = 127;
+	slices[1].ueid[4] = 127;
+	slices[1].rbstartlocation = 0;
+	slices[1].rboverlocation = 0;
     slices[1].slice_id = 2;
- 	for(int i = 0;i<16;i++){
+ 	for(int i = 0;i<namelen;i++){
        slices[1].slice_name[i] = i;
 	}
 
-	slices[2].ueid[0] = -1;
-	slices[2].ueid[1] = -1;
-	slices[2].ueid[2] = -1;
-	slices[2].ueid[3] = -1;
-	slices[2].ueid[4] = -1;
-	slices[2].rbstartlocation = 65;
-	slices[2].rboverlocation = 84;
+	slices[2].ueid[0] = 127;
+	slices[2].ueid[1] = 127;
+	slices[2].ueid[2] = 127;
+	slices[2].ueid[3] = 127;
+	slices[2].ueid[4] = 127;
+	slices[2].rbstartlocation = 0;
+	slices[2].rboverlocation = 0;
     slices[2].slice_id = 3;
-	for(int i = 0;i<16;i++){
+	for(int i = 0;i<namelen;i++){
        slices[2].slice_name[i] = i;
 	}
-    slices[2].slice_online = 1;
+    slices[2].slice_online = 0;
+
+    ue_speed[0] = 3;
+	for(int i=1;i<25;i++)
+    {
+		ue_speed[i] = i;
+	}
 
 	struct lws_context_creation_info info;
 	struct lws_context *context;
@@ -211,6 +246,7 @@ int main(int argc, const char **argv)
 	nf_status_arr[0] = 2;
 	nf_status_arr[1] = RB_SIZE_deal; //rb size
 	nf_status_arr[2] = SLOT_IN_FRAME; //time 
+
 
 	if ((p = lws_cmdline_option(argc, argv, "-d")))
 		logs = atoi(p);

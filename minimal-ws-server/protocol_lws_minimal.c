@@ -20,11 +20,13 @@
 #include <string.h>
 
 //#include "openair2/LAYER2/NR_MAC_gNB/map.h"
-char arr[100];
-int refresh[3*24 + 2];
-int infor_length;
+char arr[400];
+uint8_t refresh[3*104 + 2];
+uint8_t infor_length;
 slicing slices[3];
 
+uint8_t namelen;
+uint8_t one_slice_len;
 
 /* one of these created for each message */
 
@@ -69,7 +71,7 @@ __minimal_destroy_message(void *_msg)
 static int first_conn = 0;
 static int notifying = 0;
 struct lws *wsi_client;
-
+int slices_on_num;
 
 #define RB_SIZE_deal    22
 #define RB_SIZE 		106
@@ -135,83 +137,63 @@ callback_minimal(struct lws *wsi, enum lws_callback_reasons reason,
 		wsi_client = wsi;
 		first_conn = 1;
 
-		int slices_on_num = 0;
-        for(int i=0;i<3;i++){
+		slices_on_num = 0;
+		for(int i=0;i<3;i++){
 			if(slices[i].slice_online)
 			{
-                slices_on_num = slices_on_num + 1;
+				slices_on_num = slices_on_num + 1;
 			}
 		}
 		printf("slices_on_num= %02x \n",slices_on_num);        
 		refresh[0] = 1;
-		refresh[1] = slices_on_num*24;
-		printf("refresh[ttt*24 + 19]= %02x \n",refresh[0]);
-		printf("refresh[ttt*24 + 20]= %02x \n",refresh[1]);
+	    namelen = 4*6;
+        one_slice_len = namelen + 8;
+		//refresh[1] = 2;
+		int tmp = slices_on_num*one_slice_len;
+		refresh[1] = tmp;
+		// printf("refresh[ttt*24 + 20]= %02x \n",refresh[1]);
 		int ttt=0;
 		for(int i = 0;i<3;i++){
 			if(slices[i].slice_online){
-				refresh[ttt*24 + 2] = slices[i].slice_id;
+                
+				refresh[ttt*one_slice_len + 2] = slices[i].slice_id;
 				int k = slices[i].slice_id - 1;
-				printf("k= %02x \n",k);
-				for(int j = 0;j<16;j++){
-					refresh[ttt*24 + j + 3] = slices[k].slice_name[j];
-					printf("refresh[ttt*24 + j + 3]= %02x \n",slices[k].slice_name[j]);
+
+				refresh[ttt*one_slice_len + 3] = slices[k].rbstartlocation;
+				refresh[ttt*one_slice_len + 4] = slices[k].rboverlocation;
+				refresh[ttt*one_slice_len + 5] = slices[k].ueid[0];
+				refresh[ttt*one_slice_len + 6] = slices[k].ueid[1];
+				refresh[ttt*one_slice_len + 7] = slices[k].ueid[2];
+				refresh[ttt*one_slice_len + 8] = slices[k].ueid[3];
+				refresh[ttt*one_slice_len + 9] = slices[k].ueid[4];
+				// printf("refresh[ttt*24 + 3]= %02x \n",refresh[ttt*one_slice_len + 3]);
+				// printf("refresh[ttt*24 + 4]= %02x \n",refresh[ttt*one_slice_len + 4]);
+				// printf("refresh[ttt*24 + 5]= %02x \n",refresh[ttt*one_slice_len + 5]);
+				// printf("refresh[ttt*24 + 6]= %02x \n",refresh[ttt*one_slice_len + 6]);
+				// printf("refresh[ttt*24 + 7]= %02x \n",refresh[ttt*one_slice_len + 7]);
+				// printf("refresh[ttt*24 + 8]= %02x \n",refresh[ttt*one_slice_len + 8]);
+				// printf("refresh[ttt*24 + 9]= %02x \n",refresh[ttt*one_slice_len + 9]);
+
+				for(int j = 0;j<namelen;j++){
+					refresh[ttt*one_slice_len + j + 10] = slices[k].slice_name[j];
+					// printf("refresh[%02x]= %02x \n",j+10,slices[k].slice_name[j]);
 				}
-				refresh[ttt*24 + 19] = slices[k].rbstartlocation;
-				refresh[ttt*24 + 20] = slices[k].rboverlocation;
-				refresh[ttt*24 + 21] = slices[k].ueid[0];
-				refresh[ttt*24 + 22] = slices[k].ueid[1];
-				refresh[ttt*24 + 23] = slices[k].ueid[2];
-				refresh[ttt*24 + 24] = slices[k].ueid[3];
-				refresh[ttt*24 + 25] = slices[k].ueid[4];
-				printf("refresh[ttt*24 + 19]= %02x \n",refresh[ttt*24 + 19]);
-				printf("refresh[ttt*24 + 20]= %02x \n",refresh[ttt*24 + 20]);
-				printf("refresh[ttt*24 + 21]= %02x \n",refresh[ttt*24 + 21]);
-				printf("refresh[ttt*24 + 22]= %02x \n",refresh[ttt*24 + 22]);
-				printf("refresh[ttt*24 + 23]= %02x \n",refresh[ttt*24 + 23]);
-				printf("refresh[ttt*24 + 24]= %02x \n",refresh[ttt*24 + 24]);
-				printf("refresh[ttt*24 + 25]= %02x \n",refresh[ttt*24 + 25]);
+
 				ttt=ttt+1;
 			}
 		}
-        update_client(slices_on_num*24 + 2,refresh);
 
-		// int slices_on_num = 0;
-        // for(int i=0;i<3;i++){
-		// 	if(slices[i].slice_online)
-		// 	{
-        //         slices_on_num = slices_on_num + 1;
-		// 	}
-		// }
-		// printf("slices_on_num= %02x \n",slices_on_num);        
-		// refresh[0] = 1;
-		// refresh[1] = slices_on_num*8;
-		// printf("refresh[ttt*24 + 19]= %02x \n",refresh[0]);
-		// printf("refresh[ttt*24 + 20]= %02x \n",refresh[1]);
-		// int ttt=0;
-		// for(int i = 0;i<3;i++){
-		// 	if(slices[i].slice_online){
-		// 		refresh[ttt*8 + 2] = slices[i].slice_id;
-		// 		int k = slices[i].slice_id - 1;
-		// 		printf("k= %02x \n",k);
-		// 		refresh[ttt*8 + 3] = slices[k].rbstartlocation;
-		// 		refresh[ttt*8 + 4] = slices[k].rboverlocation;
-		// 		refresh[ttt*8 + 5] = slices[k].ueid[0];
-		// 		refresh[ttt*8 + 6] = slices[k].ueid[1];
-		// 		refresh[ttt*8 + 7] = slices[k].ueid[2];
-		// 		refresh[ttt*8 + 8] = slices[k].ueid[3];
-		// 		refresh[ttt*8 + 9] = slices[k].ueid[4];
-		// 		printf("refresh[ttt*24 + 19]= %02x \n",refresh[ttt*8 + 3]);
-		// 		printf("refresh[ttt*24 + 20]= %02x \n",refresh[ttt*8 + 4]);
-		// 		printf("refresh[ttt*24 + 21]= %02x \n",refresh[ttt*8 + 5]);
-		// 		printf("refresh[ttt*24 + 22]= %02x \n",refresh[ttt*8 + 6]);
-		// 		printf("refresh[ttt*24 + 23]= %02x \n",refresh[ttt*8 + 7]);
-		// 		printf("refresh[ttt*24 + 24]= %02x \n",refresh[ttt*8 + 8]);
-		// 		printf("refresh[ttt*24 + 25]= %02x \n",refresh[ttt*8 + 9]);
-		// 		ttt=ttt+1;
-		// 	}
-		// }
-        // update_client(slices_on_num*8 + 2,refresh);
+
+		if(slices_on_num == 0)
+		{
+
+		}
+		else{
+			printf("slices_on_num= %02x \n",slices_on_num); 
+			for(int i=0;i<slices_on_num*one_slice_len+2;i++)
+			   printf("fresh[%02x] = %02x \n", i,refresh[i]);
+			update_client(slices_on_num*one_slice_len+2,refresh);
+		}
 
 		break;
 
@@ -254,8 +236,8 @@ callback_minimal(struct lws *wsi, enum lws_callback_reasons reason,
 
 	case LWS_CALLBACK_RECEIVE:
 		lwsl_user("LWS_CALLBACK_RECEIVE len %d \n",vhd->amsg.len);
-		memcpy(arr,in,2);
-		printf("arr[]= %02x \n",arr[0]);
+		memcpy(arr,in,1);
+		// printf("arr[]= %02x \n",arr[0]);
 		
 		switch (arr[0])
 		{
@@ -263,54 +245,79 @@ callback_minimal(struct lws *wsi, enum lws_callback_reasons reason,
 
 			break;
 		case 1:
+		    memcpy(arr,in,400);
 		    infor_length = arr[1];
-            memcpy(arr,in,infor_length+2);
+			// printf("arr[ ]= %02x \n",arr[1]);
+            //memcpy(arr,in,one_slice_len*(infor_length/24)+2);
+
+			
+			infor_length = infor_length/24;
+			printf("infor_length= %02x \n",infor_length);
+			for(int i = 0;i<infor_length;i++){
+				int id = arr[i*one_slice_len + 2] - 1;
+				// printf("id = %02x \n" , id);
+				slices[id].rbstartlocation = arr[i*one_slice_len + 3];
+				slices[id].rboverlocation = arr[i*one_slice_len + 4];
+				slices[id].ueid[0] = arr[i*one_slice_len + 5];
+				slices[id].ueid[1] = arr[i*one_slice_len + 6];
+				slices[id].ueid[2] = arr[i*one_slice_len + 7];
+				slices[id].ueid[3] = arr[i*one_slice_len + 8];
+				slices[id].ueid[4] = arr[i*one_slice_len + 9];
+				printf("slices[%02x].ueid[4]= %02x \n",id,slices[id].ueid[4]);
+
+				for(int j = 0;j<namelen;j++){
+					slices[id].slice_name[j] = arr[i*one_slice_len + j + 10];
+					printf("%02x slices[id].slice_name[j]= %02x \n",i*one_slice_len + j + 10,arr[i*one_slice_len + j + 10]);
+				}
+
+				if(slices[id].ueid[4] == 127)
+				{
+					slices[id].slice_online = 0;
+					slices[id].rbstartlocation = 0;
+				    slices[id].rboverlocation = 0;
+					slices[id].ueid[0] = 127;
+					slices[id].ueid[1] = 127;
+					slices[id].ueid[2] = 127;
+					slices[id].ueid[3] = 127;
+					printf("********* \n");
+				}
+				else
+				{
+					slices[id].slice_online = 1;
+					printf("######### \n");
+				}
+			}
+
+			// infor_length = infor_length/8;
+			// for(int i = 0;i<infor_length;i++){
+			// 	int id = arr[i*8 + 2] - 1;
+			// 	slices[id].rbstartlocation = arr[i*8 + 3];
+			// 	slices[id].rboverlocation = arr[i*8 + 4];
+			// 	slices[id].ueid[0] = arr[i*8 + 5];
+			// 	slices[id].ueid[1] = arr[i*8 + 6];
+			// 	slices[id].ueid[2] = arr[i*8 + 7];
+			// 	slices[id].ueid[3] = arr[i*8 + 8];
+			// 	slices[id].ueid[4] = arr[i*8 + 9];
+			// 	if(slices[id].ueid[4] == -1)
+			// 	{
+            //        slices[id].slice_online = 0;
+			// 	}
+			// 	else
+			// 	{
+			// 	   slices[id].slice_online = 1;
+			// 	}
+			// }
 			// printf("arr[]= %02x \n",arr[0]);
 			// printf("arr[]= %02x \n",arr[1]);
 			// printf("arr[]= %02x \n",arr[2]);
 			// printf("arr[]= %02x \n",arr[3]);
 			// printf("arr[]= %02x \n",arr[4]);
-			// printf("arr[]= %02x \n",arr[21]);
-			// printf("arr[]= %02x \n",arr[22]);
-			// printf("arr[]= %02x \n",arr[23]);
-			// printf("arr[]= %02x \n",arr[24]);
-			// printf("arr[]= %02x \n",arr[25]);
-			// infor_length = infor_length/24;
-			// for(int i = 0;i<infor_length;i++){
-			// 	int id = arr[i*24 + 2] - 1;
-			// 	for(int j = 0;j<16;j++){
-			// 		slices[id].slice_name[j] = arr[i*24 + j + 3];
-			// 	}
-			// 	slices[id].rbstartlocation = arr[i*24 + 19];
-			// 	slices[id].rboverlocation = arr[i*24 + 20];
-			// 	slices[id].ueid[0] = arr[i*24 + 21];
-			// 	slices[id].ueid[1] = arr[i*24 + 22];
-			// 	slices[id].ueid[2] = arr[i*24 + 23];
-			// 	slices[id].ueid[3] = arr[i*24 + 24];
-			// 	slices[id].ueid[4] = arr[i*24 + 25];
-			// }
-			infor_length = infor_length/8;
-			for(int i = 0;i<infor_length;i++){
-				int id = arr[i*8 + 2] - 1;
-				slices[id].rbstartlocation = arr[i*8 + 3];
-				slices[id].rboverlocation = arr[i*8 + 4];
-				slices[id].ueid[0] = arr[i*8 + 5];
-				slices[id].ueid[1] = arr[i*8 + 6];
-				slices[id].ueid[2] = arr[i*8 + 7];
-				slices[id].ueid[3] = arr[i*8 + 8];
-				slices[id].ueid[4] = arr[i*8 + 9];
-			}
-			printf("arr[]= %02x \n",arr[0]);
-			printf("arr[]= %02x \n",arr[1]);
-			printf("arr[]= %02x \n",arr[2]);
-			printf("arr[]= %02x \n",arr[3]);
-			printf("arr[]= %02x \n",arr[4]);
-			printf("arr[]= %02x \n",arr[5]);
-			printf("arr[]= %02x \n",arr[6]);
-			printf("arr[]= %02x \n",arr[7]);
-			printf("arr[]= %02x \n",arr[8]);
-			printf("arr[]= %02x \n",arr[9]);
-			break;
+			// printf("arr[]= %02x \n",arr[5]);
+			// printf("arr[]= %02x \n",arr[6]);
+			// printf("arr[]= %02x \n",arr[7]);
+			// printf("arr[]= %02x \n",arr[8]);
+			// printf("arr[]= %02x \n",arr[9]);
+			// break;
 
 		default:
 			break;

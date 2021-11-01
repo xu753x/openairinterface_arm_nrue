@@ -419,44 +419,51 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   // rbstart_new  = 10; 
   if(slot == 0)
   {
-    FILE * fp;
-    if((fp = fopen("text_1.txt","a+"))==NULL){
-        printf("cant open the file");
-        // exit(0);
-      }
+    // FILE * fp;
+    // if((fp = fopen("text_1.txt","a+"))==NULL){
+    //     printf("cant open the file");
+    //     // exit(0);
+    //   }
       
-    for(int j=0;j<20;j++){
-      for(int k=0;k<106;k++){
-        if(vrb_map_new[count][j][k]!=0){
-          fprintf(fp,"%d ",count);
-          fprintf(fp,"%d ",j);
-          fprintf(fp,"%d ",k);
-    fprintf(fp,"%d ",vrb_map_new[count][j][k]);
-      fprintf(fp,"\t");
-        }
-      }
-    }
-    fprintf(fp,"\n");
-    fprintf(fp,"\n");
-    fclose(fp);
+    // for(int j=0;j<20;j++){
+    //   for(int k=0;k<106;k++){
+    //     if(vrb_map_new[count][j][k]!=0){
+    //       fprintf(fp,"%d ",count);
+    //       fprintf(fp,"%d ",j);
+    //       fprintf(fp,"%d ",k);
+    // fprintf(fp,"%d ",vrb_map_new[count][j][k]);
+    //   fprintf(fp,"\t");
+    //     }
+    //   }
+    // }
+    // fprintf(fp,"\n");
+    // fprintf(fp,"\n");
+    // fclose(fp);
 
     count=count+1;
     if(count==3)
       count=0;
-    memset(vrb_map_new[count],0,20*106);
-
+    memset(vrb_map_new[count],0,20*106*4);
+    LOG_I(NR_PHY, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d \n",vrb_map_new[count][0][18],vrb_map_new[count][1][18],vrb_map_new[count][2][18],vrb_map_new[count][3][18],vrb_map_new[count][4][18],vrb_map_new[count][5][18],vrb_map_new[count][6][18],vrb_map_new[count][7][18],vrb_map_new[count][8][18],vrb_map_new[count][9][18],vrb_map_new[count][10][18],vrb_map_new[count][11][18],vrb_map_new[count][12][18],vrb_map_new[count][13][18],vrb_map_new[count][14][18],vrb_map_new[count][15][18],vrb_map_new[count][16][18],vrb_map_new[count][17][18]);
+          
     for(int j=0;j<3;j++)
     {
-      for(int k=slices[j].rbstartlocation;k<slices[j].rboverlocation;k++)
+      if(slices[j].slice_online)
       {
-        for(int i=0;i<20;i++)
+        for(int k=slices[j].rbstartlocation;k<slices[j].rboverlocation;k++)
         {
-          vrb_map_new[count][i][k] = 21 + j;
+          for(int i=0;i<20;i++)
+          {
+            vrb_map_new[count][i][k] = 21 + j;
+          }
+          if(k==18)
+          LOG_I(NR_PHY, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d \n",vrb_map_new[count][0][18],vrb_map_new[count][1][18],vrb_map_new[count][2][18],vrb_map_new[count][3][18],vrb_map_new[count][4][18],vrb_map_new[count][5][18],vrb_map_new[count][6][18],vrb_map_new[count][7][18],vrb_map_new[count][8][18],vrb_map_new[count][9][18],vrb_map_new[count][10][18],vrb_map_new[count][11][18],vrb_map_new[count][12][18],vrb_map_new[count][13][18],vrb_map_new[count][14][18],vrb_map_new[count][15][18],vrb_map_new[count][16][18],vrb_map_new[count][17][18]);
+          
         }
       }
     }
   }
-  
+  LOG_I(NR_MAC, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d \n",vrb_map_new[count][0][18],vrb_map_new[count][1][18],vrb_map_new[count][2][18],vrb_map_new[count][3][18],vrb_map_new[count][4][18],vrb_map_new[count][5][18],vrb_map_new[count][6][18],vrb_map_new[count][7][18],vrb_map_new[count][8][18],vrb_map_new[count][9][18],vrb_map_new[count][10][18],vrb_map_new[count][11][18],vrb_map_new[count][12][18],vrb_map_new[count][13][18],vrb_map_new[count][14][18],vrb_map_new[count][15][18],vrb_map_new[count][16][18],vrb_map_new[count][17][18]);
   // This schedules MIB     1
   schedule_nr_mib(module_idP, frame, slot);
 
