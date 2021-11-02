@@ -35,31 +35,6 @@
 
 
 
-uint8_t allowed_xlsch_re_in_dmrs_symbol(uint16_t k,
-                                        uint16_t start_sc,
-                                        uint16_t ofdm_symbol_size,
-                                        uint8_t numDmrsCdmGrpsNoData,
-                                        uint8_t dmrs_type) {
-  uint8_t delta;
-  uint16_t diff;
-  if (k>start_sc)
-    diff = k-start_sc;
-  else
-    diff = (ofdm_symbol_size-start_sc)+k;
-  for (int i = 0; i<numDmrsCdmGrpsNoData; i++){
-    if  (dmrs_type==NFAPI_NR_DMRS_TYPE1) {
-      delta = i;
-      if (((diff)%2)  == delta)
-        return (0);
-    }
-    else {
-      delta = i<<1;
-      if (((diff%6) == delta) || ((diff%6) == (delta+1)))
-        return (0);
-    }
-  }
-  return (1);
-}
 
 
 /*******************************************************************
@@ -268,17 +243,6 @@ void lte_gold_new(LTE_DL_FRAME_PARMS *frame_parms, uint32_t lte_gold_table[20][2
 *
 *********************************************************************/
 
-uint16_t get_dmrs_freq_idx_ul(uint16_t n, uint8_t k_prime, uint8_t delta, uint8_t dmrs_type) {
-
-  uint16_t dmrs_idx;
-
-  if (dmrs_type == pusch_dmrs_type1)
-    dmrs_idx = ((n<<2)+(k_prime<<1)+delta);
-  else
-    dmrs_idx = (6*n+k_prime+delta);
-
-  return dmrs_idx;
-}
 
 /*******************************************************************
 *

@@ -40,9 +40,9 @@
 
 void get_antenna_ports(uint8_t *ap, uint8_t n_symbs, uint8_t config);
 
-void get_Wt(int8_t *Wt, uint8_t ap, uint8_t config);
+void get_Wt(int *Wt, uint8_t ap, uint8_t config);
 
-void get_Wf(int8_t *Wf, uint8_t ap, uint8_t config);
+void get_Wf(int *Wf, uint8_t ap, uint8_t config);
 
 uint8_t get_delta(uint8_t ap, uint8_t config);
 

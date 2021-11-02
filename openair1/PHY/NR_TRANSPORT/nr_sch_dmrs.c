@@ -65,12 +65,12 @@ void get_antenna_ports(uint8_t *ap, uint8_t n_symbs, uint8_t config) {
       *(ap+i) = i;
 }
 
-void get_Wt(int8_t *Wt, uint8_t ap, uint8_t config) {
+void get_Wt(int *Wt, uint8_t ap, uint8_t config) {
   for (int i=0; i<2; i++)
     *(Wt+i)=(config==NFAPI_NR_DMRS_TYPE1)?(pdsch_dmrs_1[ap][5+i]):(pdsch_dmrs_2[ap][5+i]);
 }
 
-void get_Wf(int8_t *Wf, uint8_t ap, uint8_t config) {
+void get_Wf(int *Wf, uint8_t ap, uint8_t config) {
   for (int i=0; i<2; i++)
     *(Wf+i)=(config==NFAPI_NR_DMRS_TYPE1)?(pdsch_dmrs_1[ap][3+i]):(pdsch_dmrs_2[ap][3+i]);
 }

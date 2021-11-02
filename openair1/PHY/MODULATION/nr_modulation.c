@@ -184,44 +184,20 @@ void nr_modulation(uint32_t *in,
     j = 0;
     for (i=0; i<length/192; i++) {
       x = in64[i*3];
-      x1 = x&4095;
-      out64[j++] = nr_64qam_mod_table[x1];
-      x1 = (x>>12)&4095;
-      out64[j++] = nr_64qam_mod_table[x1];
-      x1 = (x>>24)&4095;
-      out64[j++] = nr_64qam_mod_table[x1];
-      x1 = (x>>36)&4095;
-      out64[j++] = nr_64qam_mod_table[x1];
-      x1 = (x>>48)&4095;
-      out64[j++] = nr_64qam_mod_table[x1];
-      x2 = (x>>60);
-      x = in64[i*3+1];
-      x2 |= x<<4;
-      x1 = x2&4095;
-      out64[j++] = nr_64qam_mod_table[x1];
-      x1 = (x2>>12)&4095;
-      out64[j++] = nr_64qam_mod_table[x1];
-      x1 = (x2>>24)&4095;
-      out64[j++] = nr_64qam_mod_table[x1];
-      x1 = (x2>>36)&4095;
-      out64[j++] = nr_64qam_mod_table[x1];
-      x1 = (x2>>48)&4095;
-      out64[j++] = nr_64qam_mod_table[x1];
-      x2 = ((x>>56)&0xf0) | (x2>>60);
-      x = in64[i*3+2];
-      x2 |= x<<8;
-      x1 = x2&4095;
-      out64[j++] = nr_64qam_mod_table[x1];
-      x1 = (x2>>12)&4095;
-      out64[j++] = nr_64qam_mod_table[x1];
-      x1 = (x2>>24)&4095;
-      out64[j++] = nr_64qam_mod_table[x1];
-      x1 = (x2>>36)&4095;
-      out64[j++] = nr_64qam_mod_table[x1];
-      x1 = (x2>>48)&4095;
-      out64[j++] = nr_64qam_mod_table[x1];
-      x2 = ((x>>52)&0xff0) | (x2>>60);
-      out64[j++] = nr_64qam_mod_table[x2];
+      for (int aa=0; aa < 5; aa++) {
+	out64[j++] = nr_64qam_mod_table[x&4095];
+	x=x>>12;
+      }
+      x |= in64[i*3+1]<<4;
+      for (int aa=0; aa < 5; aa++) {
+	out64[j++] = nr_64qam_mod_table[x&4095];
+	x=x>>12;
+      }
+      x |= in64[i*3+2]<<8;
+      for (int aa=0; aa < 6; aa++) {
+	out64[j++] = nr_64qam_mod_table[x&4095];
+	x=x>>12;
+      }
     }
     i *= 24;
     bit_cnt = i * 8;
@@ -254,65 +230,61 @@ void nr_layer_mapping(int16_t **mod_symbs,
                       int16_t **tx_layers)
 {
   LOG_D(PHY,"Doing layer mapping for %d layers, %d symbols\n",n_layers,n_symbs);
-
+  struct complex16 **tx_layersComplex= (struct complex16**) tx_layers;
+  struct complex16 **mod_symbsComplex= (struct complex16**) mod_symbs;
   switch (n_layers) {
 
     case 1:
-      memcpy((void*)tx_layers[0], (void*)mod_symbs[0], (n_symbs<<1)*sizeof(int16_t));
+      memcpy((void*)tx_layersComplex[0], (void*)mod_symbsComplex[0], (n_symbs)*sizeof(**tx_layersComplex));
       break;
 
     case 2:
     case 3:
     case 4:
-      for (int i=0; i<n_symbs/n_layers; i++)
-        for (int l=0; l<n_layers; l++) {
-          tx_layers[l][i<<1] = mod_symbs[0][(n_layers*i+l)<<1];
-          tx_layers[l][(i<<1)+1] = mod_symbs[0][((n_layers*i+l)<<1)+1];
-        }
+      for (int i=0; i<n_symbs/n_layers; i++) {
+	struct complex16 *source= mod_symbsComplex[0]+4*i;
+        for (int l=0; l<4; l++) 
+          tx_layersComplex[l][i] = mod_symbsComplex[0][4*i+l];
+      }
+        
       break;
 
     case 5:
       for (int i=0; i<n_symbs>>1; i++)
-        for (int l=0; l<2; l++) {
-          tx_layers[l][i<<1] = mod_symbs[0][((i<<1)+l)<<1];
-          tx_layers[l][(i<<1)+1] = mod_symbs[0][(((i<<1)+l)<<1)+1];
-        }
+        for (int l=0; l<2; l++) 
+          tx_layersComplex[l][i] = mod_symbsComplex[0][((i<<1)+l)];
+        
       for (int i=0; i<n_symbs/3; i++)
-        for (int l=2; l<5; l++) {
-          tx_layers[l][i<<1] = mod_symbs[1][(3*i+l)<<1];
-          tx_layers[l][(i<<1)+1] = mod_symbs[1][((3*i+l)<<1)+1];
-        }
+        for (int l=2; l<5; l++) 
+          tx_layersComplex[l][i] = mod_symbsComplex[1][(3*i+l)];
+        
       break;
 
     case 6:
       for (int q=0; q<2; q++)
         for (int i=0; i<n_symbs/3; i++)
-          for (int l=0; l<3; l++) {
-            tx_layers[l][i<<1] = mod_symbs[q][(3*i+l)<<1];
-            tx_layers[l][(i<<1)+1] = mod_symbs[q][((3*i+l)<<1)+1];
-          }
+          for (int l=0; l<3; l++) 
+            tx_layersComplex[l][i] = mod_symbsComplex[q][(3*i+l)];
+          
       break;
 
     case 7:
       for (int i=0; i<n_symbs/3; i++)
-        for (int l=0; l<3; l++) {
-          tx_layers[l][i<<1] = mod_symbs[1][(3*i+l)<<1];
-          tx_layers[l][(i<<1)+1] = mod_symbs[1][((3*i+l)<<1)+1];
-        }
+        for (int l=0; l<3; l++) 
+          tx_layersComplex[l][i] = mod_symbsComplex[1][(3*i+l)];
+        
       for (int i=0; i<n_symbs/4; i++)
-        for (int l=3; l<7; l++) {
-          tx_layers[l][i<<1] = mod_symbs[0][((i<<2)+l)<<1];
-          tx_layers[l][(i<<1)+1] = mod_symbs[0][(((i<<2)+l)<<1)+1];
-        }
+        for (int l=3; l<7; l++) 
+          tx_layersComplex[l][i] = mod_symbsComplex[0][((i<<2)+l)];
+        
       break;
 
     case 8:
       for (int q=0; q<2; q++)
         for (int i=0; i<n_symbs>>2; i++)
-          for (int l=0; l<3; l++) {
-            tx_layers[l][i<<1] = mod_symbs[q][((i<<2)+l)<<1];
-            tx_layers[l][(i<<1)+1] = mod_symbs[q][(((i<<2)+l)<<1)+1];
-          }
+          for (int l=0; l<3; l++) 
+            tx_layersComplex[l][i] = mod_symbsComplex[q][((i<<2)+l)];
+          
       break;
 
     default:
