@@ -1,3 +1,38 @@
+# NTN Adaptation for the 3GPP stack #
+
+> In progress **To be completed by 20 November 2021**
+
+|OpenAirInterface5G development and test suite for 4G/5G Non-Terrestrial Network support. Current work is dedicated to support NTN delay using 4G/5G waveform over LEO and GEO orbits. Current progress supports a fixed delay up to 20 msec with IP connectivity and up to 800 msec RTT with only data transmission|
+| --- |
+
+> Complete set of features and source code will be provided.
+
+ Solutions for LTE and 5G-NR to support Non-Terrestrial Networks (NTN). 
+<table style="border-collapse: collapse; border: none;">
+  <tr style="border-collapse: collapse; border: none;">
+    <td style="border-collapse: collapse; border: none;">
+      <a href="https://www.securityandtrust.lu//">
+         <img src="https://raw.githubusercontent.com/astroa-git/5g-ntn/main/img/snt_logo.png?token=AEXSLEEBFFVEANFG2U4OWL3BRJKLY" alt="" border=3 height=200 width=200>
+         </img>
+      </a>
+    </td>
+    <td style="border-collapse: collapse; border: none; vertical-align: center;">
+      <b><font size = "5">Solutions for LTE and 5G-NR to support Non-Terrestrial Networks (NTN)</font></b>
+    </td>
+  </tr>
+</table>
+
+
+# Guidelines: #
+
+* [Hardware and Software Requirements (**START HERE**)](https://www.astroa.net/)
+* [EPC](epc)
+* [FlexRAN](flexran)
+* [eNodeB](enb)
+* [UE](ue)
+* [NTN Channel Emulator](chem)
+
+
 # OpenAirInterface License #
 
 OpenAirInterface is under OpenAirInterface Software Alliance license.
