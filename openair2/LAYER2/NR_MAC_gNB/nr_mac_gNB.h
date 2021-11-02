@@ -665,6 +665,7 @@ typedef struct gNB_MAC_INST_s {
   NR_TAG_t                        *tag;
   /// Pointer to IF module instance for PHY
   NR_IF_Module_t                  *if_inst;
+  pthread_t                       stats_thread;
   /// Pusch target SNR
   int                             pusch_target_snrx10;
   /// Pucch target SNR
@@ -681,7 +682,8 @@ typedef struct gNB_MAC_INST_s {
   NR_COMMON_channels_t common_channels[NFAPI_CC_MAX];
   /// current PDU index (BCH,DLSCH)
   uint16_t pdu_index[NFAPI_CC_MAX];
-
+  int num_ulprbbl;
+  int ulprbbl[275];
   /// NFAPI Config Request Structure
   nfapi_nr_config_request_scf_t     config[NFAPI_CC_MAX];
   /// NFAPI DL Config Request Structure

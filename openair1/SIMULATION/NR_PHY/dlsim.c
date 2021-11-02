@@ -27,6 +27,7 @@
 #include <unistd.h>
 #include "common/ran_context.h"
 #include "common/config/config_userapi.h"
+#include "common/utils/nr/nr_common.h"
 #include "common/utils/LOG/log.h"
 #include "LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
 #include "LAYER2/NR_MAC_UE/mac_defs.h"
@@ -430,7 +431,9 @@ int main(int argc, char **argv)
 
   FILE *scg_fd=NULL;
   
-  while ((c = getopt (argc, argv, "f:hA:pf:g:in:s:S:t:x:y:z:M:N:F:GR:dPIL:Ea:b:d:e:m:w:T:U:q")) != -1) {
+
+  while ((c = getopt (argc, argv, "f:hA:pf:g:in:s:S:t:x:y:z:M:N:F:GR:dPIL:Ea:b:D:e:m:w:T:U:q")) != -1) {
+
     switch (c) {
     case 'f':
       scg_fd = fopen(optarg,"r");
@@ -596,7 +599,7 @@ int main(int argc, char **argv)
     case 'b':
       g_rbSize = atoi(optarg);
       break;
-    case 'd':
+    case 'D':
       dlsch_threads = atoi(optarg);
       break;    
     case 'e':
@@ -674,7 +677,7 @@ int main(int argc, char **argv)
       printf("-U Change DMRS Config, arguments list DMRS TYPE{0=A,1=B} DMRS AddPos{0:2} DMRS ConfType{1:2}, e.g. -U 3 0 2 1 \n");
       printf("-P Print DLSCH performances\n");
       printf("-w Write txdata to binary file (one frame)\n");
-      printf("-d number of dlsch threads, 0: no dlsch parallelization\n");
+      printf("-D number of dlsch threads, 0: no dlsch parallelization\n");
       exit (-1);
       break;
     }
@@ -691,7 +694,7 @@ int main(int argc, char **argv)
 
   if (snr1set==0)
     snr1 = snr0+10;
-  init_dlsch_tpool(dlsch_threads);
+
 
 
   RC.gNB = (PHY_VARS_gNB**) malloc(sizeof(PHY_VARS_gNB *));
@@ -940,8 +943,6 @@ int main(int argc, char **argv)
   // generate signal
   AssertFatal(input_fd==NULL,"Not ready for input signal file\n");
   gNB->pbch_configured = 1;
-  gNB->ssb[0].ssb_pdu.ssb_pdu_rel15.bchPayload=0x001234;
-  gNB->ssb[0].ssb_pdu.ssb_pdu_rel15.SsbBlockIndex = 0;
 
   //Configure UE
   rrc.carrier.MIB = (uint8_t*) malloc(4);
@@ -971,11 +972,29 @@ int main(int argc, char **argv)
   //NR_COMMON_channels_t *cc = RC.nrmac[0]->common_channels;
   snrRun = 0;
 
-
+  gNB->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
+  char tp_param[] = "n";
+  initTpool(tp_param, gNB->threadPool, true);
+  gNB->resp_L1_tx = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
+  initNotifiedFIFO(gNB->resp_L1_tx);
+  // we create 2 threads for L1 tx processing
+  notifiedFIFO_elt_t *msgL1Tx = newNotifiedFIFO_elt(sizeof(processingData_L1tx_t),0,gNB->resp_L1_tx,processSlotTX);
+  processingData_L1tx_t *msgDataTx = (processingData_L1tx_t *)NotifiedFifoData(msgL1Tx);
+  init_DLSCH_struct(gNB, msgDataTx);
+  msgDataTx->slot = slot;
+  msgDataTx->frame = frame;
+  memset(msgDataTx->ssb, 0, 64*sizeof(NR_gNB_SSB_t));
+  reset_meas(&msgDataTx->phy_proc_tx);
+  gNB->phy_proc_tx_0 = &msgDataTx->phy_proc_tx;
+  pushTpool(gNB->threadPool,msgL1Tx);
+  if (dlsch_threads ) { 
+    init_dlsch_tpool(dlsch_threads);
+    pthread_t dlsch0_threads;
+    threadCreate(&dlsch0_threads, dlsch_thread, (void *)UE, "DLthread", -1, OAI_PRIORITY_RT_MAX-1);
+  }
   for (SNR = snr0; SNR < snr1; SNR += .2) {
 
     varArray_t *table_tx=initVarArray(1000,sizeof(double));
-    reset_meas(&gNB->phy_proc_tx); // total gNB tx
     reset_meas(&gNB->dlsch_scrambling_stats);
     reset_meas(&gNB->dlsch_interleaving_stats);
     reset_meas(&gNB->dlsch_rate_matching_stats);
@@ -1016,7 +1035,7 @@ int main(int argc, char **argv)
       int harq_pid = slot;
       NR_DL_UE_HARQ_t *UE_harq_process = dlsch0->harq_processes[harq_pid];
 
-      NR_gNB_DLSCH_t *gNB_dlsch = gNB->dlsch[0][0];
+      NR_gNB_DLSCH_t *gNB_dlsch = msgDataTx->dlsch[0][0];
       nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &gNB_dlsch->harq_process.pdsch_pdu.pdsch_pdu_rel15;
       
       UE_harq_process->ack = 0;
@@ -1067,10 +1086,14 @@ int main(int argc, char **argv)
           ptrsRePerSymb = ((rel15->rbSize + rel15->PTRSFreqDensity - 1)/rel15->PTRSFreqDensity);
           printf("[DLSIM] PTRS Symbols in a slot: %2u, RE per Symbol: %3u, RE in a slot %4d\n", ptrsSymbPerSlot,ptrsRePerSymb, ptrsSymbPerSlot*ptrsRePerSymb );
         }
+
+        msgDataTx->ssb[0].ssb_pdu.ssb_pdu_rel15.bchPayload=0x001234;
+        msgDataTx->ssb[0].ssb_pdu.ssb_pdu_rel15.SsbBlockIndex = 0;
+        msgDataTx->gNB = gNB;
         if (run_initial_sync)
-          nr_common_signal_procedures(gNB,frame,slot,gNB->ssb[0].ssb_pdu);
+          nr_common_signal_procedures(gNB,frame,slot,msgDataTx->ssb[0].ssb_pdu);
         else
-          phy_procedures_gNB_TX(gNB,frame,slot,1);
+          phy_procedures_gNB_TX(msgDataTx,frame,slot,1);
             
         int txdataF_offset = (slot%2) * frame_parms->samples_per_slot_wCP;
         
@@ -1279,10 +1302,10 @@ int main(int argc, char **argv)
     if (print_perf==1) {
       printf("\ngNB TX function statistics (per %d us slot, NPRB %d, mcs %d, TBS %d, Kr %d (Zc %d))\n",
 	     1000>>*scc->ssbSubcarrierSpacing, g_rbSize, g_mcsIndex,
-	     gNB->dlsch[0][0]->harq_process.pdsch_pdu.pdsch_pdu_rel15.TBSize[0]<<3,
-	     gNB->dlsch[0][0]->harq_process.K,
-	     gNB->dlsch[0][0]->harq_process.K/((gNB->dlsch[0][0]->harq_process.pdsch_pdu.pdsch_pdu_rel15.TBSize[0]<<3)>3824?22:10));
-      printDistribution(&gNB->phy_proc_tx,table_tx,"PHY proc tx");
+	     msgDataTx->dlsch[0][0]->harq_process.pdsch_pdu.pdsch_pdu_rel15.TBSize[0]<<3,
+	     msgDataTx->dlsch[0][0]->harq_process.K,
+	     msgDataTx->dlsch[0][0]->harq_process.K/((msgDataTx->dlsch[0][0]->harq_process.pdsch_pdu.pdsch_pdu_rel15.TBSize[0]<<3)>3824?22:10));
+      printDistribution(gNB->phy_proc_tx_0,table_tx,"PHY proc tx");
       printStatIndent2(&gNB->dlsch_encoding_stats,"DLSCH encoding time");
       printStatIndent3(&gNB->dlsch_segmentation_stats,"DLSCH segmentation time");
       printStatIndent3(&gNB->tinput,"DLSCH LDPC input processing time");
