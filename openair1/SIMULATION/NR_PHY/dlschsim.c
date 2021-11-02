@@ -465,7 +465,6 @@ int main(int argc, char **argv)
 	double *modulated_input = malloc16(sizeof(double) * 16 * 68 * 384); // [hna] 16 segments, 68*Zc
 	short *channel_output_fixed = malloc16(sizeof(short) * 16 * 68 * 384);
 	short *channel_output_uncoded = malloc16(sizeof(unsigned short) * 16 * 68 * 384);
-	double errors_bit_uncoded = 0;
 	//unsigned char *estimated_output;
 	unsigned char *estimated_output_bit;
 	unsigned char *test_input_bit;
@@ -514,7 +513,6 @@ int main(int argc, char **argv)
 		n_false_positive = 0;
 
 		for (trial = 0; trial < n_trials; trial++) {
-			errors_bit_uncoded = 0;
 			for (i = 0; i < available_bits; i++) {
 #ifdef DEBUG_CODER
 				if ((i&0xf)==0)
@@ -551,14 +549,8 @@ int main(int argc, char **argv)
 					channel_output_uncoded[i] = 1;  //QPSK demod
 				else
 					channel_output_uncoded[i] = 0;
-				/*
-				if (channel_output_uncoded[i] != dlsch->harq_process.f[i])
-					errors_bit_uncoded = errors_bit_uncoded + 1;
-				*/
 			}
 
-			//if (errors_bit_uncoded>10)
-			//printf("errors bits uncoded %f\n", errors_bit_uncoded);
 #ifdef DEBUG_CODER
 			printf("\n");
 			exit(-1);

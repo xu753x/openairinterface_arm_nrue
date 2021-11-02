@@ -131,7 +131,7 @@ void nr_modulation(uint32_t *in,
   uint8_t idx;
   uint32_t i,j;
   uint32_t bit_cnt;
-  uint64_t x,x1,x2;
+  uint64_t x,x1;
 
 #if defined(__SSE2__)
   __m128i *nr_mod_table128;
@@ -241,11 +241,9 @@ void nr_layer_mapping(int16_t **mod_symbs,
     case 2:
     case 3:
     case 4:
-      for (int i=0; i<n_symbs/n_layers; i++) {
-	struct complex16 *source= mod_symbsComplex[0]+4*i;
+      for (int i=0; i<n_symbs/n_layers; i++)
         for (int l=0; l<4; l++) 
           tx_layersComplex[l][i] = mod_symbsComplex[0][4*i+l];
-      }
         
       break;
 

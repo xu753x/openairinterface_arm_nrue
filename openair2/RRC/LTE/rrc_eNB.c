@@ -94,7 +94,7 @@
 #if ENABLE_RAL
   #include "rrc_eNB_ral.h"
 #endif
-
+#include <openair1/PHY/LTE_TRANSPORT/transport_proto.h>
 #include "SIMULATION/TOOLS/sim.h" // for taus
 
 #define ASN_MAX_ENCODE_SIZE 4096
@@ -1000,11 +1000,6 @@ void put_UE_in_freelist(module_id_t mod_id, rnti_t rnti, boolean_t removeFlag) {
   free_list->tail_freelist = (free_list->tail_freelist + 1) % (NUMBER_OF_UE_MAX+1);
   pthread_mutex_unlock(&lock_ue_freelist);
 }
-
-extern int16_t find_dlsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type);
-extern int16_t find_ulsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type);
-extern void clean_eNb_ulsch(LTE_eNB_ULSCH_t *ulsch);
-extern void clean_eNb_dlsch(LTE_eNB_DLSCH_t *dlsch);
 
 void release_UE_in_freeList(module_id_t mod_id) {
   int i, j, CC_id, pdu_number;

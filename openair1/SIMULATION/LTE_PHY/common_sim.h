@@ -138,7 +138,7 @@ void display_options_values(paramdef_t *options, int verbose) {
 
     if (ptr->voidptr != NULL) {
       if ( (ptr->paramflags & PARAMFLAG_BOOL) )
-        strcpy(varText, *(bool *)ptr->iptr ? "True": "False" );
+        sprintf(varText, "%s", *ptr->iptr ? "True": "False" );
       else  switch (ptr->type) {
           case TYPE_INT:
             sprintf(varText,"%d",*ptr->iptr);
