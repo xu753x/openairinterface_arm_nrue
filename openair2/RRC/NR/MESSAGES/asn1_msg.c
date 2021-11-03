@@ -1724,14 +1724,14 @@ void fill_mastercellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig, NR_CellGr
   rlc_BearerConfig_drb->reestablishRLC                             = NULL;
   rlc_Config_drb                                                   = calloc(1, sizeof(NR_RLC_Config_t));
         // RLC UM Bi-directional Bearer configuration
-      rlc_Config_drb->present                                          = NR_RLC_Config_PR_um_Bi_Directional;
+      /*rlc_Config_drb->present                                          = NR_RLC_Config_PR_um_Bi_Directional;
       rlc_Config_drb->choice.um_Bi_Directional                            = calloc(1, sizeof(*rlc_Config->choice.um_Bi_Directional));
       rlc_Config_drb->choice.um_Bi_Directional->ul_UM_RLC.sn_FieldLength  = calloc(1, sizeof(*rlc_Config->choice.um_Bi_Directional->ul_UM_RLC.sn_FieldLength));
       *rlc_Config_drb->choice.um_Bi_Directional->ul_UM_RLC.sn_FieldLength = NR_SN_FieldLengthUM_size12;
       rlc_Config_drb->choice.um_Bi_Directional->dl_UM_RLC.sn_FieldLength  = calloc(1, sizeof(*rlc_Config->choice.um_Bi_Directional->dl_UM_RLC.sn_FieldLength));
       *rlc_Config_drb->choice.um_Bi_Directional->dl_UM_RLC.sn_FieldLength = NR_SN_FieldLengthUM_size12;
-      rlc_Config_drb->choice.um_Bi_Directional->dl_UM_RLC.t_Reassembly    = NR_T_Reassembly_ms15;
-  /*rlc_Config_drb->present                                          = NR_RLC_Config_PR_am;
+      rlc_Config_drb->choice.um_Bi_Directional->dl_UM_RLC.t_Reassembly    = NR_T_Reassembly_ms15;*/
+  rlc_Config_drb->present                                          = NR_RLC_Config_PR_am;
   rlc_Config_drb->choice.am                                        = calloc(1, sizeof(*rlc_Config_drb->choice.am));
   rlc_Config_drb->choice.am->dl_AM_RLC.sn_FieldLength              = calloc(1, sizeof(NR_SN_FieldLengthAM_t));
   *(rlc_Config_drb->choice.am->dl_AM_RLC.sn_FieldLength)           = NR_SN_FieldLengthAM_size18;
@@ -1742,7 +1742,7 @@ void fill_mastercellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig, NR_CellGr
   rlc_Config_drb->choice.am->ul_AM_RLC.t_PollRetransmit            = NR_T_PollRetransmit_ms80;
   rlc_Config_drb->choice.am->ul_AM_RLC.pollPDU                     = NR_PollPDU_p64;
   rlc_Config_drb->choice.am->ul_AM_RLC.pollByte                    = NR_PollByte_kB125;
-  rlc_Config_drb->choice.am->ul_AM_RLC.maxRetxThreshold            = NR_UL_AM_RLC__maxRetxThreshold_t4;*/
+  rlc_Config_drb->choice.am->ul_AM_RLC.maxRetxThreshold            = NR_UL_AM_RLC__maxRetxThreshold_t4;
   rlc_BearerConfig_drb->rlc_Config                                 = rlc_Config_drb;
   logicalChannelConfig_drb                                             = calloc(1, sizeof(NR_LogicalChannelConfig_t));
   logicalChannelConfig_drb->ul_SpecificParameters                      = calloc(1, sizeof(*logicalChannelConfig_drb->ul_SpecificParameters));

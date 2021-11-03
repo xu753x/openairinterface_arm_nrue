@@ -420,6 +420,13 @@ typedef struct NR_UE_harq {
 
 //! fixme : need to enhace for the multiple TB CQI report
 
+typedef struct NR_DL_bler_stats {
+  frame_t last_frame_slot;
+  float bler;
+  float rd2_bler;
+  uint8_t mcs;
+  int dlsch_rounds[8];
+} NR_DL_bler_stats_t;
 
 //
 /*! As per spec 38.214 section 5.2.1.4.2
@@ -563,6 +570,9 @@ typedef struct {
   /// per-LC status data
   mac_rlc_status_resp_t rlc_status[MAX_NUM_LCID];
 
+  /// Estimation of HARQ from BLER
+  NR_DL_bler_stats_t dl_bler_stats;
+
   int lcid_mask;
   int lcid_to_schedule;
   uint16_t ta_frame;
@@ -682,7 +692,6 @@ typedef struct gNB_MAC_INST_s {
   NR_COMMON_channels_t common_channels[NFAPI_CC_MAX];
   /// current PDU index (BCH,DLSCH)
   uint16_t pdu_index[NFAPI_CC_MAX];
-
   int num_ulprbbl;
   int ulprbbl[275];
   /// NFAPI Config Request Structure
@@ -765,6 +774,10 @@ typedef struct gNB_MAC_INST_s {
   int *flexible_symbols;
   int last_ul_slot;
   int prefered_slot_msg2;
+  double dl_bler_target_upper;
+  double dl_bler_target_lower;
+  double dl_rd2_bler_threshold;
+  uint8_t dl_max_mcs;
 } gNB_MAC_INST;
 
 #endif /*__LAYER2_NR_MAC_GNB_H__ */

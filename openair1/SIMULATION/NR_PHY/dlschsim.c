@@ -426,7 +426,9 @@ int main(int argc, char **argv)
 	UE->dlsch_SI[0] = new_nr_ue_dlsch(1, 1, Nsoft, 5, N_RB_DL, 0);
 	UE->dlsch_ra[0] = new_nr_ue_dlsch(1, 1, Nsoft, 5, N_RB_DL, 0);
 	unsigned char harq_pid = 0; //dlsch->harq_ids[subframe];
-	NR_gNB_DLSCH_t *dlsch = gNB->dlsch[0][0];
+  processingData_L1tx_t msgDataTx;
+  init_DLSCH_struct(gNB, &msgDataTx);
+	NR_gNB_DLSCH_t *dlsch = msgDataTx.dlsch[0][0];
 	nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &dlsch->harq_process.pdsch_pdu.pdsch_pdu_rel15;
 	//time_stats_t *rm_stats, *te_stats, *i_stats;
 	uint8_t is_crnti = 0, llr8_flag = 0;
@@ -501,8 +503,10 @@ int main(int argc, char **argv)
 
 	//printf("crc32: [0]->0x%08x\n",crc24c(test_input, 32));
 	// generate signal
+	    unsigned char output[rel15->rbSize * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * NR_MAX_NB_LAYERS] __attribute__((aligned(32)));
+    bzero(output,rel15->rbSize * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * NR_MAX_NB_LAYERS);
 	if (input_fd == NULL) {
-		nr_dlsch_encoding(gNB, test_input, frame, slot, dlsch, frame_parms,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
+	  nr_dlsch_encoding(gNB, test_input, frame, slot, dlsch, frame_parms,output,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
 	}
 
 	for (SNR = snr0; SNR < snr1; SNR += snr_step) {
@@ -519,11 +523,12 @@ int main(int argc, char **argv)
 
 				//if (i<16)
 				//   printf("encoder output f[%d] = %d\n",i,dlsch->harq_processes[0]->f[i]);
+				/*
 				if (dlsch->harq_process.f[i] == 0)
 					modulated_input[i] = 1.0;        ///sqrt(2);  //QPSK
 				else
 					modulated_input[i] = -1.0;        ///sqrt(2);
-
+				*/
 				//if (i<16) printf("modulated_input[%d] = %d\n",i,modulated_input[i]);
 				//SNR =10;
 				SNR_lin = pow(10, SNR / 10.0);
@@ -546,9 +551,10 @@ int main(int argc, char **argv)
 					channel_output_uncoded[i] = 1;  //QPSK demod
 				else
 					channel_output_uncoded[i] = 0;
-
+				/*
 				if (channel_output_uncoded[i] != dlsch->harq_process.f[i])
 					errors_bit_uncoded = errors_bit_uncoded + 1;
+				*/
 			}
 
 			//if (errors_bit_uncoded>10)
@@ -634,7 +640,7 @@ int main(int argc, char **argv)
 
 	for (i = 0; i < 2; i++) {
 		printf("gNB %d\n", i);
-		free_gNB_dlsch(&(gNB->dlsch[0][i]),N_RB_DL);
+		free_gNB_dlsch(&(msgDataTx.dlsch[0][i]),N_RB_DL);
 		printf("UE %d\n", i);
 		free_nr_ue_dlsch(&(UE->dlsch[0][0][i]),N_RB_DL);
 	}
