@@ -155,12 +155,14 @@ void initNamedTpool(char *params,tpool_t *pool, bool performanceMeas, char *name
 }
 
 #ifdef TEST_THREAD_POOL
+volatile int oai_exit=0;
 
 void exit_function(const char *file, const char *function, const int line, const char *s) {
 }
 
 struct testData {
   int id;
+  int sleepTime;
   char txt[30];
 };
 
@@ -168,7 +170,8 @@ void processing(void *arg) {
   struct testData *in=(struct testData *)arg;
   printf("doing: %d, %s, in thr %ld\n",in->id, in->txt,pthread_self() );
   sprintf(in->txt,"Done by %ld, job %d", pthread_self(), in->id);
-  usleep(rand()%100);
+  in->sleepTime=rand()%1000;
+  usleep(in->sleepTime);
   printf("done: %d, %s, in thr %ld\n",in->id, in->txt,pthread_self() );
 }
 
@@ -213,6 +216,35 @@ int main() {
   notifiedFIFO_t worker_back;
   initNotifiedFIFO(&worker_back);
 
+  int cumulProcessTime=0, cumulTime=0;
+  struct timespec st,end;
+  clock_gettime(CLOCK_MONOTONIC, &st);
+  for (int i=0; i <1000 ; i++) {
+    for (int j=0; j <4 ; j++) {
+      notifiedFIFO_elt_t *work=newNotifiedFIFO_elt(sizeof(struct testData), i, &worker_back, processing);
+      struct testData *x=(struct testData *)NotifiedFifoData(work);
+      x->id=i;
+      pushTpool(&pool, work);
+    }
+    int ret=4, sleepmax=0;
+    while (ret) {
+      tmp=pullTpool(&worker_back,&pool);
+      if (tmp) {
+	ret--;
+	struct testData *dd=NotifiedFifoData(tmp);
+	if (dd->sleepTime > sleepmax)
+	  sleepmax=dd->sleepTime;
+	delNotifiedFIFO_elt(tmp);
+      }
+    }
+    cumulProcessTime+=sleepmax;
+  }
+  clock_gettime(CLOCK_MONOTONIC, &end);
+  long long dur=(end.tv_sec-st.tv_sec)*1000*1000+(end.tv_nsec-st.tv_nsec)/1000;
+  printf("In µs, Total time per group of 4 job:%lld, work time per job %d, overhead per job %lld\n",
+	 dur/1000, cumulProcessTime/1000, (dur-cumulProcessTime)/4000);
+
+	/*	
   for (int i=0; i <1000 ; i++) {
     notifiedFIFO_elt_t *work=newNotifiedFIFO_elt(sizeof(struct testData), i, &worker_back, processing);
     struct testData *x=(struct testData *)NotifiedFifoData(work);
@@ -232,7 +264,7 @@ int main() {
 
     abortTpool(&pool,510);
   } while(tmp);
-
+	*/
   return 0;
 }
 #endif
