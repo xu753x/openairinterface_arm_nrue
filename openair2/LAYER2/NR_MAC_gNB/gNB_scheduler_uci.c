@@ -1190,9 +1190,9 @@ int nr_acknack_scheduling(int mod_id,
   //const int nr_mix_slots = 1; //karim, always there is a mixed slot
   const int nr_slots_period = 5;
   int first_ul_slot_tdd = 0;
-  for(int i = slot+3; i< n_slots_frame; i++){
+  for(int i = slot+2; i< n_slots_frame; i++){
 
-    if (RC.nrmac[mod_id]->flexible_slots_per_frame[i] > 0 && i != 8) {first_ul_slot_tdd = i; break;}
+    if (RC.nrmac[mod_id]->flexible_slots_per_frame[i] > 0 ) {first_ul_slot_tdd = i; break;}
      
     
   }
