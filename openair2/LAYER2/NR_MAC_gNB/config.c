@@ -387,16 +387,25 @@ void config_common(int Mod_idP, int ssb_SubcarrierOffset, int pdsch_AntennaPorts
   //int flexible_slots_per_frame[20] = {0,0,0,0,0,0,0,2,1,1,0,0,0,0,0,0,0,2,1,1}; //original configuration works
   //int flexible_slots_per_frame[20] = {0,0,0,0,0,2,1,1,1,1,0,0,2,1,1,1,1,1,1,1};
   //int flexible_slots_per_frame[20] = {0,0,1,1,0,0,1,1,0,0,2,1,0,0,1,1,0,0,2,1};
+  //int flexible_slots_per_frame[20] = {0,0,0,2,1,0,0,2,1,1,0,0,2,1,1,0,0,0,2,1};
+
   int flexible_slots_per_frame[20] = {0,0,0,2,1,0,0,0,2,1,0,0,0,2,1,0,0,0,2,1}; // works
   //int flexible_slots_per_frame[20] = {0,0,0,0,2,1,1,0,0,0,2,1,1,0,0,0,0,2,1,1}; //harq pucch frame != pucch frame
-  int flexible_symbols[2] = {6,4};
+  int flexible_symbols[3] = {1,4,4};
   RC.nrmac[Mod_idP]->flexible_slots_per_frame = calloc(20,sizeof(int));
-  RC.nrmac[Mod_idP]->flexible_symbols = calloc(2,sizeof(int));
+  RC.nrmac[Mod_idP]->flexible_symbols = calloc(3,sizeof(int));
+  RC.nrmac[Mod_idP]->flexible_start_symbols = calloc(3,sizeof(int));
+
   for(int i = 0;i < 20; i++) {RC.nrmac[Mod_idP]->flexible_slots_per_frame[i] = flexible_slots_per_frame[i]; }
   RC.nrmac[Mod_idP]->flexible_symbols[0] = flexible_symbols[0];
   RC.nrmac[Mod_idP]->flexible_symbols[1] = flexible_symbols[1];
+    RC.nrmac[Mod_idP]->flexible_symbols[2] = flexible_symbols[2];
+
   RC.nrmac[Mod_idP]->prefered_slot_msg2 = 18;
   RC.nrmac[Mod_idP]->last_ul_slot = 19;
+  RC.nrmac[Mod_idP]->flexible_start_symbols[0] = 1;
+  RC.nrmac[Mod_idP]->flexible_start_symbols[1] = 9;
+  RC.nrmac[Mod_idP]->flexible_start_symbols[2] = 10; // for msg3
   // TDD Table Configuration
   //cfg->tdd_table.tdd_period.value = scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity;
   cfg->tdd_table.tdd_period.tl.tag = NFAPI_NR_CONFIG_TDD_PERIOD_TAG;
@@ -414,7 +423,8 @@ void config_common(int Mod_idP, int ssb_SubcarrierOffset, int pdsch_AntennaPorts
     int periods_per_frame = set_tdd_config_nr_flex(cfg,
                                               scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
                                               RC.nrmac[Mod_idP]->flexible_slots_per_frame,
-                                              RC.nrmac[Mod_idP]->flexible_symbols);
+                                              RC.nrmac[Mod_idP]->flexible_symbols,
+                                              RC.nrmac[Mod_idP]->flexible_start_symbols);
 
     if (periods_per_frame < 0)
       LOG_E(NR_MAC,"TDD configuration can not be done\n");

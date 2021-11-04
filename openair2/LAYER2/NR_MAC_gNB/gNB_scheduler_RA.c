@@ -900,7 +900,7 @@ void nr_get_Msg3alloc(module_id_t module_id,
       startSymbolAndLength = pusch_TimeDomainAllocationList->list.array[i]->startSymbolAndLength;
       SLIV2SL(startSymbolAndLength, &StartSymbolIndex, &NrOfSymbols);
       // we want to transmit in the uplink symbols of mixed slot
-      if (NrOfSymbols == RC.nrmac[module_id]->flexible_symbols[1]) {
+      if (NrOfSymbols == RC.nrmac[module_id]->flexible_symbols[2]) {
         k2 = *pusch_TimeDomainAllocationList->list.array[i]->k2;
         temp_slot = current_slot + k2 + DELTA[mu]; // msg3 slot according to 8.3 in 38.213
         ra->Msg3_slot = temp_slot%nr_slots_per_frame[mu];
@@ -933,7 +933,7 @@ void nr_get_Msg3alloc(module_id_t module_id,
       assert(1==2);
   }
 
-  LOG_D(NR_MAC, "[RAPROC] Msg3 slot %d: current slot %u Msg3 frame %u k2 %u Msg3_tda_id %u start symbol index %u\n", ra->Msg3_slot, current_slot, ra->Msg3_frame, k2,ra->Msg3_tda_id, StartSymbolIndex);
+  LOG_I(NR_MAC, "[RAPROC] Msg3 slot %d: current slot %u Msg3 frame %u k2 %u Msg3_tda_id %u start symbol index %u\n", ra->Msg3_slot, current_slot, ra->Msg3_frame, k2,ra->Msg3_tda_id, StartSymbolIndex);
   uint16_t *vrb_map_UL =
       &RC.nrmac[module_id]->common_channels[CC_id].vrb_map_UL[ra->Msg3_slot * MAX_BWP_SIZE];
   const uint16_t bwpSize = NRRIV2BW(ubwp ?

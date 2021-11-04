@@ -186,7 +186,7 @@ int set_tdd_config_nr( nfapi_nr_config_request_scf_t *cfg,
 
 int set_tdd_config_nr_flex( nfapi_nr_config_request_scf_t *cfg,
                        int mu,
-                       int *flexible_slots_per_frame, int *flexible_symbols) {
+                       int *flexible_slots_per_frame, int *flexible_symbols, int* start_symbols) {
   int slot_number = 0;
   int nb_periods_per_frame;
   int nb_slots_to_set = TDD_CONFIG_NB_FRAMES*(1<<mu)*NR_NUMBER_OF_SUBFRAMES_PER_FRAME;
@@ -265,19 +265,19 @@ int set_tdd_config_nr_flex( nfapi_nr_config_request_scf_t *cfg,
       }
     }
     else {
-      for (int number_of_symbol = 0; number_of_symbol <flexible_symbols[0]; number_of_symbol++) {
+      for (int number_of_symbol = 0; number_of_symbol <flexible_symbols[0] + start_symbols[0] ; number_of_symbol++) {
               cfg->tdd_table.max_tdd_periodicity_list[slot_number].max_num_of_symbol_per_slot_list[number_of_symbol].slot_config.value= 0;
 
               if((number_of_symbol+1)%NR_NUMBER_OF_SYMBOLS_PER_SLOT == 0)
                 slot_number++;
       }
-      for (int number_of_symbol = flexible_symbols[0]; number_of_symbol <NR_NUMBER_OF_SYMBOLS_PER_SLOT - flexible_symbols[1]; number_of_symbol++) {
+      for (int number_of_symbol = flexible_symbols[0] + start_symbols[0]; number_of_symbol <NR_NUMBER_OF_SYMBOLS_PER_SLOT - start_symbols[1]; number_of_symbol++) {
               cfg->tdd_table.max_tdd_periodicity_list[slot_number].max_num_of_symbol_per_slot_list[number_of_symbol].slot_config.value= 2;
 
               if((number_of_symbol+1)%NR_NUMBER_OF_SYMBOLS_PER_SLOT == 0)
                 slot_number++;
       }
-      for (int number_of_symbol = flexible_symbols[1]; number_of_symbol <NR_NUMBER_OF_SYMBOLS_PER_SLOT; number_of_symbol++) {
+      for (int number_of_symbol = start_symbols[1]; number_of_symbol <NR_NUMBER_OF_SYMBOLS_PER_SLOT; number_of_symbol++) {
               cfg->tdd_table.max_tdd_periodicity_list[slot_number].max_num_of_symbol_per_slot_list[number_of_symbol].slot_config.value= 1;
 
               if((number_of_symbol+1)%NR_NUMBER_OF_SYMBOLS_PER_SLOT == 0)

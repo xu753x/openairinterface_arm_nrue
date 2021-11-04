@@ -772,6 +772,7 @@ typedef struct gNB_MAC_INST_s {
   //KARIM
   int *flexible_slots_per_frame;
   int *flexible_symbols;
+  int *flexible_start_symbols;
   int last_ul_slot;
   int prefered_slot_msg2;
   double dl_bler_target_upper;
