@@ -107,7 +107,8 @@ add_msg3(module_id_t module_idP, int CC_id, RA_t *ra, frame_t frameP,
   nfapi_hi_dci0_request_body_t   *hi_dci0_req_body;
   nfapi_hi_dci0_request_pdu_t    *hi_dci0_pdu;
   uint8_t sf_ahead_dl;
-  uint8_t rvseq[4] = {0, 2, 3, 1};
+ // uint8_t rvseq[4] = {0, 2, 3, 1};
+  uint8_t rvseq[4] = {0, 0, 0, 0};
   uint8_t pusch_maxNumRepetitionCEmodeA_r13;
   ul_req = &mac->UL_req_tmp[CC_id][ra->Msg3_subframe];
   ul_req_body = &ul_req->ul_config_request_body;
@@ -115,9 +116,9 @@ add_msg3(module_id_t module_idP, int CC_id, RA_t *ra, frame_t frameP,
               ra->rnti);
 
   if (ra->rach_resource_type > 0) {
-    LOG_D (MAC, "[eNB %d][RAPROC] Frame %d, Subframe %d : CC_id %d CE level %d is active, Msg3 in (%d,%d)\n",
+    LOG_I (MAC, "[eNB %d][RAPROC] Frame %d, Subframe %d : CC_id %d CE level %d is active, Msg3 in (%d,%d)\n",
            module_idP, frameP, subframeP, CC_id, ra->rach_resource_type - 1, ra->Msg3_frame, ra->Msg3_subframe);
-    LOG_D (MAC, "Frame %d, Subframe %d Adding Msg3 UL Config Request for (%d,%d) : (%d,%d)\n",
+    LOG_I (MAC, "Frame %d, Subframe %d Adding Msg3 UL Config Request for (%d,%d) : (%d,%d)\n",
            frameP, subframeP, ra->Msg3_frame, ra->Msg3_subframe, ra->msg3_nb_rb, ra->msg3_round);
     ul_config_pdu = &ul_req_body->ul_config_pdu_list[ul_req_body->number_of_pdus];
     memset ((void *) ul_config_pdu, 0, sizeof (nfapi_ul_config_request_pdu_t));
@@ -153,11 +154,11 @@ add_msg3(module_id_t module_idP, int CC_id, RA_t *ra, frame_t frameP,
     ul_req_body->number_of_pdus++;
   }                             //  if (ra->rach_resource_type>0) {
   else {
-    LOG_D(MAC,
+    LOG_I(MAC,
           "[eNB %d][RAPROC] Frame %d, Subframe %d : CC_id %d RA is active, Msg3 in (%d,%d)\n",
           module_idP, frameP, subframeP, CC_id, ra->Msg3_frame,
           ra->Msg3_subframe);
-    LOG_D(MAC,
+    LOG_I(MAC,
           "Frame %d, Subframe %d Adding Msg3 UL Config Request for (%d,%d) : (%d,%d,%d) for rnti: %d\n",
           frameP, subframeP, ra->Msg3_frame, ra->Msg3_subframe,
           ra->msg3_nb_rb, ra->msg3_first_rb, ra->msg3_round, ra->rnti);
@@ -1394,7 +1395,7 @@ initiate_ra_proc(module_id_t module_idP,
       ra[i].RA_rnti = ra_rnti;
       ra[i].preamble_index = preamble_index;
       failure_cnt = 0;
-      LOG_D(MAC,
+      LOG_I(MAC,
             "[eNB %d][RAPROC] CC_id %d Frame %d Activating RAR generation in Frame %d, subframe %d for process %d, rnti %x, state %d\n",
             module_idP, CC_id, frameP, ra[i].Msg2_frame,
             ra[i].Msg2_subframe, i, ra[i].rnti, ra[i].state);

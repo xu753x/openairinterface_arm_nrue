@@ -1181,15 +1181,26 @@ schedule_ulsch(module_id_t module_idP,
                sub_frame_t subframeP)
 //-----------------------------------------------------------------------------
 {
+  eNB_MAC_INST *eNB_NTN = RC.mac[module_idP];
+  COMMON_channels_t *delayIndication = &eNB_NTN->common_channels[0];
   eNB_MAC_INST *mac = NULL;
   COMMON_channels_t *cc = NULL;
   int sched_subframe;
   int sched_frame;
+  int ntnd=delayIndication->ntn_delay;
   /* Init */
+  //  LOG_I(MAC,"DELAY VALUE %d\n",ntnd);
   mac = RC.mac[module_idP];
   start_meas(&(mac->schedule_ulsch));
-  sched_subframe = (subframeP + 4) % 10;
-  sched_frame = frameP;
+
+  sched_subframe = (subframeP + 4 + ntnd) % 10;
+
+  if(ntnd>=6) {
+	sched_frame = frameP + 1 + (ntnd-5)/10;
+  } else {
+	sched_frame=frameP;
+  }
+
   cc = mac->common_channels;
 
   /* For TDD: check subframes where we have to act and return if nothing should be done now */
@@ -1363,9 +1374,16 @@ schedule_ulsch_rnti(module_id_t   module_idP,
   eNB_MAC_INST *mac = RC.mac[module_idP];
   COMMON_channels_t *cc = mac->common_channels;
   UE_info_t *UE_info = &mac->UE_info;
-  //uint8_t aggregation = 2;
 
-  int sched_frame = frameP;
+  int ntnd=cc->ntn_delay;
+  //uint8_t aggregation = 2;
+  int sched_frame;
+  sched_frame=frameP;
+
+  if (ntnd>=6) {
+	sched_frame=frameP + 1 + (ntnd-5)/10;
+  } else sched_frame=frameP;
+
 
   if (sched_subframeP < subframeP) {
     sched_frame++;
