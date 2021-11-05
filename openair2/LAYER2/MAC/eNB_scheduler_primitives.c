@@ -188,18 +188,24 @@ get_Msg3alloc(COMMON_channels_t *cc,
               sub_frame_t       *subframe)
 //------------------------------------------------------------------------------
 {
+
   // Fill in other TDD Configuration!!!!
   int subframeAssignment;
-
+  int ntnd=cc->ntn_delay;
+  int sf_offset;
+  //LOG_I(PHY,"VERIFICATION eNB_scheduler_primitives.c DELAY=%d\n",ntnd);
   if (cc->tdd_Config == NULL) { // FDD
-    *subframe = current_subframe + 6;
 
-    if (*subframe > 9) {
-      *subframe = *subframe - 10;
-      *frame = (current_frame + 1) & 1023;
-    } else {
-      *frame = current_frame;
-    }
+  sf_offset = current_subframe + 6 + ntnd;
+
+	if (sf_offset > 9) {
+		*subframe = sf_offset%10;
+		*frame = (current_frame + sf_offset/10) & 1023;
+	} else {
+		*subframe = current_subframe + 6 + ntnd;
+                *frame = current_frame;
+	}
+
   } else {      // TDD
     subframeAssignment = (int) cc->tdd_Config->subframeAssignment;
 
@@ -303,9 +309,8 @@ get_Msg3allocret(COMMON_channels_t *cc,
 //------------------------------------------------------------------------------
 {
   int subframeAssignment;
-
+  int ntnd=cc->ntn_delay;
   if (cc->tdd_Config == NULL) { //FDD
-    /* always retransmit in n+8 */
     *subframe = current_subframe + 8;
 
     if (*subframe > 9) {
@@ -681,7 +686,8 @@ get_pucch1_absSF(COMMON_channels_t *cc,
 {
   uint16_t sf, f, nextf;
   LTE_TDD_Config_t *tdd_Config = cc->tdd_Config;
-
+  int ntnd=cc->ntn_delay;
+  //LOG_I(MAC,"ntnd%d\n",ntnd);
   if (tdd_Config == NULL) { //FDD n+4
     return (dlsch_absSF + 4) % 10240;
   }
@@ -3664,8 +3670,8 @@ get_retransmission_timing(LTE_TDD_Config_t *tdd_Config,
     if (*subframeP > 1) {
       *frameP = (*frameP + 1) % 1024;
     }
-
     *subframeP = (*subframeP + 8) % 10;
+//    *frameP = (*frameP+1) %1024;
   } else {
     switch (tdd_Config->subframeAssignment) { //TODO fill in other TDD configs
       default:
@@ -4053,7 +4059,7 @@ extract_harq(module_id_t mod_idP,
     num_ack_nak         = harq_indication_fdd->number_of_ack_nack;
     pdu                 = &harq_indication_fdd->harq_tb_n[0];
     harq_pid = ((10 * frameP) + subframeP + 10236) & 7;
-    LOG_D(MAC, "frame %d subframe %d harq_pid %d mode %d tmode[0] %d num_ack_nak %d round %d\n",
+    LOG_D(MAC, "frame %d subframe %d harq_pid %d mode %d tmode[0] %d num_ack_nak %d round %d\n", //astro
           frameP,
           subframeP,
           harq_pid,
@@ -4102,16 +4108,16 @@ extract_harq(module_id_t mod_idP,
           LOG_D(MAC, "Received %d for harq_pid %d\n",
                 pdu[0],
                 harq_pid);
-          RA_t *ra = &eNB->common_channels[CC_idP].ra[0];
+          RA_t *ra = &eNB->common_channels[CC_idP].ra[0]; //astro
 
           for (uint8_t ra_i = 0; ra_i < NB_RA_PROC_MAX; ra_i++) {
             if (ra[ra_i].rnti == rnti && ra[ra_i].state == MSGCRNTI_ACK && ra[ra_i].crnti_harq_pid == harq_pid) {
-              LOG_D(MAC,"CRNTI Reconfiguration: ACK %d rnti %x round %d frame %d subframe %d \n",
+              LOG_I(MAC,"CRNTI Reconfiguration: ACK %d rnti %x round %d frame %d subframe %d \n",
                     pdu[0],
                     rnti,
                     sched_ctl->round[CC_idP][harq_pid],
                     frameP,
-                    subframeP);
+                    subframeP); //astro
 
               if (pdu[0] == 1) {
                 cancel_ra_proc(mod_idP,
@@ -4131,7 +4137,7 @@ extract_harq(module_id_t mod_idP,
             }
           }
 
-          LOG_D(MAC, "In extract_harq(): pdu[0] = %d for harq_pid = %d\n", pdu[0], harq_pid);
+          LOG_D(MAC, "In extract_harq(): pdu[0] = %d for harq_pid = %d\n", pdu[0], harq_pid);//astro
 
           if (pdu[0] == 1) {  // ACK
             sched_ctl->round[CC_idP][harq_pid] = 8; // release HARQ process
