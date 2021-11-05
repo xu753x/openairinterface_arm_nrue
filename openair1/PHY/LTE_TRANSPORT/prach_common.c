@@ -450,6 +450,7 @@ int is_prach_subframe0(LTE_DL_FRAME_PARMS *frame_parms,uint8_t prach_ConfigIndex
   uint8_t t1_ra;
   uint8_t t2_ra;
   int prach_mask = 0;
+  int ntnd=frame_parms->ntn_delay;
 
   if (frame_parms->frame_type == FDD) { //FDD
     //implement Table 5.7.1-2 from 36.211 (Rel-10, p.41)
@@ -469,10 +470,18 @@ int is_prach_subframe0(LTE_DL_FRAME_PARMS *frame_parms,uint8_t prach_ConfigIndex
 
       case 1:
       case 4:
-        if (subframe==4) prach_mask = 1;
-
+        {
+         if ( (ntnd%10) <= 5 ) {
+                if (subframe==(4 + (ntnd%10))) {
+			prach_mask = 1;
+		}
+         }else {
+                if (subframe==( 4 + (ntnd%10)-10) ) {
+			prach_mask = 1;
+		}
+        }
         break;
-
+        }
       case 2:
       case 5:
         if (subframe==7) prach_mask = 1;
