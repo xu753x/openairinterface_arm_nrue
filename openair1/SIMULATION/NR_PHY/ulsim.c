@@ -303,6 +303,7 @@ int main(int argc, char **argv)
   //float eff_tp_check = 0.7;
   uint8_t snrRun;
   int prb_inter = 0;
+  uint8_t max_rounds = 4;
 
   int enable_ptrs = 0;
   int modify_dmrs = 0;
@@ -336,7 +337,7 @@ int main(int argc, char **argv)
   /* initialize the sin-cos table */
    InitSinLUT();
 
-  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:ikl:m:n:p:r:s:u:w:y:z:F:G:H:M:N:PR:S:T:U:L:Z")) != -1) {
+  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:ikl:m:n:p:qr:s:u:w:y:z:F:G:H:M:N:PR:S:T:U:L:Z")) != -1) {
     printf("handling optarg %c\n",c);
     switch (c) {
 
@@ -451,6 +452,10 @@ int main(int argc, char **argv)
       
     case 'p':
       extended_prefix_flag = 1;
+      break;
+
+    case 'q':
+      max_rounds = 1;
       break;
       
     case 'r':
@@ -824,7 +829,6 @@ int main(int argc, char **argv)
   uint16_t n_rb1 = 75;
   
   uint16_t pdu_bit_map = PUSCH_PDU_BITMAP_PUSCH_DATA; // | PUSCH_PDU_BITMAP_PUSCH_PTRS;
-  uint8_t max_rounds = 4;
   uint8_t crc_status = 0;
 
   unsigned char mod_order = nr_get_Qm_ul(Imcs, mcs_table);

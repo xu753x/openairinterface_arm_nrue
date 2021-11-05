@@ -592,6 +592,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
   p_decParams->Z = harq_process->Z;
 
+  LOG_D(PHY,"BG %d, Z %d, R %d\n",p_decParams->BG,p_decParams->Z,p_decParams->R);
 
   p_decParams->numMaxIter = ulsch->max_ldpc_iterations;
   p_decParams->outMode= 0;

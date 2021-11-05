@@ -66,6 +66,7 @@ static inline t_nrLDPC_procBuf* nrLDPC_init_mem(void)
         p_procBuf->bnProcBufRes = (int8_t*) malloc32_clear(NR_LDPC_SIZE_BN_PROC_BUF*sizeof(int8_t));
         p_procBuf->llrRes       = (int8_t*) malloc32_clear(NR_LDPC_MAX_NUM_LLR     *sizeof(int8_t));
         p_procBuf->llrProcBuf   = (int8_t*) malloc32_clear(NR_LDPC_MAX_NUM_LLR     *sizeof(int8_t));
+        p_procBuf->bnProcBufTemp = (int8_t*) malloc32_clear(NR_LDPC_MAX_NUM_LLR     *sizeof(int8_t));
     }
 
     return(p_procBuf);
@@ -79,6 +80,7 @@ static inline void nrLDPC_free_mem(t_nrLDPC_procBuf* p_procBuf)
     free(p_procBuf->bnProcBufRes);
     free(p_procBuf->llrRes);
     free(p_procBuf->llrProcBuf);
+    free(p_procBuf->bnProcBufTemp);
 
     free(p_procBuf);
 }

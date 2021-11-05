@@ -886,6 +886,18 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->startAddrBnGroups = lut_startAddrBnGroups_BG1_R13;
             p_lut->startAddrBnGroupsLlr = lut_startAddrBnGroupsLlr_BG1_R13;
 
+            p_lut->numBnDegCNG7[0] = 13;
+            p_lut->numBnDegCNG7[1] =  7;
+            p_lut->numBnDegCNG7[2] =  0;
+            p_lut->numBnDegCNG7[3] =  2;
+
+            p_lut->addrOffset_CNG7_SG1 = (const uint16_t**) addrOffset_BG1_CNG7_SG1_R13;
+            p_lut->bnIdx_CNG7_SG1 = bnIdx_BG1_CNG7_SG1_R13;
+            p_lut->addrOffset_CNG7_SG2 = (const uint16_t**) addrOffset_BG1_CNG7_SG2_R13;
+            p_lut->bnIdx_CNG7_SG2 = bnIdx_BG1_CNG7_SG2_R13;
+            p_lut->addrOffset_CNG7_SG4 = (const uint16_t**) addrOffset_BG1_CNG7_SG4_R13;
+            p_lut->bnIdx_CNG7_SG4 = bnIdx_BG1_CNG7_SG4_R13;
+
             numLLR = NR_LDPC_NCOL_BG1_R13*Z;
         }
         else if (R == 23)
@@ -917,6 +929,13 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->numBnInBnGroups = lut_numBnInBnGroups_BG1_R23;
             p_lut->startAddrBnGroups = lut_startAddrBnGroups_BG1_R23;
             p_lut->startAddrBnGroupsLlr = lut_startAddrBnGroupsLlr_BG1_R23;
+
+            p_lut->addrOffset_CNG7_SG1 = (const uint16_t**) addrOffset_BG1_CNG7_SG1_R23;
+            p_lut->bnIdx_CNG7_SG1 = bnIdx_BG1_CNG7_SG1_R13;
+            p_lut->addrOffset_CNG7_SG2 = (const uint16_t**) addrOffset_BG1_CNG7_SG2_R23;
+            p_lut->bnIdx_CNG7_SG2 = bnIdx_BG1_CNG7_SG2_R13;
+            p_lut->addrOffset_CNG7_SG3 = (const uint16_t**) addrOffset_BG1_CNG7_SG3_R23;
+            p_lut->bnIdx_CNG7_SG3 = bnIdx_BG1_CNG7_SG3_R23;
 
             numLLR = NR_LDPC_NCOL_BG1_R23*Z;
         }
@@ -967,6 +986,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z2_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z2_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z2_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z2_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z2_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z2_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z2_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z2_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z2_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z2_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z2_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z2_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z2_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z2_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z2_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z2_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z2_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z2_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z2_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z2_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z2_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z2_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z2_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z2_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z2_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z2_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z2_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z2_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z2_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z2_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z2_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z2_CNG19_SG4_R13;
             break;
         }
         case 3:
@@ -980,6 +1040,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z3_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z3_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z3_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z3_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z3_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z3_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z3_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z3_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z3_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z3_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z3_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z3_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z3_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z3_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z3_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z3_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z3_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z3_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z3_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z3_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z3_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z3_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z3_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z3_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z3_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z3_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z3_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z3_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z3_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z3_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z3_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z3_CNG19_SG4_R13;
             break;
         }
         case 4:
@@ -993,6 +1094,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z4_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z4_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z4_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z4_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z4_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z4_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z4_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z4_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z4_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z4_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z4_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z4_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z4_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z4_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z4_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z4_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z4_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z4_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z4_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z4_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z4_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z4_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z4_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z4_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z4_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z4_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z4_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z4_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z4_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z4_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z4_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z4_CNG19_SG4_R13;
             break;
         }
         case 5:
@@ -1006,6 +1148,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z5_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z5_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z5_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z5_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z5_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z5_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z5_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z5_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z5_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z5_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z5_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z5_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z5_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z5_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z5_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z5_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z5_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z5_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z5_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z5_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z5_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z5_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z5_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z5_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z5_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z5_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z5_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z5_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z5_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z5_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z5_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z5_CNG19_SG4_R13;
             break;
         }
         case 6:
@@ -1019,6 +1202,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z6_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z6_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z6_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z6_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z6_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z6_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z6_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z6_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z6_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z6_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z6_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z6_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z6_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z6_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z6_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z6_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z6_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z6_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z6_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z6_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z6_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z6_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z6_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z6_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z6_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z6_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z6_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z6_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z6_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z6_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z6_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z6_CNG19_SG4_R13;
             break;
         }
         case 7:
@@ -1032,6 +1256,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z7_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z7_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z7_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z7_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z7_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z7_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z7_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z7_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z7_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z7_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z7_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z7_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z7_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z7_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z7_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z7_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z7_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z7_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z7_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z7_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z7_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z7_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z7_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z7_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z7_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z7_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z7_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z7_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z7_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z7_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z7_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z7_CNG19_SG4_R13;
             break;
         }
         case 8:
@@ -1045,6 +1310,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z8_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z8_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z8_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z8_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z8_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z8_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z8_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z8_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z8_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z8_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z8_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z8_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z8_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z8_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z8_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z8_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z8_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z8_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z8_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z8_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z8_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z8_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z8_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z8_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z8_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z8_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z8_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z8_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z8_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z8_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z8_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z8_CNG19_SG4_R13;
             break;
         }
         case 9:
@@ -1058,6 +1364,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z9_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z9_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z9_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z9_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z9_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z9_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z9_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z9_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z9_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z9_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z9_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z9_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z9_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z9_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z9_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z9_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z9_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z9_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z9_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z9_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z9_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z9_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z9_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z9_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z9_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z9_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z9_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z9_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z9_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z9_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z9_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z9_CNG19_SG4_R13;
             break;
         }
         case 10:
@@ -1071,6 +1418,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z10_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z10_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z10_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z10_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z10_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z10_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z10_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z10_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z10_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z10_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z10_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z10_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z10_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z10_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z10_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z10_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z10_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z10_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z10_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z10_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z10_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z10_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z10_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z10_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z10_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z10_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z10_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z10_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z10_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z10_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z10_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z10_CNG19_SG4_R13;
             break;
         }
         case 11:
@@ -1084,6 +1472,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z11_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z11_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z11_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z11_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z11_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z11_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z11_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z11_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z11_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z11_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z11_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z11_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z11_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z11_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z11_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z11_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z11_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z11_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z11_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z11_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z11_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z11_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z11_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z11_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z11_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z11_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z11_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z11_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z11_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z11_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z11_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z11_CNG19_SG4_R13;
             break;
         }
         case 12:
@@ -1097,6 +1526,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z12_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z12_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z12_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z12_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z12_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z12_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z12_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z12_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z12_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z12_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z12_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z12_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z12_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z12_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z12_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z12_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z12_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z12_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z12_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z12_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z12_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z12_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z12_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z12_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z12_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z12_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z12_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z12_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z12_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z12_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z12_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z12_CNG19_SG4_R13;
             break;
         }
         case 13:
@@ -1110,6 +1580,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z13_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z13_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z13_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z13_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z13_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z13_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z13_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z13_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z13_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z13_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z13_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z13_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z13_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z13_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z13_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z13_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z13_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z13_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z13_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z13_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z13_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z13_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z13_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z13_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z13_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z13_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z13_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z13_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z13_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z13_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z13_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z13_CNG19_SG4_R13;
             break;
         }
         case 14:
@@ -1123,6 +1634,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z14_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z14_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z14_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z14_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z14_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z14_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z14_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z14_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z14_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z14_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z14_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z14_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z14_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z14_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z14_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z14_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z14_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z14_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z14_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z14_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z14_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z14_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z14_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z14_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z14_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z14_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z14_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z14_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z14_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z14_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z14_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z14_CNG19_SG4_R13;
             break;
         }
         case 15:
@@ -1136,6 +1688,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z15_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z15_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z15_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z15_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z15_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z15_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z15_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z15_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z15_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z15_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z15_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z15_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z15_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z15_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z15_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z15_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z15_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z15_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z15_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z15_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z15_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z15_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z15_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z15_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z15_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z15_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z15_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z15_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z15_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z15_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z15_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z15_CNG19_SG4_R13;
             break;
         }
         case 16:
@@ -1149,6 +1742,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z16_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z16_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z16_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z16_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z16_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z16_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z16_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z16_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z16_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z16_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z16_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z16_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z16_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z16_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z16_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z16_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z16_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z16_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z16_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z16_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z16_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z16_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z16_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z16_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z16_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z16_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z16_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z16_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z16_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z16_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z16_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z16_CNG19_SG4_R13;
             break;
         }
         case 18:
@@ -1162,6 +1796,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z18_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z18_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z18_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z18_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z18_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z18_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z18_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z18_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z18_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z18_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z18_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z18_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z18_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z18_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z18_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z18_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z18_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z18_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z18_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z18_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z18_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z18_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z18_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z18_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z18_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z18_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z18_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z18_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z18_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z18_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z18_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z18_CNG19_SG4_R13;
             break;
         }
         case 20:
@@ -1175,6 +1850,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z20_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z20_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z20_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z20_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z20_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z20_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z20_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z20_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z20_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z20_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z20_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z20_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z20_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z20_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z20_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z20_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z20_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z20_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z20_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z20_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z20_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z20_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z20_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z20_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z20_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z20_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z20_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z20_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z20_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z20_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z20_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z20_CNG19_SG4_R13;
             break;
         }
         case 22:
@@ -1188,6 +1904,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z22_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z22_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z22_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z22_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z22_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z22_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z22_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z22_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z22_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z22_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z22_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z22_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z22_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z22_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z22_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z22_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z22_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z22_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z22_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z22_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z22_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z22_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z22_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z22_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z22_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z22_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z22_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z22_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z22_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z22_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z22_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z22_CNG19_SG4_R13;
             break;
         }
         case 24:
@@ -1201,6 +1958,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z24_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z24_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z24_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z24_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z24_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z24_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z24_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z24_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z24_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z24_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z24_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z24_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z24_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z24_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z24_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z24_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z24_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z24_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z24_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z24_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z24_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z24_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z24_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z24_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z24_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z24_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z24_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z24_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z24_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z24_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z24_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z24_CNG19_SG4_R13;
             break;
         }
         case 26:
@@ -1214,6 +2012,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z26_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z26_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z26_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z26_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z26_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z26_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z26_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z26_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z26_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z26_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z26_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z26_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z26_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z26_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z26_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z26_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z26_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z26_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z26_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z26_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z26_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z26_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z26_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z26_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z26_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z26_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z26_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z26_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z26_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z26_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z26_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z26_CNG19_SG4_R13;
             break;
         }
         case 28:
@@ -1227,6 +2066,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z28_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z28_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z28_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z28_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z28_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z28_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z28_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z28_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z28_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z28_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z28_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z28_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z28_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z28_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z28_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z28_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z28_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z28_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z28_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z28_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z28_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z28_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z28_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z28_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z28_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z28_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z28_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z28_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z28_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z28_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z28_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z28_CNG19_SG4_R13;
             break;
         }
         case 30:
@@ -1240,6 +2120,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z30_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z30_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z30_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z30_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z30_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z30_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z30_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z30_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z30_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z30_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z30_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z30_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z30_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z30_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z30_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z30_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z30_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z30_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z30_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z30_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z30_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z30_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z30_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z30_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z30_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z30_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z30_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z30_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z30_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z30_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z30_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z30_CNG19_SG4_R13;
             break;
         }
         case 32:
@@ -1253,6 +2174,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z32_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z32_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z32_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z32_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z32_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z32_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z32_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z32_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z32_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z32_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z32_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z32_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z32_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z32_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z32_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z32_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z32_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z32_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z32_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z32_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z32_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z32_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z32_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z32_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z32_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z32_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z32_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z32_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z32_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z32_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z32_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z32_CNG19_SG4_R13;
             break;
         }
         case 36:
@@ -1266,6 +2228,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z36_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z36_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z36_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z36_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z36_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z36_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z36_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z36_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z36_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z36_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z36_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z36_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z36_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z36_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z36_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z36_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z36_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z36_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z36_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z36_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z36_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z36_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z36_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z36_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z36_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z36_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z36_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z36_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z36_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z36_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z36_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z36_CNG19_SG4_R13;
             break;
         }
         case 40:
@@ -1279,6 +2282,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z40_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z40_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z40_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z40_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z40_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z40_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z40_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z40_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z40_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z40_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z40_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z40_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z40_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z40_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z40_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z40_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z40_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z40_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z40_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z40_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z40_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z40_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z40_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z40_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z40_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z40_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z40_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z40_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z40_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z40_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z40_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z40_CNG19_SG4_R13;
             break;
         }
         case 44:
@@ -1292,6 +2336,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z44_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z44_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z44_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z44_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z44_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z44_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z44_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z44_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z44_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z44_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z44_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z44_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z44_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z44_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z44_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z44_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z44_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z44_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z44_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z44_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z44_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z44_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z44_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z44_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z44_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z44_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z44_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z44_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z44_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z44_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z44_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z44_CNG19_SG4_R13;
             break;
         }
         case 48:
@@ -1305,6 +2390,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z48_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z48_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z48_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z48_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z48_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z48_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z48_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z48_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z48_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z48_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z48_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z48_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z48_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z48_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z48_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z48_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z48_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z48_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z48_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z48_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z48_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z48_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z48_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z48_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z48_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z48_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z48_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z48_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z48_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z48_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z48_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z48_CNG19_SG4_R13;
             break;
         }
         case 52:
@@ -1318,6 +2444,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z52_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z52_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z52_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z52_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z52_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z52_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z52_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z52_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z52_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z52_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z52_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z52_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z52_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z52_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z52_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z52_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z52_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z52_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z52_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z52_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z52_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z52_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z52_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z52_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z52_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z52_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z52_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z52_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z52_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z52_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z52_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z52_CNG19_SG4_R13;
             break;
         }
         case 56:
@@ -1331,6 +2498,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z56_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z56_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z56_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z56_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z56_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z56_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z56_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z56_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z56_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z56_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z56_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z56_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z56_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z56_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z56_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z56_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z56_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z56_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z56_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z56_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z56_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z56_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z56_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z56_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z56_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z56_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z56_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z56_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z56_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z56_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z56_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z56_CNG19_SG4_R13;
             break;
         }
         case 60:
@@ -1344,6 +2552,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z60_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z60_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z60_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z60_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z60_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z60_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z60_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z60_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z60_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z60_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z60_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z60_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z60_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z60_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z60_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z60_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z60_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z60_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z60_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z60_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z60_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z60_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z60_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z60_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z60_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z60_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z60_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z60_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z60_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z60_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z60_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z60_CNG19_SG4_R13;
             break;
         }
         case 64:
@@ -1357,6 +2606,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z64_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z64_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z64_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z64_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z64_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z64_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z64_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z64_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z64_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z64_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z64_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z64_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z64_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z64_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z64_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z64_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z64_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z64_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z64_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z64_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z64_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z64_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z64_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z64_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z64_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z64_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z64_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z64_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z64_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z64_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z64_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z64_CNG19_SG4_R13;
             break;
         }
         case 72:
@@ -1370,6 +2660,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z72_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z72_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z72_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z72_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z72_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z72_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z72_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z72_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z72_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z72_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z72_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z72_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z72_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z72_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z72_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z72_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z72_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z72_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z72_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z72_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z72_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z72_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z72_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z72_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z72_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z72_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z72_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z72_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z72_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z72_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z72_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z72_CNG19_SG4_R13;
             break;
         }
         case 80:
@@ -1383,6 +2714,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z80_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z80_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z80_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z80_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z80_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z80_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z80_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z80_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z80_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z80_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z80_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z80_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z80_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z80_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z80_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z80_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z80_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z80_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z80_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z80_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z80_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z80_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z80_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z80_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z80_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z80_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z80_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z80_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z80_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z80_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z80_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z80_CNG19_SG4_R13;
             break;
         }
         case 88:
@@ -1396,6 +2768,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z88_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z88_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z88_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z88_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z88_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z88_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z88_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z88_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z88_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z88_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z88_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z88_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z88_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z88_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z88_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z88_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z88_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z88_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z88_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z88_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z88_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z88_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z88_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z88_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z88_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z88_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z88_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z88_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z88_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z88_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z88_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z88_CNG19_SG4_R13;
             break;
         }
         case 96:
@@ -1409,6 +2822,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z96_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z96_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z96_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z96_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z96_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z96_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z96_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z96_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z96_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z96_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z96_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z96_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z96_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z96_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z96_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z96_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z96_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z96_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z96_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z96_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z96_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z96_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z96_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z96_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z96_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z96_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z96_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z96_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z96_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z96_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z96_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z96_CNG19_SG4_R13;
             break;
         }
         case 104:
@@ -1422,6 +2876,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z104_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z104_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z104_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z104_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z104_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z104_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z104_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z104_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z104_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z104_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z104_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z104_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z104_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z104_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z104_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z104_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z104_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z104_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z104_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z104_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z104_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z104_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z104_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z104_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z104_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z104_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z104_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z104_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z104_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z104_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z104_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z104_CNG19_SG4_R13;
             break;
         }
         case 112:
@@ -1435,6 +2930,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z112_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z112_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z112_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z112_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z112_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z112_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z112_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z112_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z112_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z112_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z112_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z112_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z112_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z112_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z112_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z112_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z112_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z112_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z112_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z112_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z112_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z112_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z112_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z112_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z112_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z112_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z112_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z112_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z112_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z112_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z112_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z112_CNG19_SG4_R13;
             break;
         }
         case 120:
@@ -1448,6 +2984,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z120_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z120_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z120_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z120_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z120_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z120_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z120_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z120_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z120_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z120_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z120_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z120_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z120_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z120_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z120_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z120_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z120_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z120_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z120_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z120_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z120_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z120_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z120_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z120_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z120_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z120_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z120_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z120_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z120_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z120_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z120_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z120_CNG19_SG4_R13;
             break;
         }
         case 128:
@@ -1461,6 +3038,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z128_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z128_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z128_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z128_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z128_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z128_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z128_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z128_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z128_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z128_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z128_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z128_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z128_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z128_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z128_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z128_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z128_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z128_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z128_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z128_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z128_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z128_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z128_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z128_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z128_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z128_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z128_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z128_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z128_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z128_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z128_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z128_CNG19_SG4_R13;
             break;
         }
         case 144:
@@ -1474,6 +3092,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z144_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z144_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z144_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z144_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z144_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z144_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z144_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z144_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z144_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z144_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z144_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z144_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z144_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z144_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z144_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z144_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z144_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z144_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z144_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z144_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z144_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z144_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z144_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z144_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z144_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z144_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z144_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z144_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z144_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z144_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z144_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z144_CNG19_SG4_R13;
             break;
         }
         case 160:
@@ -1487,6 +3146,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z160_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z160_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z160_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z160_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z160_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z160_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z160_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z160_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z160_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z160_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z160_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z160_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z160_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z160_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z160_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z160_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z160_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z160_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z160_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z160_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z160_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z160_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z160_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z160_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z160_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z160_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z160_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z160_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z160_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z160_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z160_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z160_CNG19_SG4_R13;
             break;
         }
         case 176:
@@ -1500,6 +3200,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z176_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z176_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z176_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z176_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z176_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z176_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z176_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z176_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z176_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z176_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z176_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z176_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z176_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z176_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z176_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z176_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z176_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z176_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z176_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z176_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z176_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z176_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z176_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z176_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z176_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z176_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z176_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z176_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z176_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z176_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z176_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z176_CNG19_SG4_R13;
             break;
         }
         case 192:
@@ -1513,6 +3254,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z192_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z192_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z192_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z192_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z192_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z192_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z192_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z192_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z192_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z192_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z192_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z192_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z192_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z192_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z192_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z192_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z192_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z192_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z192_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z192_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z192_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z192_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z192_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z192_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z192_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z192_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z192_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z192_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z192_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z192_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z192_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z192_CNG19_SG4_R13;
             break;
         }
         case 208:
@@ -1526,6 +3308,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z208_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z208_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z208_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z208_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z208_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z208_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z208_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z208_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z208_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z208_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z208_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z208_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z208_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z208_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z208_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z208_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z208_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z208_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z208_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z208_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z208_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z208_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z208_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z208_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z208_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z208_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z208_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z208_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z208_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z208_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z208_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z208_CNG19_SG4_R13;
             break;
         }
         case 224:
@@ -1539,6 +3362,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z224_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z224_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z224_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z224_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z224_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z224_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z224_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z224_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z224_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z224_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z224_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z224_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z224_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z224_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z224_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z224_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z224_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z224_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z224_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z224_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z224_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z224_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z224_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z224_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z224_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z224_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z224_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z224_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z224_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z224_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z224_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z224_CNG19_SG4_R13;
             break;
         }
         case 240:
@@ -1552,6 +3416,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z240_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z240_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z240_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z240_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z240_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z240_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z240_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z240_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z240_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z240_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z240_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z240_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z240_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z240_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z240_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z240_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z240_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z240_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z240_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z240_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z240_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z240_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z240_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z240_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z240_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z240_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z240_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z240_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z240_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z240_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z240_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z240_CNG19_SG4_R13;
             break;
         }
         case 256:
@@ -1565,6 +3470,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z256_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z256_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z256_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z256_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z256_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z256_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z256_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z256_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z256_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z256_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z256_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z256_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z256_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z256_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z256_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z256_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z256_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z256_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z256_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z256_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z256_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z256_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z256_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z256_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z256_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z256_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z256_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z256_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z256_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z256_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z256_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z256_CNG19_SG4_R13;
             break;
         }
         case 288:
@@ -1578,6 +3524,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z288_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z288_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z288_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z288_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z288_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z288_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z288_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z288_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z288_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z288_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z288_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z288_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z288_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z288_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z288_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z288_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z288_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z288_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z288_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z288_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z288_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z288_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z288_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z288_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z288_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z288_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z288_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z288_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z288_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z288_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z288_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z288_CNG19_SG4_R13;
             break;
         }
         case 320:
@@ -1591,6 +3578,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z320_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z320_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z320_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z320_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z320_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z320_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z320_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z320_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z320_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z320_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z320_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z320_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z320_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z320_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z320_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z320_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z320_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z320_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z320_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z320_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z320_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z320_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z320_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z320_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z320_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z320_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z320_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z320_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z320_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z320_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z320_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z320_CNG19_SG4_R13;
             break;
         }
         case 352:
@@ -1604,6 +3632,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z352_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z352_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z352_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z352_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z352_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z352_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z352_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z352_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z352_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z352_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z352_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z352_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z352_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z352_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z352_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z352_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z352_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z352_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z352_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z352_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z352_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z352_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z352_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z352_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z352_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z352_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z352_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z352_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z352_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z352_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z352_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z352_CNG19_SG4_R13;
             break;
         }
         case 384:
@@ -1617,6 +3686,47 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z384_CNG9;
             p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z384_CNG10;
             p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z384_CNG19;
+
+            p_lut->circShift_CNG3_SG1  = bnIdxCshift_BG1_Z384_CNG3_SG1_R13;
+
+            p_lut->circShift_CNG4_SG1  = bnIdxCshift_BG1_Z384_CNG4_SG1_R13;
+            p_lut->circShift_CNG4_SG2  = bnIdxCshift_BG1_Z384_CNG4_SG2_R13;
+            p_lut->circShift_CNG4_SG3  = bnIdxCshift_BG1_Z384_CNG4_SG3_R13;
+
+            p_lut->circShift_CNG5_SG1  = bnIdxCshift_BG1_Z384_CNG5_SG1_R13;
+            p_lut->circShift_CNG5_SG2  = bnIdxCshift_BG1_Z384_CNG5_SG2_R13;
+            p_lut->circShift_CNG5_SG3  = bnIdxCshift_BG1_Z384_CNG5_SG3_R13;
+            p_lut->circShift_CNG5_SG4  = bnIdxCshift_BG1_Z384_CNG5_SG4_R13;
+            p_lut->circShift_CNG5_SG5  = bnIdxCshift_BG1_Z384_CNG5_SG5_R13;
+            p_lut->circShift_CNG5_SG9  = bnIdxCshift_BG1_Z384_CNG5_SG9_R13;
+
+            p_lut->circShift_CNG6_SG1  = bnIdxCshift_BG1_Z384_CNG6_SG1_R13;
+            p_lut->circShift_CNG6_SG2  = bnIdxCshift_BG1_Z384_CNG6_SG2_R13;
+            p_lut->circShift_CNG6_SG3  = bnIdxCshift_BG1_Z384_CNG6_SG3_R13;
+            p_lut->circShift_CNG6_SG4  = bnIdxCshift_BG1_Z384_CNG6_SG4_R13;
+            p_lut->circShift_CNG6_SG5  = bnIdxCshift_BG1_Z384_CNG6_SG5_R13;
+
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z384_CNG7_SG1_R13;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z384_CNG7_SG2_R13;
+            p_lut->circShift_CNG7_SG4  = bnIdxCshift_BG1_Z384_CNG7_SG4_R13;
+            if (R == 23)
+            {
+            p_lut->circShift_CNG7_SG1  = bnIdxCshift_BG1_Z384_CNG7_SG1_R23;
+            p_lut->circShift_CNG7_SG2  = bnIdxCshift_BG1_Z384_CNG7_SG2_R23;
+            p_lut->circShift_CNG7_SG3  = bnIdxCshift_BG1_Z384_CNG7_SG3_R23;
+            }
+
+            p_lut->circShift_CNG8_SG1  = bnIdxCshift_BG1_Z384_CNG8_SG1_R13;
+            p_lut->circShift_CNG8_SG2  = bnIdxCshift_BG1_Z384_CNG8_SG2_R13;
+
+            p_lut->circShift_CNG9_SG1  = bnIdxCshift_BG1_Z384_CNG9_SG1_R13;
+            p_lut->circShift_CNG9_SG2  = bnIdxCshift_BG1_Z384_CNG9_SG2_R13;
+
+            p_lut->circShift_CNG10_SG1 = bnIdxCshift_BG1_Z384_CNG10_SG1_R13;
+
+            p_lut->circShift_CNG19_SG2 = bnIdxCshift_BG1_Z384_CNG19_SG2_R13;
+            p_lut->circShift_CNG19_SG3 = bnIdxCshift_BG1_Z384_CNG19_SG3_R13;
+            p_lut->circShift_CNG19_SG4 = bnIdxCshift_BG1_Z384_CNG19_SG4_R13;
             break;
         }
         default:
