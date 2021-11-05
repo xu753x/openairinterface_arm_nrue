@@ -170,6 +170,8 @@ typedef struct RadioResourceConfig_s {
   long        mpdcch_startSF_CSS_RA_r13_val;
   long       *prach_HoppingOffset_r13;
   BOOLEAN_t     mbms_dedicated_serving_cell;
+  lte_delay_mode_t              ntn_orbit[MAX_NUM_CCs]; //This is wrong!
+  int32_t                       ntn_delay[MAX_NUM_CCs];
 } RadioResourceConfig;
 
 // eNB: ENB_APP -> RRC messages
@@ -326,6 +328,9 @@ typedef struct RrcConfigurationReq_s {
   long                           discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_bits_unused[MAX_NUM_CCs];
   //Nr secondary cell group SSB central frequency (for ENDC NSA)
   int                            nr_scg_ssb_freq;
+  //NTN Delay
+  lte_delay_mode_t  		ntn_orbit[MAX_NUM_CCs];
+  int32_t                       ntn_delay[MAX_NUM_CCs];
 } RrcConfigurationReq;
 
 #define MAX_NUM_NBIOT_CELEVELS    3
