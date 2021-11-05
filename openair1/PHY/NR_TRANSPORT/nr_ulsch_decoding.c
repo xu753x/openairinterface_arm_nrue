@@ -421,6 +421,8 @@ void nr_processULSegment(void* arg) {
 
   ////////////////////////////////// pl =====> llrProcBuf //////////////////////////////////
 
+  p_decoderParms->n = length_dec;
+  p_decoderParms->crc_type = crc_type;
   no_iteration_ldpc = nrLDPC_decoder(p_decoderParms,
                                      (int8_t*)&pl[0],
                                      llrProcBuf,
@@ -608,6 +610,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
   p_decParams->numMaxIter = ulsch->max_ldpc_iterations;
   p_decParams->outMode= 0;
+  p_decParams->F = harq_process->F;
 
   r_offset = 0;
 
