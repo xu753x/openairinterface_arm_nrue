@@ -440,8 +440,15 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,
   else
     harq_pid = subframe2harq_pid(frame_parms,proc->frame_rx,subframe);
 
+  int ntnd=frame_parms->ntn_delay;
+  //LOG_I(PHY,"VERIFICATION ulsch_decoding DELAY=%d\n",ntnd);
   // x1 is set in lte_gold_generic
-  x2 = ((uint32_t)ulsch->rnti<<14) + ((uint32_t)subframe<<9) + frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.3.1
+  if ( (subframe-(ntnd%10)) >=0) {
+    x2 = ((uint32_t)ulsch->rnti<<14) + ((uint32_t)(subframe-(ntnd%10))<<9) + frame_parms->Nid_cell;
+    } else {
+        x2 = ((uint32_t)ulsch->rnti<<14) + ((uint32_t)(10-(ntnd%10)+subframe)<<9) + frame_parms->Nid_cell;
+    }
+
   ulsch_harq = ulsch->harq_processes[harq_pid];
   AssertFatal(harq_pid!=255,
               "FATAL ERROR: illegal harq_pid, returning\n");
