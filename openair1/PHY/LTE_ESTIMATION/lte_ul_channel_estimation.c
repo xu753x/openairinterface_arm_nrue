@@ -46,8 +46,7 @@ int32_t lte_ul_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
   AssertFatal(ul_ch_estimates != NULL, "ul_ch_estimates is null ");
   AssertFatal(ul_ch_estimates_time != NULL, "ul_ch_estimates_time is null\n");
   int subframe = proc->subframe_rx;
-
-  uint8_t harq_pid; 
+  uint8_t harq_pid;
 
   int16_t delta_phase = 0;
   int16_t *ru1 = ru_90;
@@ -62,7 +61,16 @@ int32_t lte_ul_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
   uint8_t nb_antennas_rx = frame_parms->nb_antennas_rx;
   uint8_t cyclic_shift;
   uint32_t alpha_ind;
-  uint32_t u=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[Ns+(subframe<<1)];
+  int ntnd=frame_parms->ntn_delay;
+  //LOG_I(PHY,"VERIFICATION lte_ul_channel_estimation DELAY=%d\n",ntnd);
+  uint32_t u;
+
+  if ( (subframe-(ntnd%10)) >=0) {
+	u=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[Ns+((subframe-(ntnd%10))<<1)];
+    } else {
+	u=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[Ns+((10-(ntnd%10)+subframe)<<1)];
+    }
+
   uint32_t v=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[Ns+(subframe<<1)];
   int symbol_offset,i;
   //debug_msg("lte_ul_channel_estimation: cyclic shift %d\n",cyclicShift);
@@ -85,9 +93,17 @@ int32_t lte_ul_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
   uint16_t N_rb_alloc = ulsch->harq_processes[harq_pid]->nb_rb;
   int32_t tmp_estimates[N_rb_alloc*12] __attribute__((aligned(16)));
   Msc_RS = N_rb_alloc*12;
-  cyclic_shift = (frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift +
-                  ulsch->harq_processes[harq_pid]->n_DMRS2 +
-                  frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[(subframe<<1)+Ns]) % 12;
+
+  if ( (subframe-(ntnd%10)) >=0) {
+    cyclic_shift = (frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift +
+                   ulsch->harq_processes[harq_pid]->n_DMRS2 +
+                   frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[((subframe-(ntnd%10))<<1)+Ns]) % 12;
+    } else {
+        cyclic_shift = (frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift +
+                        ulsch->harq_processes[harq_pid]->n_DMRS2 +
+                        frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[((10-(ntnd%10)+subframe)<<1)+Ns]) % 12;
+    }
+
   Msc_idx_ptr = (uint16_t *) bsearch(&Msc_RS, dftsizes, 34, sizeof(uint16_t), compareints);
 
   if (Msc_idx_ptr)

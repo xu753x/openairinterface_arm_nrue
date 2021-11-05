@@ -1399,8 +1399,11 @@ void pusch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
   LTE_UL_eNB_HARQ_t *ulsch_harq;
   const int subframe = proc->subframe_rx;
   const int frame    = proc->frame_rx;
+  uint32_t frameTimeDelay = frame;
   uint32_t harq_pid0 = subframe2harq_pid(&eNB->frame_parms,frame,subframe);
 
+  uint32_t ntnd=fp->ntn_delay;
+  //LOG_I(PHY,"DELAY %d\n",ntnd);
   for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
     ulsch = eNB->ulsch[i];
 
@@ -1408,15 +1411,21 @@ void pusch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
     else harq_pid=harq_pid0;
 
     ulsch_harq = ulsch->harq_processes[harq_pid];
+    frameTimeDelay = ulsch_harq->frame;
 
     if (ulsch->rnti>0) LOG_D(PHY,"eNB->ulsch[%d]->harq_processes[harq_pid:%d] SFN/SF:%04d%d: PUSCH procedures, UE %d/%x ulsch_harq[status:%d SFN/SF:%04d%d handled:%d]\n",
                                i, harq_pid, frame,subframe,i,ulsch->rnti,
                                ulsch_harq->status, ulsch_harq->frame, ulsch_harq->subframe, ulsch_harq->handled);
 
+   if (ntnd >= 4) {
+        frameTimeDelay= frame - 1 - (ntnd-3)/10;
+	//if  (ulsch_harq->frame == frame && ulsch_harq->status == ACTIVE) frameTimeDelay=frame;
+   } else frameTimeDelay = frame;
+
     if ((ulsch) &&
         (ulsch->rnti>0) &&
         (ulsch_harq->status == ACTIVE) &&
-        ((ulsch_harq->frame == frame)	    || (ulsch_harq->repetition_number >1) ) &&
+        ((ulsch_harq->frame == frameTimeDelay)	    || (ulsch_harq->repetition_number >1) ) &&
         ((ulsch_harq->subframe == subframe) || (ulsch_harq->repetition_number >1) ) &&
         (ulsch_harq->handled == 0)) {
       // UE has ULSCH scheduling
@@ -1428,7 +1437,10 @@ void pusch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
       }
 
       LOG_D(PHY,"[eNB %d] frame %d, subframe %d: Scheduling ULSCH Reception for UE %d \n", eNB->Mod_id, frame, subframe, i);
+      int ntnd=fp->ntn_delay;
+      LOG_D(PHY,"VERIFICATION phy_procedures_lte_eNb DELAY=%d\n",ntnd);
       nPRS = fp->pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[subframe<<1];
+
       ulsch->cyclicShift = (ulsch_harq->n_DMRS2 +
                             fp->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift +
                             nPRS)%12;
@@ -2135,6 +2147,7 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
   lte_eNB_I0_measurements (eNB, subframe, 0, eNB->first_run_I0_measurements);
   int min_I0=1000,max_I0=0;
   int amin=0,amax=0;
+  int rtt=fp->ntn_delay;
   if ((frame==0) && (subframe==3)) {
     for (int i=0; i<eNB->frame_parms.N_RB_UL; i++) {
       if (i==(eNB->frame_parms.N_RB_UL>>1) - 1) i+=2;
@@ -2144,7 +2157,7 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
       if (eNB->measurements.n0_subband_power_tot_dB[i]>max_I0) {max_I0 = eNB->measurements.n0_subband_power_tot_dB[i]; amax=i;}
     }
 
-    LOG_I (PHY, "max_I0 %d (rb %d), min_I0 %d (rb %d), avg I0 %d\n", max_I0, amax, min_I0, amin, eNB->measurements.n0_subband_power_avg_dB);
+    LOG_I (PHY, "RTT %d max_I0 %d (rb %d), min_I0 %d (rb %d), avg I0 %d\n", rtt, max_I0, amax, min_I0, amin, eNB->measurements.n0_subband_power_avg_dB);
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_UESPEC, 0 );
