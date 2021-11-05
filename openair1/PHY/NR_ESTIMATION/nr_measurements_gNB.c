@@ -34,18 +34,20 @@
 #include "PHY/defs_gNB.h"
 #include "PHY/phy_extern.h"
 #include "nr_ul_estimation.h"
-
+extern int16_t ul_ch_estimates_time_loc[2][32768];//行2；是因为两天线；列：4为点数扩大了四倍，4*2048为本来需要的点数
 extern openair0_config_t openair0_cfg[MAX_CARDS];
 
 int nr_est_timing_advance_pusch(PHY_VARS_gNB* gNB, int UE_id, float *distptr)
 {
   int i, aa, max_pos = 0, max_val = 0;
-  
+  //LOG_I(PHY, "start nr_est_timing_advance_pusch\n");
   NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
   NR_gNB_PUSCH *gNB_pusch_vars   = gNB->pusch_vars[UE_id];
   int32_t **ul_ch_estimates_time = gNB_pusch_vars->ul_ch_estimates_time;
   
+  //frame_parms->ofdm_symbol_size=8192;//ldx_add,频谱细化
   int sync_pos = frame_parms->nb_prefix_samples / 8;
+  //int sync_pos = frame_parms->nb_prefix_samples / 8*4;//ldx_add,频谱细化
 
   for (i = 0; i < frame_parms->ofdm_symbol_size; i++) {
     int temp = 0;
@@ -65,6 +67,33 @@ int nr_est_timing_advance_pusch(PHY_VARS_gNB* gNB, int UE_id, float *distptr)
   if (max_pos > frame_parms->ofdm_symbol_size/2)
     max_pos = max_pos - frame_parms->ofdm_symbol_size;
 
+  /**********************ldx_add,频谱细化排序****************************/
+  int max_pos_loc=0;
+  int max_val_loc=0; 
+
+  for (i = 0; i < (frame_parms->ofdm_symbol_size); i++)//本来应该乘以4
+  {
+    int temp = 0;
+
+    for (aa = 0; aa < frame_parms->nb_antennas_rx; aa++)
+    {
+      short Re = ((int16_t *)ul_ch_estimates_time_loc[aa])[(i << 1)];
+      short Im = ((int16_t *)ul_ch_estimates_time_loc[aa])[1 + (i << 1)];
+      temp += (Re * Re / 2) + (Im * Im / 2);
+    }
+
+    if (temp > max_val_loc)
+    {
+      max_pos_loc = i;
+      max_val_loc = temp;
+    }
+  }
+
+  if (max_pos_loc > (frame_parms->ofdm_symbol_size*2))
+    max_pos_loc = max_pos_loc - frame_parms->ofdm_symbol_size*4;
+  /**********************ldx_add,频谱细化排序****************************/
+
+  /**********************ldx_add,计算距离****************************/
   // int delta_shift=0;
   // delta_shift=max_pos - sync_pos;
   // //获取TA_command的值
@@ -94,12 +123,13 @@ int nr_est_timing_advance_pusch(PHY_VARS_gNB* gNB, int UE_id, float *distptr)
   
   // //打印计算值 
   // printf("\nta_command:%d,TA_benchmark:%d,delta_shift:%d,shfit:%f,distance_esitimation:%f米",ta_command,TA_benchmark,delta_shift,shift,distance_esitimation);//ldx_add
-  
-  int delta_shift=max_pos - sync_pos;
+  int ifft_8192=4;
+  int delta_shift=max_pos_loc - sync_pos*ifft_8192;
   int TA_benchmark = 10;
+  
   double delta_shift_benchmark = 13.2965;
-  double shift = (ta_command-TA_benchmark)*16+delta_shift-delta_shift_benchmark;
-  *distptr = shift*299792458/61440000/2;
+  double shift = (ta_command-TA_benchmark)*16*ifft_8192+delta_shift-delta_shift_benchmark*ifft_8192;
+  *distptr = shift*299792458/(30000*frame_parms->ofdm_symbol_size*ifft_8192)/2;
   // printf("\nta_command:%d",ta_command);
   
   // //存储shift
@@ -111,8 +141,8 @@ int nr_est_timing_advance_pusch(PHY_VARS_gNB* gNB, int UE_id, float *distptr)
   //     }
   // fprintf(shift_save,"%lf ",shift);
   // fclose(shift_save);
-
-
+  /**********************ldx_add,计算距离****************************/
+  //LOG_I(PHY, "end nr_est_timing_advance_pusch\n");
   return max_pos - sync_pos;
 }
 

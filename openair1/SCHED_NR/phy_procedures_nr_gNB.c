@@ -373,7 +373,7 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
 {
 
   pthread_mutex_lock(&gNB->UL_INFO_mutex);
-
+  //LOG_I(PHY, "start nr_fill_indication\n");
   int timing_advance_update, cqi;
   int sync_pos;
   NR_gNB_ULSCH_t                       *ulsch                 = gNB->ulsch[ULSCH_id][0];
@@ -445,7 +445,7 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
   }
 
   gNB->UL_INFO.rx_ind.number_of_pdus++;
-
+  //LOG_I(PHY, "end nr_fill_indication\n");
   pthread_mutex_unlock(&gNB->UL_INFO_mutex);
 }
 

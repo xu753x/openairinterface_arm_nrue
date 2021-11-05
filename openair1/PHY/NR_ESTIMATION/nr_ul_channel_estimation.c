@@ -37,6 +37,7 @@
 //#define DEBUG_PUSCH
 
 #define dBc(x,y) (dB_fixed(((int32_t)(x))*(x) + ((int32_t)(y))*(y)))
+int16_t ul_ch_estimates_time_loc[2][32768];//行2；是因为两天线；列：4为点数扩大了四倍，4*2048为本来需要的点数，32768=4*4*2048
 
 int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
                                 unsigned char Ns,
@@ -76,10 +77,16 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 
   symbol_offset = gNB->frame_parms.ofdm_symbol_size*symbol;
 
+  //ldx_add
+  //printf("\n**************ofdm_symbol_size:%d,symbol:%d\n",gNB->frame_parms.ofdm_symbol_size,symbol);
+  
   k = bwp_start_subcarrier;
   int re_offset;
 
   uint16_t nb_rb_pusch = pusch_pdu->rb_size;
+
+  //ldx_add
+  //printf("\n**************pusch_pdu->rb_size:%d\n",pusch_pdu->rb_size);
 
 #ifdef DEBUG_CH
   LOG_I(PHY, "In %s: ch_offset %d, symbol_offset %d OFDM size %d, Ns = %d, k = %d symbol %d\n",
@@ -132,10 +139,13 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
   //------------------generate DMRS------------------//
 
   if (pusch_pdu->transform_precoding == transform_precoder_disabled) {
+    //ldx_add,走这个逻辑分支
+    //printf("\n**************1.1**************\n");
     nr_pusch_dmrs_rx(gNB, Ns, gNB->nr_gold_pusch_dmrs[pusch_pdu->scid][Ns][symbol], &pilot[0], 1000, 0, nb_rb_pusch, (pusch_pdu->bwp_start + pusch_pdu->rb_start)*NR_NB_SC_PER_RB, pusch_pdu->dmrs_config_type);
   }
   else {  // if transform precoding or SC-FDMA is enabled in Uplink
-
+    //ldx_add
+    //printf("\n**************1.2**************\n");
     // NR_SC_FDMA supports type1 DMRS so only 6 DMRS REs per RB possible
     uint16_t index = get_index_for_dmrs_lowpapr_seq(nb_rb_pusch * (NR_NB_SC_PER_RB/2));
     uint8_t u = pusch_pdu->dfts_ofdm.low_papr_group_number; 
@@ -168,6 +178,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 #endif
   // char filename[20];//LOG_M
   // char varname[10];
+  //printf("\n***********nb_antennas_rx:%d*************\n",gNB->frame_parms.nb_antennas_rx);
   for (aarx=0; aarx<gNB->frame_parms.nb_antennas_rx; aarx++) {
 
     re_offset = k;   /* Initializing the Resource element offset for each Rx antenna */
@@ -181,7 +192,9 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
     ul_ch = (int16_t *)&ul_ch_estimates[aarx][ch_offset];
     re_offset = k;
 
-    memset(ul_ch,0,4*(gNB->frame_parms.ofdm_symbol_size));
+    memset(ul_ch,0,4*4*(gNB->frame_parms.ofdm_symbol_size));
+    memset(ul_ch_estimates_time_loc,0,4*4*(gNB->frame_parms.ofdm_symbol_size));//ldx_add,频谱细化
+  
 
 #ifdef DEBUG_PUSCH
     LOG_I(PHY, "In %s symbol_offset %d, nushift %d\n", __FUNCTION__, symbol_offset, nushift);
@@ -193,7 +206,8 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
     //if ((gNB->frame_parms.N_RB_UL&1)==0) {
 
     if (pusch_pdu->dmrs_config_type == pusch_dmrs_type1){
-
+      //ldx_add
+      //走这个逻辑分支，printf("\n**************2.1********************\n");
       // Treat first 2 pilots specially (left edge)
       ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
       ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
@@ -377,6 +391,8 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 
       // check if PRB crosses DC and improve estimates around DC
       if ((bwp_start_subcarrier < gNB->frame_parms.ofdm_symbol_size) && (bwp_start_subcarrier+nb_rb_pusch*12 >= gNB->frame_parms.ofdm_symbol_size)) {
+        //ldx_add,不走这个分支
+        //printf("\n**************1********************\n");
         ul_ch = (int16_t *)&ul_ch_estimates[aarx][ch_offset];
         uint16_t idxDC = 2*(gNB->frame_parms.ofdm_symbol_size - bwp_start_subcarrier);
         uint16_t idxPil = idxDC/2;
@@ -392,7 +408,8 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 
         // for proper allignment of SIMD vectors
         if((gNB->frame_parms.N_RB_UL&1)==0) {
-
+           //ldx_add
+          printf("\n**************2********************\n");
           multadd_real_vector_complex_scalar(fdcl,
                                              ch,
                                              ul_ch-4,
@@ -410,6 +427,8 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
                                              8);
         }
         else {
+           //ldx_add
+          printf("\n**************3********************\n");
           multadd_real_vector_complex_scalar(fdclh,
                                              ch,
                                              ul_ch,
@@ -440,7 +459,8 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
     else { //pusch_dmrs_type2  |p_r,p_l,d,d,d,d,p_r,p_l,d,d,d,d|
 
       // Treat first DMRS specially (left edge)
-
+        //ldx_add
+        //printf("\n**************2.2********************\n");
         rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];
 
         ul_ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
@@ -523,10 +543,11 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
         ul_ch_128[0] = _mm_slli_epi16 (ul_ch_128[0], 2);
     }
 
-
+  
     // Convert to time domain
-
-    switch (gNB->frame_parms.ofdm_symbol_size) {
+  switch (gNB->frame_parms.ofdm_symbol_size)
+   // switch (gNB->frame_parms.ofdm_symbol_size*4) //ldx_add,频谱细化修改
+    {
         case 128:
           idft(IDFT_128,(int16_t*) &ul_ch_estimates[aarx][symbol_offset],
                  (int16_t*) ul_ch_estimates_time[aarx],
@@ -558,11 +579,19 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
           break;
 
         case 2048:
+        {
           idft(IDFT_2048,(int16_t*) &ul_ch_estimates[aarx][symbol_offset],
                  (int16_t*) ul_ch_estimates_time[aarx],
                  1);
+          //LOG_I(PHY, "*************before 0:%d,1:%d,2:%d,3:%d************\n", ul_ch_estimates_time_loc[aarx][0],ul_ch_estimates_time_loc[aarx][1],ul_ch_estimates_time_loc[aarx][2],ul_ch_estimates_time_loc[aarx][3]);
+          //printf("\n*************before 0:%d,1:%d,2:%d,3:%d************\n",ul_ch_estimates_time_loc[aarx][0],ul_ch_estimates_time_loc[aarx][1],ul_ch_estimates_time_loc[aarx][2],ul_ch_estimates_time_loc[aarx][3]);
+          idft(IDFT_8192,(int16_t*) &ul_ch_estimates[aarx][symbol_offset],
+                 (int16_t*) ul_ch_estimates_time_loc[aarx],
+                 1);//ldx_add,频谱细化
+          //LOG_I(PHY, "*************after 0:%d,1:%d,2:%d,3:%d************\n", ul_ch_estimates_time_loc[aarx][0],ul_ch_estimates_time_loc[aarx][1],ul_ch_estimates_time_loc[aarx][2],ul_ch_estimates_time_loc[aarx][3]);
+          //printf("\n*************after 0:%d,1:%d,2:%d,3:%d************\n",ul_ch_estimates_time_loc[aarx][0],ul_ch_estimates_time_loc[aarx][1],ul_ch_estimates_time_loc[aarx][2],ul_ch_estimates_time_loc[aarx][3]);
           break;
-
+        }
         case 4096:
           idft(IDFT_4096,(int16_t*) &ul_ch_estimates[aarx][symbol_offset],
                  (int16_t*) ul_ch_estimates_time[aarx],
@@ -581,7 +610,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
                  1);
           break;
       }
-
+      
   }
 
   // char filename[20];//LOG_M
@@ -592,7 +621,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
   //   LOG_M(filename,varname, rxptr[aa],100,1,1);
   // }
   music1d(rxptr, aoaptr);
-
+  //LOG_I(PHY, "end nr_pusch_channel_estimation\n");
   // FILE *aoa_get;
   // int aoa;
   // aoa_get = fopen("aoa.txt","rt");
