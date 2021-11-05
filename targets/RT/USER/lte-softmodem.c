@@ -336,6 +336,9 @@ void set_default_frame_parms(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
     //    downlink_frequency[CC_id][3] = downlink_frequency[CC_id][0];
     //printf("Downlink for CC_id %d frequency set to %u\n", CC_id, downlink_frequency[CC_id][0]);
     frame_parms[CC_id]->dl_CarrierFreq=downlink_frequency[CC_id][0];
+
+    //Delay Support
+    frame_parms[CC_id]->ntn_delay=0;
   }
 }
 
