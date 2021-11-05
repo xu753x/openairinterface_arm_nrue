@@ -1,0 +1,6 @@
+UE ID 0 RNTI 483d (1/1)
+UE 0: dlsch_rounds 44/1/0/0, dlsch_errors 0, average RSRP 0 (0 meas)
+UE 0: dlsch_total_bytes 308
+UE 0: ulsch_rounds 86/0/0/0, ulsch_DTX 0, ulsch_errors 0
+UE 0: ulsch_total_bytes_scheduled 8686, ulsch_total_bytes_received 8686
+UE 0: LCID 1: 3 bytes TX

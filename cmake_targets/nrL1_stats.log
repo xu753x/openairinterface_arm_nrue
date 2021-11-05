@@ -1,0 +1,16 @@
+ 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 0. 0. 0. 1. 0. 1. 1. 1. 1. 1. 1. 1. 1. 0.
+ 0. 0. 0. 0. 1. 0. 0. 0. 0. 1. 0. 0. 2. 0. 0. 1. 1. 1. 1. 1. 1. 1. 1. 2. 3.
+ 4.-1. 2. 1.-4. 4. 3. 1. 1. 1. 1. 1. 1. 0. 0. 0. 0. 0. 0. 0. 0. 0.-1.-1.-1.
+-1.-1.-1.-1. 0.-1.-1.-1.-1.-1.-1.-2.-1.-1.-1.-1.-1.-2.-1.-2.-2.-1.-2.-2.-1.
+-2.-1.-2.-2.-2.-2.
+max_I0 35 (rb 50), min_I0 27 (rb 54), avg I0 31
+PRACH I0 = 18.9 dB
+ULSCH RNTI c355: ulsch_power[0] 59,7 ulsch_noise_power[0] 32.1
+                  ulsch_power[1] 41.7, ulsch_noise_power[1] 31.4
+                 round_trials 38(0.0e+00):0(0.0e+00):0(0.0e+00):0, DTX 13, current_Qm 2, current_RI 1, total_bytes RX/SCHED 0/3749
+ULSCH RNTI 92d5: ulsch_power[0] 60,2 ulsch_noise_power[0] 31.8
+                  ulsch_power[1] 53.2, ulsch_noise_power[1] 31.9
+                 round_trials 25(0.0e+00):0(0.0e+00):0(0.0e+00):0, DTX 13, current_Qm 2, current_RI 1, total_bytes RX/SCHED 0/2436
+ULSCH RNTI 483d: ulsch_power[0] 51,1 ulsch_noise_power[0] 34.0
+                  ulsch_power[1] 55.7, ulsch_noise_power[1] 30.0
+                 round_trials 98(0.0e+00):0(0.0e+00):0(0.0e+00):0, DTX 0, current_Qm 2, current_RI 1, total_bytes RX/SCHED 0/9809
