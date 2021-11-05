@@ -95,9 +95,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
     else
     {
         // Use LLR processing buffer as temporary output buffer
-        p_llrOut = p_procBuf->llrProcBuf;
-        // Clear llrProcBuf
-        memset(p_llrOut,0, NR_LDPC_MAX_NUM_LLR*sizeof(int8_t));
+        p_llrOut = p_procBuf->llrOut;
     }
 
 
@@ -342,7 +340,6 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
         {
             nrLDPC_llr2bit(p_out, p_llrOut, numLLR);
         }
-
 #ifdef NR_LDPC_PROFILER_DETAIL
         stop_meas(&p_profiler->llr2bit);
 #endif

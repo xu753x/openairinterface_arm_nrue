@@ -104,6 +104,7 @@ typedef struct nrLDPC_procBuf {
     int8_t* bnProcBufRes; /**< Buffer for BN processing results */
     int8_t* llrRes; /**< Buffer for LLR results */
     int8_t* llrProcBuf; /**< LLR processing buffer */
+    int8_t* llrOut;
 } t_nrLDPC_procBuf;
 
 
