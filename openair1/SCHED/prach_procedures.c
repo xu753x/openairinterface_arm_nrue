@@ -48,6 +48,7 @@
 
 #include "intertask_interface.h"
 
+#define ENERGY_THD 450
 
 extern int oai_nfapi_rach_ind(nfapi_rach_indication_t *rach_ind);
 
@@ -56,7 +57,8 @@ void prach_procedures(PHY_VARS_eNB *eNB,
   uint16_t max_preamble[4],max_preamble_energy[4],max_preamble_delay[4],avg_preamble_energy[4];
   uint16_t i;
   int frame,subframe;
-
+  LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
+  int ntnd = fp->ntn_delay;
   if (br_flag==1) {
     subframe = eNB->proc.subframe_prach_br;
     frame = eNB->proc.frame_prach_br;
@@ -147,7 +149,7 @@ void prach_procedures(PHY_VARS_eNB *eNB,
     } */// ce_level
   } else {
     if ((eNB->prach_energy_counter == 100) &&
-        (max_preamble_energy[0] > eNB->measurements.prach_I0+eNB->prach_DTX_threshold)) {
+        (max_preamble_energy[0] > eNB->measurements.prach_I0+eNB->prach_DTX_threshold+ENERGY_THD)) {
       LOG_D(PHY,"[eNB %d/%d][RAPROC] Frame %d, subframe %d Initiating RA procedure with preamble %d, energy %d.%d dB, delay %d\n",
             eNB->Mod_id,
             eNB->CC_id,
@@ -168,7 +170,11 @@ void prach_procedures(PHY_VARS_eNB *eNB,
       eNB->preamble_list[0].preamble_rel8.tl.tag                = NFAPI_PREAMBLE_REL8_TAG;
       eNB->preamble_list[0].preamble_rel8.timing_advance        = max_preamble_delay[0];
       eNB->preamble_list[0].preamble_rel8.preamble              = max_preamble[0];
-      eNB->preamble_list[0].preamble_rel8.rnti                  = 1+subframe;  // note: fid is implicitly 0 here
+        if (subframe-(ntnd%10)<0) {
+                eNB->preamble_list[0].preamble_rel8.rnti = 1 + 10+subframe-(ntnd%10);
+        }else { eNB->preamble_list[0].preamble_rel8.rnti = 1 + subframe-(ntnd%10);
+        }
+        //LOG_I(PHY,"RA_RNTI=%d\n",eNB->preamble_list[0].preamble_rel8.rnti);
       eNB->preamble_list[0].preamble_rel13.rach_resource_type   = 0;
       eNB->preamble_list[0].instance_length                     = 0; //don't know exactly what this is
 
