@@ -673,6 +673,7 @@ typedef struct {
 	nfapi_uint16_tlv_t pb;
 	nfapi_uint16_tlv_t dl_cyclic_prefix_type;
 	nfapi_uint16_tlv_t ul_cyclic_prefix_type;
+	nfapi_uint16_tlv_t ntn_delay;
 } nfapi_subframe_config_t;
 
 #define NFAPI_SUBFRAME_CONFIG_DUPLEX_MODE_TAG 0x0001
@@ -681,6 +682,7 @@ typedef struct {
 #define NFAPI_SUBFRAME_CONFIG_DL_CYCLIC_PREFIX_TYPE_TAG 0x0004
 #define NFAPI_SUBFRAME_CONFIG_UL_CYCLIC_PREFIX_TYPE_TAG 0x0005
 #define NFAPI_SUBFRAME_CONFIG_NUMEROLOGY_INDEX_MU_TAG 0x0006
+#define NFAPI_SUBFRAME_CONFIG_DELAY_TAG 0x0007
 
 typedef struct {
 	nfapi_uint16_tlv_t dl_channel_bandwidth;

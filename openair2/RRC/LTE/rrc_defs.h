@@ -762,6 +762,7 @@ typedef struct {
   SRB_INFO                          SI;
   uint8_t                           *paging[MAX_MOBILES_PER_ENB];
   uint32_t                           sizeof_paging[MAX_MOBILES_PER_ENB];
+  int                               ntn_delay;
 } rrc_eNB_carrier_data_t;
 
 

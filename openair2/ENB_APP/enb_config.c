@@ -447,7 +447,6 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
         else
           RRC_CONFIGURATION_REQ (msg_p).eMBMS_M2_configured = 0;
 
-        // Parse optional physical parameters
         config_getlist( &CCsParamList,NULL,0,enbpath);
         LOG_I(RRC,"num component carriers %d \n",CCsParamList.numelt);
 
@@ -469,6 +468,25 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
             AssertFatal (ccparams_lte.tdd_config_s <= LTE_TDD_Config__specialSubframePatterns_ssp8,
                          "Failed to parse eNB configuration file %s, enb %u illegal tdd_config_s %d (should be 0-%d)!",
                          RC.config_file_name, i, ccparams_lte.tdd_config_s, LTE_TDD_Config__specialSubframePatterns_ssp8);
+
+        if (!ccparams_lte.ntn_orbit)
+              AssertFatal (0,
+                           "Failed to parse eNB configuration file %s, enb 1 define %s: LEO,GEO!\n",
+                           RC.config_file_name, ENB_CONFIG_STRING_DELAY_MODE_TYPE);
+             else if (strcmp(ccparams_lte.ntn_orbit, "LEO") == 0) {
+              RRC_CONFIGURATION_REQ (msg_p).ntn_orbit[j] = LEO;
+            } else  if (strcmp(ccparams_lte.ntn_orbit, "GEO") == 0) {
+              RRC_CONFIGURATION_REQ (msg_p).ntn_orbit[j] = GEO;
+
+              //Introduce no Asserstion for the monment. TEMP
+              if (ccparams_lte.ntn_delay) RRC_CONFIGURATION_REQ (msg_p).ntn_delay[j]=ccparams_lte.ntn_delay;
+
+            } else {
+              AssertFatal (0,
+                           "Failed to parse eNB configuration file %s, enb 1 unknown value \"%s\" for ntn_orbit choice: GEO or LEO !\n",
+                           RC.config_file_name, ccparams_lte.ntn_orbit);
+            }
+
 
             if (!ccparams_lte.prefix_type)
               AssertFatal (0,
@@ -1046,11 +1064,13 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                              "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for rach_raResponseWindowSize choice: 2,3,4,5,6,7,8,10!\n",
                              RC.config_file_name, i, ccparams_lte.rach_preambleTransMax);
 
+
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_macContentionResolutionTimer= (ccparams_lte.rach_macContentionResolutionTimer/8)-1;
+
 
               if ((ccparams_lte.rach_macContentionResolutionTimer<8) ||
                   (ccparams_lte.rach_macContentionResolutionTimer>64) ||
-                  ((ccparams_lte.rach_macContentionResolutionTimer&7)!=0))
+                  ((ccparams_lte.rach_macContentionResolutionTimer&7)!=0)) //Do Nothing for now
                 AssertFatal (0,
                              "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for rach_macContentionResolutionTimer choice: 8,16,...,56,64!\n",
                              RC.config_file_name, i, ccparams_lte.rach_preambleTransMax);
@@ -3128,7 +3148,7 @@ void configure_du_mac(int inst) {
                          (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
                          (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
                          (LTE_MBSFN_AreaInfoList_r9_t *) NULL,
-			 (LTE_MBSFNAreaConfiguration_r9_t*) NULL
+			 (LTE_MBSFNAreaConfiguration_r9_t*) NULL, carrier->ntn_delay
                         );
 }
 

@@ -1340,6 +1340,7 @@ typedef struct {
   BCCH_PDU BCCH_BR_pdu[20];
   BCCH_PDU BCCH_MBMS_pdu;
   uint8_t FeMBMS_flag;
+  int ntn_delay;
 } COMMON_channels_t;
 /*! \brief top level eNB MAC structure */
 typedef struct eNB_MAC_INST_s {

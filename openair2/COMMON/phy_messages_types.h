@@ -78,6 +78,7 @@ typedef struct PhyConfigurationReq_s {
   int32_t                 nb_antennas_rx[MAX_NUM_CCs];
   int32_t                 tx_gain[MAX_NUM_CCs];
   int32_t                 rx_gain[MAX_NUM_CCs];
+  int32_t		  ntn_delay[MAX_NUM_CCs];
 } PhyConfigurationReq;
 
 // UE: RRC -> PHY messages

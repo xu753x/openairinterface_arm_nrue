@@ -390,7 +390,8 @@ static void rrc_M2AP_init_MCCH(
                            (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
                            (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
                            (LTE_MBSFN_AreaInfoList_r9_t *) NULL,
-			   (LTE_MBSFNAreaConfiguration_r9_t*)(RC.rrc[enb_mod_idP]->carrier[CC_id].mcch_message)
+			   (LTE_MBSFNAreaConfiguration_r9_t*)(RC.rrc[enb_mod_idP]->carrier[CC_id].mcch_message),
+			   0 //carrier->ntn_delay
                         );
   }
   
@@ -718,7 +719,8 @@ static uint8_t rrc_M2AP_do_SIB1_MBMS_SIB13(
                         (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
                         (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
                         (LTE_MBSFN_AreaInfoList_r9_t *) NULL,
-			(LTE_MBSFNAreaConfiguration_r9_t*) NULL
+			(LTE_MBSFNAreaConfiguration_r9_t*) NULL,
+                        carrier->ntn_delay
                         );
   }
 
@@ -1001,7 +1003,7 @@ static uint8_t rrc_M2AP_do_SIB23_SIB2(
                         (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
                         (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
                         (LTE_MBSFN_AreaInfoList_r9_t *) NULL,
-			(LTE_MBSFNAreaConfiguration_r9_t*) NULL
+			(LTE_MBSFNAreaConfiguration_r9_t*) NULL, carrier->ntn_delay
                         );
   }
 
@@ -1174,7 +1176,7 @@ for( i=0; i < m2ap_setup_resp->num_mcch_config_per_mbsfn; i++){
                         (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
                         (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
                         (LTE_MBSFN_AreaInfoList_r9_t *) NULL,
-			(LTE_MBSFNAreaConfiguration_r9_t*) NULL
+			(LTE_MBSFNAreaConfiguration_r9_t*) NULL, carrier->ntn_delay
                         );
   }
 
@@ -1455,7 +1457,7 @@ static uint8_t rrc_M2AP_do_SIB23_SIB2_SIB13(
                         (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
                         (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
                         (LTE_MBSFN_AreaInfoList_r9_t *) NULL,
-			(LTE_MBSFNAreaConfiguration_r9_t*) NULL
+			(LTE_MBSFNAreaConfiguration_r9_t*) NULL, carrier->ntn_delay
                         );
   }
 

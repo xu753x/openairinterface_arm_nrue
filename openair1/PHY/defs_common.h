@@ -106,6 +106,9 @@ typedef enum {EXTENDED=1,NORMAL=0} lte_prefix_type_t;
 
 typedef enum {LOCALIZED=0,DISTRIBUTED=1} vrb_t;
 
+//Support for NTN Fixed and Dynamic Delay
+typedef enum {GEO=0,LEO=1} lte_delay_mode_t;
+
 /// Enumeration for parameter PHICH-Duration \ref PHICH_CONFIG_COMMON::phich_duration.
 typedef enum {
   normal=0,
@@ -683,6 +686,10 @@ typedef struct LTE_DL_FRAME_PARMS {
   struct NonMBSFN_SubframeConfig *non_mbsfn_SubframeConfig;
   /// for fair RR scheduler
   uint32_t ue_multiple_max;
+
+  /// for NTN Delay
+  lte_delay_mode_t  delay_mode;
+  int               ntn_delay;
 } LTE_DL_FRAME_PARMS;
 
 typedef enum {

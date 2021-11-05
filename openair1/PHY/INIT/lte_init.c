@@ -95,6 +95,8 @@ void phy_config_request(PHY_Config_t *phy_config) {
   int                 Ncp            = cfg->subframe_config.dl_cyclic_prefix_type.value;
   int                 p_eNB          = cfg->rf_config.tx_antenna_ports.value;
   uint32_t            dl_CarrierFreq = cfg->nfapi_config.earfcn.value;
+  int	 	      ntn_delay    = cfg->subframe_config.ntn_delay.value;
+  LOG_I(PHY,"DELAY NTN VALUE %d\n\n\n",ntn_delay);
   LOG_I(PHY,"Configuring MIB for instance %d, CCid %d : (band %d,N_RB_DL %d, N_RB_UL %d, Nid_cell %d,eNB_tx_antenna_ports %d,Ncp %d,DL freq %u,phich_config.resource %d, phich_config.duration %d)\n",
         Mod_id, CC_id, eutra_band, dl_Bandwidth, ul_Bandwidth, Nid_cell, p_eNB,Ncp,dl_CarrierFreq,
         cfg->phich_config.phich_resource.value,
@@ -127,7 +129,7 @@ void phy_config_request(PHY_Config_t *phy_config) {
   fp->ul_CarrierFreq = fp->dl_CarrierFreq - (get_uldl_offset (eutra_band) * 100000);
   fp->tdd_config = 0;
   fp->tdd_config_S = 0;
-
+  fp->ntn_delay=ntn_delay;
   if (fp->dl_CarrierFreq == fp->ul_CarrierFreq)
     fp->frame_type = TDD;
   else

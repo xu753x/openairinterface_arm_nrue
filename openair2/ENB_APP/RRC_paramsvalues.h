@@ -50,7 +50,7 @@
 #define ENB_CONFIG_STRING_NID_CELL                                      "Nid_cell"
 #define ENB_CONFIG_STRING_N_RB_DL                                       "N_RB_DL"
 #define ENB_CONFIG_STRING_CELL_MBSFN                                    "Nid_cell_mbsfn"
-
+#define ENB_CONFIG_STRING_NTN_DELAY                                   "ntn_delay"
 
 #define FRAMETYPE_OKVALUES                                      {"FDD","TDD"}
 #define FRAMETYPE_MODVALUES                                     { FDD, TDD} 
@@ -92,5 +92,6 @@
 #define UETIMER_N311_OKVALUES                                   {1,2,3,4,5,6,8,10}
 #define UETN311(A)                                              LTE_UE_TimersAndConstants__n311_ ## A
 #define UETIMER_N311_MODVALUES                                  { UETN311(n1), UETN311(n2),UETN311(n3),UETN311(n4),UETN311(n5),UETN311(n6),UETN311(n8),UETN311(n10)}
+
 
 #endif

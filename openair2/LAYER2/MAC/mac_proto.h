@@ -951,7 +951,7 @@ int rrc_mac_config_req_eNB(module_id_t module_idP,
                            struct LTE_NonMBSFN_SubframeConfig_r14 *nonMBSFN_SubframeConfig,
                            LTE_SystemInformationBlockType1_MBMS_r14_t   *sib1_mbms_r14_fembms,
                            LTE_MBSFN_AreaInfoList_r9_t *mbsfn_AreaInfoList_fembms,
-			   LTE_MBSFNAreaConfiguration_r9_t * mbms_AreaConfiguration
+			   LTE_MBSFNAreaConfiguration_r9_t * mbms_AreaConfiguration, int ntn_delay
                           );
 
 /** \brief RRC eNB Configuration primitive for PHY/MAC.  Allows configuration of PHY/MAC resources based on System Information (SI), RRCConnectionSetup and RRCConnectionReconfiguration messages.

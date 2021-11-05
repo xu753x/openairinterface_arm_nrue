@@ -231,7 +231,8 @@ void config_mib(int                 Mod_idP,
                 int                 p_eNBP,
                 uint32_t            dl_CarrierFreqP,
                 uint32_t            ul_CarrierFreqP,
-                uint32_t            pbch_repetitionP
+                uint32_t            pbch_repetitionP,
+		int 		    ntn_delay  //to Test
                ) {
   nfapi_config_request_t *cfg = &RC.mac[Mod_idP]->config[CC_idP];
   cfg->num_tlv=0;
@@ -243,6 +244,9 @@ void config_mib(int                 Mod_idP,
   cfg->num_tlv++;
   cfg->subframe_config.ul_cyclic_prefix_type.value = NcpP;
   cfg->subframe_config.ul_cyclic_prefix_type.tl.tag = NFAPI_SUBFRAME_CONFIG_UL_CYCLIC_PREFIX_TYPE_TAG;
+  cfg->num_tlv++;
+  cfg->subframe_config.ntn_delay.value = ntn_delay;
+  cfg->subframe_config.dl_cyclic_prefix_type.tl.tag = NFAPI_SUBFRAME_CONFIG_DELAY_TAG;
   cfg->num_tlv++;
   cfg->rf_config.dl_channel_bandwidth.value        = to_prb(dl_BandwidthP);
   cfg->rf_config.dl_channel_bandwidth.tl.tag = NFAPI_RF_CONFIG_DL_CHANNEL_BANDWIDTH_TAG;
@@ -288,6 +292,7 @@ void config_mib(int                 Mod_idP,
   LOG_I(MAC,
         "%s() NFAPI_CONFIG_REQUEST(num_tlv:%u) DL_BW:%u UL_BW:%u Ncp %d,p_eNB %d,earfcn %d,band %d,phich_resource %u phich_duration %u phich_power_offset %u PSS %d SSS %d PCI %d"
         " PBCH repetition %d"
+        " NTN Delay Value %d"
         "\n"
         ,__FUNCTION__
         ,cfg->num_tlv
@@ -303,6 +308,7 @@ void config_mib(int                 Mod_idP,
         ,cfg->sch_config.secondary_synchronization_signal_epre_eprers.value
         ,cfg->sch_config.physical_cell_id.value
         ,cfg->emtc_config.pbch_repetitions_enable_r13.value
+	,cfg->subframe_config.ntn_delay.value
        );
 }
 
@@ -778,7 +784,7 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
                            struct LTE_NonMBSFN_SubframeConfig_r14 *nonMBSFN_SubframeConfig,
                            LTE_SystemInformationBlockType1_MBMS_r14_t   *sib1_mbms_r14_fembms,
                            LTE_MBSFN_AreaInfoList_r9_t *mbsfn_AreaInfoList_fembms,
-   		           LTE_MBSFNAreaConfiguration_r9_t*mbms_AreaConfig
+		           LTE_MBSFNAreaConfiguration_r9_t*mbms_AreaConfig, int ntn_delay
                           ) {
   int i;
   int UE_id = -1;
@@ -798,6 +804,7 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
     RC.mac[Mod_idP]->common_channels[CC_idP].Ncp = Ncp;
     RC.mac[Mod_idP]->common_channels[CC_idP].eutra_band = eutra_band;
     RC.mac[Mod_idP]->common_channels[CC_idP].dl_CarrierFreq = dl_CarrierFreq;
+    RC.mac[Mod_idP]->common_channels[CC_idP].ntn_delay = ntn_delay;
     LOG_I(MAC,
           "Configuring MIB for instance %d, CCid %d : (band %d,N_RB_DL %d,Nid_cell %d,p %d,DL freq %u,phich_config.resource %d, phich_config.duration %d)\n",
           Mod_idP,
@@ -818,7 +825,8 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
                p_eNB,
                dl_CarrierFreq,
                ul_CarrierFreq,
-               pbch_repetition
+               pbch_repetition,
+	       ntn_delay //represent delay: Hardocoded to 10: WORKS.  ntn_delay set at rrc_mac_config_req_eNB: Check function call
               );
     mac_init_cell_params(Mod_idP,CC_idP);
 
