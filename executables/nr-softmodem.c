@@ -21,6 +21,14 @@
 
 
 #define _GNU_SOURCE             /* See feature_test_macros(7) */
+
+#include<stdio.h>
+#include<string.h>
+#include<stdlib.h>
+#include<unistd.h>
+#include<arpa/inet.h>
+#include<sys/socket.h>
+
 #include <sched.h>
 
 
@@ -658,6 +666,25 @@ void init_pdcp(void) {
 
 int main( int argc, char **argv )
 {
+
+  //创建套接字
+	int sock = socket(AF_INET, SOCK_STREAM, 0);
+
+	//服务器的ip为10.38.24.13，端口号4000
+	struct sockaddr_in serv_addr;
+	memset(&serv_addr, 0, sizeof(serv_addr));
+	serv_addr.sin_family = AF_INET;
+	serv_addr.sin_addr.s_addr = inet_addr("192.168.43.163");
+	serv_addr.sin_port = htons(4000);
+	
+  printf("--------------------------------------------------------------------------------------------------------------------------\n");
+  printf("oh no, not connected!\n");
+  printf("***************************************************************************************************************************\n");
+	//向服务器发送连接请求
+	connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
+  printf("%d\n", sock);
+  printf("yeah, connect!\n");
+
   int ru_id, CC_id = 0;
 
   start_background_system();
@@ -916,6 +943,8 @@ if(!IS_SOFTMODEM_NOS1)
 
 
   logClean();
+    //断开连接
+	close(sock);
   printf("Bye.\n");
   return 0;
 }
