@@ -71,7 +71,7 @@ int nr_est_timing_advance_pusch(PHY_VARS_gNB* gNB, int UE_id, float *distptr)
   int max_pos_loc=0;
   int max_val_loc=0; 
 
-  for (i = 0; i < (frame_parms->ofdm_symbol_size); i++)//本来应该乘以4
+  for (i = 0; i < (frame_parms->ofdm_symbol_size*4); i++)//本来应该乘以4
   {
     int temp = 0;
 

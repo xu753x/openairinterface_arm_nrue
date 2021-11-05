@@ -59,7 +59,7 @@ int aoas[INTERVAL];
 float dists[INTERVAL];
 extern uint8_t nfapi_mode;
 
-char buffer[25];
+//char buffer[25];
 
 void nr_set_ssb_first_subcarrier(nfapi_nr_config_request_scf_t *cfg, NR_DL_FRAME_PARMS *fp) {
 
@@ -727,8 +727,8 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
             printf("\n*****current angle is %.2fdegrees", aoa_sum/INTERVAL);
             printf("\n*****current distance is %.2fmeters\n", distance);
             
-            sprintf(buffer, "%.2f,%.2f", aoa_sum/INTERVAL, distance);
-            write(3, buffer, sizeof(buffer));
+            // sprintf(buffer, "%.2f,%.2f", aoa_sum/INTERVAL, distance);
+            // write(3, buffer, sizeof(buffer));
 
             // FILE *distance_save;
             // distance_save = fopen("distance_record.txt", "at");
