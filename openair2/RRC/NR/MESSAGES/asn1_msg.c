@@ -1251,6 +1251,7 @@ void fill_initial_SpCellConfig(rnti_t rnti,
 
   // configure Scheduling request
   // 40 slot period 
+  if (0){
   pucch_Config->schedulingRequestResourceToAddModList = calloc(1,sizeof(*pucch_Config->schedulingRequestResourceToAddModList));
   NR_SchedulingRequestResourceConfig_t *schedulingRequestResourceConfig = calloc(1,sizeof(*schedulingRequestResourceConfig));
   schedulingRequestResourceConfig->schedulingRequestResourceId = 1;
@@ -1266,6 +1267,7 @@ void fill_initial_SpCellConfig(rnti_t rnti,
   schedulingRequestResourceConfig->resource = calloc(1,sizeof(*schedulingRequestResourceConfig->resource));
   *schedulingRequestResourceConfig->resource = 0;
   ASN_SEQUENCE_ADD(&pucch_Config->schedulingRequestResourceToAddModList->list,schedulingRequestResourceConfig);
+  }
 
  pucch_Config->dl_DataToUL_ACK = calloc(1,sizeof(*pucch_Config->dl_DataToUL_ACK));
  long *delay[8];
@@ -1303,7 +1305,7 @@ void fill_initial_SpCellConfig(rnti_t rnti,
      else
        coreset->frequencyDomainResources.buf[1] = 0xff;
   } else {
-     coreset->frequencyDomainResources.buf[0] = 0xf0;
+     coreset->frequencyDomainResources.buf[0] = 0xff;
      coreset->frequencyDomainResources.buf[1] = 0x00;
   }
   coreset->frequencyDomainResources.buf[2] = 0;
@@ -1343,7 +1345,7 @@ void fill_initial_SpCellConfig(rnti_t rnti,
   ss2->monitoringSymbolsWithinSlot->buf[1]=0x0;
   ss2->nrofCandidates=calloc(1,sizeof(*ss2->nrofCandidates));
   ss2->nrofCandidates->aggregationLevel1 = NR_SearchSpace__nrofCandidates__aggregationLevel1_n0;
-  ss2->nrofCandidates->aggregationLevel2 = NR_SearchSpace__nrofCandidates__aggregationLevel2_n2;
+  ss2->nrofCandidates->aggregationLevel2 = NR_SearchSpace__nrofCandidates__aggregationLevel2_n4;
   ss2->nrofCandidates->aggregationLevel4 = NR_SearchSpace__nrofCandidates__aggregationLevel4_n1;
   ss2->nrofCandidates->aggregationLevel8 = NR_SearchSpace__nrofCandidates__aggregationLevel8_n0;
   ss2->nrofCandidates->aggregationLevel16 = NR_SearchSpace__nrofCandidates__aggregationLevel16_n0;

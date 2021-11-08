@@ -907,6 +907,8 @@ bool nr_UE_is_to_be_scheduled(module_id_t mod_id, int CC_id, int UE_id, frame_t 
         diff,
         has_data,
         sched_ctrl->SR);
+  /*if (high_inactivity && *high_innactivity_ues == 1)  return 0;   
+  if (*high_innactivity_ues == 0) (*high_innactivity_ues)++; */
   return has_data || sched_ctrl->SR || high_inactivity;
 }
 
@@ -1052,6 +1054,9 @@ void pf_ul(module_id_t module_id,
            uint8_t *rballoc_mask) {
 
   const int CC_id = 0;
+  /*int *high_innactivity_ues;
+  high_innactivity_ues = CALLOC(1,sizeof(int));
+  *high_innactivity_ues = 0;*/
   gNB_MAC_INST *nrmac = RC.nrmac[module_id];
   NR_ServingCellConfigCommon_t *scc = nrmac->common_channels[CC_id].ServingCellConfigCommon;
   NR_UE_info_t *UE_info = &nrmac->UE_info;
@@ -1401,7 +1406,7 @@ nr_pp_impl_ul nr_init_fr1_ulsch_preprocessor(module_id_t module_id, int CC_id)
   }
   return nr_fr1_ulsch_preprocessor;
 }
-
+int last_scheduled_ue = 1;
 void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
 {
   gNB_MAC_INST *nr_mac = RC.nrmac[module_id];
@@ -1428,6 +1433,9 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
   const NR_list_t *UE_list = &UE_info->list;
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
+    /*if (UE_id == last_scheduled_ue){
+      continue;
+    }*/
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     if (sched_ctrl->ul_failure == 1 && get_softmodem_params()->phy_test==0) continue;
 
@@ -1721,5 +1729,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
                        bwpid);
 
     memset(sched_pusch, 0, sizeof(*sched_pusch));
+    /*if (UE_id == 0 && UE_list->next[UE_id] < 0)last_scheduled_ue=1;
+    else last_scheduled_ue = !last_scheduled_ue;*/
   }
 }
