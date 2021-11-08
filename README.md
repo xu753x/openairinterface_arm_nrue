@@ -25,7 +25,7 @@
 
 # Guidelines: #
 
-* [Hardware and Software Requirements (**START HERE**)](https://www.astroa.net/)
+* [Hardware and Software Requirements (**START HERE**)](https://www.astroa.net/5g-ntn/markdown-docs/req)
 * [EPC](epc)
 * [FlexRAN](flexran)
 * [eNodeB](enb)
