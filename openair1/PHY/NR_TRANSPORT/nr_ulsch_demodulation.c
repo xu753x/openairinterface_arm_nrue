@@ -1160,8 +1160,7 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
                 uint8_t ulsch_id,
                 uint32_t frame,
                 uint8_t slot,
-                unsigned char harq_pid,
-                int *aoaptr)
+                unsigned char harq_pid)
 {
 
   uint8_t aarx, aatx;
@@ -1196,8 +1195,7 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
                                   symbol,
                                   ulsch_id,
                                   bwp_start_subcarrier,
-                                  rel15_ul,
-                                  aoaptr);
+                                  rel15_ul);
 
       nr_gnb_measurements(gNB, ulsch_id, harq_pid, symbol);
 

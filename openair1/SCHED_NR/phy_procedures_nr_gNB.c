@@ -51,11 +51,13 @@
 #include "intertask_interface.h"
 
 //#define DEBUG_RXDATA
-#define INTERVAL 20
+#define INTERVAL 200
 uint8_t SSB_Table[38] = {0, 2, 4, 6, 8, 10, 12, 14, 254, 254, 16, 18, 20, 22, 24, 26, 28, 30, 254, 254, 32, 34, 36, 38, 40, 42, 44, 46, 254, 254, 48, 50, 52, 54, 56, 58, 60, 62};
-int aoa = 0, lccount = 0;
-float dist = 0, aoa_sum = 0, dist_sum = 0;
-int aoas[INTERVAL];
+//int aoa = 0, lccount = 0;
+int lccount = 0;
+//float dist = 0, aoa_sum = 0, dist_sum = 0;
+float dist = 0, dist_sum = 0;
+//int aoas[INTERVAL];
 float dists[INTERVAL];
 extern uint8_t nfapi_mode;
 
@@ -680,7 +682,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
 
           VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_RX_PUSCH,1);
 	        start_meas(&gNB->rx_pusch_stats);
-          no_sig = nr_rx_pusch(gNB, ULSCH_id, frame_rx, slot_rx, harq_pid, &aoa);
+          no_sig = nr_rx_pusch(gNB, ULSCH_id, frame_rx, slot_rx, harq_pid);
           if (no_sig) {
             LOG_D(PHY, "PUSCH not detected in frame %d, slot %d\n", frame_rx, slot_rx);
             nr_fill_indication(gNB, frame_rx, slot_rx, ULSCH_id, harq_pid, 1, &dist);
@@ -710,7 +712,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
           /****************************AOA statistics************************************/
           if (lccount < INTERVAL)
           {
-            aoas[lccount] = aoa;
+            //aoas[lccount] = aoa;
             dists[lccount] = dist;
             lccount++;
           }
@@ -718,13 +720,13 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
           {
             for (int i = 0; i < INTERVAL; i++)
             {
-              aoa_sum += aoas[i];
+              //aoa_sum += aoas[i];
               dist_sum += dists[i];
             }
             float distance;
             distance=(1-0.22705)*dist_sum/INTERVAL+0.235872;
             printf("\n*****The positioning results is");
-            printf("\n*****current angle is %.2fdegrees", aoa_sum/INTERVAL);
+            //printf("\n*****current angle is %.2fdegrees", aoa_sum/INTERVAL);
             printf("\n*****current distance is %.2fmeters\n", distance);
             
             // sprintf(buffer, "%.2f,%.2f", aoa_sum/INTERVAL, distance);
@@ -749,7 +751,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
             // fclose(distance_save);
 
             lccount = 0;
-            aoa_sum = 0;
+            //aoa_sum = 0;
             dist_sum = 0;
           }
           /*******************************************************************************/

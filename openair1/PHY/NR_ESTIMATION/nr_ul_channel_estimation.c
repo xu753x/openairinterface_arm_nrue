@@ -45,8 +45,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
                                 unsigned char symbol,
                                 int ul_id,
                                 unsigned short bwp_start_subcarrier,
-                                nfapi_nr_pusch_pdu_t *pusch_pdu,
-                                int *aoaptr) {
+                                nfapi_nr_pusch_pdu_t *pusch_pdu) {
 
   int pilot[3280] __attribute__((aligned(16)));
   unsigned char aarx;
@@ -620,7 +619,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
   //   sprintf(varname,"rxdataF%d", aa);//LOG_M
   //   LOG_M(filename,varname, rxptr[aa],100,1,1);
   // }
-  music1d(rxptr, aoaptr);
+  //music1d(rxptr, aoaptr);
   //LOG_I(PHY, "end nr_pusch_channel_estimation\n");
   // FILE *aoa_get;
   // int aoa;
