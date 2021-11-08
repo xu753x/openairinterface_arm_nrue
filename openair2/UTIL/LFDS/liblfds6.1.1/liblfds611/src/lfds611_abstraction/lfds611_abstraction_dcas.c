@@ -117,7 +117,7 @@ static LFDS611_INLINE unsigned char lfds611_abstraction_dcas( volatile lfds611_a
 
 
 /****************************************************************************/
-#if ((defined __i686__ || defined __arm__) && __GNUC__ >= 4 && __GNUC_MINOR__ >= 1 && __GNUC_PATCHLEVEL__ >= 0)
+#if ((defined __i686__ || defined __arm__ || defined __aarch64__) && __GNUC__ >= 4 && __GNUC_MINOR__ >= 1 && __GNUC_PATCHLEVEL__ >= 0)
 
 /* TRD : any OS on x86 or ARM with GCC 4.1.0 or better
 

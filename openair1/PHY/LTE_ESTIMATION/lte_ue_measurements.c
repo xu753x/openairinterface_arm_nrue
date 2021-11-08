@@ -458,6 +458,7 @@ void conjch0_mult_ch1(int *ch0,
                       unsigned short nb_rb,
                       unsigned char output_shift0)
 {
+#if defined(__x86_64__) || defined(__i386__)
   //This function is used to compute multiplications in Hhermitian * H matrix
   unsigned short rb;
   __m128i *dl_ch0_128,*dl_ch1_128, *ch0conj_ch1_128, mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3;
@@ -494,6 +495,9 @@ void conjch0_mult_ch1(int *ch0,
   }
   _mm_empty();
   _m_empty();
+#elif defined(__arm__) || defined(__aarch64__)
+
+#endif
 }
 
 void construct_HhH_elements(int *ch0conj_ch0, //00_00
@@ -528,6 +532,7 @@ void construct_HhH_elements(int *ch0conj_ch0, //00_00
   after_mf_10_128 = (__m128i *)after_mf_10;
   after_mf_11_128 = (__m128i *)after_mf_11;
 
+#if defined(__x86_64__) || defined(__i386__)
   for (rb=0; rb<3*nb_rb; rb++) {
 
     after_mf_00_128[0] =_mm_adds_epi16(ch0conj_ch0_128[0],ch3conj_ch3_128[0]);// _mm_adds_epi32(ch0conj_ch0_128[0], ch3conj_ch3_128[0]); //00_00 + 10_10
@@ -567,6 +572,9 @@ void construct_HhH_elements(int *ch0conj_ch0, //00_00
   }
   _mm_empty();
   _m_empty();
+#elif defined(__arm__) || defined(__aarch64__)
+
+#endif
 }
 
 
@@ -580,6 +588,7 @@ void squared_matrix_element(int32_t *Hh_h_00,
   Hh_h_00_128 = (__m128i *)Hh_h_00;
   Hh_h_00_sq_128 = (__m128i *)Hh_h_00_sq;
 
+#if defined(__x86_64__) || defined(__i386__)
   for (rb=0; rb<3*nb_rb; rb++) {
 
     Hh_h_00_sq_128[0] = _mm_madd_epi16(Hh_h_00_128[0],Hh_h_00_128[0]);
@@ -595,6 +604,9 @@ void squared_matrix_element(int32_t *Hh_h_00,
   }
   _mm_empty();
   _m_empty();
+#elif defined(__arm__) || defined(__aarch64__)
+
+#endif
 }
 
 
@@ -618,6 +630,7 @@ void det_HhH(int32_t *after_mf_00,
 
   det_fin_128 = (__m128i *)det_fin;
 
+#if defined(__x86_64__) || defined(__i386__)
   for (rb=0; rb<3*nb_rb; rb++) {
 
     ad_re_128 = _mm_madd_epi16(after_mf_00_128[0],after_mf_11_128[0]);
@@ -644,6 +657,9 @@ void det_HhH(int32_t *after_mf_00,
   }
   _mm_empty();
   _m_empty();
+#elif defined(__arm__) || defined(__aarch64__)
+
+#endif
 }
 
 void numer(int32_t *Hh_h_00_sq,
@@ -665,6 +681,7 @@ void numer(int32_t *Hh_h_00_sq,
 
   num_fin_128 = (__m128i *)num_fin;
 
+#if defined(__x86_64__) || defined(__i386__)
   for (rb=0; rb<3*nb_rb; rb++) {
 
     sq_a_plus_sq_d_128 = _mm_add_epi32(h_h_00_sq_128[0],h_h_11_sq_128[0]);
@@ -690,6 +707,9 @@ void numer(int32_t *Hh_h_00_sq,
   }
   _mm_empty();
   _m_empty();
+#elif defined(__arm__) || defined(__aarch64__)
+
+#endif
 }
 
 void dlsch_channel_level_TM34_meas(int *ch00,
@@ -1019,7 +1039,7 @@ void lte_ue_measurements(PHY_VARS_UE *ue,
   unsigned int limit,subband;
 #if defined(__x86_64__) || defined(__i386__)
   __m128i *dl_ch0_128,*dl_ch1_128;
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
   int16x8_t *dl_ch0_128, *dl_ch1_128;
 #endif
   int *dl_ch0,*dl_ch1;
@@ -1218,7 +1238,7 @@ void lte_ue_measurements(PHY_VARS_UE *ue,
 
         dl_ch0_128    = (__m128i *)&ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id][aarx][4];
         dl_ch1_128    = (__m128i *)&ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id][2+aarx][4];
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
         int32x4_t pmi128_re,pmi128_im,mmtmpPMI0,mmtmpPMI1,mmtmpPMI0b,mmtmpPMI1b;
 
         dl_ch0_128    = (int16x8_t *)&ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id][aarx][4];
@@ -1233,7 +1253,7 @@ void lte_ue_measurements(PHY_VARS_UE *ue,
 
           pmi128_re = _mm_xor_si128(pmi128_re,pmi128_re);
           pmi128_im = _mm_xor_si128(pmi128_im,pmi128_im);
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
 
           pmi128_re = vdupq_n_s32(0);
           pmi128_im = vdupq_n_s32(0);
@@ -1291,7 +1311,7 @@ void lte_ue_measurements(PHY_VARS_UE *ue,
             pmi128_im = _mm_add_epi32(pmi128_im,mmtmpPMI1);
             //print_ints(" pmi128_im 1 ",&pmi128_im);*/
 
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
 
             mmtmpPMI0 = vmull_s16(((int16x4_t*)dl_ch0_128)[0], ((int16x4_t*)dl_ch1_128)[0]);
             mmtmpPMI1 = vmull_s16(((int16x4_t*)dl_ch0_128)[1], ((int16x4_t*)dl_ch1_128)[1]);

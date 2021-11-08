@@ -359,7 +359,7 @@ void pdcch_channel_level(int32_t **dl_ch_estimates_ext,
 #if defined(__x86_64__) || defined(__i386__)
   __m128i *dl_ch128;
   __m128i avg128P;
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
   int16x8_t *dl_ch128;
   int32x4_t *avg128P;
 #else
@@ -373,9 +373,9 @@ void pdcch_channel_level(int32_t **dl_ch_estimates_ext,
 #if defined(__x86_64__) || defined(__i386__)
       avg128P = _mm_setzero_si128();
       dl_ch128=(__m128i *)&dl_ch_estimates_ext[(aatx<<1)+aarx][0];
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
      dl_ch128=&dl_ch_estimates_ext[(aatx<<1)+aarx][0];
-#error __arm__ not yet implemented, cannot build __FILE__
+//#error __arm__ not yet implemented, cannot build __FILE__
 #else
       dl_ch128=&dl_ch_estimates_ext[(aatx<<1)+aarx][0];
 #error Unsupported CPU architecture, cannot build __FILE__
@@ -386,7 +386,7 @@ void pdcch_channel_level(int32_t **dl_ch_estimates_ext,
         avg128P = _mm_add_epi32(avg128P,_mm_madd_epi16(dl_ch128[0],dl_ch128[0]));
         avg128P = _mm_add_epi32(avg128P,_mm_madd_epi16(dl_ch128[1],dl_ch128[1]));
         avg128P = _mm_add_epi32(avg128P,_mm_madd_epi16(dl_ch128[2],dl_ch128[2]));
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
 #else
 #error Unsupported CPU architecture, cannot build __FILE__
 #endif
@@ -430,7 +430,7 @@ void pdcch_detection_mrc_i(LTE_DL_FRAME_PARMS *frame_parms,
 
 #if defined(__x86_64__) || defined(__i386__)
   __m128i *rxdataF_comp128_0,*rxdataF_comp128_1,*rxdataF_comp128_i0,*rxdataF_comp128_i1,*rho128_0,*rho128_1,*rho128_i0,*rho128_i1;
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
   int16x8_t *rxdataF_comp128_0,*rxdataF_comp128_1,*rxdataF_comp128_i0,*rxdataF_comp128_i1,*rho128_0,*rho128_1,*rho128_i0,*rho128_i1;
 #else
 #error Unsupported CPU architecture, cannot build __FILE__
@@ -444,7 +444,7 @@ void pdcch_detection_mrc_i(LTE_DL_FRAME_PARMS *frame_parms,
 #if defined(__x86_64__) || defined(__i386__)
       rxdataF_comp128_0   = (__m128i *)&rxdataF_comp[(aatx<<1)][symbol*frame_parms->N_RB_DL*12];
       rxdataF_comp128_1   = (__m128i *)&rxdataF_comp[(aatx<<1)+1][symbol*frame_parms->N_RB_DL*12];
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
       rxdataF_comp128_0   = (int16x8_t *)&rxdataF_comp[(aatx<<1)][symbol*frame_parms->N_RB_DL*12];
       rxdataF_comp128_1   = (int16x8_t *)&rxdataF_comp[(aatx<<1)+1][symbol*frame_parms->N_RB_DL*12];
 #else

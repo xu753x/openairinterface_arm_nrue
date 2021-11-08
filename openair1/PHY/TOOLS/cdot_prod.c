@@ -113,7 +113,7 @@ int32_t dot_product(int16_t *x,
  
   return(result);
 
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
   int16x4_t *x_128=(int16x4_t*)x;
   int16x4_t *y_128=(int16x4_t*)y;
   int32x4_t tmp_re,tmp_im;
@@ -233,7 +233,7 @@ int64_t dot_product64(int16_t *x,
   _m_empty();
  
   return(result);
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
   int16x4_t *x_128=(int16x4_t*)x;
   int16x4_t *y_128=(int16x4_t*)y;
   int32x4_t tmp_re,tmp_im;
@@ -249,17 +249,17 @@ int64_t dot_product64(int16_t *x,
 
   for (n=0; n<(N>>2); n++) {
 
-    tmp_re  = vmull_s16(*x_128++, *y_128++);
+    tmp_re  = vmull_s16(x_128[0], y_128[0]);
     //tmp_re = [Re(x[0])Re(y[0]) Im(x[0])Im(y[0]) Re(x[1])Re(y[1]) Im(x[1])Im(y[1])] 
-    tmp_re1 = vmull_s16(*x_128++, *y_128++);
+    tmp_re1 = vmull_s16(x_128[1], y_128[1]);
     //tmp_re1 = [Re(x1[1])Re(x2[1]) Im(x1[1])Im(x2[1]) Re(x1[1])Re(x2[2]) Im(x1[1])Im(x2[2])] 
     tmp_re  = vcombine_s32(vpadd_s32(vget_low_s32(tmp_re),vget_high_s32(tmp_re)),
                            vpadd_s32(vget_low_s32(tmp_re1),vget_high_s32(tmp_re1)));
     //tmp_re = [Re(ch[0])Re(rx[0])+Im(ch[0])Im(ch[0]) Re(ch[1])Re(rx[1])+Im(ch[1])Im(ch[1]) Re(ch[2])Re(rx[2])+Im(ch[2]) Im(ch[2]) Re(ch[3])Re(rx[3])+Im(ch[3])Im(ch[3])] 
 
-    tmp_im  = vmull_s16(vrev32_s16(vmul_s16(*x_128++,*(int16x4_t*)conjug)),*y_128++);
+    tmp_im  = vmull_s16(vrev32_s16(vmul_s16(x_128[0],*(int16x4_t*)conjug)),y_128[0]);
     //tmp_im = [-Im(ch[0])Re(rx[0]) Re(ch[0])Im(rx[0]) -Im(ch[1])Re(rx[1]) Re(ch[1])Im(rx[1])]
-    tmp_im1 = vmull_s16(vrev32_s16(vmul_s16(*x_128++,*(int16x4_t*)conjug)),*y_128++);
+    tmp_im1 = vmull_s16(vrev32_s16(vmul_s16(x_128[1],*(int16x4_t*)conjug)),y_128[1]);
     //tmp_im1 = [-Im(ch[2])Re(rx[2]) Re(ch[2])Im(rx[2]) -Im(ch[3])Re(rx[3]) Re(ch[3])Im(rx[3])]
     tmp_im  = vcombine_s32(vpadd_s32(vget_low_s32(tmp_im),vget_high_s32(tmp_im)),
                            vpadd_s32(vget_low_s32(tmp_im1),vget_high_s32(tmp_im1)));
@@ -267,6 +267,8 @@ int64_t dot_product64(int16_t *x,
 
     re_cumul = vqaddq_s32(re_cumul,vqshlq_s32(tmp_re,shift));
     im_cumul = vqaddq_s32(im_cumul,vqshlq_s32(tmp_im,shift));
+    x_128 += 2;
+    y_128 += 2;
   }
   
   re_cumul2 = vpadd_s32(vget_low_s32(re_cumul),vget_high_s32(re_cumul));

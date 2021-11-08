@@ -42,6 +42,7 @@
 uint16_t decodeSmallBlock(int8_t *in, uint8_t len){
 	uint16_t out = 0;
 
+#if defined(__x86_64__) || defined(__i386__)
 	AssertFatal(len >= 3 && len <= 11, "[decodeSmallBlock] Message Length = %d (Small Block Coding is only defined for input lengths 3 to 11)", len);
 
 	if(len<7) {
@@ -151,6 +152,8 @@ uint16_t decodeSmallBlock(int8_t *in, uint8_t len){
 #endif
 
 	}
+#elif defined(__arm__) || defined(__aarch64__)
 
+#endif
 	return out;
 }

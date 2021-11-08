@@ -58,7 +58,7 @@ struct treillis {
   int exit_state;
 }  __attribute__ ((aligned(64)));
 
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
 
 struct treillis {
   union {
@@ -182,12 +182,12 @@ char interleave_compact_byte(short *base_interleaver,unsigned char *input, unsig
                                        0b01000000,
                                        0b10000000);
 #endif
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
   uint8x16_t *i_128=(uint8x16_t *)input, *o_128=(uint8x16_t *)expandInput;
   uint8x16_t tmp1,tmp2;
   uint16x8_t tmp3;
   uint32x4_t tmp4;
-  uint8x16_t and_tmp;
+  //uint8x16_t and_tmp;
   uint8x16_t BIT_MASK = {       0b10000000,
                                 0b01000000,
                                 0b00100000,
@@ -315,7 +315,7 @@ char interleave_compact_byte(short *base_interleaver,unsigned char *input, unsig
     //print_bytes2("out",(uint8_t*)(o_256+7));
     o_256+=8;
 #endif
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
     tmp1=vld1q_u8((uint8_t *)i_128);
     //print_bytes("tmp1:",(uint8_t*)&tmp1);
     uint8x16x2_t temp1 =  vzipq_u8(tmp1,tmp1);
@@ -379,7 +379,7 @@ char interleave_compact_byte(short *base_interleaver,unsigned char *input, unsig
   __m256i tmp={0};
   uint32_t *systematic2_ptr=(uint32_t *) output;
 #endif
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
   uint8x16_t tmp;
   const uint8_t __attribute__ ((aligned (16))) _Powers[16]=
   { 1, 2, 4, 8, 16, 32, 64, 128, 1, 2, 4, 8, 16, 32, 64, 128 };
@@ -448,7 +448,7 @@ char interleave_compact_byte(short *base_interleaver,unsigned char *input, unsig
     tmp=_mm256_insert_epi8(tmp,expandInput[*ptr_intl++],24+0);
     *systematic2_ptr++=(unsigned int)_mm256_movemask_epi8(tmp);
 #endif
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
     tmp=vsetq_lane_u8(expandInput[*ptr_intl++],tmp,7);
     tmp=vsetq_lane_u8(expandInput[*ptr_intl++],tmp,6);
     tmp=vsetq_lane_u8(expandInput[*ptr_intl++],tmp,5);
@@ -514,7 +514,7 @@ void threegpplte_turbo_encoder_sse(unsigned char *input,
   interleave_compact_byte(base_interleaver,input,systematic2,input_length_bytes);
 #if defined(__x86_64__) || defined(__i386__)
   __m64 *ptr_output=(__m64 *) output;
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
   uint8x8_t *ptr_output=(uint8x8_t *)output;
 #endif
   unsigned char cur_s1, cur_s2;
@@ -533,7 +533,7 @@ void threegpplte_turbo_encoder_sse(unsigned char *input,
       */
       *ptr_output++ = _mm_add_pi8(all_treillis[state0][cur_s1].systematic_andp1_64[code_rate],
                                   all_treillis[state1][cur_s2].parity2_64[code_rate]);
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
       *ptr_output++ = vadd_u8(all_treillis[state0][cur_s1].systematic_andp1_64[code_rate],
                               all_treillis[state0][cur_s1].parity2_64[code_rate]);
 #endif

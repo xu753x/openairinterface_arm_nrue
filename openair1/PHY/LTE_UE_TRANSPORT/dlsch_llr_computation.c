@@ -1021,6 +1021,7 @@ void dlsch_16qam_llr_SIC (LTE_DL_FRAME_PARMS *frame_parms,
     len>>=2;  // length in quad words (4 REs)
     len+=(len_mod4==0 ? 0 : 1);
 
+#if defined(__x86_64__) || defined(__i386__)
     for (i=0; i<len; i++) {
 
 
@@ -1048,6 +1049,9 @@ void dlsch_16qam_llr_SIC (LTE_DL_FRAME_PARMS *frame_parms,
   }
   _mm_empty();
   _m_empty();
+#elif defined(__arm__) || defined(__aarch64__)
+
+#endif
 }
 }
 
@@ -1139,7 +1143,7 @@ void qam64_llr(int16_t *stream0_in,
   __m128i *rxF_128 = (__m128i*)stream0_in;
   __m128i *ch_mag_128 = (__m128i*)chan_magn;
   __m128i *ch_magb_128 = (__m128i*)chan_magn_b;
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
   int16x8_t *rxF_128 = (int16x8_t*)stream0_in;
   int16x8_t *ch_mag_128 = (int16x8_t*)chan_magn;
   int16x8_t *ch_magb_128 = (int16x8_t*)chan_magn_b;
@@ -1325,7 +1329,7 @@ void dlsch_64qam_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
     len2+=(len_mod4?0:1);
 
 
-
+#if defined(__x86_64__) || defined(__i386__)
     for (i=0; i<len2; i++) {
 
       __m128i *x1 = (__m128i*)rxF;
@@ -1390,6 +1394,9 @@ void dlsch_64qam_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
 
   _mm_empty();
   _m_empty();
+#elif defined(__arm__) || defined(__aarch64__)
+
+#endif
 
   }
 }

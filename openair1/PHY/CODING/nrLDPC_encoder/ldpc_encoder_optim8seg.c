@@ -67,6 +67,29 @@ int nrLDPC_encod(unsigned char **test_input,unsigned char **channel_input,int Zc
   masks[5] = _mm256_set1_epi8(0x20);
   masks[6] = _mm256_set1_epi8(0x40);
   masks[7] = _mm256_set1_epi8(0x80);
+#elif defined(__arm__) || defined(__aarch64__)
+  int64x2_t andmask[2];
+  andmask[0] = vdupq_n_s64 (0x0102040810204080);  // every 8 bits -> 8 bytes, pattern repeats.
+  andmask[1] = vdupq_n_s64 (0x0102040810204080);
+  int8x16_t zero256   = vdupq_n_s8(0);
+  int8x16_t masks[16];
+  register int8x16_t c256[2];
+  masks[0] = vdupq_n_s8 (0x1);
+  masks[1] = vdupq_n_s8 (0x1);
+  masks[2] = vdupq_n_s8(0x2);
+  masks[3] = vdupq_n_s8(0x2);
+  masks[4] = vdupq_n_s8(0x4);
+  masks[5] = vdupq_n_s8(0x4);
+  masks[6] = vdupq_n_s8(0x8);
+  masks[7] = vdupq_n_s8(0x8);
+  masks[8] = vdupq_n_s8(0x10);
+  masks[9] = vdupq_n_s8(0x10);
+  masks[10] = vdupq_n_s8(0x20);
+  masks[11] = vdupq_n_s8(0x20);
+  masks[12] = vdupq_n_s8(0x40);
+  masks[13] = vdupq_n_s8(0x40);
+  masks[14] = vdupq_n_s8(0x80);
+  masks[15] = vdupq_n_s8(0x80);
 #endif
 
   AssertFatal((impp->n_segments>0&&impp->n_segments<=8),"0 < n_segments %d <= 8\n",impp->n_segments);
@@ -141,8 +164,31 @@ int nrLDPC_encod(unsigned char **test_input,unsigned char **channel_input,int Zc
       c[i] |= (temp << j);
     }
   }
-#else
-  AssertFatal(1==0,"Need AVX2 for this\n");
+#elif defined(__arm__) || defined(__aarch64__)
+  uint32_t test_data;
+  for (i=0; i<block_length>>5; i++) {
+    //c256 = _mm256_and_si256(_mm256_cmpeq_epi8(_mm256_andnot_si256(_mm256_shuffle_epi8(_mm256_set1_epi32(((uint32_t*)test_input[0])[i]), shufmask),andmask),zero256),masks[0]);
+    test_data = ((uint32_t*)test_input[0])[i];
+    c256[0] = vandq_s8((int8x16_t)vceqq_s8(vbicq_s8((int8x16_t)andmask[0],vcombine_s8(vtbl1_s8((int8x8_t)vdup_n_s32(test_data), vdup_n_s8(0)),vtbl1_s8((int8x8_t)vdup_n_s32(test_data), vdup_n_s8(1)))),zero256),masks[0]);
+    c256[1] = vandq_s8((int8x16_t)vceqq_s8(vbicq_s8((int8x16_t)andmask[1],vcombine_s8(vtbl1_s8((int8x8_t)vdup_n_s32(test_data), vdup_n_s8(2)),vtbl1_s8((int8x8_t)vdup_n_s32(test_data), vdup_n_s8(3)))),zero256),masks[1]);
+
+    for (j=1; j<impp->n_segments; j++) {
+      test_data = ((uint32_t*)test_input[j])[i];
+      c256[0] = vorrq_s8(vandq_s8((int8x16_t)vceqq_s8(vbicq_s8((int8x16_t)andmask[0],vcombine_s8(vtbl1_s8((int8x8_t)vdup_n_s32(test_data), vdup_n_s8(0)),vtbl1_s8((int8x8_t)vdup_n_s32(test_data), vdup_n_s8(1)))),zero256),masks[j*2]),c256[0]);
+      c256[1] = vorrq_s8(vandq_s8((int8x16_t)vceqq_s8(vbicq_s8((int8x16_t)andmask[1],vcombine_s8(vtbl1_s8((int8x8_t)vdup_n_s32(test_data), vdup_n_s8(2)),vtbl1_s8((int8x8_t)vdup_n_s32(test_data), vdup_n_s8(3)))),zero256),masks[j*2+1]),c256[1]);
+    }
+
+    ((int8x16_t *)c)[i*2] = c256[0];
+    ((int8x16_t *)c)[i*2+1] = c256[1];
+  }
+  for (i=(block_length>>5)<<5;i<block_length;i++) {
+    for (j=0; j<impp->n_segments; j++) {
+
+      temp = (test_input[j][i/8]&(128>>(i&7)))>>(7-(i&7));
+      //printf("c(%d,%d)=%d\n",j,i,temp);
+      c[i] |= (temp << j);
+    }
+  }
 #endif
 #endif
 
@@ -214,8 +260,37 @@ int nrLDPC_encod(unsigned char **test_input,unsigned char **channel_input,int Zc
 	channel_input[j][block_length-2*Zc+i] = (d[i]>>j)&1;
     }
 
-#else
-    AssertFatal(1==0,"Need AVX2 for now\n");
+#elif defined(__arm__) || defined(__aarch64__)
+  if ((((2*Zc)&31) == 0) && (((block_length-(2*Zc))&31) == 0)) {
+    //AssertFatal(((2*Zc)&31) == 0,"2*Zc needs to be a multiple of 32 for now\n");
+    //AssertFatal(((block_length-(2*Zc))&31) == 0,"block_length-(2*Zc) needs to be a multiple of 32 for now\n");
+    uint32_t l1 = (block_length-(2*Zc))>>5;
+    uint32_t l2 = ((nrows-no_punctured_columns) * Zc-removed_bit)>>5;
+    int16x8_t *c256p = (int16x8_t *)&c[2*Zc];
+    int16x8_t *d256p = (int16x8_t *)&d[0];
+    //  if (((block_length-(2*Zc))&31)>0) l1++;
+    for (i=0;i<l1;i++)
+    	for (j=0;j<impp->n_segments;j++){
+      ((int16x8_t *)channel_input[j])[i*2] = vandq_s16(vqshlq_s16(c256p[i*2],vdupq_n_s16(-j)),(int16x8_t)masks[0]);
+      ((int16x8_t *)channel_input[j])[i*2+1] = vandq_s16(vqshlq_s16(c256p[i*2+1],vdupq_n_s16(-j)),(int16x8_t)masks[1]);
+      }
+    //  if ((((nrows-no_punctured_columns) * Zc-removed_bit)&31)>0) l2++;
+
+    for (i1=0;i1<l2;i1++,i++)
+    	for (j=0;j<impp->n_segments;j++){
+      ((int16x8_t *)channel_input[j])[i*2] = vandq_s16(vqshlq_s16(d256p[i1*2],vdupq_n_s16(-j)),(int16x8_t)masks[0]);
+      ((int16x8_t *)channel_input[j])[i*2+1] = vandq_s16(vqshlq_s16(d256p[i1*2+1],vdupq_n_s16(-j)),(int16x8_t)masks[1]);
+      }
+  }
+  else {
+    // do non-SIMD version
+    for (i=0;i<(block_length-2*Zc);i++)
+      for (j=0; j<impp->n_segments; j++)
+	channel_input[j][i] = (c[2*Zc+i]>>j)&1;
+    for (i=0;i<((nrows-no_punctured_columns) * Zc-removed_bit);i++)
+      for (j=0; j<impp->n_segments; j++)
+	channel_input[j][block_length-2*Zc+i] = (d[i]>>j)&1;
+    }
 #endif
 
   if(impp->toutput != NULL) stop_meas(impp->toutput);

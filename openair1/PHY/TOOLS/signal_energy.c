@@ -174,7 +174,7 @@ int32_t signal_energy_nodc(int32_t *input,uint32_t length)
   return temp;
 }
 
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
 
 int32_t signal_energy(int32_t *input,uint32_t length)
 {
@@ -322,9 +322,9 @@ main(int argc,char **argv)
 int32_t signal_power(int32_t *input, uint32_t length)
 {
 
+  int32_t temp = 0;
+#if 0
   uint32_t i;
-  int32_t temp;
-
   __m128i in, in_clp, i16_min;
   __m128  num0, num1;
   __m128  recp1;
@@ -343,16 +343,19 @@ int32_t signal_power(int32_t *input, uint32_t length)
   //Ave
   num1 = _mm_dp_ps(num0, recp1, 0xFF);
   temp = _mm_cvtsi128_si32(_mm_cvttps_epi32(num1));
+#else
 
+#endif
   return temp;
 }
 
 int32_t interference_power(int32_t *input, uint32_t length)
 {
 
-  uint32_t i;
-  int32_t temp;
+  int32_t temp = 0;
 
+#if 0
+  uint32_t i;
   __m128i in, in_clp, i16_min;
   __m128i num0, num1, num2, num3;
   __m128  num4, num5, num6;
@@ -377,7 +380,9 @@ int32_t interference_power(int32_t *input, uint32_t length)
   //Interference ve
   num6 = _mm_mul_ps(num5, recp1); //Cn / n
   temp = _mm_cvtsi128_si32(_mm_cvttps_epi32(num6));
+#else
 
+#endif
   return temp;
 }
 

@@ -28,6 +28,7 @@ int add_vector16(short *x,
                  short *z,
                  unsigned int N)
 {
+#if defined(__x86_64__) || defined(__i386__)
   unsigned int i;                 // loop counter
 
   __m128i *x_128;
@@ -87,7 +88,9 @@ int add_vector16(short *x,
 
   _mm_empty();
   _m_empty();
+#elif defined(__arm__) || defined(__aarch64__)
 
+#endif
   return(0);
 }
 
@@ -105,6 +108,7 @@ int add_vector16_64(short *x,
                     short *z,
                     unsigned int N)
 {
+#if defined(__x86_64__) || defined(__i386__)
   unsigned int i;                 // loop counter
 
   __m64 *x_64;
@@ -133,6 +137,9 @@ int add_vector16_64(short *x,
 
   _mm_empty();
   _m_empty();
+#elif defined(__arm__) || defined(__aarch64__)
+
+#endif
   return(0);
 }
 
@@ -141,6 +148,7 @@ int add_cpx_vector32(short *x,
                      short *z,
                      unsigned int N)
 {
+#if defined(__x86_64__) || defined(__i386__)
   unsigned int i;                 // loop counter
 
   __m128i *x_128;
@@ -167,6 +175,9 @@ int add_cpx_vector32(short *x,
 
   _mm_empty();
   _m_empty();
+#elif defined(__arm__) || defined(__aarch64__)
+
+#endif
   return(0);
 }
 
@@ -175,6 +186,7 @@ int32_t sub_cpx_vector16(int16_t *x,
                      int16_t *z,
                      uint32_t N)
 {
+#if defined(__x86_64__) || defined(__i386__)
   unsigned int i;                 // loop counter
 
   __m128i *x_128;
@@ -196,6 +208,9 @@ int32_t sub_cpx_vector16(int16_t *x,
 
   _mm_empty();
   _m_empty();
+#elif defined(__arm__) || defined(__aarch64__)
+
+#endif
   return(0);
 }
 
@@ -206,6 +221,7 @@ int add_real_vector64(short *x,
                       short *z,
                       unsigned int N)
 {
+#if defined(__x86_64__) || defined(__i386__)
   unsigned int i;                 // loop counter
 
   __m128i *x_128;
@@ -231,6 +247,9 @@ int add_real_vector64(short *x,
 
   _mm_empty();
   _m_empty();
+#elif defined(__arm__) || defined(__aarch64__)
+
+#endif
   return(0);
 }
 
@@ -239,6 +258,7 @@ int sub_real_vector64(short *x,
                       short *z,
                       unsigned int N)
 {
+#if defined(__x86_64__) || defined(__i386__)
   unsigned int i;                 // loop counter
 
   __m128i *x_128;
@@ -264,6 +284,9 @@ int sub_real_vector64(short *x,
 
   _mm_empty();
   _m_empty();
+#elif defined(__arm__) || defined(__aarch64__)
+
+#endif
   return(0);
 }
 

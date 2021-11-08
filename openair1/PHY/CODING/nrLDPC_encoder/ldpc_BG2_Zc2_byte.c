@@ -1,4 +1,8 @@
+#if defined(__x86_64__) || defined(__i386__)
 #include "PHY/sse_intrin.h"
+#elif defined(__arm__) || defined(__aarch64__)
+#include <arm_neon.h>
+#endif
 #define scalar_xor(a,b) ((a)^(b))
 // generated code for Zc=2, byte encoding
 static inline void ldpc_BG2_Zc2_byte(uint8_t *c,uint8_t *d) {

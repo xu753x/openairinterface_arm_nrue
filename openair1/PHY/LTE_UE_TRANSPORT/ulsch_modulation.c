@@ -48,7 +48,7 @@ void dft_lte(int32_t *z,int32_t *d, int32_t Msc_PUSCH, uint8_t Nsymb)
 
 #if defined(__x86_64__) || defined(__i386__)
   __m128i dft_in128[4][1200],dft_out128[4][1200];
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
   int16x8_t dft_in128[4][1200],dft_out128[4][1200];
 #endif
   uint32_t *dft_in0=(uint32_t*)dft_in128[0],*dft_out0=(uint32_t*)dft_out128[0];

@@ -460,11 +460,19 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
 
 /* @}*/
 
+#if defined(__x86_64__)
 static __inline__ uint64_t rdtsc(void) {
   uint32_t a, d;
   __asm__ volatile ("rdtsc" : "=a" (a), "=d" (d));
   return (((uint64_t)d)<<32) | ((uint64_t)a);
 }
+#elif defined(__aarch64__)
+static __inline__ uint64_t rdtsc(void) {
+    uint64_t r = 0;
+    asm volatile("mrs %0, cntvct_el0" : "=r" (r));
+    return r;
+}
+#endif
 
 #define DEBUG_REALTIME 1
 #if DEBUG_REALTIME

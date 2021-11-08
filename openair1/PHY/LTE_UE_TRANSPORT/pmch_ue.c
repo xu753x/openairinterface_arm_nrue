@@ -223,7 +223,7 @@ void mch_channel_level(int **dl_ch_estimates_ext,
   int i,aarx,nre;
 #if defined(__x86_64__) || defined(__i386__)
   __m128i *dl_ch128,avg128;
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
   int32x4_t avg128;
 #endif
 
@@ -270,7 +270,7 @@ void mch_channel_level_khz_1dot25(int **dl_ch_estimates_ext,
   int i,aarx,nre;
 #if defined(__x86_64__) || defined(__i386__)
   __m128i *dl_ch128,avg128;
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
   int32x4_t avg128;
 #endif
 
@@ -962,7 +962,7 @@ void mch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 #if defined(__x86_64__) || defined(__i386__)
   __m128i xmm1,xmm2,*ch_mag,*ch_magb;
   __m128i *rxF = (__m128i *)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
   int16x8_t xmm1,xmm2,*ch_mag,*ch_magb;
   int16x8_t *rxF = (int16x8_t *)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
 #endif
@@ -1097,7 +1097,7 @@ void mch_64qam_llr_khz_1dot25(LTE_DL_FRAME_PARMS *frame_parms,
 #if defined(__x86_64__) || defined(__i386__)
   __m128i xmm1,xmm2,*ch_mag,*ch_magb;
   __m128i *rxF = (__m128i *)&rxdataF_comp[0][0];
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
   int16x8_t xmm1,xmm2,*ch_mag,*ch_magb;
   int16x8_t *rxF = (int16x8_t *)&rxdataF_comp[0][0];
 #endif

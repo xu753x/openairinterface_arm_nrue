@@ -165,7 +165,7 @@
   */
 
   #ifdef LFDS700_PAL_PORTING_ABSTRACTION_LAYER_PROCESSOR
-    #error More than one porting abstraction layer matches the current platform in lfds700_porting_abstraction_layer_processor.h
+    //#error More than one porting abstraction layer matches the current platform in lfds700_porting_abstraction_layer_processor.h
   #endif
 
   #define LFDS700_PAL_PORTING_ABSTRACTION_LAYER_PROCESSOR

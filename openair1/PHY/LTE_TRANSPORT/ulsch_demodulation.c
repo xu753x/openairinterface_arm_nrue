@@ -55,7 +55,7 @@ void lte_idft(LTE_DL_FRAME_PARMS *frame_parms,uint32_t *z, uint16_t Msc_PUSCH) {
 #if defined(__x86_64__) || defined(__i386__)
   __m128i idft_in128[3][1200],idft_out128[3][1200];
   __m128i norm128;
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
   int16x8_t idft_in128[3][1200],idft_out128[3][1200];
   int16x8_t norm128;
 #endif
@@ -470,7 +470,7 @@ int32_t ulsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
 #if defined(__x86_64__) || defined(__i386__)
   __m128i *rxF=(__m128i *)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
   __m128i **llrp128 = (__m128i **)llrp;
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
   int16x8_t *rxF= (int16x8_t *)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
   int16x8_t **llrp128 = (int16x8_t **)llrp;
 #endif
@@ -565,7 +565,7 @@ void ulsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
   __m128i mmtmpU1,mmtmpU2;
   ch_mag =(__m128i *)&ul_ch_mag[0][(symbol*frame_parms->N_RB_DL*12)];
   ch_magb =(__m128i *)&ul_ch_magb[0][(symbol*frame_parms->N_RB_DL*12)];
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
   int16x8_t *rxF=(int16x8_t *)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
   int16x8_t *ch_mag,*ch_magb;
   int16x8_t mmtmpU1,mmtmpU2;
@@ -786,7 +786,7 @@ void ulsch_channel_compensation(int32_t **rxdataF_ext,
   uint8_t aarx;//,symbol_mod;
   __m128i mmtmpU0,mmtmpU1,mmtmpU2,mmtmpU3;
 
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
   int16x4_t *ul_ch128,*rxdataF128;
   int16x8_t *ul_ch_mag128,*ul_ch_mag128b,*rxdataF_comp128;
   uint8_t aarx;//,symbol_mod;
@@ -986,7 +986,7 @@ void ulsch_channel_level(int32_t **drs_ch_estimates_ext,
 #if defined(__x86_64__) || defined(__i386__)
   __m128i *ul_ch128;
   __m128 avg128U;
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
   int32x4_t avg128U;
   int16x4_t *ul_ch128;
 #endif

@@ -126,7 +126,7 @@ int test_ldpc(short No_iteration,
   unsigned char *channel_input_optim[MAX_NUM_DLSCH_SEGMENTS];
   double *channel_output;
   double *modulated_input[MAX_NUM_DLSCH_SEGMENTS];
-  char *channel_output_fixed[MAX_NUM_DLSCH_SEGMENTS];
+  int8_t *channel_output_fixed[MAX_NUM_DLSCH_SEGMENTS];
   unsigned int i,j,trial=0;
   short BG=0,nrows=0;//,ncols;
   int no_punctured_columns,removed_bit;
@@ -161,7 +161,8 @@ int test_ldpc(short No_iteration,
     estimated_output[j] = (unsigned char*) malloc16(sizeof(unsigned char) * block_length);
     estimated_output_bit[j] = (unsigned char*) malloc16(sizeof(unsigned char) * block_length);
     modulated_input[j] = (double *)malloc16(sizeof(double) * 68*384);
-    channel_output_fixed[j]  =  (char *)malloc16(sizeof( char) * 68*384);
+    channel_output_fixed[j]  =  (int8_t *)malloc16(sizeof( int8_t) * 68*384);
+    memset(channel_output_fixed[j], 0, sizeof( int8_t) * 68*384);
   }
   //modulated_input = (double *)malloc(sizeof(double) * 68*384);
   //channel_output  = (double *)malloc(sizeof(double) * 68*384);
@@ -358,7 +359,7 @@ int test_ldpc(short No_iteration,
         //printf("llr[%d]=%d\n",i,channel_output_fixed[i]);
 
         //channel_output_fixed[i] = (char)quantize(sigma/4.0,(2.0*modulated_input[i]) - 1.0 + sigma*gaussdouble(0.0,1.0),qbits);
-        channel_output_fixed[j][i] = (char)quantize(sigma/4.0/4.0,modulated_input[j][i] + sigma*gaussdouble(0.0,1.0),qbits);
+        channel_output_fixed[j][i] = (int8_t)quantize(sigma/4.0/4.0,modulated_input[j][i] + sigma*gaussdouble(0.0,1.0),qbits);
         //channel_output_fixed[i] = (char)quantize8bit(sigma/4.0,(2.0*modulated_input[i]) - 1.0 + sigma*gaussdouble(0.0,1.0));
         //printf("llr[%d]=%d\n",i,channel_output_fixed[i]);
         //printf("channel_output_fixed[%d]: %d\n",i,channel_output_fixed[i]);

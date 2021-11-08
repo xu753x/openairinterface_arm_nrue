@@ -3,7 +3,9 @@
 #include <math.h>
 #include <stdint.h>
 
+#ifdef __AVX2__
 #include <immintrin.h>
+#endif
 
 void nr_polar_kernal_operation(uint8_t *u, uint8_t *d, uint16_t N)
 {

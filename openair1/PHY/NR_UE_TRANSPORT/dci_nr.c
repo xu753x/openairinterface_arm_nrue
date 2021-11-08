@@ -293,9 +293,10 @@ void nr_pdcch_channel_level(int32_t **dl_ch_estimates_ext,
 #if defined(__x86_64__) || defined(__i386__)
   __m128i *dl_ch128;
   __m128i avg128P;
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
   int16x8_t *dl_ch128;
-  int32x4_t *avg128P;
+  int32x4_t avg128P;
+  int32x4_t mmtmp0,mmtmp1;
 #endif
 
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
@@ -303,7 +304,8 @@ void nr_pdcch_channel_level(int32_t **dl_ch_estimates_ext,
 #if defined(__x86_64__) || defined(__i386__)
     avg128P = _mm_setzero_si128();
     dl_ch128=(__m128i *)&dl_ch_estimates_ext[aarx][0];
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
+    avg128P = vdupq_n_s32(0);
     dl_ch128=(int16x8_t *)&dl_ch_estimates_ext[aarx][0];
 #endif
 
@@ -312,7 +314,16 @@ void nr_pdcch_channel_level(int32_t **dl_ch_estimates_ext,
       avg128P = _mm_add_epi32(avg128P,_mm_madd_epi16(dl_ch128[0],dl_ch128[0]));
       avg128P = _mm_add_epi32(avg128P,_mm_madd_epi16(dl_ch128[1],dl_ch128[1]));
       avg128P = _mm_add_epi32(avg128P,_mm_madd_epi16(dl_ch128[2],dl_ch128[2]));
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
+      mmtmp0 = vmull_s16(((int16x4_t*)dl_ch128)[0],((int16x4_t*)dl_ch128)[0]);
+      mmtmp1 = vmull_s16(((int16x4_t*)dl_ch128)[1],((int16x4_t*)dl_ch128)[1]);
+      avg128P = vqaddq_s32(avg128P,vcombine_s32(vpadd_s32(vget_low_s32(mmtmp0),vget_high_s32(mmtmp0)),vpadd_s32(vget_low_s32(mmtmp1),vget_high_s32(mmtmp1))));
+      mmtmp0 = vmull_s16(((int16x4_t*)dl_ch128)[2],((int16x4_t*)dl_ch128)[2]);
+      mmtmp1 = vmull_s16(((int16x4_t*)dl_ch128)[3],((int16x4_t*)dl_ch128)[3]);
+      avg128P = vqaddq_s32(avg128P,vcombine_s32(vpadd_s32(vget_low_s32(mmtmp0),vget_high_s32(mmtmp0)),vpadd_s32(vget_low_s32(mmtmp1),vget_high_s32(mmtmp1))));
+      mmtmp0 = vmull_s16(((int16x4_t*)dl_ch128)[4],((int16x4_t*)dl_ch128)[4]);
+      mmtmp1 = vmull_s16(((int16x4_t*)dl_ch128)[5],((int16x4_t*)dl_ch128)[5]);
+      avg128P = vqaddq_s32(avg128P,vcombine_s32(vpadd_s32(vget_low_s32(mmtmp0),vget_high_s32(mmtmp0)),vpadd_s32(vget_low_s32(mmtmp1),vget_high_s32(mmtmp1))));
 #endif
       //      for (int i=0;i<24;i+=2) printf("pdcch channel re %d (%d,%d)\n",(rb*12)+(i>>1),((int16_t*)dl_ch128)[i],((int16_t*)dl_ch128)[i+1]);
       dl_ch128+=3;
@@ -561,12 +572,13 @@ void nr_pdcch_channel_compensation(int32_t **rxdataF_ext,
   uint8_t aarx;
 #if defined(__x86_64__) || defined(__i386__)
   __m128i mmtmpP0,mmtmpP1,mmtmpP2,mmtmpP3;
-#elif defined(__arm__)
-  int16x8_t mmtmpP0,mmtmpP1,mmtmpP2,mmtmpP3;
-#endif
-#if defined(__x86_64__) || defined(__i386__)
   __m128i *dl_ch128,*rxdataF128,*rxdataF_comp128;
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
+  int32x4_t mmtmpP0,mmtmpP1,mmtmpP0b,mmtmpP1b;
+  int16x4_t *dl_ch128,*rxdataF128;
+  int16x4x2_t *rxdataF_comp128;
+  int16_t conj[4]__attribute__((aligned(16))) = {1,-1,1,-1};
+  int32x4_t output_shift128 = vmovq_n_s32(-(int32_t)output_shift);
 #endif
 
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
@@ -577,8 +589,11 @@ void nr_pdcch_channel_compensation(int32_t **rxdataF_ext,
     //printf("ch compensation dl_ch ext addr %p \n", &dl_ch_estimates_ext[(aatx<<1)+aarx][symbol*20*12]);
     //printf("rxdataf ext addr %p symbol %d\n", &rxdataF_ext[aarx][symbol*20*12], symbol);
     //printf("rxdataf_comp addr %p\n",&rxdataF_comp[(aatx<<1)+aarx][symbol*20*12]);
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
     // to be filled in
+    dl_ch128          = (int16x4_t *)&dl_ch_estimates_ext[aarx][symbol*coreset_nbr_rb*12];
+    rxdataF128        = (int16x4_t *)&rxdataF_ext[aarx][symbol*coreset_nbr_rb*12];
+    rxdataF_comp128   = (int16x4x2_t *)&rxdataF_comp[aarx][symbol*coreset_nbr_rb*12];
 #endif
 
     for (rb=0; rb<(coreset_nbr_rb*3)>>2; rb++) {
@@ -648,8 +663,53 @@ void nr_pdcch_channel_compensation(int32_t **rxdataF_ext,
       dl_ch128+=3;
       rxdataF128+=3;
       rxdataF_comp128+=3;
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
       // to be filled in
+      mmtmpP0 = vmull_s16(dl_ch128[0], rxdataF128[0]);
+      mmtmpP1 = vmull_s16(dl_ch128[1], rxdataF128[1]);
+      mmtmpP0 = vcombine_s32(vpadd_s32(vget_low_s32(mmtmpP0),vget_high_s32(mmtmpP0)),
+                             vpadd_s32(vget_low_s32(mmtmpP1),vget_high_s32(mmtmpP1)));
+      mmtmpP0b = vmull_s16(vrev32_s16(vmul_s16(dl_ch128[0],*(int16x4_t *)conj)), rxdataF128[0]);
+      mmtmpP1b = vmull_s16(vrev32_s16(vmul_s16(dl_ch128[1],*(int16x4_t *)conj)), rxdataF128[1]);
+      mmtmpP1 = vcombine_s32(vpadd_s32(vget_low_s32(mmtmpP0b),vget_high_s32(mmtmpP0b)),
+                             vpadd_s32(vget_low_s32(mmtmpP1b),vget_high_s32(mmtmpP1b)));
+      mmtmpP0 = vqshlq_s32(mmtmpP0,output_shift128);
+      mmtmpP1 = vqshlq_s32(mmtmpP1,output_shift128);
+      rxdataF_comp128[0] = vzip_s16(vmovn_s32(mmtmpP0),vmovn_s32(mmtmpP1));
+
+      mmtmpP0 = vmull_s16(dl_ch128[2], rxdataF128[2]);
+      mmtmpP1 = vmull_s16(dl_ch128[3], rxdataF128[3]);
+      mmtmpP0 = vcombine_s32(vpadd_s32(vget_low_s32(mmtmpP0),vget_high_s32(mmtmpP0)),
+                             vpadd_s32(vget_low_s32(mmtmpP1),vget_high_s32(mmtmpP1)));
+      mmtmpP0b = vmull_s16(vrev32_s16(vmul_s16(dl_ch128[2],*(int16x4_t *)conj)), rxdataF128[2]);
+      mmtmpP1b = vmull_s16(vrev32_s16(vmul_s16(dl_ch128[3],*(int16x4_t *)conj)), rxdataF128[3]);
+      mmtmpP1 = vcombine_s32(vpadd_s32(vget_low_s32(mmtmpP0b),vget_high_s32(mmtmpP0b)),
+                             vpadd_s32(vget_low_s32(mmtmpP1b),vget_high_s32(mmtmpP1b)));
+      mmtmpP0 = vqshlq_s32(mmtmpP0,output_shift128);
+      mmtmpP1 = vqshlq_s32(mmtmpP1,output_shift128);
+      rxdataF_comp128[1] = vzip_s16(vmovn_s32(mmtmpP0),vmovn_s32(mmtmpP1));
+
+      mmtmpP0 = vmull_s16(dl_ch128[4], rxdataF128[4]);
+      mmtmpP1 = vmull_s16(dl_ch128[5], rxdataF128[5]);
+      mmtmpP0 = vcombine_s32(vpadd_s32(vget_low_s32(mmtmpP0),vget_high_s32(mmtmpP0)),
+                             vpadd_s32(vget_low_s32(mmtmpP1),vget_high_s32(mmtmpP1)));
+      mmtmpP0b = vmull_s16(vrev32_s16(vmul_s16(dl_ch128[4],*(int16x4_t *)conj)), rxdataF128[4]);
+      mmtmpP1b = vmull_s16(vrev32_s16(vmul_s16(dl_ch128[5],*(int16x4_t *)conj)), rxdataF128[5]);
+      mmtmpP1 = vcombine_s32(vpadd_s32(vget_low_s32(mmtmpP0b),vget_high_s32(mmtmpP0b)),
+                             vpadd_s32(vget_low_s32(mmtmpP1b),vget_high_s32(mmtmpP1b)));
+      mmtmpP0 = vqshlq_s32(mmtmpP0,output_shift128);
+      mmtmpP1 = vqshlq_s32(mmtmpP1,output_shift128);
+      rxdataF_comp128[2] = vzip_s16(vmovn_s32(mmtmpP0),vmovn_s32(mmtmpP1));
+
+      for (int i=0; i<12 ; i++)
+        LOG_DDD("rxdataF128[%d]=(%d,%d) X dlch[%d]=(%d,%d) rxdataF_comp128[%d]=(%d,%d)\n",
+               (rb*12)+i, ((short *)rxdataF128)[i<<1],((short *)rxdataF128)[1+(i<<1)],
+               (rb*12)+i, ((short *)dl_ch128)[i<<1],((short *)dl_ch128)[1+(i<<1)],
+               (rb*12)+i, ((short *)rxdataF_comp128)[i<<1],((short *)rxdataF_comp128)[1+(i<<1)]);
+
+      dl_ch128+=6;
+      rxdataF128+=6;
+      rxdataF_comp128+=3;
 #endif
     }
   }
@@ -666,7 +726,7 @@ void nr_pdcch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
                          uint8_t symbol) {
 #if defined(__x86_64__) || defined(__i386__)
   __m128i *rxdataF_comp128_0,*rxdataF_comp128_1;
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
   int16x8_t *rxdataF_comp128_0,*rxdataF_comp128_1;
 #endif
   int32_t i;
@@ -675,7 +735,7 @@ void nr_pdcch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
 #if defined(__x86_64__) || defined(__i386__)
     rxdataF_comp128_0   = (__m128i *)&rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12];
     rxdataF_comp128_1   = (__m128i *)&rxdataF_comp[1][symbol*frame_parms->N_RB_DL*12];
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
     rxdataF_comp128_0   = (int16x8_t *)&rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12];
     rxdataF_comp128_1   = (int16x8_t *)&rxdataF_comp[1][symbol*frame_parms->N_RB_DL*12];
 #endif
@@ -684,8 +744,8 @@ void nr_pdcch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
     for (i=0; i<frame_parms->N_RB_DL*3; i++) {
 #if defined(__x86_64__) || defined(__i386__)
       rxdataF_comp128_0[i] = _mm_adds_epi16(_mm_srai_epi16(rxdataF_comp128_0[i],1),_mm_srai_epi16(rxdataF_comp128_1[i],1));
-#elif defined(__arm__)
-      rxdataF_comp128_0[i] = vhaddq_s16(rxdataF_comp128_0[i],rxdataF_comp128_1[i]);
+#elif defined(__arm__) || defined(__aarch64__)
+      rxdataF_comp128_0[i] = vaddq_s16(vqshlq_s16(rxdataF_comp128_0[i], vmovq_n_s16(-1)),vqshlq_s16(rxdataF_comp128_1[i], vmovq_n_s16(-1)));
 #endif
     }
   }

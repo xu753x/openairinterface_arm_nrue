@@ -282,8 +282,13 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
   uint16_t dmrs_length = get_num_dmrs(harq_process->dlDmrsSymbPos);
   uint32_t i,j;
+#if defined(__x86_64__)||defined(__i386__)
   __m128i *pv = (__m128i *)&z;
   __m128i *pl = (__m128i *)&l;
+#elif defined(__arm__)|| defined(__aarch64__)
+  int16x8_t *pv = (int16x8_t *)&z;
+  int8x16_t *pl = (int8x16_t *)&l;
+#endif
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_SEGMENTATION, VCD_FUNCTION_IN);
 
   //NR_DL_UE_HARQ_t *harq_process = dlsch->harq_processes[0];
@@ -504,10 +509,16 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
       //skip filler bits
       memcpy((&z[0]+Kr),harq_process->d[r]+(Kr-2*harq_process->Z),(kc*harq_process->Z-Kr)*sizeof(int16_t));
 
+#if defined(__x86_64__)||defined(__i386__)
       //Saturate coded bits before decoding into 8 bits values
       for (i=0, j=0; j < ((kc*harq_process->Z)>>4)+1;  i+=2, j++) {
         pl[j] = _mm_packs_epi16(pv[i],pv[i+1]);
       }
+#elif defined(__arm__)|| defined(__aarch64__)
+      for (i=0, j=0; j < ((kc*harq_process->Z)>>4)+1;  i+=2, j++) {
+        pl[j] = vcombine_s8(vmovn_s16(pv[i]),vmovn_s16(pv[i+1]));
+      }
+#endif
 
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_LDPC, VCD_FUNCTION_IN);
       no_iteration_ldpc = nrLDPC_decoder(p_decParams,
@@ -691,8 +702,13 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
 
   uint16_t length_dmrs = get_num_dmrs(harq_process->dlDmrsSymbPos);
   uint32_t i,j;
+#if defined(__x86_64__)||defined(__i386__)
   __m128i *pv = (__m128i *)&z;
   __m128i *pl = (__m128i *)&l;
+#elif defined(__arm__)|| defined(__aarch64__)
+  int16x8_t *pv = (int16x8_t *)&z;
+  int8x16_t *pl = (int8x16_t *)&l;
+#endif
   notifiedFIFO_t nf;
   initNotifiedFIFO(&nf);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_SEGMENTATION, VCD_FUNCTION_IN);
@@ -982,10 +998,16 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
     //skip filler bits
     memcpy((&z[0]+Kr),harq_process->d[r]+(Kr-2*harq_process->Z),(kc*harq_process->Z-Kr)*sizeof(int16_t));
 
+#if defined(__x86_64__)||defined(__i386__)
     //Saturate coded bits before decoding into 8 bits values
     for (i=0, j=0; j < ((kc*harq_process->Z)>>4)+1;  i+=2, j++) {
       pl[j] = _mm_packs_epi16(pv[i],pv[i+1]);
     }
+#elif defined(__arm__)|| defined(__aarch64__)
+    for (i=0, j=0; j < ((kc*harq_process->Z)>>4)+1;  i+=2, j++) {
+      pl[j] = vcombine_s8(vmovn_s16(pv[i]),vmovn_s16(pv[i+1]));
+    }
+#endif
 
     no_iteration_ldpc = nrLDPC_decoder(p_decParams,
                                        (int8_t *)&pl[0],
@@ -1162,8 +1184,13 @@ void nr_dlsch_decoding_process(void *arg) {
   uint8_t nb_re_dmrs = 6;
   uint16_t length_dmrs = 1;
   uint32_t i,j;
+#if defined(__x86_64__)||defined(__i386__)
   __m128i *pv = (__m128i *)&z;
   __m128i *pl = (__m128i *)&l;
+#elif defined(__arm__)|| defined(__aarch64__)
+  int16x8_t *pv = (int16x8_t *)&z;
+  int8x16_t *pl = (int8x16_t *)&l;
+#endif
   proc->instance_cnt_dlsch_td=-1;
   //proc->nr_slot_rx = proc->sub_frame_start * frame_parms->slots_per_subframe;
   proc->decoder_thread_available = 1;
@@ -1382,10 +1409,16 @@ void nr_dlsch_decoding_process(void *arg) {
     //skip filler bits
     memcpy((&z[0]+Kr),harq_process->d[r]+(Kr-2*harq_process->Z),(kc*harq_process->Z-Kr)*sizeof(int16_t));
 
+#if defined(__x86_64__)||defined(__i386__)
     //Saturate coded bits before decoding into 8 bits values
     for (i=0, j=0; j < ((kc*harq_process->Z)>>4)+1;  i+=2, j++) {
       pl[j] = _mm_packs_epi16(pv[i],pv[i+1]);
     }
+#elif defined(__arm__)|| defined(__aarch64__)
+    for (i=0, j=0; j < ((kc*harq_process->Z)>>4)+1;  i+=2, j++) {
+      pl[j] = vcombine_s8(vmovn_s16(pv[i]),vmovn_s16(pv[i+1]));
+    }
+#endif
 
     no_iteration_ldpc = nrLDPC_decoder(p_decParams,
                                        (int8_t *)&pl[0],

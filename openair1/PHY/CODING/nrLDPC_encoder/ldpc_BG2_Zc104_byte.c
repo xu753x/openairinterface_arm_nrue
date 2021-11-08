@@ -1,6 +1,11 @@
+#if defined(__x86_64__) || defined(__i386__)
 #include "PHY/sse_intrin.h"
+#elif defined(__arm__) || defined(__aarch64__)
+#include <arm_neon.h>
+#endif
 // generated code for Zc=104, byte encoding
 static inline void ldpc_BG2_Zc104_byte(uint8_t *c,uint8_t *d) {
+#if defined(__x86_64__) || defined(__i386__)
   __m64 *csimd=(__m64 *)c,*dsimd=(__m64 *)d;
 
   __m64 *c2,*d2;
@@ -136,4 +141,141 @@ static inline void ldpc_BG2_Zc104_byte(uint8_t *c,uint8_t *d) {
 //row: 41
      d2[533]=_mm_xor_si64(c2[1572],_mm_xor_si64(c2[1312],_mm_xor_si64(c2[10],_mm_xor_si64(c2[1050],_mm_xor_si64(c2[556],_mm_xor_si64(c2[296],_mm_xor_si64(c2[288],_mm_xor_si64(c2[558],_mm_xor_si64(c2[1856],_mm_xor_si64(c2[1875],_mm_xor_si64(c2[1615],_mm_xor_si64(c2[1612],_mm_xor_si64(c2[1120],_mm_xor_si64(c2[860],_mm_xor_si64(c2[349],_mm_xor_si64(c2[1378],_mm_xor_si64(c2[372],_mm_xor_si64(c2[1408],_mm_xor_si64(c2[114],_mm_xor_si64(c2[1177],_mm_xor_si64(c2[1438],_mm_xor_si64(c2[1441],_mm_xor_si64(c2[942],_mm_xor_si64(c2[682],_mm_xor_si64(c2[1980],_mm_xor_si64(c2[423],_mm_xor_si64(c2[2011],_mm_xor_si64(c2[450],_mm_xor_si64(c2[1257],_mm_xor_si64(c2[739],_mm_xor_si64(c2[1513],_mm_xor_si64(c2[1283],_mm_xor_si64(c2[1023],_mm_xor_si64(c2[758],c2[1795]))))))))))))))))))))))))))))))))));
   }
+#elif defined(__arm__) || defined(__aarch64__)
+  int64x1_t *csimd=(int64x1_t *)c,*dsimd=(int64x1_t *)d;
+
+  int64x1_t *c2,*d2;
+
+  int i2;
+  for (i2=0; i2<13; i2++) {
+     c2=&csimd[i2];
+     d2=&dsimd[i2];
+
+//row: 0
+     d2[0]=veor_s64(c2[1564],veor_s64(c2[262],veor_s64(c2[1302],veor_s64(c2[548],veor_s64(c2[553],veor_s64(c2[810],veor_s64(c2[1880],veor_s64(c2[1877],veor_s64(c2[1125],veor_s64(c2[601],veor_s64(c2[1643],veor_s64(c2[624],veor_s64(c2[1673],veor_s64(c2[366],veor_s64(c2[1442],veor_s64(c2[1690],veor_s64(c2[947],veor_s64(c2[166],veor_s64(c2[688],veor_s64(c2[184],veor_s64(c2[702],veor_s64(c2[1509],veor_s64(c2[991],veor_s64(c2[1778],veor_s64(c2[1275],veor_s64(c2[1023],c2[2060]))))))))))))))))))))))))));
+
+//row: 1
+     d2[13]=veor_s64(c2[1824],veor_s64(c2[1564],veor_s64(c2[262],veor_s64(c2[1302],veor_s64(c2[808],veor_s64(c2[548],veor_s64(c2[553],veor_s64(c2[810],veor_s64(c2[61],veor_s64(c2[1880],veor_s64(c2[1877],veor_s64(c2[1385],veor_s64(c2[1125],veor_s64(c2[601],veor_s64(c2[1643],veor_s64(c2[624],veor_s64(c2[1673],veor_s64(c2[366],veor_s64(c2[1442],veor_s64(c2[1690],veor_s64(c2[1207],veor_s64(c2[947],veor_s64(c2[166],veor_s64(c2[688],veor_s64(c2[184],veor_s64(c2[702],veor_s64(c2[1509],veor_s64(c2[991],veor_s64(c2[1778],veor_s64(c2[1535],veor_s64(c2[1275],veor_s64(c2[1023],c2[2060]))))))))))))))))))))))))))))))));
+
+//row: 2
+     d2[26]=veor_s64(c2[1824],veor_s64(c2[1564],veor_s64(c2[522],veor_s64(c2[262],veor_s64(c2[1302],veor_s64(c2[808],veor_s64(c2[548],veor_s64(c2[553],veor_s64(c2[810],veor_s64(c2[61],veor_s64(c2[1880],veor_s64(c2[1877],veor_s64(c2[1385],veor_s64(c2[1125],veor_s64(c2[861],veor_s64(c2[601],veor_s64(c2[1643],veor_s64(c2[884],veor_s64(c2[624],veor_s64(c2[1673],veor_s64(c2[366],veor_s64(c2[1702],veor_s64(c2[1442],veor_s64(c2[1690],veor_s64(c2[1207],veor_s64(c2[947],veor_s64(c2[426],veor_s64(c2[166],veor_s64(c2[688],veor_s64(c2[444],veor_s64(c2[184],veor_s64(c2[702],veor_s64(c2[1769],veor_s64(c2[1509],veor_s64(c2[991],veor_s64(c2[1778],veor_s64(c2[1535],veor_s64(c2[1275],veor_s64(c2[1283],veor_s64(c2[1023],c2[2060]))))))))))))))))))))))))))))))))))))))));
+
+//row: 3
+     d2[39]=veor_s64(c2[1564],veor_s64(c2[262],veor_s64(c2[1302],veor_s64(c2[548],veor_s64(c2[553],veor_s64(c2[1070],veor_s64(c2[810],veor_s64(c2[1880],veor_s64(c2[58],veor_s64(c2[1877],veor_s64(c2[1125],veor_s64(c2[601],veor_s64(c2[1643],veor_s64(c2[624],veor_s64(c2[1673],veor_s64(c2[626],veor_s64(c2[366],veor_s64(c2[1442],veor_s64(c2[1950],veor_s64(c2[1690],veor_s64(c2[947],veor_s64(c2[166],veor_s64(c2[948],veor_s64(c2[688],veor_s64(c2[184],veor_s64(c2[962],veor_s64(c2[702],veor_s64(c2[1509],veor_s64(c2[991],veor_s64(c2[2038],veor_s64(c2[1778],veor_s64(c2[1275],veor_s64(c2[1023],veor_s64(c2[241],c2[2060]))))))))))))))))))))))))))))))))));
+
+//row: 4
+     d2[52]=veor_s64(c2[1046],veor_s64(c2[786],veor_s64(c2[1563],veor_s64(c2[524],veor_s64(c2[785],veor_s64(c2[30],veor_s64(c2[1849],veor_s64(c2[1854],veor_s64(c2[32],veor_s64(c2[809],veor_s64(c2[1362],veor_s64(c2[1102],veor_s64(c2[1099],veor_s64(c2[607],veor_s64(c2[347],veor_s64(c2[1902],veor_s64(c2[865],veor_s64(c2[1925],veor_s64(c2[895],veor_s64(c2[1667],veor_s64(c2[651],veor_s64(c2[912],veor_s64(c2[416],veor_s64(c2[156],veor_s64(c2[1467],veor_s64(c2[1976],veor_s64(c2[1485],veor_s64(c2[2003],veor_s64(c2[731],veor_s64(c2[213],veor_s64(c2[1000],veor_s64(c2[757],veor_s64(c2[497],veor_s64(c2[245],c2[1282]))))))))))))))))))))))))))))))))));
+
+//row: 5
+     d2[65]=veor_s64(c2[1312],veor_s64(c2[1052],veor_s64(c2[1829],veor_s64(c2[790],veor_s64(c2[4],veor_s64(c2[296],veor_s64(c2[36],veor_s64(c2[28],veor_s64(c2[298],veor_s64(c2[292],veor_s64(c2[1615],veor_s64(c2[1355],veor_s64(c2[1352],veor_s64(c2[860],veor_s64(c2[600],veor_s64(c2[89],veor_s64(c2[1118],veor_s64(c2[112],veor_s64(c2[1148],veor_s64(c2[1933],veor_s64(c2[917],veor_s64(c2[1178],veor_s64(c2[1174],veor_s64(c2[682],veor_s64(c2[422],veor_s64(c2[1720],veor_s64(c2[163],veor_s64(c2[1751],veor_s64(c2[190],veor_s64(c2[1225],veor_s64(c2[997],veor_s64(c2[479],veor_s64(c2[1253],veor_s64(c2[1023],veor_s64(c2[763],veor_s64(c2[498],c2[1535]))))))))))))))))))))))))))))))))))));
+
+//row: 6
+     d2[78]=veor_s64(c2[786],veor_s64(c2[526],veor_s64(c2[1303],veor_s64(c2[264],veor_s64(c2[1820],veor_s64(c2[1849],veor_s64(c2[1589],veor_s64(c2[1594],veor_s64(c2[1851],veor_s64(c2[1102],veor_s64(c2[842],veor_s64(c2[839],veor_s64(c2[347],veor_s64(c2[87],veor_s64(c2[1642],veor_s64(c2[605],veor_s64(c2[1665],veor_s64(c2[635],veor_s64(c2[1407],veor_s64(c2[391],veor_s64(c2[652],veor_s64(c2[654],veor_s64(c2[156],veor_s64(c2[1988],veor_s64(c2[1207],veor_s64(c2[1716],veor_s64(c2[1225],veor_s64(c2[1743],veor_s64(c2[1753],veor_s64(c2[471],veor_s64(c2[2032],veor_s64(c2[740],veor_s64(c2[497],veor_s64(c2[237],veor_s64(c2[2064],veor_s64(c2[1022],c2[242]))))))))))))))))))))))))))))))))))));
+
+//row: 7
+     d2[91]=veor_s64(c2[525],veor_s64(c2[265],veor_s64(c2[12],veor_s64(c2[1042],veor_s64(c2[789],veor_s64(c2[3],veor_s64(c2[1829],veor_s64(c2[1588],veor_s64(c2[1328],veor_s64(c2[1075],veor_s64(c2[1333],veor_s64(c2[1067],veor_s64(c2[1590],veor_s64(c2[1597],veor_s64(c2[1337],veor_s64(c2[813],veor_s64(c2[841],veor_s64(c2[581],veor_s64(c2[315],veor_s64(c2[578],veor_s64(c2[572],veor_s64(c2[312],veor_s64(c2[86],veor_s64(c2[1905],veor_s64(c2[1639],veor_s64(c2[1381],veor_s64(c2[1128],veor_s64(c2[344],veor_s64(c2[78],veor_s64(c2[1404],veor_s64(c2[1151],veor_s64(c2[374],veor_s64(c2[108],veor_s64(c2[1146],veor_s64(c2[1153],veor_s64(c2[893],veor_s64(c2[130],veor_s64(c2[1956],veor_s64(c2[391],veor_s64(c2[398],veor_s64(c2[138],veor_s64(c2[1699],veor_s64(c2[1987],veor_s64(c2[1727],veor_s64(c2[1461],veor_s64(c2[946],veor_s64(c2[680],veor_s64(c2[1468],veor_s64(c2[1462],veor_s64(c2[1202],veor_s64(c2[964],veor_s64(c2[711],veor_s64(c2[1482],veor_s64(c2[1489],veor_s64(c2[1229],veor_s64(c2[2006],veor_s64(c2[210],veor_s64(c2[2036],veor_s64(c2[1771],veor_s64(c2[1518],veor_s64(c2[479],veor_s64(c2[473],veor_s64(c2[213],veor_s64(c2[236],veor_s64(c2[2055],veor_s64(c2[1802],veor_s64(c2[1803],veor_s64(c2[1537],veor_s64(c2[761],veor_s64(c2[755],c2[495]))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))));
+
+//row: 8
+     d2[104]=veor_s64(c2[1307],veor_s64(c2[1047],veor_s64(c2[5],veor_s64(c2[1824],veor_s64(c2[785],veor_s64(c2[1312],veor_s64(c2[291],veor_s64(c2[31],veor_s64(c2[36],veor_s64(c2[293],veor_s64(c2[295],veor_s64(c2[1623],veor_s64(c2[1363],veor_s64(c2[1360],veor_s64(c2[868],veor_s64(c2[608],veor_s64(c2[344],veor_s64(c2[84],veor_s64(c2[1126],veor_s64(c2[367],veor_s64(c2[107],veor_s64(c2[1156],veor_s64(c2[1928],veor_s64(c2[1172],veor_s64(c2[912],veor_s64(c2[1173],veor_s64(c2[677],veor_s64(c2[417],veor_s64(c2[1988],veor_s64(c2[1728],veor_s64(c2[158],veor_s64(c2[2006],veor_s64(c2[1746],veor_s64(c2[185],veor_s64(c2[1252],veor_s64(c2[992],veor_s64(c2[474],veor_s64(c2[1248],veor_s64(c2[1018],veor_s64(c2[758],veor_s64(c2[766],veor_s64(c2[506],c2[1543]))))))))))))))))))))))))))))))))))))))))));
+
+//row: 9
+     d2[117]=veor_s64(c2[784],veor_s64(c2[2],veor_s64(c2[1821],veor_s64(c2[1561],veor_s64(c2[532],veor_s64(c2[522],veor_s64(c2[1572],veor_s64(c2[1847],veor_s64(c2[1078],veor_s64(c2[818],veor_s64(c2[1852],veor_s64(c2[810],veor_s64(c2[30],veor_s64(c2[1067],veor_s64(c2[556],veor_s64(c2[1100],veor_s64(c2[318],veor_s64(c2[58],veor_s64(c2[1097],veor_s64(c2[55],veor_s64(c2[345],veor_s64(c2[1642],veor_s64(c2[1382],veor_s64(c2[1900],veor_s64(c2[858],veor_s64(c2[863],veor_s64(c2[1900],veor_s64(c2[1936],veor_s64(c2[894],veor_s64(c2[893],veor_s64(c2[1930],veor_s64(c2[1665],veor_s64(c2[636],veor_s64(c2[662],veor_s64(c2[1699],veor_s64(c2[910],veor_s64(c2[1960],veor_s64(c2[167],veor_s64(c2[1464],veor_s64(c2[1204],veor_s64(c2[1465],veor_s64(c2[423],veor_s64(c2[1987],veor_s64(c2[945],veor_s64(c2[1483],veor_s64(c2[454],veor_s64(c2[2014],veor_s64(c2[972],veor_s64(c2[729],veor_s64(c2[1779],veor_s64(c2[211],veor_s64(c2[1248],veor_s64(c2[998],veor_s64(c2[2035],veor_s64(c2[991],veor_s64(c2[495],veor_s64(c2[1805],veor_s64(c2[1545],veor_s64(c2[243],veor_s64(c2[1280],veor_s64(c2[1280],c2[238])))))))))))))))))))))))))))))))))))))))))))))))))))))))))))));
+
+//row: 10
+     d2[130]=veor_s64(c2[1302],veor_s64(c2[1073],veor_s64(c2[425],c2[968])));
+
+//row: 11
+     d2[143]=veor_s64(c2[1565],veor_s64(c2[263],veor_s64(c2[1303],veor_s64(c2[1824],veor_s64(c2[549],veor_s64(c2[554],veor_s64(c2[1071],veor_s64(c2[811],veor_s64(c2[1881],veor_s64(c2[59],veor_s64(c2[1878],veor_s64(c2[1126],veor_s64(c2[602],veor_s64(c2[1644],veor_s64(c2[625],veor_s64(c2[1674],veor_s64(c2[627],veor_s64(c2[367],veor_s64(c2[1430],veor_s64(c2[1951],veor_s64(c2[1691],veor_s64(c2[948],veor_s64(c2[167],veor_s64(c2[936],veor_s64(c2[676],veor_s64(c2[185],veor_s64(c2[963],veor_s64(c2[703],veor_s64(c2[1485],veor_s64(c2[1510],veor_s64(c2[992],veor_s64(c2[2039],veor_s64(c2[1779],veor_s64(c2[1276],veor_s64(c2[1024],veor_s64(c2[242],veor_s64(c2[2061],c2[1018])))))))))))))))))))))))))))))))))))));
+
+//row: 12
+     d2[156]=veor_s64(c2[11],veor_s64(c2[1830],veor_s64(c2[528],veor_s64(c2[1568],veor_s64(c2[1074],veor_s64(c2[814],veor_s64(c2[806],veor_s64(c2[1076],veor_s64(c2[548],veor_s64(c2[314],veor_s64(c2[54],veor_s64(c2[64],veor_s64(c2[1638],veor_s64(c2[1378],veor_s64(c2[867],veor_s64(c2[1909],veor_s64(c2[864],veor_s64(c2[890],veor_s64(c2[1926],veor_s64(c2[632],veor_s64(c2[1695],veor_s64(c2[1956],veor_s64(c2[1460],veor_s64(c2[1200],veor_s64(c2[419],veor_s64(c2[941],veor_s64(c2[450],veor_s64(c2[968],veor_s64(c2[1775],veor_s64(c2[1257],veor_s64(c2[2031],veor_s64(c2[1801],veor_s64(c2[1541],veor_s64(c2[1276],c2[234]))))))))))))))))))))))))))))))))));
+
+//row: 13
+     d2[169]=veor_s64(c2[2],veor_s64(c2[792],veor_s64(c2[1832],veor_s64(c2[4],veor_s64(c2[1078],veor_s64(c2[1070],veor_s64(c2[1587],veor_s64(c2[1327],veor_s64(c2[1332],veor_s64(c2[318],veor_s64(c2[575],veor_s64(c2[315],veor_s64(c2[1642],veor_s64(c2[1118],veor_s64(c2[81],veor_s64(c2[1154],veor_s64(c2[111],veor_s64(c2[1156],veor_s64(c2[896],veor_s64(c2[1959],veor_s64(c2[401],veor_s64(c2[141],veor_s64(c2[1464],veor_s64(c2[683],veor_s64(c2[1465],veor_s64(c2[1205],veor_s64(c2[714],veor_s64(c2[1492],veor_s64(c2[1232],veor_s64(c2[2039],veor_s64(c2[1508],veor_s64(c2[476],veor_s64(c2[216],veor_s64(c2[2039],veor_s64(c2[1805],veor_s64(c2[1540],veor_s64(c2[758],c2[498])))))))))))))))))))))))))))))))))))));
+
+//row: 14
+     d2[182]=veor_s64(c2[791],veor_s64(c2[531],veor_s64(c2[785],veor_s64(c2[1308],veor_s64(c2[1562],veor_s64(c2[269],veor_s64(c2[523],veor_s64(c2[1854],veor_s64(c2[1594],veor_s64(c2[1848],veor_s64(c2[1586],veor_s64(c2[1853],veor_s64(c2[1856],veor_s64(c2[291],veor_s64(c2[31],veor_s64(c2[817],veor_s64(c2[1094],veor_s64(c2[834],veor_s64(c2[1101],veor_s64(c2[844],veor_s64(c2[1358],veor_s64(c2[1098],veor_s64(c2[339],veor_s64(c2[79],veor_s64(c2[346],veor_s64(c2[1647],veor_s64(c2[1901],veor_s64(c2[610],veor_s64(c2[864],veor_s64(c2[1670],veor_s64(c2[1924],veor_s64(c2[627],veor_s64(c2[894],veor_s64(c2[1412],veor_s64(c2[1926],veor_s64(c2[1666],veor_s64(c2[396],veor_s64(c2[650],veor_s64(c2[657],veor_s64(c2[1171],veor_s64(c2[911],veor_s64(c2[161],veor_s64(c2[1980],veor_s64(c2[168],veor_s64(c2[1199],veor_s64(c2[1466],veor_s64(c2[1721],veor_s64(c2[156],veor_s64(c2[1988],veor_s64(c2[1198],veor_s64(c2[1230],veor_s64(c2[1484],veor_s64(c2[1748],veor_s64(c2[183],veor_s64(c2[2002],veor_s64(c2[476],veor_s64(c2[730],veor_s64(c2[2037],veor_s64(c2[212],veor_s64(c2[732],veor_s64(c2[1259],veor_s64(c2[999],veor_s64(c2[502],veor_s64(c2[242],veor_s64(c2[496],veor_s64(c2[2056],veor_s64(c2[244],veor_s64(c2[1014],veor_s64(c2[1541],c2[1281])))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))));
+
+//row: 15
+     d2[195]=veor_s64(c2[525],veor_s64(c2[1304],veor_s64(c2[1044],veor_s64(c2[1302],veor_s64(c2[1821],veor_s64(c2[263],veor_s64(c2[782],veor_s64(c2[1568],veor_s64(c2[1588],veor_s64(c2[288],veor_s64(c2[28],veor_s64(c2[1593],veor_s64(c2[33],veor_s64(c2[1850],veor_s64(c2[290],veor_s64(c2[841],veor_s64(c2[1620],veor_s64(c2[1360],veor_s64(c2[838],veor_s64(c2[1357],veor_s64(c2[86],veor_s64(c2[865],veor_s64(c2[605],veor_s64(c2[1641],veor_s64(c2[81],veor_s64(c2[604],veor_s64(c2[1123],veor_s64(c2[1664],veor_s64(c2[104],veor_s64(c2[634],veor_s64(c2[1153],veor_s64(c2[1406],veor_s64(c2[1925],veor_s64(c2[390],veor_s64(c2[922],veor_s64(c2[651],veor_s64(c2[1170],veor_s64(c2[1987],veor_s64(c2[687],veor_s64(c2[427],veor_s64(c2[1206],veor_s64(c2[1725],veor_s64(c2[1728],veor_s64(c2[168],veor_s64(c2[1224],veor_s64(c2[1743],veor_s64(c2[1742],veor_s64(c2[182],veor_s64(c2[470],veor_s64(c2[989],veor_s64(c2[2031],veor_s64(c2[471],veor_s64(c2[739],veor_s64(c2[1258],veor_s64(c2[236],veor_s64(c2[1015],veor_s64(c2[755],veor_s64(c2[2063],veor_s64(c2[503],veor_s64(c2[1021],c2[1540]))))))))))))))))))))))))))))))))))))))))))))))))))))))))))));
+
+//row: 16
+     d2[208]=veor_s64(c2[1311],veor_s64(c2[1051],veor_s64(c2[1820],veor_s64(c2[1560],veor_s64(c2[1828],veor_s64(c2[531],veor_s64(c2[271],veor_s64(c2[789],veor_s64(c2[1311],veor_s64(c2[295],veor_s64(c2[35],veor_s64(c2[817],veor_s64(c2[557],veor_s64(c2[27],veor_s64(c2[549],veor_s64(c2[297],veor_s64(c2[806],veor_s64(c2[1328],veor_s64(c2[1614],veor_s64(c2[1354],veor_s64(c2[57],veor_s64(c2[1876],veor_s64(c2[1364],veor_s64(c2[1873],veor_s64(c2[859],veor_s64(c2[599],veor_s64(c2[1381],veor_s64(c2[1121],veor_s64(c2[88],veor_s64(c2[870],veor_s64(c2[610],veor_s64(c2[1130],veor_s64(c2[1639],veor_s64(c2[111],veor_s64(c2[893],veor_s64(c2[633],veor_s64(c2[1147],veor_s64(c2[1669],veor_s64(c2[1932],veor_s64(c2[375],veor_s64(c2[916],veor_s64(c2[1698],veor_s64(c2[1438],veor_s64(c2[1177],veor_s64(c2[1699],veor_s64(c2[681],veor_s64(c2[421],veor_s64(c2[1203],veor_s64(c2[943],veor_s64(c2[1719],veor_s64(c2[422],veor_s64(c2[162],veor_s64(c2[162],veor_s64(c2[684],veor_s64(c2[1750],veor_s64(c2[453],veor_s64(c2[193],veor_s64(c2[189],veor_s64(c2[711],veor_s64(c2[996],veor_s64(c2[1778],veor_s64(c2[1518],veor_s64(c2[478],veor_s64(c2[1000],veor_s64(c2[1252],veor_s64(c2[1774],veor_s64(c2[1022],veor_s64(c2[762],veor_s64(c2[1544],veor_s64(c2[1284],veor_s64(c2[497],veor_s64(c2[1279],veor_s64(c2[1019],veor_s64(c2[1534],veor_s64(c2[2056],c2[2057])))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))));
+
+//row: 17
+     d2[221]=veor_s64(c2[1309],veor_s64(c2[1049],veor_s64(c2[529],veor_s64(c2[269],veor_s64(c2[1826],veor_s64(c2[1306],veor_s64(c2[1046],veor_s64(c2[787],veor_s64(c2[7],veor_s64(c2[293],veor_s64(c2[33],veor_s64(c2[1592],veor_s64(c2[1332],veor_s64(c2[38],veor_s64(c2[1337],veor_s64(c2[295],veor_s64(c2[1594],veor_s64(c2[293],veor_s64(c2[1612],veor_s64(c2[1352],veor_s64(c2[832],veor_s64(c2[572],veor_s64(c2[1362],veor_s64(c2[582],veor_s64(c2[870],veor_s64(c2[610],veor_s64(c2[90],veor_s64(c2[1909],veor_s64(c2[86],veor_s64(c2[1645],veor_s64(c2[1385],veor_s64(c2[1128],veor_s64(c2[348],veor_s64(c2[109],veor_s64(c2[1668],veor_s64(c2[1408],veor_s64(c2[1145],veor_s64(c2[365],veor_s64(c2[1930],veor_s64(c2[1150],veor_s64(c2[914],veor_s64(c2[394],veor_s64(c2[134],veor_s64(c2[1175],veor_s64(c2[395],veor_s64(c2[402],veor_s64(c2[679],veor_s64(c2[419],veor_s64(c2[1978],veor_s64(c2[1718],veor_s64(c2[1717],veor_s64(c2[1197],veor_s64(c2[937],veor_s64(c2[160],veor_s64(c2[1459],veor_s64(c2[1748],veor_s64(c2[1228],veor_s64(c2[968],veor_s64(c2[187],veor_s64(c2[1486],veor_s64(c2[994],veor_s64(c2[474],veor_s64(c2[214],veor_s64(c2[476],veor_s64(c2[1775],veor_s64(c2[1250],veor_s64(c2[470],veor_s64(c2[1020],veor_s64(c2[760],veor_s64(c2[240],veor_s64(c2[2059],veor_s64(c2[495],veor_s64(c2[2054],veor_s64(c2[1794],veor_s64(c2[1545],c2[765])))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))));
+
+//row: 18
+     d2[234]=veor_s64(c2[263],veor_s64(c2[948],c2[1226]));
+
+//row: 19
+     d2[247]=veor_s64(c2[531],veor_s64(c2[1308],veor_s64(c2[269],veor_s64(c2[1560],veor_s64(c2[1594],veor_s64(c2[1586],veor_s64(c2[1856],veor_s64(c2[1068],veor_s64(c2[834],veor_s64(c2[844],veor_s64(c2[79],veor_s64(c2[1647],veor_s64(c2[610],veor_s64(c2[1670],veor_s64(c2[627],veor_s64(c2[1412],veor_s64(c2[396],veor_s64(c2[657],veor_s64(c2[1980],veor_s64(c2[1199],veor_s64(c2[1721],veor_s64(c2[1230],veor_s64(c2[1748],veor_s64(c2[476],veor_s64(c2[2037],veor_s64(c2[732],veor_s64(c2[242],veor_s64(c2[2056],c2[1014]))))))))))))))))))))))))))));
+
+//row: 20
+     d2[260]=veor_s64(c2[266],veor_s64(c2[6],veor_s64(c2[783],veor_s64(c2[1823],veor_s64(c2[1329],veor_s64(c2[1069],veor_s64(c2[1074],veor_s64(c2[1331],veor_s64(c2[1077],veor_s64(c2[582],veor_s64(c2[322],veor_s64(c2[319],veor_s64(c2[1906],veor_s64(c2[1646],veor_s64(c2[1122],veor_s64(c2[85],veor_s64(c2[1145],veor_s64(c2[115],veor_s64(c2[887],veor_s64(c2[888],veor_s64(c2[1950],veor_s64(c2[132],veor_s64(c2[1728],veor_s64(c2[1468],veor_s64(c2[687],veor_s64(c2[1196],veor_s64(c2[705],veor_s64(c2[1223],veor_s64(c2[2030],veor_s64(c2[1512],veor_s64(c2[220],veor_s64(c2[2056],veor_s64(c2[1796],veor_s64(c2[1544],c2[502]))))))))))))))))))))))))))))))))));
+
+//row: 21
+     d2[273]=veor_s64(c2[1307],veor_s64(c2[5],veor_s64(c2[1045],veor_s64(c2[521],veor_s64(c2[291],veor_s64(c2[296],veor_s64(c2[813],veor_s64(c2[553],veor_s64(c2[1623],veor_s64(c2[1880],veor_s64(c2[1620],veor_s64(c2[868],veor_s64(c2[344],veor_s64(c2[1386],veor_s64(c2[367],veor_s64(c2[1416],veor_s64(c2[369],veor_s64(c2[109],veor_s64(c2[1172],veor_s64(c2[1693],veor_s64(c2[1433],veor_s64(c2[677],veor_s64(c2[1988],veor_s64(c2[678],veor_s64(c2[418],veor_s64(c2[2006],veor_s64(c2[705],veor_s64(c2[445],veor_s64(c2[1252],veor_s64(c2[734],veor_s64(c2[1768],veor_s64(c2[1508],veor_s64(c2[730],veor_s64(c2[1018],veor_s64(c2[766],veor_s64(c2[2063],c2[1803]))))))))))))))))))))))))))))))))))));
+
+//row: 22
+     d2[286]=veor_s64(c2[558],c2[1614]);
+
+//row: 23
+     d2[299]=veor_s64(c2[1046],veor_s64(c2[606],c2[1431]));
+
+//row: 24
+     d2[312]=veor_s64(c2[287],veor_s64(c2[319],c2[245]));
+
+//row: 25
+     d2[325]=veor_s64(c2[1311],c2[661]);
+
+//row: 26
+     d2[338]=veor_s64(c2[11],veor_s64(c2[1830],veor_s64(c2[1831],veor_s64(c2[788],veor_s64(c2[528],veor_s64(c2[529],veor_s64(c2[1568],veor_s64(c2[1569],veor_s64(c2[1074],veor_s64(c2[814],veor_s64(c2[815],veor_s64(c2[806],veor_s64(c2[807],veor_s64(c2[1076],veor_s64(c2[1337],veor_s64(c2[1077],veor_s64(c2[314],veor_s64(c2[54],veor_s64(c2[55],veor_s64(c2[64],veor_s64(c2[312],veor_s64(c2[52],veor_s64(c2[1099],veor_s64(c2[1638],veor_s64(c2[1378],veor_s64(c2[1379],veor_s64(c2[1127],veor_s64(c2[867],veor_s64(c2[868],veor_s64(c2[1909],veor_s64(c2[1910],veor_s64(c2[1150],veor_s64(c2[890],veor_s64(c2[891],veor_s64(c2[1926],veor_s64(c2[1927],veor_s64(c2[632],veor_s64(c2[893],veor_s64(c2[633],veor_s64(c2[1955],veor_s64(c2[1695],veor_s64(c2[1696],veor_s64(c2[1956],veor_s64(c2[138],veor_s64(c2[1957],veor_s64(c2[1460],veor_s64(c2[1200],veor_s64(c2[1201],veor_s64(c2[679],veor_s64(c2[419],veor_s64(c2[420],veor_s64(c2[941],veor_s64(c2[1202],veor_s64(c2[942],veor_s64(c2[710],veor_s64(c2[450],veor_s64(c2[451],veor_s64(c2[968],veor_s64(c2[1229],veor_s64(c2[969],veor_s64(c2[1230],veor_s64(c2[2035],veor_s64(c2[1775],veor_s64(c2[1776],veor_s64(c2[1257],veor_s64(c2[1258],veor_s64(c2[2031],veor_s64(c2[213],veor_s64(c2[2032],veor_s64(c2[1801],veor_s64(c2[1541],veor_s64(c2[1542],veor_s64(c2[1536],veor_s64(c2[1276],veor_s64(c2[1277],veor_s64(c2[234],veor_s64(c2[495],c2[235])))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))));
+
+//row: 27
+     d2[351]=veor_s64(c2[8],c2[427]);
+
+//row: 28
+     d2[364]=veor_s64(c2[1587],veor_s64(c2[582],c2[1695]));
+
+//row: 29
+     d2[377]=veor_s64(c2[526],c2[887]);
+
+//row: 30
+     d2[390]=veor_s64(c2[1620],veor_s64(c2[392],veor_s64(c2[708],c2[1794])));
+
+//row: 31
+     d2[403]=veor_s64(c2[782],veor_s64(c2[1572],veor_s64(c2[520],veor_s64(c2[1858],veor_s64(c2[1850],veor_s64(c2[288],veor_s64(c2[28],veor_s64(c2[807],veor_s64(c2[1098],veor_s64(c2[1355],veor_s64(c2[1095],veor_s64(c2[343],veor_s64(c2[1898],veor_s64(c2[861],veor_s64(c2[1934],veor_s64(c2[891],veor_s64(c2[1936],veor_s64(c2[1676],veor_s64(c2[660],veor_s64(c2[1181],veor_s64(c2[921],veor_s64(c2[165],veor_s64(c2[1463],veor_s64(c2[166],veor_s64(c2[1985],veor_s64(c2[1494],veor_s64(c2[193],veor_s64(c2[2012],veor_s64(c2[740],veor_s64(c2[209],veor_s64(c2[1256],veor_s64(c2[996],veor_s64(c2[506],veor_s64(c2[241],veor_s64(c2[1538],c2[1278])))))))))))))))))))))))))))))))))));
+
+//row: 32
+     d2[416]=veor_s64(c2[532],veor_s64(c2[272],veor_s64(c2[1309],veor_s64(c2[1049],veor_s64(c2[10],veor_s64(c2[1560],veor_s64(c2[1595],veor_s64(c2[1335],veor_s64(c2[1327],veor_s64(c2[1597],veor_s64(c2[835],veor_s64(c2[575],veor_s64(c2[572],veor_s64(c2[80],veor_s64(c2[1899],veor_s64(c2[1648],veor_s64(c2[1388],veor_s64(c2[338],veor_s64(c2[1671],veor_s64(c2[1411],veor_s64(c2[368],veor_s64(c2[1153],veor_s64(c2[397],veor_s64(c2[137],veor_s64(c2[398],veor_s64(c2[130],veor_s64(c2[1981],veor_s64(c2[1721],veor_s64(c2[1200],veor_s64(c2[940],veor_s64(c2[1462],veor_s64(c2[1231],veor_s64(c2[971],veor_s64(c2[1489],veor_s64(c2[477],veor_s64(c2[217],veor_s64(c2[1778],veor_s64(c2[473],veor_s64(c2[243],veor_s64(c2[2062],veor_s64(c2[2057],veor_s64(c2[1797],c2[755]))))))))))))))))))))))))))))))))))))))))));
+
+//row: 33
+     d2[429]=veor_s64(c2[261],veor_s64(c2[1051],veor_s64(c2[12],veor_s64(c2[1337],veor_s64(c2[1329],veor_s64(c2[1586],veor_s64(c2[577],veor_s64(c2[574],veor_s64(c2[839],veor_s64(c2[1901],veor_s64(c2[1390],veor_s64(c2[340],veor_s64(c2[1413],veor_s64(c2[370],veor_s64(c2[1155],veor_s64(c2[139],veor_s64(c2[400],veor_s64(c2[1723],veor_s64(c2[942],veor_s64(c2[1464],veor_s64(c2[973],veor_s64(c2[1491],veor_s64(c2[1490],veor_s64(c2[219],veor_s64(c2[1780],veor_s64(c2[475],veor_s64(c2[2064],veor_s64(c2[1799],c2[757]))))))))))))))))))))))))))));
+
+//row: 34
+     d2[442]=veor_s64(c2[1562],veor_s64(c2[1302],veor_s64(c2[1822],veor_s64(c2[260],veor_s64(c2[0],veor_s64(c2[520],veor_s64(c2[1040],veor_s64(c2[1560],veor_s64(c2[1311],veor_s64(c2[546],veor_s64(c2[286],veor_s64(c2[806],veor_s64(c2[291],veor_s64(c2[811],veor_s64(c2[548],veor_s64(c2[1328],veor_s64(c2[1068],veor_s64(c2[1878],veor_s64(c2[1618],veor_s64(c2[59],veor_s64(c2[1615],veor_s64(c2[316],veor_s64(c2[56],veor_s64(c2[1123],veor_s64(c2[863],veor_s64(c2[1383],veor_s64(c2[599],veor_s64(c2[339],veor_s64(c2[859],veor_s64(c2[1381],veor_s64(c2[1901],veor_s64(c2[635],veor_s64(c2[375],veor_s64(c2[895],veor_s64(c2[1411],veor_s64(c2[1931],veor_s64(c2[104],veor_s64(c2[884],veor_s64(c2[624],veor_s64(c2[1440],veor_s64(c2[1180],veor_s64(c2[1700],veor_s64(c2[1441],veor_s64(c2[142],veor_s64(c2[1961],veor_s64(c2[945],veor_s64(c2[685],veor_s64(c2[1205],veor_s64(c2[164],veor_s64(c2[1983],veor_s64(c2[424],veor_s64(c2[426],veor_s64(c2[1206],veor_s64(c2[946],veor_s64(c2[182],veor_s64(c2[2014],veor_s64(c2[442],veor_s64(c2[453],veor_s64(c2[1233],veor_s64(c2[973],veor_s64(c2[1520],veor_s64(c2[1260],veor_s64(c2[1780],veor_s64(c2[729],veor_s64(c2[1249],veor_s64(c2[1516],veor_s64(c2[217],veor_s64(c2[2036],veor_s64(c2[1286],veor_s64(c2[1026],veor_s64(c2[1546],veor_s64(c2[1021],veor_s64(c2[761],veor_s64(c2[1281],veor_s64(c2[1798],veor_s64(c2[499],c2[239]))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))));
+
+//row: 35
+     d2[455]=veor_s64(c2[1041],veor_s64(c2[781],veor_s64(c2[1571],veor_s64(c2[532],veor_s64(c2[38],veor_s64(c2[1857],veor_s64(c2[1849],veor_s64(c2[27],veor_s64(c2[1332],veor_s64(c2[1357],veor_s64(c2[1097],veor_s64(c2[1094],veor_s64(c2[602],veor_s64(c2[342],veor_s64(c2[1910],veor_s64(c2[860],veor_s64(c2[1933],veor_s64(c2[890],veor_s64(c2[1675],veor_s64(c2[659],veor_s64(c2[920],veor_s64(c2[1957],veor_s64(c2[424],veor_s64(c2[164],veor_s64(c2[1462],veor_s64(c2[1984],veor_s64(c2[1493],veor_s64(c2[2011],veor_s64(c2[739],veor_s64(c2[208],veor_s64(c2[995],veor_s64(c2[765],veor_s64(c2[505],veor_s64(c2[240],c2[1277]))))))))))))))))))))))))))))))))));
+
+//row: 36
+     d2[468]=veor_s64(c2[1311],veor_s64(c2[1879],c2[971]));
+
+//row: 37
+     d2[481]=veor_s64(c2[781],veor_s64(c2[1822],veor_s64(c2[1571],veor_s64(c2[520],veor_s64(c2[532],veor_s64(c2[1560],veor_s64(c2[1857],veor_s64(c2[806],veor_s64(c2[1849],veor_s64(c2[811],veor_s64(c2[27],veor_s64(c2[1328],veor_s64(c2[1068],veor_s64(c2[1097],veor_s64(c2[59],veor_s64(c2[1094],veor_s64(c2[316],veor_s64(c2[56],veor_s64(c2[342],veor_s64(c2[1383],veor_s64(c2[1910],veor_s64(c2[859],veor_s64(c2[860],veor_s64(c2[1901],veor_s64(c2[1933],veor_s64(c2[895],veor_s64(c2[890],veor_s64(c2[1931],veor_s64(c2[1675],veor_s64(c2[884],veor_s64(c2[624],veor_s64(c2[659],veor_s64(c2[1700],veor_s64(c2[920],veor_s64(c2[142],veor_s64(c2[1961],veor_s64(c2[164],veor_s64(c2[1205],veor_s64(c2[1462],veor_s64(c2[424],veor_s64(c2[1984],veor_s64(c2[1206],veor_s64(c2[946],veor_s64(c2[1493],veor_s64(c2[442],veor_s64(c2[2011],veor_s64(c2[1233],veor_s64(c2[973],veor_s64(c2[739],veor_s64(c2[1780],veor_s64(c2[208],veor_s64(c2[1249],veor_s64(c2[995],veor_s64(c2[217],veor_s64(c2[2036],veor_s64(c2[505],veor_s64(c2[1546],veor_s64(c2[240],veor_s64(c2[1281],veor_s64(c2[1277],veor_s64(c2[499],c2[239])))))))))))))))))))))))))))))))))))))))))))))))))))))))))))));
+
+//row: 38
+     d2[494]=veor_s64(c2[1562],veor_s64(c2[1302],veor_s64(c2[0],veor_s64(c2[1040],veor_s64(c2[546],veor_s64(c2[286],veor_s64(c2[291],veor_s64(c2[548],veor_s64(c2[1332],veor_s64(c2[1878],veor_s64(c2[1618],veor_s64(c2[1615],veor_s64(c2[1123],veor_s64(c2[863],veor_s64(c2[339],veor_s64(c2[1381],veor_s64(c2[375],veor_s64(c2[1411],veor_s64(c2[104],veor_s64(c2[1180],veor_s64(c2[1441],veor_s64(c2[1438],veor_s64(c2[945],veor_s64(c2[685],veor_s64(c2[1983],veor_s64(c2[426],veor_s64(c2[2014],veor_s64(c2[453],veor_s64(c2[1260],veor_s64(c2[729],veor_s64(c2[1516],veor_s64(c2[1286],veor_s64(c2[1026],veor_s64(c2[761],c2[1798]))))))))))))))))))))))))))))))))));
+
+//row: 39
+     d2[507]=veor_s64(c2[1040],veor_s64(c2[780],veor_s64(c2[1830],veor_s64(c2[1570],veor_s64(c2[531],veor_s64(c2[1309],veor_s64(c2[37],veor_s64(c2[1856],veor_s64(c2[1848],veor_s64(c2[26],veor_s64(c2[1356],veor_s64(c2[1096],veor_s64(c2[1093],veor_s64(c2[601],veor_s64(c2[341],veor_s64(c2[90],veor_s64(c2[1909],veor_s64(c2[859],veor_s64(c2[113],veor_s64(c2[1932],veor_s64(c2[889],veor_s64(c2[1674],veor_s64(c2[918],veor_s64(c2[658],veor_s64(c2[919],veor_s64(c2[423],veor_s64(c2[163],veor_s64(c2[1721],veor_s64(c2[1461],veor_s64(c2[1983],veor_s64(c2[1752],veor_s64(c2[1492],veor_s64(c2[2010],veor_s64(c2[1488],veor_s64(c2[998],veor_s64(c2[738],veor_s64(c2[220],veor_s64(c2[994],veor_s64(c2[764],veor_s64(c2[504],veor_s64(c2[499],veor_s64(c2[239],c2[1276]))))))))))))))))))))))))))))))))))))))))));
+
+//row: 40
+     d2[520]=veor_s64(c2[272],veor_s64(c2[261],veor_s64(c2[1049],veor_s64(c2[1051],veor_s64(c2[10],veor_s64(c2[12],veor_s64(c2[1335],veor_s64(c2[1337],veor_s64(c2[1327],veor_s64(c2[1329],veor_s64(c2[1597],veor_s64(c2[1846],veor_s64(c2[1586],veor_s64(c2[575],veor_s64(c2[577],veor_s64(c2[572],veor_s64(c2[834],veor_s64(c2[574],veor_s64(c2[323],veor_s64(c2[1899],veor_s64(c2[1901],veor_s64(c2[1388],veor_s64(c2[1390],veor_s64(c2[338],veor_s64(c2[340],veor_s64(c2[1411],veor_s64(c2[1413],veor_s64(c2[368],veor_s64(c2[370],veor_s64(c2[1153],veor_s64(c2[1415],veor_s64(c2[1155],veor_s64(c2[137],veor_s64(c2[139],veor_s64(c2[398],veor_s64(c2[660],veor_s64(c2[400],veor_s64(c2[1721],veor_s64(c2[1723],veor_s64(c2[940],veor_s64(c2[942],veor_s64(c2[1462],veor_s64(c2[1724],veor_s64(c2[1464],veor_s64(c2[971],veor_s64(c2[973],veor_s64(c2[1489],veor_s64(c2[1751],veor_s64(c2[1491],veor_s64(c2[217],veor_s64(c2[219],veor_s64(c2[1778],veor_s64(c2[1780],veor_s64(c2[473],veor_s64(c2[735],veor_s64(c2[475],veor_s64(c2[2062],veor_s64(c2[2064],veor_s64(c2[1797],veor_s64(c2[1799],veor_s64(c2[755],veor_s64(c2[1017],c2[757]))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))));
+
+//row: 41
+     d2[533]=veor_s64(c2[1572],veor_s64(c2[1312],veor_s64(c2[10],veor_s64(c2[1050],veor_s64(c2[556],veor_s64(c2[296],veor_s64(c2[288],veor_s64(c2[558],veor_s64(c2[1856],veor_s64(c2[1875],veor_s64(c2[1615],veor_s64(c2[1612],veor_s64(c2[1120],veor_s64(c2[860],veor_s64(c2[349],veor_s64(c2[1378],veor_s64(c2[372],veor_s64(c2[1408],veor_s64(c2[114],veor_s64(c2[1177],veor_s64(c2[1438],veor_s64(c2[1441],veor_s64(c2[942],veor_s64(c2[682],veor_s64(c2[1980],veor_s64(c2[423],veor_s64(c2[2011],veor_s64(c2[450],veor_s64(c2[1257],veor_s64(c2[739],veor_s64(c2[1513],veor_s64(c2[1283],veor_s64(c2[1023],veor_s64(c2[758],c2[1795]))))))))))))))))))))))))))))))))));
+  }
+#endif
 }

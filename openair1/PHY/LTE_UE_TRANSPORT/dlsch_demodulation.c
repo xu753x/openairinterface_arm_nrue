@@ -1653,6 +1653,7 @@ void dlsch_channel_compensation_core(int **rxdataF_ext,
                                      int start_point)
 
 {
+#if defined(__x86_64__) || defined(__i386__)
   unsigned short ii;
   int length_mod8 = 0;
   int length2;
@@ -1822,6 +1823,9 @@ void dlsch_channel_compensation_core(int **rxdataF_ext,
 
   _mm_empty();
   _m_empty();
+#elif defined(__arm__) || defined(__aarch64__)
+
+#endif
 }
 
 #if defined(__x86_64__) || defined(__i386__)
@@ -1913,6 +1917,7 @@ void prec2A_TM56_128(unsigned char pmi,__m128i *ch0,__m128i *ch1) {
 short TM3_prec[8]__attribute__((aligned(16))) = {1,1,-1,-1,1,1,-1,-1} ;
 
 void prec2A_TM3_128(__m128i *ch0,__m128i *ch1) {
+#if defined(__x86_64__) || defined(__i386__)
   __m128i amp = _mm_set1_epi16(ONE_OVER_SQRT2_Q15);
   __m128i tmp0,tmp1;
   //_mm_mulhi_epi16
@@ -1939,12 +1944,16 @@ void prec2A_TM3_128(__m128i *ch0,__m128i *ch1) {
   //  print_shorts("prec2A_TM3 ch1 (after):",ch1);
   _mm_empty();
   _m_empty();
+#elif defined(__arm__) || defined(__aarch64__)
+
+#endif
 }
 
 // pmi = 0 => stream 0 (1,1), stream 1 (1,-1)
 // pmi = 1 => stream 0 (1,j), stream 2 (1,-j)
 
 void prec2A_TM4_128(int pmi,__m128i *ch0,__m128i *ch1) {
+#if defined(__x86_64__) || defined(__i386__)
   // sqrt(2) is already taken into account in computation sqrt_rho_a, sqrt_rho_b,
   //so divide by 2 is replaced by divide by sqrt(2).
   // printf ("demod pmi=%d\n", pmi);
@@ -1983,6 +1992,9 @@ void prec2A_TM4_128(int pmi,__m128i *ch0,__m128i *ch1) {
   _m_empty();
   // print_shorts("prec2A_TM4 ch0 (end):",ch0);
   //print_shorts("prec2A_TM4 ch1 (end):",ch1);
+#elif defined(__arm__) || defined(__aarch64__)
+
+#endif
 }
 
 void dlsch_channel_compensation_TM56(int **rxdataF_ext,
@@ -3204,6 +3216,7 @@ void dlsch_detection_mrc_TM34(LTE_DL_FRAME_PARMS *frame_parms,
                               unsigned char symbol,
                               unsigned short nb_rb,
                               unsigned char dual_stream_UE) {
+#if defined(__x86_64__) || defined(__i386__)
   int i;
   __m128i *rxdataF_comp128_0,*rxdataF_comp128_1;
   __m128i *dl_ch_mag128_0,*dl_ch_mag128_1;
@@ -3320,6 +3333,9 @@ void dlsch_detection_mrc_TM34(LTE_DL_FRAME_PARMS *frame_parms,
 
   _mm_empty();
   _m_empty();
+#elif defined(__arm__) || defined(__aarch64__)
+
+#endif
 }
 
 void dlsch_scale_channel(int **dl_ch_estimates_ext,

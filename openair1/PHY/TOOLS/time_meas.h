@@ -45,7 +45,7 @@ typedef struct {
   int trials;
   int meas_flag;
 } time_stats_t;
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
 typedef struct {
   uint32_t in;
   uint32_t diff;
@@ -53,6 +53,7 @@ typedef struct {
   uint32_t diff_square; /*!< \brief process duration square */
   uint32_t max;
   int trials;
+  int meas_flag;
 } time_stats_t;
 #endif
 
@@ -85,6 +86,13 @@ static inline uint32_t rdtsc_oai(void) __attribute__((always_inline));
 static inline uint32_t rdtsc_oai(void) {
   uint32_t r = 0;
   asm volatile("mrc p15, 0, %0, c9, c13, 0" : "=r"(r) );
+  return r;
+}
+#elif defined(__aarch64__)
+static inline uint64_t rdtsc_oai(void) {
+  uint64_t r = 0;
+  //asm volatile("mrs %0, cntvct_el0" : "=r" (r));
+  asm volatile("mrs %0, PMCCNTR_EL0" : "=r" (r));
   return r;
 }
 #endif

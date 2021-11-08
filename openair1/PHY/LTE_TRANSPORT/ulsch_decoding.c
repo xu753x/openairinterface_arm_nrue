@@ -635,7 +635,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,
     ((__m256i *)cseq)[i2++] = ((__m256i *)unscrambling_lut)[s&65535];
     ((__m256i *)cseq)[i2++] = ((__m256i *)unscrambling_lut)[(s>>16)&65535];
 #endif
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
     ((int16x8_t *)cseq)[i2++] = ((int16x8_t *)unscrambling_lut)[(s&65535)<<1];
     ((int16x8_t *)cseq)[i2++] = ((int16x8_t *)unscrambling_lut)[1+((s&65535)<<1)];
     s>>=16;

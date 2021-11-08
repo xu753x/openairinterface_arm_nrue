@@ -30,7 +30,9 @@
 
 
 #include <stdint.h>
+#ifdef __AVX2__
 #include <immintrin.h>
+#endif
 #include "nrLDPCdecoder_defs.h"
 #include "nrLDPC_types.h"
 #include "nrLDPC_init.h"

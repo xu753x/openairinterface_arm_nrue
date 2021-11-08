@@ -331,15 +331,20 @@ static inline __m128i ssp_cvtepi16_epi32_SSE2 ( __m128i a) {
 }
 #endif // __SSE4_1__
 
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
 #include <arm_neon.h>
 
 #endif // x86_64 || i386
 
 #if defined(__x86_64__) || defined(__i386__)
   #define vect128 __m128i
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
   #define vect128 int16x8_t
+#endif
+
+#if defined(__arm__) || defined(__aarch64__)
+#define __m128i int16x8_t
+#define __m64 int8x8_t
 #endif
 
 static const short minusConjug128[8]__attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1};
@@ -356,8 +361,26 @@ static inline vect128 mulByConjugate128(vect128 *a, vect128 *b, int8_t output_sh
   vect128 lowPart = _mm_unpacklo_epi32(realPart,imagPart);
   vect128 highPart = _mm_unpackhi_epi32(realPart,imagPart);
   return ( _mm_packs_epi32(lowPart,highPart));
-#elif defined(__arm__)
-  AssertFatal(false, "not developped\n");
+#elif defined(__arm__) || defined(__aarch64__)
+  int32x4_t mmtmpP0,mmtmpP1,mmtmpP0b,mmtmpP1b;
+  int16x4x2_t Part;
+  int16_t conj[4]__attribute__((aligned(16))) = {1,-1,1,-1};
+  int32x4_t output_shift128 = vmovq_n_s32(-(int32_t)output_shift);
+
+  mmtmpP0 = vmull_s16(((int16x4_t*)a)[0], ((int16x4_t*)b)[0]);
+  mmtmpP1 = vmull_s16(((int16x4_t*)a)[1], ((int16x4_t*)b)[1]);
+  mmtmpP0 = vcombine_s32(vpadd_s32(vget_low_s32(mmtmpP0),vget_high_s32(mmtmpP0)),
+                         vpadd_s32(vget_low_s32(mmtmpP1),vget_high_s32(mmtmpP1)));
+  mmtmpP0b = vmull_s16(vrev32_s16(vmul_s16(((int16x4_t*)a)[0],*(int16x4_t *)conj)),  ((int16x4_t*)b)[0]);
+  mmtmpP1b = vmull_s16(vrev32_s16(vmul_s16(((int16x4_t*)a)[1],*(int16x4_t *)conj)),  ((int16x4_t*)b)[1]);
+  mmtmpP1 = vcombine_s32(vpadd_s32(vget_low_s32(mmtmpP0b),vget_high_s32(mmtmpP0b)),
+                         vpadd_s32(vget_low_s32(mmtmpP1b),vget_high_s32(mmtmpP1b)));
+  mmtmpP0 = vqshlq_s32(mmtmpP0,output_shift128);
+  mmtmpP1 = vqshlq_s32(mmtmpP1,output_shift128);
+  Part = vzip_s16(vmovn_s32(mmtmpP0),vmovn_s32(mmtmpP1));
+
+  return vcombine_s16(Part.val[0],Part.val[1]);
+  //AssertFatal(false, "not developped\n");
 #endif
 }
 
@@ -374,8 +397,8 @@ static inline vect128 mulByConjugate128(vect128 *a, vect128 *b, int8_t output_sh
            _mm_extract_epi16(x,6),\
            _mm_extract_epi16(x,7));\
   }
-#elif defined(__arm__)
-  displaySamples128(vect) {}
+#elif defined(__arm__) || defined(__aarch64__)
+#define displaySamples128(vect) {}
 //TBD
 #endif
 #endif // SSE_INTRIN_H

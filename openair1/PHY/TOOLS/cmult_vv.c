@@ -31,7 +31,7 @@ int16_t conjug2[8]__attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1} ;
 #define simdshort_q15_t __m64
 #define set1_int16(a) _mm_set1_epi16(a)
 #define setr_int16(a0, a1, a2, a3, a4, a5, a6, a7) _mm_setr_epi16(a0, a1, a2, a3, a4, a5, a6, a7 )
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
 int16_t conjug[4]__attribute__((aligned(16))) = {-1,1,-1,1} ;
 #define simd_q15_t int16x8_t
 #define simdshort_q15_t int16x4_t
@@ -70,7 +70,7 @@ int mult_cpx_conj_vector(int16_t *x1,
   simd_q15_t tmp_re,tmp_im;
   simd_q15_t tmpy0,tmpy1;
 
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
   int32x4_t tmp_re,tmp_im;
   int32x4_t tmp_re1,tmp_im1;
   int16x4x2_t tmpy;
@@ -99,7 +99,7 @@ int mult_cpx_conj_vector(int16_t *x1,
     else
       *y_128 += _mm_packs_epi32(tmpy0,tmpy1);
 
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
 
     tmp_re  = vmull_s16(((simdshort_q15_t *)x1_128)[0], ((simdshort_q15_t*)x2_128)[0]);
     //tmp_re = [Re(x1[0])Re(x2[0]) Im(x1[0])Im(x2[0]) Re(x1[1])Re(x2[1]) Im(x1[1])Im(x2[1])]
@@ -155,6 +155,7 @@ int mult_cpx_vector(int16_t *x1, //Q15
   // N        - the size f the vectors (this function does N cpx mpy. WARNING: N>=4;
   //
   // output_shift  - shift to be applied to generate output
+#if defined(__x86_64__) || defined(__i386__)
   uint32_t i;                 // loop counter
   simd_q15_t *x1_128;
   simd_q15_t *x2_128;
@@ -196,6 +197,35 @@ int mult_cpx_vector(int16_t *x1, //Q15
   }
   _mm_empty();
   _m_empty();
+#elif defined(__arm__) || defined(__aarch64__)
+  uint32_t i;
+  int16x4_t *x1_128,*x2_128;
+  int16x4x2_t *y_128;
+  int32x4_t mmtmpP0,mmtmpP1,mmtmpP0b,mmtmpP1b;
+  int16_t conj[4]__attribute__((aligned(16))) = {1,-1,1,-1};
+  int32x4_t output_shift128 = vmovq_n_s32(-(int32_t)output_shift);
+
+  x1_128 = (int16x4_t *)&x1[0];
+  x2_128 = (int16x4_t *)&x2[0];
+  y_128  = (int16x4x2_t *)&y[0];
+  for(i=0; i<(N>>2); i++) {
+    mmtmpP0 = vmull_s16(vmul_s16(x1_128[0],*(int16x4_t *)conj), x2_128[0]);
+    mmtmpP1 = vmull_s16(vmul_s16(x1_128[1],*(int16x4_t *)conj), x2_128[1]);
+    mmtmpP0 = vcombine_s32(vpadd_s32(vget_low_s32(mmtmpP0),vget_high_s32(mmtmpP0)),
+                           vpadd_s32(vget_low_s32(mmtmpP1),vget_high_s32(mmtmpP1)));
+    mmtmpP0b = vmull_s16(vrev32_s16(x1_128[0]), x2_128[0]);
+    mmtmpP1b = vmull_s16(vrev32_s16(x1_128[1]), x2_128[1]);
+    mmtmpP1 = vcombine_s32(vpadd_s32(vget_low_s32(mmtmpP0b),vget_high_s32(mmtmpP0b)),
+                           vpadd_s32(vget_low_s32(mmtmpP1b),vget_high_s32(mmtmpP1b)));
+    mmtmpP0 = vqshlq_s32(mmtmpP0,output_shift128);
+    mmtmpP1 = vqshlq_s32(mmtmpP1,output_shift128);
+    *y_128 = vzip_s16(vmovn_s32(mmtmpP0),vmovn_s32(mmtmpP1));
+    
+    x1_128+=2;
+    x2_128+=2;
+    y_128++;
+  }
+#endif
   return(0);
 }
 
@@ -220,25 +250,18 @@ int multadd_cpx_vector(int16_t *x1,
   // N        - the size f the vectors (this function does N cpx mpy. WARNING: N>=4;
   //
   // output_shift  - shift to be applied to generate output
+#if defined(__x86_64__) || defined(__i386__)
   uint32_t i;                 // loop counter
   simd_q15_t *x1_128;
   simd_q15_t *x2_128;
   simd_q15_t *y_128;
-#if defined(__x86_64__) || defined(__i386__)
   simd_q15_t tmp_re,tmp_im;
   simd_q15_t tmpy0,tmpy1;
-#elif defined(__arm__)
-  int32x4_t tmp_re,tmp_im;
-  int32x4_t tmp_re1,tmp_im1;
-  int16x4x2_t tmpy;
-  int32x4_t shift = vdupq_n_s32(-output_shift);
-#endif
   x1_128 = (simd_q15_t *)&x1[0];
   x2_128 = (simd_q15_t *)&x2[0];
   y_128  = (simd_q15_t *)&y[0];
   // we compute 4 cpx multiply for each loop
   for(i=0; i<(N>>2); i++) {
-#if defined(__x86_64__) || defined(__i386__)
     tmp_re = _mm_sign_epi16(*x1_128,*(__m128i*)&conjug2[0]);
     tmp_re = _mm_madd_epi16(tmp_re,*x2_128);
     tmp_im = _mm_shufflelo_epi16(*x1_128,_MM_SHUFFLE(2,3,0,1));
@@ -255,14 +278,46 @@ int multadd_cpx_vector(int16_t *x1,
     else
       *y_128 = _mm_adds_epi16(*y_128,_mm_packs_epi32(tmpy0,tmpy1));
     //print_shorts("*y_128:",&y_128[i]);
-#elif defined(__arm__)
-    msg("mult_cpx_vector not implemented for __arm__");
-#endif
     x1_128++;
     x2_128++;
     y_128++;
   }
   _mm_empty();
   _m_empty();
+#elif defined(__arm__) || defined(__aarch64__)
+  uint32_t i;
+  int16x4_t *x1_128,*x2_128;
+  int16x4x2_t y_tmp;
+  int16x8_t *y_128;
+  int32x4_t mmtmpP0,mmtmpP1,mmtmpP0b,mmtmpP1b;
+  int16_t conj[4]__attribute__((aligned(16))) = {1,-1,1,-1};
+  int32x4_t shift = vdupq_n_s32(-(int32_t)output_shift);
+
+  x1_128 = (int16x4_t *)&x1[0];
+  x2_128 = (int16x4_t *)&x2[0];
+  y_128  = (int16x8_t *)&y[0];
+  for(i=0; i<(N>>2); i++) {
+    mmtmpP0 = vmull_s16(vmul_s16(x1_128[0],*(int16x4_t *)conj), x2_128[0]);
+    mmtmpP1 = vmull_s16(vmul_s16(x1_128[1],*(int16x4_t *)conj), x2_128[1]);
+    mmtmpP0 = vcombine_s32(vpadd_s32(vget_low_s32(mmtmpP0),vget_high_s32(mmtmpP0)),
+                           vpadd_s32(vget_low_s32(mmtmpP1),vget_high_s32(mmtmpP1)));
+    mmtmpP0b = vmull_s16(vrev32_s16(x1_128[0]), x2_128[0]);
+    mmtmpP1b = vmull_s16(vrev32_s16(x1_128[1]), x2_128[1]);
+    mmtmpP1 = vcombine_s32(vpadd_s32(vget_low_s32(mmtmpP0b),vget_high_s32(mmtmpP0b)),
+                           vpadd_s32(vget_low_s32(mmtmpP1b),vget_high_s32(mmtmpP1b)));
+    mmtmpP0 = vqshlq_s32(mmtmpP0,shift);
+    mmtmpP1 = vqshlq_s32(mmtmpP1,shift);
+    if (zero_flag == 1){
+      y_tmp = vzip_s16(vmovn_s32(mmtmpP0),vmovn_s32(mmtmpP1));
+      *y_128 = vcombine_s16(y_tmp.val[0],y_tmp.val[1]);
+    }else{
+       y_tmp = vzip_s16(vmovn_s32(mmtmpP0),vmovn_s32(mmtmpP1));
+      *y_128 = vqaddq_s16(*y_128,vcombine_s16(y_tmp.val[0],y_tmp.val[1]));
+    }
+    x1_128+=2;
+    x2_128+=2;
+    y_128++;
+  }
+#endif
   return(0);
 }
