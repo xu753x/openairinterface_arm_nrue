@@ -519,7 +519,9 @@ void *UE_thread(void *arg) {
   bool syncRunning=false;
   const int nb_slot_frame = UE->frame_parms.slots_per_frame;
   int absolute_slot=0, decoded_frame_rx=INT_MAX, trashed_frames=0;
-
+  if (usrp_tx_thread == 1) {
+    UE->rfdevice.trx_write_init(&UE->rfdevice);
+  }
   for (int i=0; i<NR_RX_NB_TH+1; i++) {// NR_RX_NB_TH working + 1 we are making to be pushed
     notifiedFIFO_elt_t *newElt = newNotifiedFIFO_elt(sizeof(nr_rxtx_thread_data_t), RX_JOB_ID,&nf,processSlotRX);
     nr_rxtx_thread_data_t *curMsg=(nr_rxtx_thread_data_t *)NotifiedFifoData(newElt);
@@ -707,21 +709,53 @@ void *UE_thread(void *arg) {
     int flags = 0;
     int slot_tx_usrp = slot_nr + DURATION_RX_TO_TX - NR_RX_NB_TH;
 
-    if (openair0_cfg[0].duplex_mode == duplex_mode_TDD) {
+    int scc_flag = 0;
+    if (mac->scc != NULL) {
+      scc_flag = 1;
+    } else if (mac->scc_SIB != NULL) {
+      scc_flag = 2;
+    }
+    if (scc_flag == 0) {
+      flags = 0;
+    } else if (openair0_cfg[0].duplex_mode == duplex_mode_TDD) {
 
       uint8_t tdd_period = mac->phy_config.config_req.tdd_table.tdd_period_in_slots;
-      int nrofUplinkSlots, nrofUplinkSymbols;
-      if (mac->scc) {
+      int nrofUplinkSlots, nrofUplinkSymbols, nrofDownlinkSlots, nrofDownlinkSymbols;
+      //if (mac->scc) {
+      if (scc_flag == 1) {
         nrofUplinkSlots = mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
         nrofUplinkSymbols = mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols;
+	nrofDownlinkSlots = mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots;
+	nrofDownlinkSymbols = mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols;
       }
       else {
         nrofUplinkSlots = mac->scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
         nrofUplinkSymbols = mac->scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols;
+	nrofDownlinkSlots = mac->scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots;
+        nrofDownlinkSymbols = mac->scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols;
       }
       uint8_t  num_UL_slots = nrofUplinkSlots + (nrofUplinkSymbols != 0);
 
       uint8_t first_tx_slot = tdd_period - num_UL_slots;
+      if (scc_flag == 1) {
+        if ((mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1 != NULL) && (mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530 != NULL)) {
+          if (*mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530 == 0) {
+            uint8_t first_num_DL_slots = nrofDownlinkSlots + (nrofDownlinkSymbols != 0);
+	    first_tx_slot = first_num_DL_slots + (nrofUplinkSymbols != 0);
+	  } else {
+            LOG_E(PHY, "mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530 is %ld\n", *mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530);
+	  }
+	}
+      } else if (scc_flag == 2) {
+        if ((mac->scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.ext1 != NULL) && (mac->scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530 != NULL)) {
+          if (*mac->scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530 == 0) {
+            uint8_t first_num_DL_slots = nrofDownlinkSlots + (nrofDownlinkSymbols != 0);
+            first_tx_slot = first_num_DL_slots + (nrofUplinkSymbols != 0);
+          } else {
+            LOG_E(PHY, "mac->scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530 is %ld\n", *mac->scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530);
+          }
+        }
+      }
 
       if (slot_tx_usrp % tdd_period == first_tx_slot)
         flags = 2;
@@ -734,17 +768,17 @@ void *UE_thread(void *arg) {
     }
 
     if (flags || IS_SOFTMODEM_RFSIM)
-      AssertFatal(writeBlockSize ==
+ //     AssertFatal(writeBlockSize ==
                   UE->rfdevice.trx_write_func(&UE->rfdevice,
                                               writeTimestamp,
                                               txp,
                                               writeBlockSize,
                                               UE->frame_parms.nb_antennas_tx,
-                                              flags),"");
+                                              flags);//,"");
     
-    for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
+/*    for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
       memset(txp[i], 0, writeBlockSize);
-
+*/
     nbSlotProcessing++;
     LOG_D(PHY,"Number of slots being processed at the moment: %d\n",nbSlotProcessing);
     pushTpool(&(get_nrUE_params()->Tpool), msgToPush);
