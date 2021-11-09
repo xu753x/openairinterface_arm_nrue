@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 project (OpenAirInterface)
-set ( CMAKE_BUILD_TYPE  )
+set ( CMAKE_BUILD_TYPE  Debug)
 set ( CFLAGS_PROCESSOR_USER "" )
 set ( UE_EXPANSION False )
 set ( PRE_SCD_THREAD False )
