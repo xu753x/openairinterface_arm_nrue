@@ -168,11 +168,11 @@ struct testData {
 
 void processing(void *arg) {
   struct testData *in=(struct testData *)arg;
-  printf("doing: %d, %s, in thr %ld\n",in->id, in->txt,pthread_self() );
+  //printf("doing: %d, %s, in thr %ld\n",in->id, in->txt,pthread_self() );
   sprintf(in->txt,"Done by %ld, job %d", pthread_self(), in->id);
   in->sleepTime=rand()%1000;
   usleep(in->sleepTime);
-  printf("done: %d, %s, in thr %ld\n",in->id, in->txt,pthread_self() );
+  //printf("done: %d, %s, in thr %ld\n",in->id, in->txt,pthread_self() );
 }
 
 int main() {
@@ -211,26 +211,29 @@ int main() {
   } while(tmp);
 
   tpool_t  pool;
-  char params[]="1,2,3,u";
+  char params[]="1,2,3,4,5";
   initTpool(params,&pool, true);
   notifiedFIFO_t worker_back;
   initNotifiedFIFO(&worker_back);
 
+  sleep(1);
   int cumulProcessTime=0, cumulTime=0;
   struct timespec st,end;
   clock_gettime(CLOCK_MONOTONIC, &st);
+  int nb_jobs=4;
   for (int i=0; i <1000 ; i++) {
-    for (int j=0; j <4 ; j++) {
+    int parall=nb_jobs;
+    for (int j=0; j <parall ; j++) {
       notifiedFIFO_elt_t *work=newNotifiedFIFO_elt(sizeof(struct testData), i, &worker_back, processing);
       struct testData *x=(struct testData *)NotifiedFifoData(work);
       x->id=i;
       pushTpool(&pool, work);
     }
-    int ret=4, sleepmax=0;
-    while (ret) {
+    int sleepmax=0;
+    while (parall) {
       tmp=pullTpool(&worker_back,&pool);
       if (tmp) {
-	ret--;
+	parall--;
 	struct testData *dd=NotifiedFifoData(tmp);
 	if (dd->sleepTime > sleepmax)
 	  sleepmax=dd->sleepTime;
@@ -241,8 +244,8 @@ int main() {
   }
   clock_gettime(CLOCK_MONOTONIC, &end);
   long long dur=(end.tv_sec-st.tv_sec)*1000*1000+(end.tv_nsec-st.tv_nsec)/1000;
-  printf("In µs, Total time per group of 4 job:%lld, work time per job %d, overhead per job %lld\n",
-	 dur/1000, cumulProcessTime/1000, (dur-cumulProcessTime)/4000);
+  printf("In µs, Total time per group of %d job:%lld, work time per job %d, overhead per job %lld\n",
+	 nb_jobs, dur/1000, cumulProcessTime/1000, (dur-cumulProcessTime)/(1000*nb_jobs));
 
 	/*	
   for (int i=0; i <1000 ; i++) {
