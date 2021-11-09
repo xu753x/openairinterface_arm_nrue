@@ -117,7 +117,8 @@ int main(int argc, char **argv)
         uint8_t mcs_table = 0;
         double DS_TDL = .03;
 	cpuf = get_cpu_freq_GHz();
-
+	char gNBthreads[128]="n";
+	
 	if (load_configmodule(argc, argv, CONFIG_ENABLECMDLINEONLY) == 0) {
 		exit_fun("[NR_DLSCHSIM] Error, configuration module init failed\n");
 	}
@@ -125,7 +126,7 @@ int main(int argc, char **argv)
 	//logInit();
 	randominit(0);
 
-	while ((c = getopt(argc, argv, "df:hpVg:i:j:n:l:m:r:s:S:y:z:M:N:F:R:P:L:")) != -1) {
+	while ((c = getopt(argc, argv, "df:hpVg:i:j:n:l:m:r:s:S:y:z:M:N:F:R:P:L:X:")) != -1) {
 		switch (c) {
 		/*case 'f':
 			write_output_file = 1;
@@ -291,6 +292,11 @@ int main(int argc, char **argv)
 			nb_rb = atoi(optarg);
 			break;
 
+		case 'X':
+		  strncpy(gNBthreads, optarg, sizeof(gNBthreads));
+		  gNBthreads[sizeof(gNBthreads)-1]=0;
+		  break;
+
 		/*case 'x':
 			transmission_mode = atoi(optarg);
 			break;*/
@@ -349,6 +355,8 @@ int main(int argc, char **argv)
 	RC.gNB = (PHY_VARS_gNB **) malloc(sizeof(PHY_VARS_gNB *));
 	RC.gNB[0] = malloc(sizeof(PHY_VARS_gNB));
 	gNB = RC.gNB[0];
+	gNB->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
+	initTpool(gNBthreads, gNB->threadPool, true);
 	//gNB_config = &gNB->gNB_config;
 	frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)
 	frame_parms->nb_antennas_tx = n_tx;
