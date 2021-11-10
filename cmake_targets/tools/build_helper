@@ -710,6 +710,9 @@ check_install_oai_software() {
             specific_packages="libtasn1-6-dev libgnutls28-dev iproute2 libconfig-dev"
             LAPACK_LIBNAME="liblapack.so-x86_64-linux-gnu"
             LAPACK_TARGET="/usr/lib/x86_64-linux-gnu/atlas/liblapack.so"
+            #if it is aarch64
+            #LAPACK_LIBNAME="liblapack.so-aarch64-linux-gnu"
+            #LAPACK_TARGET="/usr/lib/aarch64-linux-gnu/atlas/liblapack.so"
             ;;
     esac
     $SUDO apt-get install -y \
