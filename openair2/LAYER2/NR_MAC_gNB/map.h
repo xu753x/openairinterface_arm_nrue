@@ -13,9 +13,8 @@ typedef struct {
 extern slicing slices[3];
 extern int vrb_map_new[3][20][106];
 extern int count;
-extern int rbstart_new;
-extern int rbrbstart_new_count;
 extern uint8_t ue_speed[25];
+extern uint8_t ue_of_slice[6];
 #endif
 
 

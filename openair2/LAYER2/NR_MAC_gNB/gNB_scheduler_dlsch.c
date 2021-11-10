@@ -49,7 +49,6 @@
 #include "executables/softmodem-common.h"
 
 #include "map.h"
-int rbstart_new;
 int vrb_map_new[3][20][106];
 int count;
 
@@ -459,7 +458,11 @@ bool allocate_dl_retransmission(module_id_t module_id,
 
   const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
   int rbStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
-  rbStart = rbStart+rbstart_new;
+  rbStart = 3;
+  LOG_I(MAC, "& \n");
+  LOG_I(MAC, "%d \n",rbStart);
+  LOG_I(MAC, "%d \n",bwpSize);
+
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
   const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
   const uint8_t num_dmrs_cdm_grps_no_data = sched_ctrl->active_bwp ? (f ? 1 : (ps->nrOfSymbols == 2 ? 1 : 2)) : (ps->nrOfSymbols == 2 ? 1 : 2);
@@ -549,7 +552,9 @@ bool allocate_dl_retransmission(module_id_t module_id,
   /* just reuse from previous scheduling opportunity, set new start RB */
   sched_ctrl->sched_pdsch = *retInfo;
   sched_ctrl->sched_pdsch.rbStart = rbStart;
-
+  LOG_I(MAC, "&& \n");
+  LOG_I(MAC, "%d \n",rbStart);
+  LOG_I(MAC, "%d \n",sched_ctrl->sched_pdsch.rbSize);
   /* retransmissions: directly allocate */
   *n_rb_sched -= sched_ctrl->sched_pdsch.rbSize;
   for (int rb = 0; rb < sched_ctrl->sched_pdsch.rbSize; rb++)
@@ -674,7 +679,10 @@ void pf_dl(module_id_t module_id,
 
     const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
     int rbStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
-    rbStart = rbStart+rbstart_new;
+    rbStart=3;
+    LOG_I(MAC, "$ \n");
+    LOG_I(MAC, "%d \n",rbStart);
+    LOG_I(MAC, "%d \n",bwpSize);
     /* Find a free CCE */
     bool freeCCE = find_free_CCE(module_id, slot, UE_id);
     if (!freeCCE) {
@@ -710,6 +718,10 @@ void pf_dl(module_id_t module_id,
     while (rbStart + max_rbSize < bwpSize && rballoc_mask[rbStart + max_rbSize])
       max_rbSize++;
 
+    LOG_I(MAC, "$$ \n");
+    LOG_I(MAC, "%d \n",rbStart);
+    LOG_I(MAC, "%d \n",max_rbSize);
+
     /* MCS has been set above */
     const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] : 1;
     NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
@@ -741,6 +753,11 @@ void pf_dl(module_id_t module_id,
     n_rb_sched -= sched_pdsch->rbSize;
     for (int rb = 0; rb < sched_pdsch->rbSize; rb++)
       rballoc_mask[rb + sched_pdsch->rbStart] = 0;
+
+    LOG_I(MAC, "$$$ \n");
+    LOG_I(MAC, "%d \n",sched_pdsch->rbStart);
+    LOG_I(MAC, "%d \n",sched_pdsch->rbSize);
+
     for (int i = 0; i<sched_pdsch->rbSize; i++){
         if (rballoc_mask[i+ sched_pdsch->rbStart] == 0){
         vrb_map_new[count][slot][i+sched_pdsch->rbStart+27] = 25;
@@ -792,12 +809,18 @@ void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   uint16_t *vrb_map = RC.nrmac[module_id]->common_channels[CC_id].vrb_map;
   uint8_t rballoc_mask[bwpSize];
   int n_rb_sched = 0;
+
+  LOG_I(MAC, "********** \n");
+  LOG_I(MAC, "%d \n",bwpSize);
+ 
   for (int i = 0; i < bwpSize; i++) {
     // calculate mask: init with "NOT" vrb_map:
     // if any RB in vrb_map is blocked (1), the current RBG will be 0
     rballoc_mask[i] = !vrb_map[i];
     n_rb_sched += rballoc_mask[i];
+     
   }
+  LOG_I(MAC, "%d \n",n_rb_sched);
   // for (int i = 0; i<48; i++){
   //     if (rballoc_mask[i] == 0){
   //     vrb_map_new[count][slot][i+27] = 11;

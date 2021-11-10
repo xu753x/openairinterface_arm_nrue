@@ -61,8 +61,6 @@
 #include "map.h"
 int vrb_map_new[3][20][106];
 int count;
-int rbstart_new;
-int rbrbstart_new_count;
 slicing slices[3];
 
 uint16_t nr_pdcch_order_table[6] = { 31, 31, 511, 2047, 2047, 8191 };
@@ -412,11 +410,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
 
   if ((slot == 0) && (frame & 127) == 0) dump_mac_stats(RC.nrmac[module_idP]);
-  // rbstart_new = 15;
-  // rbrbstart_new_count = rbrbstart_new_count + 1;
-  // int mass = 60000;
-  // rbstart_new = rbstart_new + rbrbstart_new_count/mass;
-  // rbstart_new  = 10; 
+  
   if(slot == 0)
   {
     // FILE * fp;
@@ -444,7 +438,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     if(count==3)
       count=0;
     memset(vrb_map_new[count],0,20*106*4);
-    LOG_I(NR_PHY, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d \n",vrb_map_new[count][0][18],vrb_map_new[count][1][18],vrb_map_new[count][2][18],vrb_map_new[count][3][18],vrb_map_new[count][4][18],vrb_map_new[count][5][18],vrb_map_new[count][6][18],vrb_map_new[count][7][18],vrb_map_new[count][8][18],vrb_map_new[count][9][18],vrb_map_new[count][10][18],vrb_map_new[count][11][18],vrb_map_new[count][12][18],vrb_map_new[count][13][18],vrb_map_new[count][14][18],vrb_map_new[count][15][18],vrb_map_new[count][16][18],vrb_map_new[count][17][18]);
+    // LOG_I(NR_PHY, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d \n",vrb_map_new[count][0][18],vrb_map_new[count][1][18],vrb_map_new[count][2][18],vrb_map_new[count][3][18],vrb_map_new[count][4][18],vrb_map_new[count][5][18],vrb_map_new[count][6][18],vrb_map_new[count][7][18],vrb_map_new[count][8][18],vrb_map_new[count][9][18],vrb_map_new[count][10][18],vrb_map_new[count][11][18],vrb_map_new[count][12][18],vrb_map_new[count][13][18],vrb_map_new[count][14][18],vrb_map_new[count][15][18],vrb_map_new[count][16][18],vrb_map_new[count][17][18]);
           
     for(int j=0;j<3;j++)
     {
@@ -456,14 +450,14 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
           {
             vrb_map_new[count][i][k] = 21 + j;
           }
-          if(k==18)
-          LOG_I(NR_PHY, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d \n",vrb_map_new[count][0][18],vrb_map_new[count][1][18],vrb_map_new[count][2][18],vrb_map_new[count][3][18],vrb_map_new[count][4][18],vrb_map_new[count][5][18],vrb_map_new[count][6][18],vrb_map_new[count][7][18],vrb_map_new[count][8][18],vrb_map_new[count][9][18],vrb_map_new[count][10][18],vrb_map_new[count][11][18],vrb_map_new[count][12][18],vrb_map_new[count][13][18],vrb_map_new[count][14][18],vrb_map_new[count][15][18],vrb_map_new[count][16][18],vrb_map_new[count][17][18]);
+          // if(k==18)
+          // LOG_I(NR_PHY, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d \n",vrb_map_new[count][0][18],vrb_map_new[count][1][18],vrb_map_new[count][2][18],vrb_map_new[count][3][18],vrb_map_new[count][4][18],vrb_map_new[count][5][18],vrb_map_new[count][6][18],vrb_map_new[count][7][18],vrb_map_new[count][8][18],vrb_map_new[count][9][18],vrb_map_new[count][10][18],vrb_map_new[count][11][18],vrb_map_new[count][12][18],vrb_map_new[count][13][18],vrb_map_new[count][14][18],vrb_map_new[count][15][18],vrb_map_new[count][16][18],vrb_map_new[count][17][18]);
           
         }
       }
     }
   }
-  LOG_I(NR_MAC, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d \n",vrb_map_new[count][0][18],vrb_map_new[count][1][18],vrb_map_new[count][2][18],vrb_map_new[count][3][18],vrb_map_new[count][4][18],vrb_map_new[count][5][18],vrb_map_new[count][6][18],vrb_map_new[count][7][18],vrb_map_new[count][8][18],vrb_map_new[count][9][18],vrb_map_new[count][10][18],vrb_map_new[count][11][18],vrb_map_new[count][12][18],vrb_map_new[count][13][18],vrb_map_new[count][14][18],vrb_map_new[count][15][18],vrb_map_new[count][16][18],vrb_map_new[count][17][18]);
+  // LOG_I(NR_MAC, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d \n",vrb_map_new[count][0][18],vrb_map_new[count][1][18],vrb_map_new[count][2][18],vrb_map_new[count][3][18],vrb_map_new[count][4][18],vrb_map_new[count][5][18],vrb_map_new[count][6][18],vrb_map_new[count][7][18],vrb_map_new[count][8][18],vrb_map_new[count][9][18],vrb_map_new[count][10][18],vrb_map_new[count][11][18],vrb_map_new[count][12][18],vrb_map_new[count][13][18],vrb_map_new[count][14][18],vrb_map_new[count][15][18],vrb_map_new[count][16][18],vrb_map_new[count][17][18]);
   // This schedules MIB     1
   schedule_nr_mib(module_idP, frame, slot);
 
