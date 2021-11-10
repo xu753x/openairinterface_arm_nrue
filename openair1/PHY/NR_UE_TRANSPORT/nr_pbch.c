@@ -328,7 +328,7 @@ void nr_pbch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
 #if defined(__x86_64__) || defined(__i386__)
       rxdataF_comp128_0[i] = _mm_adds_epi16(_mm_srai_epi16(rxdataF_comp128_0[i],1),_mm_srai_epi16(rxdataF_comp128_1[i],1));
 #elif defined(__arm__) || defined(__aarch64__)
-      rxdataF_comp128_0[i] = vhaddq_s16(rxdataF_comp128_0[i],rxdataF_comp128_1[i]);
+      rxdataF_comp128_0[i] = vaddq_s16(vqshlq_s16(rxdataF_comp128_0[i], vmovq_n_s16(-1)),vqshlq_s16(rxdataF_comp128_1[i], vmovq_n_s16(-1)));
 #endif
     }
   }

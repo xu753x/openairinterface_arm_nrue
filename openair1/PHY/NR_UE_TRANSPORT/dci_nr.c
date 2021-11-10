@@ -675,7 +675,7 @@ void nr_pdcch_channel_compensation(int32_t **rxdataF_ext,
                              vpadd_s32(vget_low_s32(mmtmpP1b),vget_high_s32(mmtmpP1b)));
       mmtmpP0 = vqshlq_s32(mmtmpP0,output_shift128);
       mmtmpP1 = vqshlq_s32(mmtmpP1,output_shift128);
-      rxdataF_comp128[0] = vzip_s16(vmovn_s32(mmtmpP0),vmovn_s32(mmtmpP1));
+      rxdataF_comp128[0] = vzip_s16(vqmovn_s32(mmtmpP0),vqmovn_s32(mmtmpP1));
 
       mmtmpP0 = vmull_s16(dl_ch128[2], rxdataF128[2]);
       mmtmpP1 = vmull_s16(dl_ch128[3], rxdataF128[3]);
@@ -687,7 +687,7 @@ void nr_pdcch_channel_compensation(int32_t **rxdataF_ext,
                              vpadd_s32(vget_low_s32(mmtmpP1b),vget_high_s32(mmtmpP1b)));
       mmtmpP0 = vqshlq_s32(mmtmpP0,output_shift128);
       mmtmpP1 = vqshlq_s32(mmtmpP1,output_shift128);
-      rxdataF_comp128[1] = vzip_s16(vmovn_s32(mmtmpP0),vmovn_s32(mmtmpP1));
+      rxdataF_comp128[1] = vzip_s16(vqmovn_s32(mmtmpP0),vqmovn_s32(mmtmpP1));
 
       mmtmpP0 = vmull_s16(dl_ch128[4], rxdataF128[4]);
       mmtmpP1 = vmull_s16(dl_ch128[5], rxdataF128[5]);
@@ -699,7 +699,7 @@ void nr_pdcch_channel_compensation(int32_t **rxdataF_ext,
                              vpadd_s32(vget_low_s32(mmtmpP1b),vget_high_s32(mmtmpP1b)));
       mmtmpP0 = vqshlq_s32(mmtmpP0,output_shift128);
       mmtmpP1 = vqshlq_s32(mmtmpP1,output_shift128);
-      rxdataF_comp128[2] = vzip_s16(vmovn_s32(mmtmpP0),vmovn_s32(mmtmpP1));
+      rxdataF_comp128[2] = vzip_s16(vqmovn_s32(mmtmpP0),vqmovn_s32(mmtmpP1));
 
       for (int i=0; i<12 ; i++)
         LOG_DDD("rxdataF128[%d]=(%d,%d) X dlch[%d]=(%d,%d) rxdataF_comp128[%d]=(%d,%d)\n",

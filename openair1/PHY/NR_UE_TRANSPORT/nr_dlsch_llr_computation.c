@@ -756,8 +756,8 @@ void nr_dlsch_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
     llr16[10] = vgetq_lane_s16(xmm0,4);
     llr16[11] = vgetq_lane_s16(xmm0,5);
     llr16[12] = vgetq_lane_s16(rxF[i],6);
-    llr16[13] = vgetq_lane_s16(rxF[i],6);
-    llr16[14] = vgetq_lane_s16(xmm0,7);
+    llr16[13] = vgetq_lane_s16(rxF[i],7);
+    llr16[14] = vgetq_lane_s16(xmm0,6);
     llr16[15] = vgetq_lane_s16(xmm0,7);
     llr16+=16;
 #endif

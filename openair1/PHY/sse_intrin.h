@@ -377,7 +377,7 @@ static inline vect128 mulByConjugate128(vect128 *a, vect128 *b, int8_t output_sh
                          vpadd_s32(vget_low_s32(mmtmpP1b),vget_high_s32(mmtmpP1b)));
   mmtmpP0 = vqshlq_s32(mmtmpP0,output_shift128);
   mmtmpP1 = vqshlq_s32(mmtmpP1,output_shift128);
-  Part = vzip_s16(vmovn_s32(mmtmpP0),vmovn_s32(mmtmpP1));
+  Part = vzip_s16(vqmovn_s32(mmtmpP0),vqmovn_s32(mmtmpP1));
 
   return vcombine_s16(Part.val[0],Part.val[1]);
   //AssertFatal(false, "not developped\n");

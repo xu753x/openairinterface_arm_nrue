@@ -124,7 +124,7 @@ void apply_7_5_kHz(PHY_VARS_UE *ue,int32_t*txdata,uint8_t slot)
                             vpadd_s32(vget_low_s32(mmtmp1),vget_high_s32(mmtmp1)));
         //mmtmp_im = [-Im(ch[0])Re(rx[0])+Re(ch[0])Im(rx[0]) -Im(ch[1])Re(rx[1])+Re(ch[1])Im(rx[1]) -Im(ch[2])Re(rx[2])+Re(ch[2])Im(rx[2]) -Im(ch[3])Re(rx[3])+Re(ch[3])Im(rx[3])]
 
-    txptr128[0] = vcombine_s16(vmovn_s32(mmtmp_re),vmovn_s32(mmtmp_im));
+    txptr128[0] = vcombine_s16(vqmovn_s32(mmtmp_re),vqmovn_s32(mmtmp_im));
     txptr128++;
     kHz7_5ptr128++;
 #endif

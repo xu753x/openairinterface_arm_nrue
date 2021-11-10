@@ -180,43 +180,54 @@ int32_t signal_energy(int32_t *input,uint32_t length)
 {
 
   int32_t i;
-  int32_t temp,temp2;
-  register int32x4_t tmpE,tmpDC;
-  int32x2_t tmpE2,tmpDC2;
-  int16x4_t *in = (int16x4_t *)input;
+  int32_t temp;
+  int16x8_t in;
+  int16x8_t i16_min, in_clp, coe1;
+  int32x4_t mmtmpP0,mmtmpP1;
+  float32x4_t recp1;
+  float32x4_t num0 =vmovq_n_f32(0);
+  float32x4_t num1 =vmovq_n_f32(0);
+  float32x4_t num2, num3;
+  float32x2_t num2_1, num3_1;
+  coe1 = vmovq_n_s16(1);
 
-  tmpE  = vdupq_n_s32(0);
-  tmpDC = vdupq_n_s32(0);
+  i16_min = vdupq_n_s16(SHRT_MIN);
+  recp1 = vdupq_n_f32(1.0/length);
 
-  for (i=0; i<length>>1; i++) {
+  for (i=0; i<length>>2; i++) {
+    in = vld1q_s16((int16_t*)input);
+    in_clp = vqsubq_s16(in,vreinterpretq_s16_u16(vceqq_s16(in,i16_min)));
+    mmtmpP0 = vmull_s16(((int16x4_t*)&in_clp)[0], ((int16x4_t*)&in_clp)[0]);
+    mmtmpP1 = vmull_s16(((int16x4_t*)&in_clp)[1], ((int16x4_t*)&in_clp)[1]);
+    mmtmpP0 = vcombine_s32(vpadd_s32(vget_low_s32(mmtmpP0),vget_high_s32(mmtmpP0)),
+                           vpadd_s32(vget_low_s32(mmtmpP1),vget_high_s32(mmtmpP1)));
+    num0 = vaddq_f32(num0, vcvtq_f32_s32(mmtmpP0));
 
-    tmpE = vqaddq_s32(tmpE,vshrq_n_s32(vmull_s16(*in,*in),shift));
-    //tmpDC = vaddw_s16(tmpDC,vshr_n_s16(*in++,shift_DC));
+    in_clp = vld1q_s16((int16_t*)input);
+    mmtmpP0 = vmull_s16(((int16x4_t*)&in_clp)[0], ((int16x4_t*)&coe1)[0]);
+    mmtmpP1 = vmull_s16(((int16x4_t*)&in_clp)[1], ((int16x4_t*)&coe1)[1]);
+    mmtmpP0 = vcombine_s32(vpadd_s32(vget_low_s32(mmtmpP0),vget_high_s32(mmtmpP0)),
+                           vpadd_s32(vget_low_s32(mmtmpP1),vget_high_s32(mmtmpP1)));
+    num1 = vaddq_f32(num1, vcvtq_f32_s32(mmtmpP0));
 
+    input += 4;
   }
 
-  tmpE2 = vpadd_s32(vget_low_s32(tmpE),vget_high_s32(tmpE));
+  num2 = vmulq_f32(num0, recp1);
+  num2_1 = vpadd_f32(vget_low_f32(num2),vget_high_f32(num2));
+  num2_1 = vpadd_f32(num2_1,num2_1);
+  num2 = vcombine_f32(num2_1,num2_1); //AC power
 
-  temp=(vget_lane_s32(tmpE2,0)+vget_lane_s32(tmpE2,1))/length;
-  temp<<=shift;   // this is the average of x^2
+  num3 = vmulq_f32(num1, recp1);
+  num3_1 = vpadd_f32(vget_low_f32(num3),vget_high_f32(num3));
+  num3_1 = vpadd_f32(num3_1,num3_1);
+  num3 = vcombine_f32(num3_1,num3_1); // DC
 
-  // now remove the DC component
+  num3 = vmulq_f32(num3, num3);
 
+  temp = vgetq_lane_s32(vcvtq_s32_f32(vsubq_f32(num2, num3)), 0);
 
-  tmpDC2 = vpadd_s32(vget_low_s32(tmpDC),vget_high_s32(tmpDC));
-
-  temp2=(vget_lane_s32(tmpDC2,0)+vget_lane_s32(tmpDC2,1))/(length*length);
-
-  //  temp2<<=(2*shift_DC);
-#ifdef MAIN
-  printf("E x^2 = %d\n",temp);
-#endif
-  temp -= temp2;
-#ifdef MAIN
-  printf("(E x)^2=%d\n",temp2);
-#endif
-
-  return((temp>0)?temp:1);
+  return temp;
 }
 
 int32_t signal_energy_nodc(int32_t *input,uint32_t length)
@@ -224,28 +235,30 @@ int32_t signal_energy_nodc(int32_t *input,uint32_t length)
 
   int32_t i;
   int32_t temp;
-  register int32x4_t tmpE;
-  int32x2_t tmpE2;
-  int16x4_t *in = (int16x4_t *)input;
+  float32x2_t tmpE2;
+  int16x8_t in;
+  int32x4_t mmtmpP0,mmtmpP1;
+  float32x4_t num0 =vmovq_n_f32(0);
 
-  tmpE = vdupq_n_s32(0);
-
-  for (i=0; i<length>>1; i++) {
-
-    tmpE = vqaddq_s32(tmpE,vshrq_n_s32(vmull_s16(*in,*in),shift));
-
+  for (i=0; i<length>>2; i++) {
+    in = vld1q_s16((int16_t*)input);
+    mmtmpP0 = vmull_s16(((int16x4_t*)&in)[0], ((int16x4_t*)&in)[0]);
+    mmtmpP1 = vmull_s16(((int16x4_t*)&in)[1], ((int16x4_t*)&in)[1]);
+    mmtmpP0 = vcombine_s32(vpadd_s32(vget_low_s32(mmtmpP0),vget_high_s32(mmtmpP0)),
+                             vpadd_s32(vget_low_s32(mmtmpP1),vget_high_s32(mmtmpP1)));
+    num0 = vaddq_f32(num0, vcvtq_f32_s32(mmtmpP0));
+    input += 4;
   }
 
-  tmpE2 = vpadd_s32(vget_low_s32(tmpE),vget_high_s32(tmpE));
+  tmpE2 = vpadd_f32(vget_low_f32(num0),vget_high_f32(num0));
 
-  temp=(vget_lane_s32(tmpE2,0)+vget_lane_s32(tmpE2,1))/length;
-  temp<<=shift;   // this is the average of x^2
+  temp=(int)((vget_lane_f32(tmpE2,0)+vget_lane_f32(tmpE2,1))/length);
 
 #ifdef MAIN
   printf("E x^2 = %d\n",temp);
 #endif
 
-  return((temp>0)?temp:1);
+  return temp;
 }
 
 #endif

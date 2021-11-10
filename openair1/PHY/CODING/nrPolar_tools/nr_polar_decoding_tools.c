@@ -296,22 +296,21 @@ void applyFtoleft(const t_nrPolar_params *pp, decoder_node_t *node) {
     else
 #else
     int sse4mod = (node->Nv/2)&7;
-    int sse4len = node->Nv/2/8;
+
+    if (sse4mod == 0) {
 #if defined(__arm__) || defined(__aarch64__)
     int16x8_t signatimesb,comp1,comp2,negminabs128;
     int16x8_t zero=vdupq_n_s16(0);
 #endif
+    __m128i a128,b128,absa128,absb128,minabs128;
+    int sse4len = node->Nv/2/8;
 
-    if (sse4mod == 0) {
-      for (int i=0;i<sse4len;i++) {
-	__m128i a128,b128,absa128,absb128,minabs128;
-	int sse4len = node->Nv/2/8;
-	
-	a128       =*((__m128i*)alpha_v);
-	b128       =((__m128i*)alpha_v)[1];
-	absa128    =_mm_abs_epi16(a128);
-	absb128    =_mm_abs_epi16(b128);
-	minabs128  =_mm_min_epi16(absa128,absb128);
+    for (int i=0;i<sse4len;i++) {
+      a128       =*((__m128i*)alpha_v);
+      b128       =((__m128i*)alpha_v)[1];
+      absa128    =_mm_abs_epi16(a128);
+      absb128    =_mm_abs_epi16(b128);
+      minabs128  =_mm_min_epi16(absa128,absb128);
 #if defined(__arm__) || defined(__aarch64__)
 	// unfortunately no direct equivalent to _mm_sign_epi16
 	signatimesb=veorq_s16(a128,b128);
@@ -325,16 +324,23 @@ void applyFtoleft(const t_nrPolar_params *pp, decoder_node_t *node) {
       }
     }
     else if (sse4mod == 4) {
-#if defined(__x86_64__) || defined(__i386__)
-      __m64 a64,b64,absa64,absb64,minabs64;
-      a64       =*((__m64*)alpha_v);
-      b64       =((__m64*)alpha_v)[1];
+#if defined(__arm__) || defined(__aarch64__)
+      int16x4_t signatimesb,comp1,comp2,negminabs128;
+      int16x4_t zero=vdup_n_s16(0);
+#endif
+      int16x4_t a64,b64,absa64,absb64,minabs64;
+      a64       =*((int16x4_t*)alpha_v);
+      b64       =((int16x4_t*)alpha_v)[1];
       absa64    =_mm_abs_pi16(a64);
       absb64    =_mm_abs_pi16(b64);
       minabs64  =_mm_min_pi16(absa64,absb64);
-#endif
+
 #if defined(__arm__) || defined(__aarch64__)
-	AssertFatal(1==0,"Need to do this still for ARM\n");
+      signatimesb=veor_s16(a64,b64);
+      comp1=(int16x4_t)vclt_s16(signatimesb,zero);
+      comp2=(int16x4_t)vcge_s16(signatimesb,zero);
+      negminabs128=vneg_s16(minabs64);
+      *((int16x4_t*)alpha_l) =vorr_s16(vand_s16(minabs64,comp2),vand_s16(negminabs128,comp1));
 #else
       *((__m64*)alpha_l) =_mm_sign_pi16(minabs64,_mm_sign_epi16(a64,b64));
 #endif
@@ -407,7 +413,10 @@ void applyGtoright(const t_nrPolar_params *pp,decoder_node_t *node) {
       
       for (int i=0;i<sse4len;i++) {
 #if defined(__arm__) || defined(__aarch64__)
-	((int16x8_t *)alpha_r)[0] = vsubq_s16(((int16x8_t *)alpha_v)[1],vmulq_s16(((int16x8_t *)alpha_v)[0],((int16x8_t *)betal)[0]));
+      int16x8_t sgn_tmp;
+      sgn_tmp = vaddq_s16((int16x8_t)vcgtq_s16(vdupq_n_s16(0),((int16x8_t *)betal)[0]),(int16x8_t)vshrq_n_u16(vcltq_s16(vdupq_n_s16(0),((int16x8_t *)betal)[0]),15));
+      sgn_tmp = vmulq_s16(((int16x8_t *)alpha_v)[0],sgn_tmp);
+      ((int16x8_t *)alpha_r)[0] = vsubq_s16(((int16x8_t *)alpha_v)[1],sgn_tmp);
 #else
 	((__m128i *)alpha_r)[0] = _mm_subs_epi16(((__m128i *)alpha_v)[1],_mm_sign_epi16(((__m128i *)alpha_v)[0],((__m128i *)betal)[0]));
 #endif	
@@ -415,7 +424,10 @@ void applyGtoright(const t_nrPolar_params *pp,decoder_node_t *node) {
     }
     else if (sse4mod == 4) {
 #if defined(__arm__) || defined(__aarch64__)
-      ((int16x4_t *)alpha_r)[0] = vsub_s16(((int16x4_t *)alpha_v)[1],vmul_s16(((int16x4_t *)alpha_v)[0],((int16x4_t *)betal)[0]));
+      int16x4_t sgn_tmp;
+      sgn_tmp = vadd_s16((int16x4_t)vcgt_s16(vdup_n_s16(0),((int16x4_t *)betal)[0]),(int16x4_t)vshr_n_u16(vclt_s16(vdup_n_s16(0),((int16x4_t *)betal)[0]),15));
+      sgn_tmp = vmul_s16(((int16x4_t *)alpha_v)[0],sgn_tmp);
+      ((int16x4_t *)alpha_r)[0] = vsub_s16(((int16x4_t *)alpha_v)[1],sgn_tmp);
 #else
       ((__m64 *)alpha_r)[0] = _mm_subs_pi16(((__m64 *)alpha_v)[1],_mm_sign_pi16(((__64 *)alpha_v)[0],((__m64 *)betal)[0]));	
 #endif
@@ -491,7 +503,28 @@ void computeBeta(const t_nrPolar_params *pp,decoder_node_t *node) {
   }
   else memcpy((void*)&betav[0],betar,(node->Nv/2)*sizeof(int16_t));
 #elif defined(__arm__) || defined(__aarch64__)
-
+  if (node->left->all_frozen==0) { // if left node is not aggregation of frozen bits
+    int arm4mod = (node->Nv/2)&15;
+    register int16x8_t allones=*((int16x8_t*)all1);
+    if (arm4mod == 0) {
+      int armlen = node->Nv/2/8;
+      for (int i=0;i<armlen;i++) {
+        ((int16x8_t*)betav)[i] = vorrq_s16((int16x8_t)vceqq_s16 (((int16x8_t*)betar)[i],
+                                               ((int16x8_t*)betal)[i]),allones);
+      }
+    }
+    else if (arm4mod == 4) {
+      ((int16x4_t*)betav)[0] = vorr_s16((int16x4_t)vceq_s16(((int16x4_t*)betar)[0],
+                                                      ((int16x4_t*)betal)[0]),*((int16x4_t*)all1));
+    }
+    else
+    {
+      for (int i=0;i<node->Nv/2;i++) {
+        betav[i] = (betal[i] != betar[i]) ? 1 : -1;
+      }
+    }
+  }
+  else memcpy((void*)&betav[0],betar,(node->Nv/2)*sizeof(int16_t));
 #endif
   memcpy((void*)&betav[node->Nv/2],betar,(node->Nv/2)*sizeof(int16_t));
 }

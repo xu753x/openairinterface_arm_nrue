@@ -452,7 +452,7 @@ void nr_dft(int32_t *z, int32_t *d, uint32_t Msc_PUSCH)
 #if defined(__x86_64__) || defined(__i386__)
         ((__m128i*)dft_out0)[i] = _mm_slli_epi16(_mm_mulhi_epi16(((__m128i*)dft_out0)[i], norm128), 1);
 #elif defined(__arm__) || defined(__aarch64__)
-        ((int16x8_t*)dft_out0)[i] = vqdmulhq_s16(((int16x8_t*)dft_out0)[i], norm128);
+        ((int16x8_t*)dft_out0)[i] = vshlq_n_s16(vshrq_n_s16(vqdmulhq_s16(((int16x8_t*)dft_out0)[i], norm128),1), 1);
 #endif
       }
 

@@ -516,7 +516,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
       }
 #elif defined(__arm__)|| defined(__aarch64__)
       for (i=0, j=0; j < ((kc*harq_process->Z)>>4)+1;  i+=2, j++) {
-        pl[j] = vcombine_s8(vmovn_s16(pv[i]),vmovn_s16(pv[i+1]));
+        pl[j] = vcombine_s8(vqmovn_s16(pv[i]),vqmovn_s16(pv[i+1]));
       }
 #endif
 
@@ -1005,7 +1005,7 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
     }
 #elif defined(__arm__)|| defined(__aarch64__)
     for (i=0, j=0; j < ((kc*harq_process->Z)>>4)+1;  i+=2, j++) {
-      pl[j] = vcombine_s8(vmovn_s16(pv[i]),vmovn_s16(pv[i+1]));
+      pl[j] = vcombine_s8(vqmovn_s16(pv[i]),vqmovn_s16(pv[i+1]));
     }
 #endif
 
@@ -1416,7 +1416,7 @@ void nr_dlsch_decoding_process(void *arg) {
     }
 #elif defined(__arm__)|| defined(__aarch64__)
     for (i=0, j=0; j < ((kc*harq_process->Z)>>4)+1;  i+=2, j++) {
-      pl[j] = vcombine_s8(vmovn_s16(pv[i]),vmovn_s16(pv[i+1]));
+      pl[j] = vcombine_s8(vqmovn_s16(pv[i]),vqmovn_s16(pv[i+1]));
     }
 #endif
 

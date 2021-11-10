@@ -21,7 +21,7 @@
 
 #include "PHY/defs_common.h"
 #include "tools_defs.h"
-
+#include "assertions.h"
 
 int add_vector16(short *x,
                  short *y,
@@ -89,7 +89,7 @@ int add_vector16(short *x,
   _mm_empty();
   _m_empty();
 #elif defined(__arm__) || defined(__aarch64__)
-
+  AssertFatal(1==0,"add_vector16 Need to do this still for ARM\n");
 #endif
   return(0);
 }
@@ -138,7 +138,7 @@ int add_vector16_64(short *x,
   _mm_empty();
   _m_empty();
 #elif defined(__arm__) || defined(__aarch64__)
-
+  AssertFatal(1==0,"add_vector16_64 Need to do this still for ARM\n");
 #endif
   return(0);
 }
@@ -176,7 +176,7 @@ int add_cpx_vector32(short *x,
   _mm_empty();
   _m_empty();
 #elif defined(__arm__) || defined(__aarch64__)
-
+  AssertFatal(1==0,"add_cpx_vector32 Need to do this still for ARM\n");
 #endif
   return(0);
 }
@@ -209,7 +209,7 @@ int32_t sub_cpx_vector16(int16_t *x,
   _mm_empty();
   _m_empty();
 #elif defined(__arm__) || defined(__aarch64__)
-
+  AssertFatal(1==0,"sub_cpx_vector16 Need to do this still for ARM\n");
 #endif
   return(0);
 }
@@ -248,7 +248,7 @@ int add_real_vector64(short *x,
   _mm_empty();
   _m_empty();
 #elif defined(__arm__) || defined(__aarch64__)
-
+  AssertFatal(1==0,"add_real_vector64 Need to do this still for ARM\n");
 #endif
   return(0);
 }
@@ -285,7 +285,7 @@ int sub_real_vector64(short *x,
   _mm_empty();
   _m_empty();
 #elif defined(__arm__) || defined(__aarch64__)
-
+  AssertFatal(1==0,"sub_real_vector64 Need to do this still for ARM\n");
 #endif
   return(0);
 }

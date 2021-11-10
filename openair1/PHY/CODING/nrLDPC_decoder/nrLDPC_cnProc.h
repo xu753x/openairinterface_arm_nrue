@@ -430,12 +430,12 @@ static inline void nrLDPC_cnProc_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                 // ymm0 = p_cnProcBuf[lut_idxCnProcG3[j][0] + i];
                 ymm0 = pj0[i*2];
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                sgn = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[1],((int8x8_t*)&sign_tmp)[1])));
+                sgn = vmulq_s8(p_ones[0],sign_tmp);
                 min = vabsq_s8(ymm0);
 
                 ymm0 = pj0[i*2+1];
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                sgn_1 = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[2],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[3],((int8x8_t*)&sign_tmp)[1])));
+                sgn_1 = vmulq_s8(p_ones[1],sign_tmp);
                 min_1 = vabsq_s8(ymm0);
 
                 // 32 CNs of second BN
@@ -443,12 +443,12 @@ static inline void nrLDPC_cnProc_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                 ymm0 = pj1[i*2];
                 min  = (int8x16_t)vminq_u8((uint8x16_t)min, (uint8x16_t)vabsq_s8(ymm0));
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                sgn = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&sgn)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&sgn)[1],((int8x8_t*)&sign_tmp)[1])));
+                sgn = vmulq_s8(sgn,sign_tmp);
 
                 ymm0 = pj1[i*2+1];
                 min_1  = (int8x16_t)vminq_u8((uint8x16_t)min_1, (uint8x16_t)vabsq_s8(ymm0));
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                sgn_1 = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&sgn_1)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&sgn_1)[1],((int8x8_t*)&sign_tmp)[1])));
+                sgn_1 = vmulq_s8(sgn_1,sign_tmp);
 
                 // Store result
                 min = (int8x16_t)vminq_u8((uint8x16_t)min, (uint8x16_t)p_maxLLR[0]); // 128 in epi8 is -127
@@ -456,10 +456,10 @@ static inline void nrLDPC_cnProc_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                 //*p_cnProcBufResBit = _mm256_sign_epi8(min, sgn);
                 //p_cnProcBufResBit++;
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),sgn),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),sgn),8));
-                p_cnProcBufResBit[i*2]= vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&min)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&min)[1],((int8x8_t*)&sign_tmp)[1])));
+                p_cnProcBufResBit[i*2]= vmulq_s8(min,sign_tmp);
 
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),sgn_1),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),sgn_1),8));
-                p_cnProcBufResBit[i*2+1]=vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&min_1)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&min_1)[1],((int8x8_t*)&sign_tmp)[1])));
+                p_cnProcBufResBit[i*2+1]=vmulq_s8(min_1,sign_tmp);
             }
         }
     }
@@ -494,12 +494,12 @@ static inline void nrLDPC_cnProc_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                 // Abs and sign of 32 CNs (first BN)
                 ymm0 = p_cnProcBuf[(lut_idxCnProcG4[j][0] + i)*2];
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                sgn = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[1],((int8x8_t*)&sign_tmp)[1])));
+                sgn = vmulq_s8(p_ones[0],sign_tmp);
                 min = vabsq_s8(ymm0);
 
                 ymm0 = p_cnProcBuf[(lut_idxCnProcG4[j][0] + i)*2+1];
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                sgn_1 = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[2],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[3],((int8x8_t*)&sign_tmp)[1])));
+                sgn_1 = vmulq_s8(p_ones[1],sign_tmp);
                 min_1 = vabsq_s8(ymm0);
 
                 // Loop over BNs
@@ -508,12 +508,12 @@ static inline void nrLDPC_cnProc_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                     ymm0 = p_cnProcBuf[(lut_idxCnProcG4[j][k] + i)*2];
                     min  = (int8x16_t)vminq_u8((uint8x16_t)min, (uint8x16_t)vabsq_s8(ymm0));
                     sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                    sgn = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&sgn)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&sgn)[1],((int8x8_t*)&sign_tmp)[1])));
+                    sgn = vmulq_s8(sgn,sign_tmp);
 
                     ymm0 = p_cnProcBuf[(lut_idxCnProcG4[j][k] + i)*2+1];
                     min_1  = (int8x16_t)vminq_u8((uint8x16_t)min_1, (uint8x16_t)vabsq_s8(ymm0));
                     sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                    sgn_1 = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&sgn_1)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&sgn_1)[1],((int8x8_t*)&sign_tmp)[1])));
+                    sgn_1 = vmulq_s8(sgn_1,sign_tmp);
 
                 }
 
@@ -522,10 +522,10 @@ static inline void nrLDPC_cnProc_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                 min_1 = (int8x16_t)vminq_u8((uint8x16_t)min_1, (uint8x16_t)p_maxLLR[1]);
 
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),sgn),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),sgn),8));
-                *p_cnProcBufResBit= vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&min)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&min)[1],((int8x8_t*)&sign_tmp)[1])));
+                *p_cnProcBufResBit= vmulq_s8(min,sign_tmp);
                 p_cnProcBufResBit++;
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),sgn_1),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),sgn_1),8));
-                *p_cnProcBufResBit=vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&min_1)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&min_1)[1],((int8x8_t*)&sign_tmp)[1])));
+                *p_cnProcBufResBit=vmulq_s8(min_1,sign_tmp);
                 p_cnProcBufResBit++;
             }
         }
@@ -562,11 +562,12 @@ static inline void nrLDPC_cnProc_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                 // Abs and sign of 32 CNs (first BN)
                 ymm0 = p_cnProcBuf[(lut_idxCnProcG5[j][0] + i)*2];
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                sgn = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[1],((int8x8_t*)&sign_tmp)[1])));
+                sgn = vmulq_s8(p_ones[0],sign_tmp);
                 min = vabsq_s8(ymm0);
+
                 ymm0 = p_cnProcBuf[(lut_idxCnProcG5[j][0] + i)*2+1];
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                sgn_1 = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[2],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[3],((int8x8_t*)&sign_tmp)[1])));
+                sgn_1 = vmulq_s8(p_ones[1],sign_tmp);
                 min_1 = vabsq_s8(ymm0);
                 // Loop over BNs
                 for (k=1; k<4; k++)
@@ -574,13 +575,12 @@ static inline void nrLDPC_cnProc_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                     ymm0 = p_cnProcBuf[(lut_idxCnProcG5[j][k] + i)*2];
                     min  = (int8x16_t)vminq_u8((uint8x16_t)min, (uint8x16_t)vabsq_s8(ymm0));
                     sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                    sgn = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&sgn)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&sgn)[1],((int8x8_t*)&sign_tmp)[1])));
-
+                    sgn = vmulq_s8(sgn,sign_tmp);
 
                     ymm0 = p_cnProcBuf[(lut_idxCnProcG5[j][k] + i)*2+1];
                     min_1  = (int8x16_t)vminq_u8((uint8x16_t)min_1, (uint8x16_t)vabsq_s8(ymm0));
                     sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                    sgn_1 = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&sgn_1)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&sgn_1)[1],((int8x8_t*)&sign_tmp)[1])));
+                    sgn_1 = vmulq_s8(sgn_1,sign_tmp);
 
                 }
 
@@ -589,10 +589,10 @@ static inline void nrLDPC_cnProc_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                 min_1 = (int8x16_t)vminq_u8((uint8x16_t)min_1, (uint8x16_t)p_maxLLR[1]);
 
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),sgn),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),sgn),8));
-                *p_cnProcBufResBit= vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&min)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&min)[1],((int8x8_t*)&sign_tmp)[1])));
+                *p_cnProcBufResBit= vmulq_s8(min,sign_tmp);
                 p_cnProcBufResBit++;
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),sgn_1),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),sgn_1),8));
-                *p_cnProcBufResBit=vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&min_1)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&min_1)[1],((int8x8_t*)&sign_tmp)[1])));
+                *p_cnProcBufResBit=vmulq_s8(min_1,sign_tmp);
                 p_cnProcBufResBit++;
             }
         }
@@ -630,11 +630,12 @@ static inline void nrLDPC_cnProc_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                 // Abs and sign of 32 CNs (first BN)
                 ymm0 = p_cnProcBuf[(lut_idxCnProcG6[j][0] + i)*2];
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                sgn = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[1],((int8x8_t*)&sign_tmp)[1])));
+                sgn = vmulq_s8(p_ones[0],sign_tmp);
                 min = vabsq_s8(ymm0);
+
                 ymm0 = p_cnProcBuf[(lut_idxCnProcG6[j][0] + i)*2+1];
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                sgn_1 = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[2],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[3],((int8x8_t*)&sign_tmp)[1])));
+                sgn_1 = vmulq_s8(p_ones[1],sign_tmp);
                 min_1 = vabsq_s8(ymm0);;
                 // Loop over BNs
                 for (k=1; k<5; k++)
@@ -642,13 +643,12 @@ static inline void nrLDPC_cnProc_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                     ymm0 = p_cnProcBuf[(lut_idxCnProcG6[j][k] + i)*2];
                     min  = (int8x16_t)vminq_u8((uint8x16_t)min, (uint8x16_t)vabsq_s8(ymm0));
                     sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                    sgn = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&sgn)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&sgn)[1],((int8x8_t*)&sign_tmp)[1])));
-
+                    sgn = vmulq_s8(sgn,sign_tmp);
 
                     ymm0 = p_cnProcBuf[(lut_idxCnProcG6[j][k] + i)*2+1];
                     min_1  = (int8x16_t)vminq_u8((uint8x16_t)min_1, (uint8x16_t)vabsq_s8(ymm0));
                     sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                    sgn_1 = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&sgn_1)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&sgn_1)[1],((int8x8_t*)&sign_tmp)[1])));
+                    sgn_1 = vmulq_s8(sgn_1,sign_tmp);
 
                 }
 
@@ -657,10 +657,10 @@ static inline void nrLDPC_cnProc_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                 min_1 = (int8x16_t)vminq_u8((uint8x16_t)min_1, (uint8x16_t)p_maxLLR[1]);
 
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),sgn),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),sgn),8));
-                *p_cnProcBufResBit= vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&min)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&min)[1],((int8x8_t*)&sign_tmp)[1])));
+                *p_cnProcBufResBit= vmulq_s8(min,sign_tmp);
                 p_cnProcBufResBit++;
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),sgn_1),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),sgn_1),8));
-                *p_cnProcBufResBit=vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&min_1)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&min_1)[1],((int8x8_t*)&sign_tmp)[1])));
+                *p_cnProcBufResBit=vmulq_s8(min_1,sign_tmp);
                 p_cnProcBufResBit++;
             }
         }
@@ -699,11 +699,12 @@ static inline void nrLDPC_cnProc_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                 // Abs and sign of 32 CNs (first BN)
                 ymm0 = p_cnProcBuf[(lut_idxCnProcG8[j][0] + i)*2];
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                sgn = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[1],((int8x8_t*)&sign_tmp)[1])));
+                sgn = vmulq_s8(p_ones[0],sign_tmp);
                 min = vabsq_s8(ymm0);
+
                 ymm0 = p_cnProcBuf[(lut_idxCnProcG8[j][0] + i)*2+1];
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                sgn_1 = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[2],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[3],((int8x8_t*)&sign_tmp)[1])));
+                sgn_1 = vmulq_s8(p_ones[1],sign_tmp);
                 min_1 = vabsq_s8(ymm0);
                 // Loop over BNs
                 for (k=1; k<7; k++)
@@ -711,13 +712,12 @@ static inline void nrLDPC_cnProc_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                     ymm0 = p_cnProcBuf[(lut_idxCnProcG8[j][k] + i)*2];
                     min  = (int8x16_t)vminq_u8((uint8x16_t)min, (uint8x16_t)vabsq_s8(ymm0));
                     sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                    sgn = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&sgn)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&sgn)[1],((int8x8_t*)&sign_tmp)[1])));
-
+                    sgn = vmulq_s8(sgn,sign_tmp);
 
                     ymm0 = p_cnProcBuf[(lut_idxCnProcG8[j][k] + i)*2+1];
                     min_1  = (int8x16_t)vminq_u8((uint8x16_t)min_1, (uint8x16_t)vabsq_s8(ymm0));
                     sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                    sgn_1 = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&sgn_1)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&sgn_1)[1],((int8x8_t*)&sign_tmp)[1])));
+                    sgn_1 = vmulq_s8(sgn_1,sign_tmp);
 
                 }
 
@@ -726,10 +726,10 @@ static inline void nrLDPC_cnProc_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                 min_1 = (int8x16_t)vminq_u8((uint8x16_t)min_1, (uint8x16_t)p_maxLLR[1]);
 
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),sgn),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),sgn),8));
-                *p_cnProcBufResBit= vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&min)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&min)[1],((int8x8_t*)&sign_tmp)[1])));
+                *p_cnProcBufResBit= vmulq_s8(min,sign_tmp);
                 p_cnProcBufResBit++;
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),sgn_1),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),sgn_1),8));
-                *p_cnProcBufResBit=vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&min_1)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&min_1)[1],((int8x8_t*)&sign_tmp)[1])));
+                *p_cnProcBufResBit=vmulq_s8(min_1,sign_tmp);
                 p_cnProcBufResBit++;
             }
         }
@@ -769,11 +769,12 @@ static inline void nrLDPC_cnProc_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                 // Abs and sign of 32 CNs (first BN)
                 ymm0 = p_cnProcBuf[(lut_idxCnProcG10[j][0] + i)*2];
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                sgn = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[1],((int8x8_t*)&sign_tmp)[1])));
+                sgn = vmulq_s8(p_ones[0],sign_tmp);
                 min = vabsq_s8(ymm0);
+
                 ymm0 = p_cnProcBuf[(lut_idxCnProcG10[j][0] + i)*2+1];
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                sgn_1 = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[2],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[3],((int8x8_t*)&sign_tmp)[1])));
+                sgn_1 = vmulq_s8(p_ones[1],sign_tmp);
                 min_1 = vabsq_s8(ymm0);
                 // Loop over BNs
                 for (k=1; k<9; k++)
@@ -781,13 +782,12 @@ static inline void nrLDPC_cnProc_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                     ymm0 = p_cnProcBuf[(lut_idxCnProcG10[j][k] + i)*2];
                     min  = (int8x16_t)vminq_u8((uint8x16_t)min, (uint8x16_t)vabsq_s8(ymm0));
                     sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                    sgn = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&sgn)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&sgn)[1],((int8x8_t*)&sign_tmp)[1])));
-
+                    sgn = vmulq_s8(sgn,sign_tmp);
 
                     ymm0 = p_cnProcBuf[(lut_idxCnProcG10[j][k] + i)*2+1];
                     min_1  = (int8x16_t)vminq_u8((uint8x16_t)min_1, (uint8x16_t)vabsq_s8(ymm0));
                     sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                    sgn_1 = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&sgn_1)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&sgn_1)[1],((int8x8_t*)&sign_tmp)[1])));
+                    sgn_1 = vmulq_s8(sgn_1,sign_tmp);
 
                 }
 
@@ -796,10 +796,10 @@ static inline void nrLDPC_cnProc_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                 min_1 = (int8x16_t)vminq_u8((uint8x16_t)min_1, (uint8x16_t)p_maxLLR[1]);
 
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),sgn),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),sgn),8));
-                *p_cnProcBufResBit= vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&min)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&min)[1],((int8x8_t*)&sign_tmp)[1])));
+                *p_cnProcBufResBit= vmulq_s8(min,sign_tmp);
                 p_cnProcBufResBit++;
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),sgn_1),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),sgn_1),8));
-                *p_cnProcBufResBit=vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&min_1)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&min_1)[1],((int8x8_t*)&sign_tmp)[1])));
+                *p_cnProcBufResBit=vmulq_s8(min_1,sign_tmp);
                 p_cnProcBufResBit++;
             }
         }
@@ -1362,12 +1362,12 @@ static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                 // Abs and sign of 32 CNs (first BN)
                 ymm0 = p_cnProcBuf[(lut_idxCnProcG3[j][0] + i)*2];
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                sgn = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[1],((int8x8_t*)&sign_tmp)[1])));
+                sgn = vmulq_s8(p_ones[0],sign_tmp);
                 min = vabsq_s8(ymm0);
 
                 ymm0 =p_cnProcBuf[(lut_idxCnProcG3[j][0] + i)*2+1];
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                sgn_1 = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[2],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[3],((int8x8_t*)&sign_tmp)[1])));
+                sgn_1 = vmulq_s8(p_ones[1],sign_tmp);
                 min_1 = vabsq_s8(ymm0);
 
                 // 32 CNs of second BN
@@ -1375,14 +1375,12 @@ static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                 ymm0 =  p_cnProcBuf[(lut_idxCnProcG3[j][1] + i)*2];
                 min  = (int8x16_t)vminq_u8((uint8x16_t)min, (uint8x16_t)vabsq_s8(ymm0));
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                sgn = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&sgn)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&sgn)[1],((int8x8_t*)&sign_tmp)[1])));
-
+                sgn = vmulq_s8(sgn,sign_tmp);
 
                 ymm0 = p_cnProcBuf[(lut_idxCnProcG3[j][1] + i)*2+1];
                 min_1  = (int8x16_t)vminq_u8((uint8x16_t)min_1, (uint8x16_t)vabsq_s8(ymm0));
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                sgn_1 = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&sgn_1)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&sgn_1)[1],((int8x8_t*)&sign_tmp)[1])));
-
+                sgn_1 = vmulq_s8(sgn_1,sign_tmp);
 
                 // Store result
                 min = (int8x16_t)vminq_u8((uint8x16_t)min, (uint8x16_t)p_maxLLR[0]); // 128 in epi8 is -127
@@ -1390,11 +1388,10 @@ static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                 //*p_cnProcBufResBit = _mm256_sign_epi8(min, sgn);
                 //p_cnProcBufResBit++;
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),sgn),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),sgn),8));
-                p_cnProcBufResBit[i*2]= vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&min)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&min)[1],((int8x8_t*)&sign_tmp)[1])));
+                p_cnProcBufResBit[i*2]= vmulq_s8(min,sign_tmp);
 
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),sgn_1),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),sgn_1),8));
-                p_cnProcBufResBit[i*2+1]=vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&min_1)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&min_1)[1],((int8x8_t*)&sign_tmp)[1])));
-
+                p_cnProcBufResBit[i*2+1]=vmulq_s8(min_1,sign_tmp);
             }
         }
     }
@@ -1430,14 +1427,12 @@ static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                 // Abs and sign of 32 CNs (first BN)
                 ymm0 = p_cnProcBuf[(lut_idxCnProcG4[j][0] + i)*2];
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                sgn = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[1],((int8x8_t*)&sign_tmp)[1])));
-
+                sgn = vmulq_s8(p_ones[0],sign_tmp);
                 min = vabsq_s8(ymm0);
 
                 ymm0 =p_cnProcBuf[(lut_idxCnProcG4[j][0] + i)*2+1];
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                sgn_1 = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[2],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[3],((int8x8_t*)&sign_tmp)[1])));
-
+                sgn_1 = vmulq_s8(p_ones[1],sign_tmp);
                 min_1 = vabsq_s8(ymm0);
                 // Loop over BNs
                 for (k=1; k<3; k++)
@@ -1445,24 +1440,22 @@ static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                     ymm0 =  p_cnProcBuf[(lut_idxCnProcG4[j][k] + i)*2];
                     min  = (int8x16_t)vminq_u8((uint8x16_t)min, (uint8x16_t)vabsq_s8(ymm0));
                     sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                    sgn = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&sgn)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&sgn)[1],((int8x8_t*)&sign_tmp)[1])));
-
+                    sgn = vmulq_s8(sgn,sign_tmp);
 
                     ymm0 = p_cnProcBuf[(lut_idxCnProcG4[j][k] + i)*2+1];
                     min_1  = (int8x16_t)vminq_u8((uint8x16_t)min_1, (uint8x16_t)vabsq_s8(ymm0));
                     sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                    sgn_1 = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&sgn_1)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&sgn_1)[1],((int8x8_t*)&sign_tmp)[1])));
-
+                    sgn_1 = vmulq_s8(sgn_1,sign_tmp);
                 }
 
                 // Store result
                 min = (int8x16_t)vminq_u8((uint8x16_t)min, (uint8x16_t)p_maxLLR[0]); // 128 in epi8 is -127
                 min_1 = (int8x16_t)vminq_u8((uint8x16_t)min_1, (uint8x16_t)p_maxLLR[1]);
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),sgn),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),sgn),8));
-                *p_cnProcBufResBit= vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&min)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&min)[1],((int8x8_t*)&sign_tmp)[1])));
+                *p_cnProcBufResBit= vmulq_s8(min,sign_tmp);
                 p_cnProcBufResBit++;
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),sgn_1),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),sgn_1),8));
-                *p_cnProcBufResBit=vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&min_1)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&min_1)[1],((int8x8_t*)&sign_tmp)[1])));
+                *p_cnProcBufResBit=vmulq_s8(min_1,sign_tmp);
                 p_cnProcBufResBit++;
             }
         }
@@ -1500,12 +1493,12 @@ static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                 // Abs and sign of 32 CNs (first BN)
                 ymm0 = p_cnProcBuf[(lut_idxCnProcG5[j][0] + i)*2];
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                sgn = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[1],((int8x8_t*)&sign_tmp)[1])));
+                sgn = vmulq_s8(p_ones[0],sign_tmp);
                 min = vabsq_s8(ymm0);
 
                 ymm0 =p_cnProcBuf[(lut_idxCnProcG5[j][0] + i)*2+1];
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                sgn_1 = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[2],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[3],((int8x8_t*)&sign_tmp)[1])));
+                sgn_1 = vmulq_s8(p_ones[1],sign_tmp);
                 min_1 = vabsq_s8(ymm0);
                 // Loop over BNs
                 for (k=1; k<4; k++)
@@ -1513,24 +1506,22 @@ static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                     ymm0 =  p_cnProcBuf[(lut_idxCnProcG5[j][k] + i)*2];
                     min  = (int8x16_t)vminq_u8((uint8x16_t)min, (uint8x16_t)vabsq_s8(ymm0));
                     sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                    sgn = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&sgn)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&sgn)[1],((int8x8_t*)&sign_tmp)[1])));
-
+                    sgn = vmulq_s8(sgn,sign_tmp);
 
                     ymm0 = p_cnProcBuf[(lut_idxCnProcG5[j][k] + i)*2+1];
                     min_1  = (int8x16_t)vminq_u8((uint8x16_t)min_1, (uint8x16_t)vabsq_s8(ymm0));
                     sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                    sgn_1 = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&sgn_1)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&sgn_1)[1],((int8x8_t*)&sign_tmp)[1])));
-
+                    sgn_1 = vmulq_s8(sgn_1,sign_tmp);
                 }
 
                 // Store result
                 min = (int8x16_t)vminq_u8((uint8x16_t)min, (uint8x16_t)p_maxLLR[0]); // 128 in epi8 is -127
                 min_1 = (int8x16_t)vminq_u8((uint8x16_t)min_1, (uint8x16_t)p_maxLLR[1]);
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),sgn),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),sgn),8));
-                *p_cnProcBufResBit= vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&min)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&min)[1],((int8x8_t*)&sign_tmp)[1])));
+                *p_cnProcBufResBit= vmulq_s8(min,sign_tmp);
                 p_cnProcBufResBit++;
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),sgn_1),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),sgn_1),8));
-                *p_cnProcBufResBit=vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&min_1)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&min_1)[1],((int8x8_t*)&sign_tmp)[1])));
+                *p_cnProcBufResBit=vmulq_s8(min_1,sign_tmp);
                 p_cnProcBufResBit++;
             }
         }
@@ -1569,12 +1560,12 @@ static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                 // Abs and sign of 32 CNs (first BN)
                 ymm0 = p_cnProcBuf[(lut_idxCnProcG6[j][0] + i)*2];
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                sgn = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[1],((int8x8_t*)&sign_tmp)[1])));
+                sgn = vmulq_s8(p_ones[0],sign_tmp);
                 min = vabsq_s8(ymm0);
 
                 ymm0 =p_cnProcBuf[(lut_idxCnProcG6[j][0] + i)*2+1];
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                sgn_1 = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[2],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[3],((int8x8_t*)&sign_tmp)[1])));
+                sgn_1 = vmulq_s8(p_ones[1],sign_tmp);
                 min_1 = vabsq_s8(ymm0);
                 // Loop over BNs
                 for (k=1; k<5; k++)
@@ -1582,24 +1573,22 @@ static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                     ymm0 =  p_cnProcBuf[(lut_idxCnProcG6[j][k] + i)*2];
                     min  = (int8x16_t)vminq_u8((uint8x16_t)min, (uint8x16_t)vabsq_s8(ymm0));
                     sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                    sgn = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&sgn)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&sgn)[1],((int8x8_t*)&sign_tmp)[1])));
-
+                    sgn = vmulq_s8(sgn,sign_tmp);
 
                     ymm0 = p_cnProcBuf[(lut_idxCnProcG6[j][k] + i)*2+1];
                     min_1  = (int8x16_t)vminq_u8((uint8x16_t)min_1, (uint8x16_t)vabsq_s8(ymm0));
                     sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                    sgn_1 = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&sgn_1)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&sgn_1)[1],((int8x8_t*)&sign_tmp)[1])));
-
+                    sgn_1 = vmulq_s8(sgn_1,sign_tmp);
                 }
 
                 // Store result
                 min = (int8x16_t)vminq_u8((uint8x16_t)min, (uint8x16_t)p_maxLLR[0]); // 128 in epi8 is -127
                 min_1 = (int8x16_t)vminq_u8((uint8x16_t)min_1, (uint8x16_t)p_maxLLR[1]);
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),sgn),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),sgn),8));
-                *p_cnProcBufResBit= vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&min)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&min)[1],((int8x8_t*)&sign_tmp)[1])));
+                *p_cnProcBufResBit= vmulq_s8(min,sign_tmp);
                 p_cnProcBufResBit++;
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),sgn_1),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),sgn_1),8));
-                *p_cnProcBufResBit=vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&min_1)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&min_1)[1],((int8x8_t*)&sign_tmp)[1])));
+                *p_cnProcBufResBit=vmulq_s8(min_1,sign_tmp);
                 p_cnProcBufResBit++;
             }
         }
@@ -1639,14 +1628,12 @@ static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                 // Abs and sign of 32 CNs (first BN)
                 ymm0 = p_cnProcBuf[(lut_idxCnProcG7[j][0] + i)*2];
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                sgn = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[1],((int8x8_t*)&sign_tmp)[1])));
-
+                sgn = vmulq_s8(p_ones[0],sign_tmp);
                 min = vabsq_s8(ymm0);
 
                 ymm0 =p_cnProcBuf[(lut_idxCnProcG7[j][0] + i)*2+1];
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                sgn_1 = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[2],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[3],((int8x8_t*)&sign_tmp)[1])));
-
+                sgn_1 = vmulq_s8(p_ones[1],sign_tmp);
                 min_1 = vabsq_s8(ymm0);
                 // Loop over BNs
                 for (k=1; k<6; k++)
@@ -1654,24 +1641,22 @@ static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                     ymm0 =  p_cnProcBuf[(lut_idxCnProcG7[j][k] + i)*2];
                     min  = (int8x16_t)vminq_u8((uint8x16_t)min, (uint8x16_t)vabsq_s8(ymm0));
                     sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                    sgn = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&sgn)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&sgn)[1],((int8x8_t*)&sign_tmp)[1])));
-
+                    sgn = vmulq_s8(sgn,sign_tmp);
 
                     ymm0 = p_cnProcBuf[(lut_idxCnProcG7[j][k] + i)*2+1];
                     min_1  = (int8x16_t)vminq_u8((uint8x16_t)min_1, (uint8x16_t)vabsq_s8(ymm0));
                     sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                    sgn_1 = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&sgn_1)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&sgn_1)[1],((int8x8_t*)&sign_tmp)[1])));
-
+                    sgn_1 = vmulq_s8(sgn_1,sign_tmp);
                 }
 
                 // Store result
                 min = (int8x16_t)vminq_u8((uint8x16_t)min, (uint8x16_t)p_maxLLR[0]); // 128 in epi8 is -127
                 min_1 = (int8x16_t)vminq_u8((uint8x16_t)min_1, (uint8x16_t)p_maxLLR[1]);
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),sgn),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),sgn),8));
-                *p_cnProcBufResBit= vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&min)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&min)[1],((int8x8_t*)&sign_tmp)[1])));
+                *p_cnProcBufResBit= vmulq_s8(min,sign_tmp);
                 p_cnProcBufResBit++;
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),sgn_1),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),sgn_1),8));
-                *p_cnProcBufResBit=vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&min_1)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&min_1)[1],((int8x8_t*)&sign_tmp)[1])));
+                *p_cnProcBufResBit=vmulq_s8(min_1,sign_tmp);
                 p_cnProcBufResBit++;
             }
         }
@@ -1711,14 +1696,12 @@ static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                 // Abs and sign of 32 CNs (first BN)
                 ymm0 = p_cnProcBuf[(lut_idxCnProcG8[j][0] + i)*2];
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                sgn = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[1],((int8x8_t*)&sign_tmp)[1])));
-
+                sgn = vmulq_s8(p_ones[0],sign_tmp);
                 min = vabsq_s8(ymm0);
 
                 ymm0 =p_cnProcBuf[(lut_idxCnProcG8[j][0] + i)*2+1];
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                sgn_1 = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[2],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[3],((int8x8_t*)&sign_tmp)[1])));
-
+                sgn_1 = vmulq_s8(p_ones[1],sign_tmp);
                 min_1 = vabsq_s8(ymm0);
                 // Loop over BNs
                 for (k=1; k<7; k++)
@@ -1726,24 +1709,22 @@ static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                     ymm0 =  p_cnProcBuf[(lut_idxCnProcG8[j][k] + i)*2];
                     min  = (int8x16_t)vminq_u8((uint8x16_t)min, (uint8x16_t)vabsq_s8(ymm0));
                     sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                    sgn = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&sgn)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&sgn)[1],((int8x8_t*)&sign_tmp)[1])));
-
+                    sgn = vmulq_s8(sgn,sign_tmp);
 
                     ymm0 = p_cnProcBuf[(lut_idxCnProcG8[j][k] + i)*2+1];
                     min_1  = (int8x16_t)vminq_u8((uint8x16_t)min_1, (uint8x16_t)vabsq_s8(ymm0));
                     sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                    sgn_1 = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&sgn_1)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&sgn_1)[1],((int8x8_t*)&sign_tmp)[1])));
-
+                    sgn_1 = vmulq_s8(sgn_1,sign_tmp);
                 }
 
                 // Store result
                 min = (int8x16_t)vminq_u8((uint8x16_t)min, (uint8x16_t)p_maxLLR[0]); // 128 in epi8 is -127
                 min_1 = (int8x16_t)vminq_u8((uint8x16_t)min_1, (uint8x16_t)p_maxLLR[1]);
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),sgn),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),sgn),8));
-                *p_cnProcBufResBit= vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&min)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&min)[1],((int8x8_t*)&sign_tmp)[1])));
+                *p_cnProcBufResBit= vmulq_s8(min,sign_tmp);
                 p_cnProcBufResBit++;
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),sgn_1),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),sgn_1),8));
-                *p_cnProcBufResBit=vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&min_1)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&min_1)[1],((int8x8_t*)&sign_tmp)[1])));
+                *p_cnProcBufResBit=vmulq_s8(min_1,sign_tmp);
                 p_cnProcBufResBit++;
             }
         }
@@ -1784,14 +1765,12 @@ static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                 // Abs and sign of 32 CNs (first BN)
                 ymm0 = p_cnProcBuf[(lut_idxCnProcG9[j][0] + i)*2];
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                sgn = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[1],((int8x8_t*)&sign_tmp)[1])));
-
+                sgn = vmulq_s8(p_ones[0],sign_tmp);
                 min = vabsq_s8(ymm0);
 
                 ymm0 =p_cnProcBuf[(lut_idxCnProcG9[j][0] + i)*2+1];
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                sgn_1 = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[2],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[3],((int8x8_t*)&sign_tmp)[1])));
-
+                sgn_1 = vmulq_s8(p_ones[1],sign_tmp);
                 min_1 = vabsq_s8(ymm0);
                 // Loop over BNs
                 for (k=1; k<8; k++)
@@ -1799,24 +1778,22 @@ static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                     ymm0 =  p_cnProcBuf[(lut_idxCnProcG9[j][k] + i)*2];
                     min  = (int8x16_t)vminq_u8((uint8x16_t)min, (uint8x16_t)vabsq_s8(ymm0));
                     sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                    sgn = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&sgn)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&sgn)[1],((int8x8_t*)&sign_tmp)[1])));
-
+                    sgn = vmulq_s8(sgn,sign_tmp);
 
                     ymm0 = p_cnProcBuf[(lut_idxCnProcG9[j][k] + i)*2+1];
                     min_1  = (int8x16_t)vminq_u8((uint8x16_t)min_1, (uint8x16_t)vabsq_s8(ymm0));
                     sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                    sgn_1 = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&sgn_1)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&sgn_1)[1],((int8x8_t*)&sign_tmp)[1])));
-
+                    sgn_1 = vmulq_s8(sgn_1,sign_tmp);
                 }
 
                 // Store result
                 min = (int8x16_t)vminq_u8((uint8x16_t)min, (uint8x16_t)p_maxLLR[0]); // 128 in epi8 is -127
                 min_1 = (int8x16_t)vminq_u8((uint8x16_t)min_1, (uint8x16_t)p_maxLLR[1]);
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),sgn),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),sgn),8));
-                *p_cnProcBufResBit= vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&min)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&min)[1],((int8x8_t*)&sign_tmp)[1])));
+                *p_cnProcBufResBit= vmulq_s8(min,sign_tmp);
                 p_cnProcBufResBit++;
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),sgn_1),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),sgn_1),8));
-                *p_cnProcBufResBit=vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&min_1)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&min_1)[1],((int8x8_t*)&sign_tmp)[1])));
+                *p_cnProcBufResBit=vmulq_s8(min_1,sign_tmp);
                 p_cnProcBufResBit++;
             }
         }
@@ -1857,14 +1834,12 @@ static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                 // Abs and sign of 32 CNs (first BN)
                 ymm0 = p_cnProcBuf[(lut_idxCnProcG10[j][0] + i)*2];
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                sgn = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[1],((int8x8_t*)&sign_tmp)[1])));
-
+                sgn = vmulq_s8(p_ones[0],sign_tmp);
                 min = vabsq_s8(ymm0);
 
                 ymm0 =p_cnProcBuf[(lut_idxCnProcG10[j][0] + i)*2+1];
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                sgn_1 = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[2],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[3],((int8x8_t*)&sign_tmp)[1])));
-
+                sgn_1 = vmulq_s8(p_ones[1],sign_tmp);
                 min_1 = vabsq_s8(ymm0);
                 // Loop over BNs
                 for (k=1; k<9; k++)
@@ -1872,24 +1847,22 @@ static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                     ymm0 =  p_cnProcBuf[(lut_idxCnProcG10[j][k] + i)*2];
                     min  = (int8x16_t)vminq_u8((uint8x16_t)min, (uint8x16_t)vabsq_s8(ymm0));
                     sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                    sgn = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&sgn)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&sgn)[1],((int8x8_t*)&sign_tmp)[1])));
-
+                    sgn = vmulq_s8(sgn,sign_tmp);
 
                     ymm0 = p_cnProcBuf[(lut_idxCnProcG10[j][k] + i)*2+1];
                     min_1  = (int8x16_t)vminq_u8((uint8x16_t)min_1, (uint8x16_t)vabsq_s8(ymm0));
                     sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                    sgn_1 = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&sgn_1)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&sgn_1)[1],((int8x8_t*)&sign_tmp)[1])));
-
+                    sgn_1 = vmulq_s8(sgn_1,sign_tmp);
                 }
 
                 // Store result
                 min = (int8x16_t)vminq_u8((uint8x16_t)min, (uint8x16_t)p_maxLLR[0]); // 128 in epi8 is -127
                 min_1 = (int8x16_t)vminq_u8((uint8x16_t)min_1, (uint8x16_t)p_maxLLR[1]);
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),sgn),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),sgn),8));
-                *p_cnProcBufResBit= vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&min)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&min)[1],((int8x8_t*)&sign_tmp)[1])));
+                *p_cnProcBufResBit= vmulq_s8(min,sign_tmp);
                 p_cnProcBufResBit++;
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),sgn_1),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),sgn_1),8));
-                *p_cnProcBufResBit=vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&min_1)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&min_1)[1],((int8x8_t*)&sign_tmp)[1])));
+                *p_cnProcBufResBit=vmulq_s8(min_1,sign_tmp);
                 p_cnProcBufResBit++;
             }
         }
@@ -1935,14 +1908,12 @@ static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                 // Abs and sign of 32 CNs (first BN)
                 ymm0 = p_cnProcBuf[(lut_idxCnProcG19[j][0] + i)*2];
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                sgn = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[1],((int8x8_t*)&sign_tmp)[1])));
-
+                sgn = vmulq_s8(p_ones[0],sign_tmp);
                 min = vabsq_s8(ymm0);
 
                 ymm0 =p_cnProcBuf[(lut_idxCnProcG19[j][0] + i)*2+1];
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                sgn_1 = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[2],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)p_ones)[3],((int8x8_t*)&sign_tmp)[1])));
-
+                sgn_1 = vmulq_s8(p_ones[1],sign_tmp);
                 min_1 = vabsq_s8(ymm0);
                 // Loop over BNs
                 for (k=1; k<18; k++)
@@ -1950,24 +1921,22 @@ static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                     ymm0 =  p_cnProcBuf[(lut_idxCnProcG19[j][k] + i)*2];
                     min  = (int8x16_t)vminq_u8((uint8x16_t)min, (uint8x16_t)vabsq_s8(ymm0));
                     sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                    sgn = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&sgn)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&sgn)[1],((int8x8_t*)&sign_tmp)[1])));
-
+                    sgn = vmulq_s8(sgn,sign_tmp);
 
                     ymm0 = p_cnProcBuf[(lut_idxCnProcG19[j][k] + i)*2+1];
                     min_1  = (int8x16_t)vminq_u8((uint8x16_t)min_1, (uint8x16_t)vabsq_s8(ymm0));
                     sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),ymm0),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),ymm0),8));
-                    sgn_1 = vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&sgn_1)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&sgn_1)[1],((int8x8_t*)&sign_tmp)[1])));
-
+                    sgn_1 = vmulq_s8(sgn_1,sign_tmp);
                 }
 
                 // Store result
                 min = (int8x16_t)vminq_u8((uint8x16_t)min, (uint8x16_t)p_maxLLR[0]); // 128 in epi8 is -127
                 min_1 = (int8x16_t)vminq_u8((uint8x16_t)min_1, (uint8x16_t)p_maxLLR[1]);
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),sgn),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),sgn),8));
-                *p_cnProcBufResBit= vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&min)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&min)[1],((int8x8_t*)&sign_tmp)[1])));
+                *p_cnProcBufResBit= vmulq_s8(min,sign_tmp);
                 p_cnProcBufResBit++;
                 sign_tmp = vaddq_s8((int8x16_t)vcgtq_s8(vdupq_n_s8(0),sgn_1),(int8x16_t)vrshrq_n_u8(vcltq_s8(vdupq_n_s8(0),sgn_1),8));
-                *p_cnProcBufResBit=vcombine_s8(vmovn_s16(vmull_s8(((int8x8_t*)&min_1)[0],((int8x8_t*)&sign_tmp)[0])),vmovn_s16(vmull_s8(((int8x8_t*)&min_1)[1],((int8x8_t*)&sign_tmp)[1])));
+                *p_cnProcBufResBit=vmulq_s8(min_1,sign_tmp);
                 p_cnProcBufResBit++;
             }
         }

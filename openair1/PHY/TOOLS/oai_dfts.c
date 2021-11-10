@@ -601,7 +601,7 @@ static inline void bfly2(int16x8_t *x0, int16x8_t *x1,int16x8_t *y0, int16x8_t *
 {
 
   int32x4_t x0r_2,x0i_2,x1r_2,x1i_2,dy0r,dy1r,dy0i,dy1i;
-
+  int32x4x2_t xtmp;
   cmult(*(x0),*(W0),&x0r_2,&x0i_2);
   cmult(*(x1),*(tw),&x1r_2,&x1i_2);
 
@@ -609,9 +609,16 @@ static inline void bfly2(int16x8_t *x0, int16x8_t *x1,int16x8_t *y0, int16x8_t *
   dy1r = vqsubq_s32(x0r_2,x1r_2);
   dy0i = vqaddq_s32(x0i_2,x1i_2);
   dy1i = vqsubq_s32(x0i_2,x1i_2);
+  dy0r = vqshlq_s32(dy0r,vmovq_n_s32(-15));
+  dy1r = vqshlq_s32(dy1r,vmovq_n_s32(-15));
+  dy0i = vqshlq_s32(dy0i,vmovq_n_s32(-15));
+  dy1i = vqshlq_s32(dy1i,vmovq_n_s32(-15));
 
-  *y0 = cpack(dy0r,dy0i);
-  *y1 = cpack(dy1r,dy1i);
+  xtmp = vzipq_s32(dy0r,dy0i);
+  *y0 = vcombine_s16(vqmovn_s32(xtmp.val[0]),vqmovn_s32(xtmp.val[1]));
+
+  xtmp = vzipq_s32(dy1r,dy1i);
+  *y1 = vcombine_s16(vqmovn_s32(xtmp.val[0]),vqmovn_s32(xtmp.val[1]));
 }
 
 
@@ -699,8 +706,12 @@ static inline void bfly2_16(int16x8_t *x0, int16x8_t *x1, int16x8_t *y0, int16x8
 static inline void bfly2_16(int16x8_t *x0, int16x8_t *x1, int16x8_t *y0, int16x8_t *y1, int16x8_t *tw, int16x8_t *twb)
 {
 
-  *y0  = vqaddq_s16(*x0,*x1);
-  *y1  = vqsubq_s16(*x0,*x1);
+  int16x8_t x1t;
+
+  x1t = packed_cmult2(*(x1),*(tw),*(twb));
+
+  *y0  = vqaddq_s16(*x0,x1t);
+  *y1  = vqsubq_s16(*x0,x1t);
 
 }
 #endif
@@ -765,7 +776,7 @@ static inline void ibfly2(int16x8_t *x0, int16x8_t *x1,int16x8_t *y0, int16x8_t 
 {
 
   int32x4_t x0r_2,x0i_2,x1r_2,x1i_2,dy0r,dy1r,dy0i,dy1i;
-
+  int32x4x2_t xtmp;
   cmultc(*(x0),*(W0),&x0r_2,&x0i_2);
   cmultc(*(x1),*(tw),&x1r_2,&x1i_2);
 
@@ -774,9 +785,16 @@ static inline void ibfly2(int16x8_t *x0, int16x8_t *x1,int16x8_t *y0, int16x8_t 
   dy0i = vqaddq_s32(x0i_2,x1i_2);
   dy1i = vqsubq_s32(x0i_2,x1i_2);
 
-  *y0 = cpack(dy0r,dy0i);
-  *y1 = cpack(dy1r,dy1i);
+  dy0r = vqshlq_s32(dy0r,vmovq_n_s32(-15));
+  dy1r = vqshlq_s32(dy1r,vmovq_n_s32(-15));
+  dy0i = vqshlq_s32(dy0i,vmovq_n_s32(-15));
+  dy1i = vqshlq_s32(dy1i,vmovq_n_s32(-15));
 
+  xtmp = vzipq_s32(dy0r,dy0i);
+  *y0 = vcombine_s16(vqmovn_s32(xtmp.val[0]),vqmovn_s32(xtmp.val[1]));
+
+  xtmp = vzipq_s32(dy1r,dy1i);
+  *y1 = vcombine_s16(vqmovn_s32(xtmp.val[0]),vqmovn_s32(xtmp.val[1]));
 }
 
 #endif
@@ -1314,12 +1332,13 @@ static inline void bfly4_tw1(int16x8_t *x0,int16x8_t *x1,int16x8_t *x2,int16x8_t
 
   register int16x8_t x1_flip,x3_flip;
 
-  *(y0) = vqaddq_s16(*(x0),vqaddq_s16(*(x1),vqaddq_s16(*(x2),*(x3))));
+  *(y0) = vqaddq_s16(vqaddq_s16(*(x0),*(x2)),vqaddq_s16(*(x1),*(x3)));
+  *(y2) = vqsubq_s16(vqaddq_s16(*(x0),*(x2)),vqaddq_s16(*(x1),*(x3)));
+
   x1_flip = vrev32q_s16(vmulq_s16(*(x1),*(int16x8_t*)conjugatedft));
   x3_flip = vrev32q_s16(vmulq_s16(*(x3),*(int16x8_t*)conjugatedft));
-  *(y1)   = vqaddq_s16(*(x0),vqsubq_s16(x1_flip,vqaddq_s16(*(x2),x3_flip)));
-  *(y2)   = vqsubq_s16(*(x0),vqsubq_s16(*(x1),vqsubq_s16(*(x2),*(x3))));
-  *(y3)   = vqsubq_s16(*(x0),vqaddq_s16(x1_flip,vqsubq_s16(*(x2),x3_flip)));
+  *(y1)   = vqaddq_s16(vqsubq_s16(*(x0),*(x2)),vqsubq_s16(x1_flip,x3_flip));
+  *(y3)   = vqsubq_s16(vqsubq_s16(*(x0),*(x2)),vqsubq_s16(x1_flip,x3_flip));
 }
 
 #endif
@@ -1979,18 +1998,19 @@ static inline void transpose16_ooff(int16x8_t *x,int16x8_t *y,int off) __attribu
 
 static inline void transpose16_ooff(int16x8_t *x,int16x8_t *y,int off)
 {
-  int16x8_t *y2=y;
-  register uint32x4x2_t ytmp0,ytmp1;
+  int64x2_t *y2=(int64x2_t *)y;
+  register int32x4x2_t ytmp0,ytmp1;
 
-  ytmp0 = vtrnq_u32((uint32x4_t)(x[0]),(uint32x4_t)(x[1]));
-  ytmp1 = vtrnq_u32((uint32x4_t)(x[2]),(uint32x4_t)(x[3]));
+  ytmp0 = vzipq_s32((int32x4_t)(x[0]),(int32x4_t)(x[1]));
+  ytmp1 = vzipq_s32((int32x4_t)(x[2]),(int32x4_t)(x[3]));
 
-  *y2   = (int16x8_t)vcombine_s16(vget_low_s16((int16x8_t)ytmp0.val[0]),vget_low_s16((int16x8_t)ytmp1.val[0])); y2+=off;
-  *y2   = (int16x8_t)vcombine_s16(vget_low_s16((int16x8_t)ytmp0.val[1]),vget_low_s16((int16x8_t)ytmp1.val[1])); y2+=off;
-  *y2   = (int16x8_t)vcombine_s16(vget_high_s16((int16x8_t)ytmp0.val[0]),vget_high_s16((int16x8_t)ytmp1.val[0])); y2+=off;
-  *y2   = (int16x8_t)vcombine_s16(vget_high_s16((int16x8_t)ytmp0.val[1]),vget_high_s16((int16x8_t)ytmp1.val[1]));
-
-
+  *y2   = vcombine_s64(vget_low_s64((int64x2_t)ytmp0.val[0]),vget_low_s64((int64x2_t)ytmp1.val[0]));
+  y2+=off;
+  *y2   = vcombine_s64(vget_high_s64((int64x2_t)ytmp0.val[0]),vget_high_s64((int64x2_t)ytmp1.val[0]));
+  y2+=off;
+  *y2   = vcombine_s64(vget_low_s64((int64x2_t)ytmp0.val[1]),vget_low_s64((int64x2_t)ytmp1.val[1]));
+  y2+=off;
+  *y2   = vcombine_s64(vget_high_s64((int64x2_t)ytmp0.val[1]),vget_high_s64((int64x2_t)ytmp1.val[1]));
 }
 
 #endif
@@ -2030,7 +2050,7 @@ static inline void transpose4_ooff_simd256(__m256i *x,__m256i *y,int off)
 static inline void transpose4_ooff(int16x4_t *x,int16x4_t *y,int off)__attribute__((always_inline));
 static inline void transpose4_ooff(int16x4_t *x,int16x4_t *y,int off)
 {
-  uint32x2x2_t ytmp = vtrn_u32((uint32x2_t)x[0],(uint32x2_t)x[1]);
+  int32x2x2_t ytmp = vzip_s32((int32x2_t)x[0],(int32x2_t)x[1]);
 
   y[0]   = (int16x4_t)ytmp.val[0];
   y[off] = (int16x4_t)ytmp.val[1];
@@ -2172,8 +2192,7 @@ static inline void dft16(int16_t *x,int16_t *y)
 
   register int16x8_t x1_flip,x3_flip,x02t,x13t;
   register int16x8_t xtmp0,xtmp1,xtmp2,xtmp3;
-  register uint32x4x2_t ytmp0,ytmp1;
-  register int16x8_t ytmp0b,ytmp1b,ytmp2b,ytmp3b;
+  register int32x4x2_t ytmp0,ytmp1;
 
   // First stage : 4 Radix-4 butterflies without input twiddles
   
@@ -2188,34 +2207,34 @@ static inline void dft16(int16_t *x,int16_t *y)
   xtmp1   = vqaddq_s16(x02t,x13t);  // x0 + x1f - x2 - x3f
   xtmp3   = vqsubq_s16(x02t,x13t);  // x0 - x1f - x2 + x3f
 
-  ytmp0  = vtrnq_u32((uint32x4_t)(xtmp0),(uint32x4_t)(xtmp1));
+  ytmp0  = vzipq_s32((int32x4_t)(xtmp0),(int32x4_t)(xtmp1));
 // y0[0] = [x00 x10 x02 x12], y0[1] = [x01 x11 x03 x13]
-  ytmp1  = vtrnq_u32((uint32x4_t)(xtmp2),(uint32x4_t)(xtmp3));
+  ytmp1  = vzipq_s32((int32x4_t)(xtmp2),(int32x4_t)(xtmp3));
 // y1[0] = [x20 x30 x22 x32], y1[1] = [x21 x31 x23 x33]
 
 
-  ytmp0b = vcombine_s16(vget_low_s16((int16x8_t)ytmp0.val[0]),vget_low_s16((int16x8_t)ytmp1.val[0]));
-// y0 = [x00 x10 x20 x30] 
-  ytmp1b = vcombine_s16(vget_low_s16((int16x8_t)ytmp0.val[1]),vget_low_s16((int16x8_t)ytmp1.val[1]));
-// t1 = [x01 x11 x21 x31] 
-  ytmp2b = vcombine_s16(vget_high_s16((int16x8_t)ytmp0.val[0]),vget_high_s16((int16x8_t)ytmp1.val[0]));
+  xtmp0 = vcombine_s16(vget_low_s16((int16x8_t)ytmp0.val[0]),vget_low_s16((int16x8_t)ytmp1.val[0]));
+// y0 = [x00 x10 x20 x30]
+  xtmp1 = vcombine_s16(vget_high_s16((int16x8_t)ytmp0.val[0]),vget_high_s16((int16x8_t)ytmp1.val[0]));
 // t2 = [x02 x12 x22 x32]
-  ytmp3b = vcombine_s16(vget_high_s16((int16x8_t)ytmp0.val[1]),vget_high_s16((int16x8_t)ytmp1.val[1]));
+  xtmp2 = vcombine_s16(vget_low_s16((int16x8_t)ytmp0.val[1]),vget_low_s16((int16x8_t)ytmp1.val[1]));
+// t1 = [x01 x11 x21 x31] 
+  xtmp3 = vcombine_s16(vget_high_s16((int16x8_t)ytmp0.val[1]),vget_high_s16((int16x8_t)ytmp1.val[1]));
 // t3 = [x03 x13 x23 x33]
 
 
   // Second stage : 4 Radix-4 butterflies with input twiddles
-  xtmp1 = packed_cmult2(ytmp1b,tw16a_128[0],tw16b_128[0]);
-  xtmp2 = packed_cmult2(ytmp2b,tw16a_128[1],tw16b_128[1]);
-  xtmp3 = packed_cmult2(ytmp3b,tw16a_128[2],tw16b_128[2]);
+  xtmp1 = packed_cmult2(xtmp1,tw16a_128[0],tw16b_128[0]);
+  xtmp2 = packed_cmult2(xtmp2,tw16a_128[1],tw16b_128[1]);
+  xtmp3 = packed_cmult2(xtmp3,tw16a_128[2],tw16b_128[2]);
 
-  x02t    = vqaddq_s16(ytmp0b,xtmp2);
+  x02t    = vqaddq_s16(xtmp0,xtmp2);
   x13t    = vqaddq_s16(xtmp1,xtmp3);
   y128[0] = vqaddq_s16(x02t,x13t);
   y128[2] = vqsubq_s16(x02t,x13t);
   x1_flip = vrev32q_s16(vmulq_s16(xtmp1,*(int16x8_t*)conjugatedft));
   x3_flip = vrev32q_s16(vmulq_s16(xtmp3,*(int16x8_t*)conjugatedft));
-  x02t    = vqsubq_s16(ytmp0b,xtmp2);
+  x02t    = vqsubq_s16(xtmp0,xtmp2);
   x13t    = vqsubq_s16(x1_flip,x3_flip);
   y128[1] = vqaddq_s16(x02t,x13t);  // x0 + x1f - x2 - x3f
   y128[3] = vqsubq_s16(x02t,x13t);  // x0 - x1f - x2 + x3f
@@ -2389,8 +2408,7 @@ static inline void idft16(int16_t *x,int16_t *y)
 
   register int16x8_t x1_flip,x3_flip,x02t,x13t;
   register int16x8_t xtmp0,xtmp1,xtmp2,xtmp3;
-  register uint32x4x2_t ytmp0,ytmp1;
-  register int16x8_t ytmp0b,ytmp1b,ytmp2b,ytmp3b;
+  register int32x4x2_t ytmp0,ytmp1;
 
   // First stage : 4 Radix-4 butterflies without input twiddles
 
@@ -2405,33 +2423,33 @@ static inline void idft16(int16_t *x,int16_t *y)
   xtmp3   = vqaddq_s16(x02t,x13t);  // x0 + x1f - x2 - x3f
   xtmp1   = vqsubq_s16(x02t,x13t);  // x0 - x1f - x2 + x3f
 
-  ytmp0  = vtrnq_u32((uint32x4_t)(xtmp0),(uint32x4_t)(xtmp1));
+  ytmp0  = vzipq_s32((int32x4_t)(xtmp0),(int32x4_t)(xtmp1));
 // y0[0] = [x00 x10 x02 x12], y0[1] = [x01 x11 x03 x13]
-  ytmp1  = vtrnq_u32((uint32x4_t)(xtmp2),(uint32x4_t)(xtmp3));
+  ytmp1  = vzipq_s32((int32x4_t)(xtmp2),(int32x4_t)(xtmp3));
 // y1[0] = [x20 x30 x22 x32], y1[1] = [x21 x31 x23 x33]
 
 
-  ytmp0b = vcombine_s16(vget_low_s16((int16x8_t)ytmp0.val[0]),vget_low_s16((int16x8_t)ytmp1.val[0]));
+  xtmp0 = vcombine_s16(vget_low_s16((int16x8_t)ytmp0.val[0]),vget_low_s16((int16x8_t)ytmp1.val[0]));
 // y0 = [x00 x10 x20 x30] 
-  ytmp1b = vcombine_s16(vget_low_s16((int16x8_t)ytmp0.val[1]),vget_low_s16((int16x8_t)ytmp1.val[1]));
-// t1 = [x01 x11 x21 x31] 
-  ytmp2b = vcombine_s16(vget_high_s16((int16x8_t)ytmp0.val[0]),vget_high_s16((int16x8_t)ytmp1.val[0]));
+  xtmp1 = vcombine_s16(vget_high_s16((int16x8_t)ytmp0.val[0]),vget_high_s16((int16x8_t)ytmp1.val[0]));
 // t2 = [x02 x12 x22 x32]
-  ytmp3b = vcombine_s16(vget_high_s16((int16x8_t)ytmp0.val[1]),vget_high_s16((int16x8_t)ytmp1.val[1]));
+  xtmp2 = vcombine_s16(vget_low_s16((int16x8_t)ytmp0.val[1]),vget_low_s16((int16x8_t)ytmp1.val[1]));
+// t1 = [x01 x11 x21 x31] 
+  xtmp3 = vcombine_s16(vget_high_s16((int16x8_t)ytmp0.val[1]),vget_high_s16((int16x8_t)ytmp1.val[1]));
 // t3 = [x03 x13 x23 x33]
 
   // Second stage : 4 Radix-4 butterflies with input twiddles
-  xtmp1 = packed_cmult2(ytmp1b,tw16a_128[0],tw16b_128[0]);
-  xtmp2 = packed_cmult2(ytmp2b,tw16a_128[1],tw16b_128[1]);
-  xtmp3 = packed_cmult2(ytmp3b,tw16a_128[2],tw16b_128[2]);
+  xtmp1 = packed_cmult2(xtmp1,tw16a_128[0],tw16b_128[0]);
+  xtmp2 = packed_cmult2(xtmp2,tw16a_128[1],tw16b_128[1]);
+  xtmp3 = packed_cmult2(xtmp3,tw16a_128[2],tw16b_128[2]);
 
-  x02t    = vqaddq_s16(ytmp0b,xtmp2);
+  x02t    = vqaddq_s16(xtmp0,xtmp2);
   x13t    = vqaddq_s16(xtmp1,xtmp3);
   y128[0] = vqaddq_s16(x02t,x13t);
   y128[2] = vqsubq_s16(x02t,x13t);
   x1_flip = vrev32q_s16(vmulq_s16(xtmp1,*(int16x8_t*)conjugatedft));
   x3_flip = vrev32q_s16(vmulq_s16(xtmp3,*(int16x8_t*)conjugatedft));
-  x02t    = vqsubq_s16(ytmp0b,xtmp2);
+  x02t    = vqsubq_s16(xtmp0,xtmp2);
   x13t    = vqsubq_s16(x1_flip,x3_flip);
   y128[3] = vqaddq_s16(x02t,x13t);  // x0 + x1f - x2 - x3f
   y128[1] = vqsubq_s16(x02t,x13t);  // x0 - x1f - x2 + x3f
@@ -2587,9 +2605,23 @@ const static int16_t tw64c[96] __attribute__((aligned(32))) = {
 #define simdshort_q15_t int16x4_t
 #define shiftright_int16(a,shift) vshrq_n_s16(a,shift)
 #define set1_int16(a) vdupq_n_s16(a)
-#define mulhi_int16(a,b) vqdmulhq_s16(a,b);
-#define _mm_empty() 
+#define _mm_empty()
 #define _m_empty()
+static inline int16x8_t mulhi_int16(int16x8_t a, int16x8_t b) {
+  int32x4_t mmtmpP0,mmtmpP1;
+  mmtmpP0 = vmull_s16(((int16x4_t*)&a)[0], ((int16x4_t*)&b)[0]);
+  mmtmpP1 = vmull_s16(((int16x4_t*)&a)[1], ((int16x4_t*)&b)[1]);
+  mmtmpP0 = vqshlq_s32(mmtmpP0,vmovq_n_s32(-14));
+  mmtmpP1 = vqshlq_s32(mmtmpP1,vmovq_n_s32(-14));
+  mmtmpP0 = vqaddq_s32(mmtmpP0,vmovq_n_s32(1));
+  mmtmpP1 = vqaddq_s32(mmtmpP1,vmovq_n_s32(1));
+  mmtmpP0 = vandq_s32(mmtmpP0,vmovq_n_s32(0x0001FFFF));
+  mmtmpP1 = vandq_s32(mmtmpP1,vmovq_n_s32(0x0001FFFF));
+  mmtmpP0 = vqshlq_s32(mmtmpP0,vmovq_n_s32(-1));
+  mmtmpP1 = vqshlq_s32(mmtmpP1,vmovq_n_s32(-1));
+  return vcombine_s16(vqmovn_s32(mmtmpP0),vqmovn_s32(mmtmpP1));
+}
+
 
 #endif
 

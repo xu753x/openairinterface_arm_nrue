@@ -21,7 +21,7 @@
 
 #include "PHY/sse_intrin.h"
 #include "tools_defs.h"
-
+#include "assertions.h"
 #if defined(__x86_64__) || defined(__i386__)
 #define simd_q15_t __m128i
 #define simdshort_q15_t __m64
@@ -36,8 +36,8 @@
 #define simdshort_q15_t int16x4_t
 #define shiftright_int16(a,shift) vshrq_n_s16(a,shift)
 #define set1_int16(a) vdupq_n_s16(a)
-#define mulhi_int16(a,b) vqdmulhq_s16(a,b)
-#define mulhi_s1_int16(a,b) vshlq_n_s16(vqdmulhq_s16(a,b),1)
+#define mulhi_int16(a,b)    vshlq_n_s16(vshrq_n_s16(vqdmulhq_s16(a,b),1),1)
+#define mulhi_s1_int16(a,b) vshlq_n_s16(vshrq_n_s16(vqdmulhq_s16(a,b),1),2)
 #define adds_int16(a,b) vqaddq_s16(a,b)
 #define mullo_int16(a,b) vmulq_s16(a,b)
 #define _mm_empty() 
@@ -143,7 +143,7 @@ void multadd_real_four_symbols_vector_complex_scalar(int16_t *x,
   _mm_empty();
   _m_empty();
 #elif defined(__arm__) || defined(__aarch64__)
-
+  AssertFatal(1==0,"multadd_real_four_symbols_vector_complex_scalar Need to do this still for ARM\n");
 #endif
 
 }
@@ -387,7 +387,7 @@ int rotate_cpx_vector(int16_t *x,
   int32x4_t shift;
   int32x4_t ab_re0,ab_re1,ab_im0,ab_im1,re32,im32;
   int16_t reflip[8]  __attribute__((aligned(16))) = {1,-1,1,1,1,-1,1,1};
-  int32x4x2_t xtmp;
+  //int32x4x2_t xtmp;
 
   ((int16_t *)&alpha_128)[0] = alpha[0];
   ((int16_t *)&alpha_128)[1] = alpha[1];
@@ -431,7 +431,7 @@ int rotate_cpx_vector(int16_t *x,
                                 vpadd_s32(((int32x2_t*)&ab_im1)[0],((int32x2_t*)&ab_im1)[1])),
                    shift);
   
-  y_128[0] = vcombine_s16(vmovn_s32(re32),vmovn_s32(im32));
+  y_128[0] = vcombine_s16(vqmovn_s32(re32),vqmovn_s32(im32));
 
 #endif
 
